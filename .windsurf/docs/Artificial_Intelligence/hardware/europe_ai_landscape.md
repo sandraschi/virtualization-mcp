@@ -137,3 +137,6 @@ Whileurope facesignificant challenges in the global AI race, its focus on ethica
 - [EU AI Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)
 - [State of AI Report (Europe)](https://www.stateof.ai/)
 - [McKinsey AIn Europe](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai-in-2022-and-a-half-decade-in-review)
+
+
+

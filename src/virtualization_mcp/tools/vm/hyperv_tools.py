@@ -1,5 +1,5 @@
 """
-Hyper-V Management Tools for VBoxMCP
+Hyper-V Management Tools for virtualization-mcp
 
 This module provides tools for managing Hyper-V virtual machines.
 """
@@ -317,3 +317,6 @@ async def stop_hyperv_vm(vm_name: str, force: bool = False, wait: bool = False) 
         Dict[str, Any]: Operation result
     """
     return await hyperv_manager.stop_vm(vm_name, force, wait)
+
+
+

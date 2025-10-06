@@ -47,3 +47,6 @@ try {
     Write-Host "Error downloading $paperTitle" -ForegroundColor Red
     Write-Host "Error details: $_" -ForegroundColor Red
 }
+
+
+

@@ -111,3 +111,6 @@ class AudioSettingsManager(BasePlugin):
         """Update audio settings for a VM."""
         # Implementation would update the actual VM's audio settings
         return settings
+
+
+

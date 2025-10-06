@@ -62,4 +62,7 @@ __all__ = [
 ]
 
 # Set up logging by default
-setup_logging(debug=os.getenv('VBOXMCP_DEBUG', '').lower() in ('1', 'true', 'yes'))
+setup_logging(debug=os.getenv('virtualization-mcp_DEBUG', '').lower() in ('1', 'true', 'yes'))
+
+
+

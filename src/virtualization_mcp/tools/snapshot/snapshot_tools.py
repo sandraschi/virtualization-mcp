@@ -373,3 +373,6 @@ async def restore_current_snapshot(
             "snapshot_restored": False,
             "vm_started": False
         }
+
+
+

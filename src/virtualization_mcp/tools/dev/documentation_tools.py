@@ -1,5 +1,5 @@
 """
-Documentation Tools for VBoxMCP
+Documentation Tools for virtualization-mcp
 
 This module provides tools for generating and managing API documentation
 following the FastMCP 2.11 standard.
@@ -54,9 +54,9 @@ class APIDocumentation(BaseModel):
     """Complete API documentation following FastMCP 2.11 standard."""
     mcp_version: str = MCP_DOC_VERSION
     schema_version: str = SCHEMA_VERSION
-    title: str = "VBoxMCP API"
+    title: str = "virtualization-mcp API"
     version: str = "1.0.0"
-    description: str = "VBoxMCP API Documentation"
+    description: str = "virtualization-mcp API Documentation"
     base_path: str = "/"
     tools: Dict[str, ToolDocumentation] = {}
     generated_at: str = datetime.now(timezone.utc).isoformat()
@@ -76,9 +76,9 @@ class DocumentationManager:
             return
             
         self.documentation = APIDocumentation(
-            title="VBoxMCP API",
+            title="virtualization-mcp API",
             version="1.0.0",
-            description="VBoxMCP API Documentation"
+            description="virtualization-mcp API Documentation"
         )
         self._initialized = True
     
@@ -294,3 +294,6 @@ def get_openapi_schema() -> Dict[str, Any]:
         Dict[str, Any]: The OpenAPI schema
     """
     return documentation_manager.generate_openapi_schema()
+
+
+

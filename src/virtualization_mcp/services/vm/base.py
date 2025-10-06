@@ -50,3 +50,6 @@ class VMService:
         for method_name in dir(mixin):
             if not method_name.startswith('_') and callable(getattr(mixin, method_name)):
                 setattr(self, method_name, getattr(mixin, method_name))
+
+
+

@@ -46,7 +46,7 @@ jobs:
       
     - name: Build MCPB extension
       run: |
-        mcpb pack mcpb/ dist/vboxmcp-v1.0.0.mcpb
+        mcpb pack mcpb/ dist/virtualization-mcp-v1.0.0.mcpb
         
     - name: Sign MCPB extension (optional)
       if: ${{ secrets.MCPB_SIGNING_KEY }}
@@ -89,3 +89,6 @@ jobs:
           See the auto-generated release notes below.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+

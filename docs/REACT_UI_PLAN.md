@@ -1,7 +1,7 @@
 # React/TypeScript UI Implementation Plan
 
 ## 1. Overview
-This document outlines the implementation strategy for the vboxmcp web interface using React and TypeScript, providing a modern, responsive user interface for managing virtual machines.
+This document outlines the implementation strategy for the virtualization-mcp web interface using React and TypeScript, providing a modern, responsive user interface for managing virtual machines.
 
 ## 2. Technology Stack
 
@@ -104,3 +104,6 @@ export const api = createApi({
 - Dark/light theme support
 - Customizable dashboards
 - Mobile responsiveness improvements
+
+
+

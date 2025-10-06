@@ -1,7 +1,7 @@
 """
-VBoxMCP Tools Package
+virtualization-mcp Tools Package
 
-This package contains all the tools for VBoxMCP organized into logical modules.
+This package contains all the tools for virtualization-mcp organized into logical modules.
 """
 
 # Import the registration function
@@ -269,3 +269,6 @@ __all__ = [
     'start_hyperv_vm',
     'stop_hyperv_vm'
 ]
+
+
+

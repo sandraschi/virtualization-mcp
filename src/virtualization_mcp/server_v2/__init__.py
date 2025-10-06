@@ -1,6 +1,6 @@
-"""VBoxMCP Server v2 - Refactored implementation.
+"""virtualization-mcp Server v2 - Refactored implementation.
 
-This package contains the refactored implementation of the VBoxMCP server,
+This package contains the refactored implementation of the virtualization-mcp server,
 featuring a modular architecture with a clear separation of concerns.
 
 Modules:
@@ -11,20 +11,23 @@ Modules:
 """
 
 # Core exports
-from .core.server import VBoxMCPServer
+from .core.server import virtualization-mcpServer
 from .config import ServerConfig, load_config
 
 # Version information
 __version__ = "2.11.2"
 
 def get_version() -> str:
-    """Get the current version of the VBoxMCP server."""
+    """Get the current version of the virtualization-mcp server."""
     return __version__
 
 __all__ = [
-    'VBoxMCPServer',
+    'virtualization-mcpServer',
     'ServerConfig',
     'load_config',
     'get_version',
     '__version__',
 ]
+
+
+

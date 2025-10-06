@@ -51,12 +51,12 @@ jobs:
         run: |
           if command -v mcpb >/dev/null 2>&1; then
             cd mcpb
-            mcpb pack . ../dist/vboxmcp-v1.0.0.mcpb
+            mcpb pack . ../dist/virtualization-mcp-v1.0.0.mcpb
             cd ..
           else
             echo "MCPB CLI not available, creating basic package"
             cd mcpb
-            zip -r ../dist/vboxmcp-v1.0.0.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
+            zip -r ../dist/virtualization-mcp-v1.0.0.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
             cd ..
           fi
       - name: Generate changelog
@@ -85,23 +85,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          release_name: VBoxMCP ${{ steps.version.outputs.version }}
+          release_name: virtualization-mcp ${{ steps.version.outputs.version }}
           body: |
-            ## 🚀 What's New in VBoxMCP ${{ steps.version.outputs.version }}
+            ## 🚀 What's New in virtualization-mcp ${{ steps.version.outputs.version }}
             
             ${{ steps.changelog.outputs.changelog }}
             
             ## 📦 Installation
             
             ### Claude Desktop Extension
-            1. Download `vboxmcp-v1.0.0.mcpb` from the assets below
+            1. Download `virtualization-mcp-v1.0.0.mcpb` from the assets below
             2. Open Claude Desktop
             3. Go to Settings > Extensions
             4. Drop the `.mcpb` file into the extensions page
             
             ### Python Package
             ```bash
-            pip install vboxmcp==${{ steps.version.outputs.version_number }}
+            pip install virtualization-mcp==${{ steps.version.outputs.version_number }}
             ```
           draft: false
           prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
@@ -129,3 +129,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+
+

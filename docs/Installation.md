@@ -14,18 +14,18 @@ This guide will help you install and set up the VirtualBox MCP Server.
 
 ```bash
 # Install the package
-pip install vboxmcp
+pip install virtualization-mcp
 
 # Verify installation
-vboxmcp --version
+virtualization-mcp --version
 ```
 
 ### Method 2: From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/vboxmcp.git
-cd vboxmcp
+git clone https://github.com/yourusername/virtualization-mcp.git
+cd virtualization-mcp
 
 # Install in development mode
 pip install -e .
@@ -38,14 +38,14 @@ pip install -r requirements-dev.txt
 
 ```bash
 # Pull the Docker image
-docker pull yourusername/vboxmcp:latest
+docker pull yourusername/virtualization-mcp:latest
 
 # Run the container
-docker run -d --name vboxmcp \
+docker run -d --name virtualization-mcp \
   -v /var/run/vboxms:/var/run/vboxms \
   -v /path/to/vms:/vms \
   -p 8000:8000 \
-  yourusername/vboxmcp
+  yourusername/virtualization-mcp
 ```
 
 ## Configuration
@@ -80,7 +80,7 @@ VBoxManage --version
 
 1. Start the MCP server:
    ```bash
-   vboxmcp start
+   virtualization-mcp start
    ```
 
 2. In a new terminal, test the API:
@@ -107,3 +107,6 @@ VBoxManage --version
    - Check for other services using the port
 
 For additional help, please refer to the [Troubleshooting](Troubleshooting) guide.
+
+
+

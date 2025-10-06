@@ -1,4 +1,4 @@
-# VBoxMCP Fixing Plan - Preserve All Functionality
+# virtualization-mcp Fixing Plan - Preserve All Functionality
 
 **Status:** CORRECTED - Technical Fix Plan  
 **Goal:** Fix import issues & FastMCP compatibility while preserving ALL tools  
@@ -26,20 +26,20 @@
 #### Morning: Diagnose Import Failures
 ```bash
 # Find the missing SecurityTestResult class
-cd D:\Dev\repos\vboxmcp
+cd D:\Dev\repos\virtualization-mcp
 grep -r "class SecurityTestResult" src/ || echo "Class missing - need to implement"
 grep -r "SecurityTestResult" src/ | head -10
 
 # Test each import level to find break point
-python -c "import vboxmcp.tools.security"
-python -c "from vboxmcp.tools.security import ai_security_tools" 
-python -c "from vboxmcp.tools.security.ai_security_tools import SecurityTestResult"
+python -c "import virtualization-mcp.tools.security"
+python -c "from virtualization-mcp.tools.security import ai_security_tools" 
+python -c "from virtualization-mcp.tools.security.ai_security_tools import SecurityTestResult"
 ```
 
 #### Afternoon: Fix Missing Classes
 1. **Implement Missing Security Result Classes:**
 ```python
-# Add to src/vboxmcp/tools/security/ai_security_tools.py
+# Add to src/virtualization-mcp/tools/security/ai_security_tools.py
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -74,9 +74,9 @@ class MalwareAnalysisResult:
 
 2. **Validate Import Chain Works:**
 ```bash
-python -c "from vboxmcp.tools.security.ai_security_tools import SecurityTestResult, MalwareAnalysisResult"
-python -c "from vboxmcp.tools.register_tools import register_all_tools"
-python -c "import vboxmcp.all_tools_server"
+python -c "from virtualization-mcp.tools.security.ai_security_tools import SecurityTestResult, MalwareAnalysisResult"
+python -c "from virtualization-mcp.tools.register_tools import register_all_tools"
+python -c "import virtualization-mcp.all_tools_server"
 ```
 
 ### Day 2: Server Consolidation & FastMCP Upgrade
@@ -84,8 +84,8 @@ python -c "import vboxmcp.all_tools_server"
 #### Morning: Identify Best Server Implementation
 ```bash
 # Compare server files and choose the most complete
-ls -la src/vboxmcp/*server*.py
-wc -l src/vboxmcp/all_tools_server.py src/vboxmcp/main.py
+ls -la src/virtualization-mcp/*server*.py
+wc -l src/virtualization-mcp/all_tools_server.py src/virtualization-mcp/main.py
 ```
 
 **Decision:** Keep `all_tools_server.py` as primary (most comprehensive)
@@ -114,9 +114,9 @@ mcp = FastMCP(
 
 3. **Test Server Startup:**
 ```bash
-cd D:\Dev\repos\vboxmcp
-python -m vboxmcp.all_tools_server --help
-python -c "from vboxmcp.all_tools_server import main; print('Import successful')"
+cd D:\Dev\repos\virtualization-mcp
+python -m virtualization-mcp.all_tools_server --help
+python -c "from virtualization-mcp.all_tools_server import main; print('Import successful')"
 ```
 
 ### Day 3: Tool Registration & Testing
@@ -124,11 +124,11 @@ python -c "from vboxmcp.all_tools_server import main; print('Import successful')
 #### Morning: Validate All Tool Categories Work
 ```python
 # Test each tool category imports and registers:
-python -c "from vboxmcp.tools.vm.vm_tools import list_vms, create_vm, start_vm"
-python -c "from vboxmcp.tools.security.security_testing_tools import security_scan_vm"  
-python -c "from vboxmcp.tools.storage.storage_tools import create_disk, attach_disk"
-python -c "from vboxmcp.tools.network.network_tools import configure_network_adapter"
-python -c "from vboxmcp.tools.snapshot.snapshot_tools import create_snapshot"
+python -c "from virtualization-mcp.tools.vm.vm_tools import list_vms, create_vm, start_vm"
+python -c "from virtualization-mcp.tools.security.security_testing_tools import security_scan_vm"  
+python -c "from virtualization-mcp.tools.storage.storage_tools import create_disk, attach_disk"
+python -c "from virtualization-mcp.tools.network.network_tools import configure_network_adapter"
+python -c "from virtualization-mcp.tools.snapshot.snapshot_tools import create_snapshot"
 ```
 
 #### Afternoon: Fix Any Remaining Import Issues
@@ -141,16 +141,16 @@ python -c "from vboxmcp.tools.snapshot.snapshot_tools import create_snapshot"
 #### Morning: Configuration System Validation
 ```bash
 # Test configuration loading
-python -c "from vboxmcp.config import settings; print(f'VBox path: {settings.VBOX_MANAGE_PATH}')"
+python -c "from virtualization-mcp.config import settings; print(f'VBox path: {settings.VBOX_MANAGE_PATH}')"
 
 # Test VirtualBox detection  
-python -c "from vboxmcp.config import get_vbox_manage_path; print(get_vbox_manage_path())"
+python -c "from virtualization-mcp.config import get_vbox_manage_path; print(get_vbox_manage_path())"
 ```
 
 #### Afternoon: Test Infrastructure Repair
 ```bash
 # Fix test imports and run basic tests
-cd D:\Dev\repos\vboxmcp
+cd D:\Dev\repos\virtualization-mcp
 python -m pytest tests/ -v --tb=short -x
 ```
 
@@ -159,7 +159,7 @@ python -m pytest tests/ -v --tb=short -x
 #### Morning: End-to-End Server Testing
 ```bash
 # Test server can start and list tools
-python -m vboxmcp.all_tools_server &
+python -m virtualization-mcp.all_tools_server &
 # Test with MCP client or FastMCP dev tools
 ```
 
@@ -206,10 +206,10 @@ python package_dxt.ps1
 ### Technical Success:
 ```bash
 # All these should work:
-python -c "import vboxmcp.all_tools_server"
-python -c "from vboxmcp.tools.security.ai_security_tools import SecurityTestResult"
-python -m vboxmcp.all_tools_server --version
-fastmcp dev src/vboxmcp/all_tools_server.py
+python -c "import virtualization-mcp.all_tools_server"
+python -c "from virtualization-mcp.tools.security.ai_security_tools import SecurityTestResult"
+python -m virtualization-mcp.all_tools_server --version
+fastmcp dev src/virtualization-mcp/all_tools_server.py
 ```
 
 ### Functionality Success:
@@ -245,3 +245,6 @@ fastmcp dev src/vboxmcp/all_tools_server.py
 **Goal:** Professional comprehensive VirtualBox MCP server with ALL features working on FastMCP 2.12.
 
 **Approach:** Technical fixes, not feature reduction.
+
+
+

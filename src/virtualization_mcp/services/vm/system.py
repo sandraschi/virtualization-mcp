@@ -194,3 +194,6 @@ class SystemSettingsManager(BasePlugin):
         """Set the boot order for a VM."""
         # Implementation would update the actual VM's boot order
         return boot_order
+
+
+

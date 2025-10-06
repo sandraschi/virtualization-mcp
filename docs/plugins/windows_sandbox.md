@@ -34,9 +34,9 @@ The Windows Sandbox plugin provides a lightweight, disposable desktop environmen
 
 2. Restart your computer if prompted.
 
-3. The plugin is enabled by default in vboxmcp. Verify it's running:
+3. The plugin is enabled by default in virtualization-mcp. Verify it's running:
    ```powershell
-   Get-Service vboxmcp | Select-Object Name, Status
+   Get-Service virtualization-mcp | Select-Object Name, Status
    ```
 
 ## Configuration
@@ -432,8 +432,8 @@ ws://localhost:8000/ws/sandbox/{sandbox_id}/console
 ### Logs
 
 Logs are available at:
-- `%PROGRAMDATA%\\vboxmcp\\logs\\windows_sandbox.log`
-- Event Viewer: `Applications and Services Logs > vboxmcp`
+- `%PROGRAMDATA%\\virtualization-mcp\\logs\\windows_sandbox.log`
+- Event Viewer: `Applications and Services Logs > virtualization-mcp`
 
 ## Examples
 
@@ -519,4 +519,7 @@ ws.onclose = () => {
 
 ## License
 
-This plugin is part of vboxmcp and is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+This plugin is part of virtualization-mcp and is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+
+

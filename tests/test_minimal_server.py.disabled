@@ -1,7 +1,7 @@
 """
-Test script for the minimal VBoxMCP server.
+Test script for the minimal virtualization-mcp server.
 
-These tests verify the functionality of the minimal VBoxMCP server implementation
+These tests verify the functionality of the minimal virtualization-mcp server implementation
 using FastMCP 2.11.0 patterns and best practices.
 """
 
@@ -83,7 +83,7 @@ class TestListVMsTool:
     @pytest.fixture
     def mock_run_vboxmanage(self):
         """Fixture to mock the run_vboxmanage function."""
-        with patch('vboxmcp.minimal_server.run_vboxmanage') as mock:
+        with patch('virtualization-mcp.minimal_server.run_vboxmanage') as mock:
             yield mock
     
     @pytest.mark.asyncio
@@ -158,7 +158,7 @@ class TestServerInitialization:
         from virtualization_mcp.minimal_server import mcp
         
         assert mcp is not None, "MCP instance should be initialized"
-        assert mcp.name == "vboxmcp", "Incorrect MCP server name"
+        assert mcp.name == "virtualization-mcp", "Incorrect MCP server name"
     
     def test_tools_registered(self):
         """Test that all tools are properly registered."""
@@ -179,4 +179,7 @@ class TestServerInitialization:
 if __name__ == "__main__":
     # Run tests with increased verbosity and coverage reporting
     import pytest
-    sys.exit(pytest.main(["-v", "--cov=vboxmcp", "--cov-report=term-missing", __file__]))
+    sys.exit(pytest.main(["-v", "--cov=virtualization-mcp", "--cov-report=term-missing", __file__]))
+
+
+

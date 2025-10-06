@@ -1,4 +1,4 @@
-"""Security Testing plugin for vboxmcp.
+"""Security Testing plugin for virtualization-mcp.
 
 This plugin provides security testing capabilities for virtual machines,
 including vulnerability scanning, penetration testing, and security assessments.
@@ -301,3 +301,6 @@ class SecurityTestingPlugin(BasePlugin):
             "memory_mb": 4096,
             "cpu_count": 2
         }
+
+
+

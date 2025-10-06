@@ -1,6 +1,6 @@
 # Backup and Recovery Workflow
 
-This guide provides comprehensive strategies for backing up and recovering virtual machines managed by vboxmcp.
+This guide provides comprehensive strategies for backing up and recovering virtual machines managed by virtualization-mcp.
 
 ## Table of Contents
 
@@ -526,3 +526,6 @@ def get_latest_backup(backup_dir):
 - [Performance Tuning](../advanced/performance_tuning.md)
 - [Security Best Practices](../advanced/security.md)
 - [Disaster Recovery Planning](../advanced/disaster_recovery.md)
+
+
+

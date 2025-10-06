@@ -11,7 +11,7 @@ This document outlines the design for a template library system that allows user
 name: "python-dev"
 version: "1.0.0"
 description: "Python 3.10 development environment"
-author: "vboxmcp Team"
+author: "virtualization-mcp Team"
 
 # Base image or requirements
 base_image: "ubuntu:22.04"
@@ -63,7 +63,7 @@ metadata:
 
 ### 3.1 Local Repository
 ```
-~/.vboxmcp/templates/
+~/.virtualization-mcp/templates/
 ├── python-dev/
 │   ├── template-definition.yaml
 │   ├── requirements.txt
@@ -119,3 +119,6 @@ vm = vm_manager.create_from_template(
 - Automated testing
 - Dependency resolution
 - Template marketplace
+
+
+

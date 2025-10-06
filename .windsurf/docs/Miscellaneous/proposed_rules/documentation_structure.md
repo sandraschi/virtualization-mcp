@@ -39,3 +39,6 @@ docs/
 3. Verify allinks and references
 4. Testhe documentation locally
 5. Deploy changes to the stable version aftereview
+
+
+

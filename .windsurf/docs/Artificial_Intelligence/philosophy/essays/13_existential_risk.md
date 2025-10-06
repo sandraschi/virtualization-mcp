@@ -145,3 +145,6 @@ Nick Bostrom's work on existential risk represents one of the most important phi
 - Harari, Y. N. (2018). *21 Lessons for the 21st Century*. Jonathan Cape.
 - Turchin, A. (2018). *The Structure of the Global Catastrophic Risk*. Cambridge University Press.
 - Beckstead, N. (2013). *On the Overwhelming Importance of Shaping the Far Future*. Ph.D. Dissertation, Rutgers University.
+
+
+

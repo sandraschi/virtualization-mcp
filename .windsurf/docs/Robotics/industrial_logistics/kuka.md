@@ -49,3 +49,6 @@ KUKA's collaborative robot (cobot), designed for safe human-robot collaboration 
 
 ## Impact and Future Direction
 KUKA has been a cornerstone of industrial automation, particularly in theuropean automotive industry. The company is now focusing heavily on Industry 4.0 solutions, human-robot collaboration, and expanding into new markets likelectronics and healthcare. The acquisition by Midea Group aims to strengthen KUKA's presence in the Asian market and leverage synergies in consumer electronics manufacturing and logistics.
+
+
+

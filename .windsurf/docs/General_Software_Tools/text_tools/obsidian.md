@@ -104,3 +104,6 @@ sudo dpkg -i obsidian_1.4.16_amd64.deb
 - [Plugin Directory](https://obsidian.md/plugins)
 - [Community Forum](https://forum.obsidian.md/)
 - [Awesome Obsidian](https://github.com/kmaasrud/awesome-obsidian)
+
+
+

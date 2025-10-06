@@ -1,5 +1,5 @@
 """
-Tests for the vboxmcp networking functionality.
+Tests for the virtualization-mcp networking functionality.
 """
 import pytest
 from unittest.mock import MagicMock, patch, call
@@ -117,3 +117,6 @@ class TestNetworkTypes:
         assert default_config.enabled is True
         assert default_config.attachment_type == NetworkAttachmentType.NAT
         assert default_config.adapter_type is None
+
+
+

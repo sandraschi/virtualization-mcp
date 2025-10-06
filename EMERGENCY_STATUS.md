@@ -1,4 +1,4 @@
-# VBoxMCP Emergency Status - 2025-09-01
+# virtualization-mcp Emergency Status - 2025-09-01
 
 ## 🚨 CRITICAL STATUS: COMPLETELY BROKEN
 
@@ -45,7 +45,7 @@
 from fastmcp import FastMCP
 import subprocess
 
-mcp = FastMCP(name="vboxmcp")
+mcp = FastMCP(name="virtualization-mcp")
 
 @mcp.tool()
 def list_vms() -> str:
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
 2. **Test it works:**
 ```bash
-cd D:\Dev\repos\vboxmcp
+cd D:\Dev\repos\virtualization-mcp
 python minimal_server.py
 ```
 
@@ -75,3 +75,6 @@ python minimal_server.py
 ---
 
 **Bottom Line:** Current codebase is a complete failure. Rebuild from scratch in 5 days using Austrian efficiency principles.
+
+
+

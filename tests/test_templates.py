@@ -1,5 +1,5 @@
 """
-Tests for the vboxmcp VM templates functionality.
+Tests for the virtualization-mcp VM templates functionality.
 """
 import pytest
 from pathlib import Path
@@ -130,3 +130,6 @@ class TestVMTemplateMixin:
         invalid_template = {"name": "invalid"}
         with pytest.raises(ValueError):
             self.templates._validate_template(invalid_template)
+
+
+

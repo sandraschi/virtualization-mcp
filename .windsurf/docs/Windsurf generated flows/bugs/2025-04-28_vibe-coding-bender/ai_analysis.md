@@ -16,3 +16,6 @@
 6. **Seek Support:** If addictive patterns persist, talk to friends, mentors, or a professional. You're not alone!
 7. **Extensive Logging:** (Project rule) Log your coding hours, breaks, and health incidents. Use this data to spotrends and adjust your workflow.
 8. **The Future:** With awareness and boundaries, you can keep the creative flow alive without risking your health or finances. Remember: sustainable coding is productive coding!
+
+
+

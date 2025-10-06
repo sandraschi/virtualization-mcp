@@ -1,4 +1,4 @@
-﻿# MetaI
+# MetaI
 
 ## Overview
 MetaIs the artificial intelligence division of Meta Platforms, Inc. Guided by Chief AI Scientist Yann LeCun, its mission is to advance AI through a commitmentopen science and collaboration. Unlike competitors whoften keep their most powerful models proprietary, MetaI'strategy is to openly release its state-of-the-art research and models, including the influential **Llama** series of large language models and the **PyTorch** deep learning framework. This approach aims to democratize access to AI, accelerate innovation, and build a foundational technology stack for the future of social connection and the metaverse.
@@ -62,3 +62,6 @@ MetaI's work is not just academic; it's deeply integrated into the company's pro
 - AI for metaverse development
 - On-device AI capabilities
 - AI safety and alignment research
+
+
+

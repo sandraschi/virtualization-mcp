@@ -1,4 +1,4 @@
-﻿# Gödel, Escher, Bach: An Eternal Golden Braid - A Timeless Exploration of Mind and Meaning
+# Gödel, Escher, Bach: An Eternal Golden Braid - A Timeless Exploration of Mind and Meaning
 
 ## Introduction: The Interwoven Worlds of Mind, Mathematics, and Art
 
@@ -119,3 +119,6 @@ Nearly half a century after its publication, "Gödel, Escher, Bach" remains a pr
 - Penrose, R. (1989). *Themperor's New Mind: Concerning Computers, Minds, and The Laws of Physics*. Oxford University Press.
 - Searle, J. R. (1980). Minds, Brains, and Programs. *Behavioral and Brain Sciences, 3*(3), 417-424.
 - Marcus, G. (2020). *The Next Decade in AI: Four Steps Towards Robust Artificial Intelligence*. MIT Press.
+
+
+

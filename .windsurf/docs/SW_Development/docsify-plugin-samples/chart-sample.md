@@ -247,3 +247,6 @@ document.addEventListener('chartjs:init', function(e) {
 ---
 
 For more information, visithe [Chart.js documentation](https://www.chartjs.org/docs/latest/).
+
+
+

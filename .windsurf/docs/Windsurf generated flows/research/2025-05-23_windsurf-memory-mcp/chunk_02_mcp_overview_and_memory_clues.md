@@ -30,3 +30,6 @@ Sources:
 *   **Custom Tools:** Developers can integrate their own custom tools by defining MCP endpoints, typically in a configuration file like `mcp_config.json`.
 *   **Interactive Management:** The Windsurf interface reportedly allows for live control of MCP tools, such as enabling, disabling, or switching between different MCP backends.
 *   **Goal:** The overall aim is to facilitate the creation of modular, testable, and reusable toolchains that enhance the capabilities of LLM agents within the Windsurf environment.
+
+
+

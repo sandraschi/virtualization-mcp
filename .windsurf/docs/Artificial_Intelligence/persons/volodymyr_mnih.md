@@ -68,3 +68,6 @@ Born in Ukraine, Mnih earned his BSc in Computer Science and Mathematics from th
 - [Deep Reinforcement Learning](https://spinningup.openai.com/) - Educational resource
 - [Atari 2600 Games](https://en.wikipedia.org/wiki/List_of_Atari_2600_games) - Testbed for DQN
 
+
+
+

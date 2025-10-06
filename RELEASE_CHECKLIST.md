@@ -8,7 +8,7 @@
 - [ ] Check for any open issues that should be addressed
 
 ## Version Bumping
-- [ ] Update `__version__` in `src/vboxmcp/__init__.py`
+- [ ] Update `__version__` in `src/virtualization-mcp/__init__.py`
 - [ ] Update version in `pyproject.toml`
 - [ ] Update version in `dxt_manifest.json`
 - [ ] Update any other version references in documentation
@@ -52,3 +52,6 @@
 - [ ] Update development version to next planned version
 - [ ] Create a new section in CHANGELOG.md for next version
 - [ ] Celebrate the release!
+
+
+

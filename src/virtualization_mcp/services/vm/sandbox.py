@@ -44,7 +44,7 @@ class VMSandboxManager:
         self.active_sandboxes: Dict[str, Dict[str, Any]] = {}
         
         # Setup sandbox base directory
-        self.sandbox_dir = os.path.join(tempfile.gettempdir(), 'vboxmcp_sandboxes')
+        self.sandbox_dir = os.path.join(tempfile.gettempdir(), 'virtualization-mcp_sandboxes')
         os.makedirs(self.sandbox_dir, exist_ok=True)
     
     def create_sandbox(self, source_vm: str, name: str = None, 
@@ -509,3 +509,6 @@ class VMSandboxManager:
             
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Failed to delete VM in Hyper-V: {e.stderr}")
+
+
+

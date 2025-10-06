@@ -13,3 +13,6 @@
 3. **Fehlerbehandlung & Logging:** Prüfe, ob die "Unsterblichkeit" auf einen Programmierfehler zurückzuführen ist, und logge alle ungewöhnlichen Lebensdauern zur weiteren Analyse.
 4. **Ökologische Balance:** Simuliere Wechselwirkungen mit anderen Arten, um ein dynamisches, stabilesystem zu fördern.
 5. **Humor nicht vergessen:** Wenn das Zieliterarisch oder humorvoll ist, dokumentiere die "Unsterblichkeit" als Feature, nicht als Bug – aber mit einem Augenzwinkern!
+
+
+

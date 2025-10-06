@@ -18,3 +18,6 @@ for clip_id, clip in clips.items():
         media_pool.AppendToTimeline([scene])
 ```
 *Scene detection API support may vary by Resolversion. For advanced use, combine with manual scripting and timelinedits.*
+
+
+

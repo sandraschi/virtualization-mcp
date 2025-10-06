@@ -1,7 +1,7 @@
 """
-VBoxMCP Plugins Package
+virtualization-mcp Plugins Package
 
-This package contains all plugin modules for VBoxMCP.
+This package contains all plugin modules for virtualization-mcp.
 """
 import logging
 from typing import Optional, Type
@@ -104,3 +104,6 @@ def get_windows_sandbox() -> Optional[WindowsSandboxHelper]:
         Optional[WindowsSandboxHelper]: The Windows Sandbox helper instance, or None if not available.
     """
     return _windows_sandbox
+
+
+

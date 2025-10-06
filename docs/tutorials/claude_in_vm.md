@@ -1,4 +1,4 @@
-# Running Claude in Virtual Machines with vboxmcp
+# Running Claude in Virtual Machines with virtualization-mcp
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -12,13 +12,13 @@
 
 ## Introduction
 
-This guide demonstrates how to use vboxmcp to create and manage virtual machines running Claude, including automated deployment, networking, and security best practices.
+This guide demonstrates how to use virtualization-mcp to create and manage virtual machines running Claude, including automated deployment, networking, and security best practices.
 
 ## Quick Start
 
 ### Prerequisites
 
-- vboxmcp installed and configured
+- virtualization-mcp installed and configured
 - VirtualBox 6.1 or later
 - Sufficient system resources (CPU, RAM, disk space)
 - Claude API access
@@ -390,3 +390,6 @@ except Exception as e:
    - Monitor performance metrics
    - Scale horizontally as needed
    - Implement auto-scaling when possible
+
+
+

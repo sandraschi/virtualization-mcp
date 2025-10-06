@@ -1,7 +1,7 @@
 """
-FastMCP Tool Registration for VBoxMCP
+FastMCP Tool Registration for virtualization-mcp
 
-This module registers all VBoxMCP tools with FastMCP.
+This module registers all virtualization-mcp tools with FastMCP.
 """
 import sys
 from typing import Dict, Any, List, Optional
@@ -42,7 +42,7 @@ from virtualization_mcp.tools.backup.backup_tools import (
 logger = logging.getLogger(__name__)
 
 def register_all_tools(mcp: FastMCP) -> None:
-    """Register all VBoxMCP tools with the FastMCP server.
+    """Register all virtualization-mcp tools with the FastMCP server.
     
     Args:
         mcp: The FastMCP instance to register tools with
@@ -91,9 +91,11 @@ def register_all_tools(mcp: FastMCP) -> None:
     mcp.tool(list_backups, name="list_vm_backups", description="List all VM backups")
     mcp.tool(delete_backup, name="delete_vm_backup", description="Delete a VM backup")
     
-    logger.info("All VBoxMCP tools registered successfully")
+    logger.info("All virtualization-mcp tools registered successfully")
 
 async def initialize_services():
     """Initialize services that need async initialization."""
     # Initialize any services that need async setup
     pass
+
+

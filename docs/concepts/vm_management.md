@@ -2,7 +2,7 @@
 
 ## Overview
 
-vboxmcp provides comprehensive management of VirtualBox virtual machines through an intuitive API. This document covers the core VM management capabilities.
+virtualization-mcp provides comprehensive management of VirtualBox virtual machines through an intuitive API. This document covers the core VM management capabilities.
 
 ## Core Operations
 
@@ -185,3 +185,6 @@ screenshot = manager.take_screenshot("ubuntu-server", "/path/to/save.png")
 - [Storage Management](../concepts/storage_management.md)
 - [Network Configuration](../concepts/network_configuration.md)
 - [Snapshot Management](../concepts/snapshot_management.md)
+
+
+

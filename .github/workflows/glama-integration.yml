@@ -27,7 +27,7 @@ jobs:
         run: |
           echo "## GLAMA.ai Quality Assessment" >> $GITHUB_STEP_SUMMARY
           echo "### Test Coverage" >> $GITHUB_STEP_SUMMARY
-          pytest --cov=src/vboxmcp --cov-report=term-missing --cov-report=xml
+          pytest --cov=src/virtualization-mcp --cov-report=term-missing --cov-report=xml
           coverage=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); print(f'{float(tree.getroot().attrib[\"line-rate\"])*100:.1f}%')")
           echo "- Coverage: $coverage" >> $GITHUB_STEP_SUMMARY
           
@@ -51,3 +51,6 @@ jobs:
             coverage.xml
             bandit-report.json
             safety-report.json
+
+
+

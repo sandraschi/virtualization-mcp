@@ -1,4 +1,4 @@
-﻿# myAIPlayground - Product Requirements Document (PRD)
+# myAIPlayground - Product Requirements Document (PRD)
 
 ## 1. Overview
 myAIPlayground is a comprehensive suite of AI applications and tools managed through a centralizedashboard. It provides a modular platform for various AI-powered applications including document processing, media management, and interactive AI experiences. The system supports multiple LLM backends (local and cloud-based) and is designed with a focus on extensibility and user experience.
@@ -212,3 +212,6 @@ myai/
    ```
 
 4. Access the dashboard at http://localhost:8000
+
+
+

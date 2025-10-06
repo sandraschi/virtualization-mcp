@@ -24,7 +24,7 @@
 ```
 vbox-mcp/
 ├── src/
-│   ├── vboxmcp/
+│   ├── virtualization-mcp/
 │   │   ├── core/
 │   │   │   ├── server.py              # Enhanced FastMCP server
 │   │   │   └── config.py              # Multi-hypervisor configuration
@@ -175,7 +175,7 @@ async def sync_vm_configurations(source: str, target: str) -> dict:
 
 ### Phase 1: Foundation (Week 1)
 **PowerShell Integration Framework**
-- [ ] Create `vboxmcp/utils/powershell.py` execution framework
+- [ ] Create `virtualization-mcp/utils/powershell.py` execution framework
 - [ ] Implement environment validation and privilege checking  
 - [ ] Design PowerShell command templating system
 - [ ] Create error handling and logging infrastructure
@@ -209,7 +209,7 @@ async def sync_vm_configurations(source: str, target: str) -> dict:
 
 ### Core Implementation
 ```python
-# vboxmcp/utils/powershell.py
+# virtualization-mcp/utils/powershell.py
 import asyncio
 import subprocess
 import json
@@ -536,3 +536,6 @@ The Hyper-V integration represents a **strategic transformation** of VBox-MCP fr
 **Date**: August 3, 2025  
 **Version**: 1.0  
 **Status**: Ready for Implementation  
+
+
+

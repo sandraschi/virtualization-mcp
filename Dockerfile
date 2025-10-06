@@ -48,7 +48,10 @@ ENV DEBUG=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import virtualization-mcp; print('VBoxMCP is healthy')" || exit 1
+    CMD python -c "import virtualization-mcp; print('virtualization-mcp is healthy')" || exit 1
 
 # Default command
 CMD ["python", "-m", "virtualization-mcp"]
+
+
+

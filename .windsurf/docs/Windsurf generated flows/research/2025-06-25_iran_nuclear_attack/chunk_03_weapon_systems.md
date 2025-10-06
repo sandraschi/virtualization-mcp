@@ -38,3 +38,6 @@
 - **Precision Requirements**: Requires accurate target coordinates
 - **Vulnerability to Defenses**: Potential interception by advanced air defenses
 - **Collateral Damage**: Risk of unintendedamage to surrounding areas
+
+
+

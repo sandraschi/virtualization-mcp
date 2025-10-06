@@ -20,3 +20,6 @@ This research explores how to enable multiple simultaneouser sessions on Windows
 ---
 
 See next chunk for technical details on RDP Wrapper and termsrv.dll patching.
+
+
+

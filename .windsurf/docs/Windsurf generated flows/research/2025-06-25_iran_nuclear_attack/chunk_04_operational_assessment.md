@@ -59,3 +59,6 @@ While the attack achieved significant damage to Iran's nuclear infrastructure, t
 2. Redundancy in centrifuge operations
 3. Speed of recovery efforts
 4. International response and sanctions enforcement
+
+
+

@@ -144,3 +144,6 @@ max_tokens: 2048
 - [VS Codextension](https://marketplace.visualstudio.com/items?itemName=mcp.mcp-vscode)
 - [JetBrains Plugin](https://plugins.jetbrains.com/plugin/12345-mcp)
 - [Jupyter Integration](https://github.com/mcplatform/mcp-jupyter)
+
+
+

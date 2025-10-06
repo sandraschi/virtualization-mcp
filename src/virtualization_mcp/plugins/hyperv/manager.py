@@ -1,5 +1,5 @@
 """
-Hyper-V Manager Plugin for VBoxMCP
+Hyper-V Manager Plugin for virtualization-mcp
 
 This module provides Hyper-V VM management functionality.
 """
@@ -59,7 +59,7 @@ class VirtualMachine(BaseModel):
     )
 
 class HyperVManagerPlugin:
-    """Hyper-V Manager Plugin for VBoxMCP."""
+    """Hyper-V Manager Plugin for virtualization-mcp."""
     
     def __init__(self):
         self.mcp = None
@@ -147,3 +147,6 @@ class HyperVManagerPlugin:
     async def _stop_vm(self, vm_name: str, force: bool = False) -> Dict[str, Any]:
         """Stop a VM."""
         raise NotImplementedError
+
+
+

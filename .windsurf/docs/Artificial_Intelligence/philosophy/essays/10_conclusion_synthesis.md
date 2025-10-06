@@ -1,4 +1,4 @@
-﻿# The Nature of Mind and the Future of Consciousness: A Synthesis
+# The Nature of Mind and the Future of Consciousness: A Synthesis
 
 ## Introduction: The Threads of Understanding
 
@@ -115,3 +115,6 @@ As we conclude this exploration of mind and consciousness, we are left with more
 - Searle, J. R. (1983). *Intentionality: An Essay in the Philosophy of Mind*. Cambridge University Press.
 - Tononi, G. (2012). *Phi: A Voyage from the Brain to the Soul*. Pantheon.
 - Varela, F. J., Thompson, E., & Rosch, E. (1991). *Thembodied Mind: Cognitive Science and Human Experience*. MIT Press.
+
+
+

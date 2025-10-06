@@ -50,3 +50,6 @@ The hard problem of consciousness remains one of the most profound challenges in
 - Dennett, D. (1991). *Consciousness Explained*. Little, Brown and Co.
 - Strawson, G. (2006). Realistic monism: Why physicalism entails panpsychism. *Journal of Consciousnesstudies, 13*(10-11), 3-31.
 - Levine, J. (1983). Materialism and qualia: Thexplanatory gap. *Pacific Philosophical Quarterly, 64*(4), 354-361.
+
+
+

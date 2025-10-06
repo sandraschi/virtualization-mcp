@@ -446,3 +446,6 @@ class NetworkManager:
         except Exception as e:
             logger.error(f"Unexpected error executing command: {e}")
             raise VBoxManagerError(f"Failed to execute command: {str(e)}")
+
+
+

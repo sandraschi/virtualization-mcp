@@ -1,8 +1,8 @@
 """
-Example Tools for VBoxMCP
+Example Tools for virtualization-mcp
 
 This module provides example implementations of tools that demonstrate best practices
-for creating tools in the VBoxMCP system. These tools can be used as templates for
+for creating tools in the virtualization-mcp system. These tools can be used as templates for
 creating new tools.
 
 Key Features:
@@ -164,3 +164,6 @@ create_task = example_tools.create_task
 list_tasks = example_tools.list_tasks
 get_counter = example_tools.get_counter
 analyze_file = example_tools.analyze_file
+
+
+

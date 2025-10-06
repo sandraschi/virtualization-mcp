@@ -12,3 +12,6 @@
 2. Add resource regeneration or limit carrot consumption per bunny.
 3. Review and constrain bunny movement logic to prevent chaotic hopping.
 4. (Optional) Add a "carrot alarm" to notify when resources are low.
+
+
+

@@ -1,5 +1,5 @@
 """
-Security Testing Tools for VBoxMCP
+Security Testing Tools for virtualization-mcp
 
 This module provides tools for security testing and vulnerability assessment.
 """
@@ -225,3 +225,6 @@ def list_available_tools() -> Dict[str, str]:
 def generate_report(test_id: str) -> Dict[str, Any]:
     """Generate a report for a completed security test."""
     return security_tester.generate_report(test_id)
+
+
+

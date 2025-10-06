@@ -1,5 +1,5 @@
 """
-Template Manager for VBoxMCP
+Template Manager for virtualization-mcp
 
 Manages VM templates for easy deployment of preconfigured virtual machines.
 """
@@ -161,4 +161,7 @@ class TemplateManager:
 
 
 __all__ = ['TemplateManager']
+
+
+
 

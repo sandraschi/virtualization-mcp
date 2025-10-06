@@ -54,3 +54,6 @@ A key differentiator for Weaviate is itstrong focus on **knowledge graph capabil
 *   Open-Source Core (BSD 3-Clause).
 *   Offers a Managed Cloud Service (Weaviate Cloud).
 *   Written primarily in Go.
+
+
+

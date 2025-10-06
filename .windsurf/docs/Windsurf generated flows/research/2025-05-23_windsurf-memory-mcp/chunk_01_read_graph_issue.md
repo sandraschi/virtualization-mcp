@@ -34,3 +34,6 @@ GitHub Issue #1273 in the `modelcontextprotocol/servers` repository: [[mcp/memor
 *   **Pull Request:** User `ajoslin103` submitted a Pull Request (PR #1276: "calling [mcp/memory] read_graph without args") on April 6, 2025, to address this bug.
 *   **Testing:** As of April 30, 2025, GitHub user `jwtracy` commented on the PRegarding a testing strategy.
 *   **Conclusion:** The failure of `mcp3_read_graph` is a confirmed bug in the `mcp/memory` server software. A fix has been proposed, but its merge andeployment status into the Windsurf environment used by Cascade is not definitively known from the issue thread alone. This explains why the tool call faileduring the current session.
+
+
+

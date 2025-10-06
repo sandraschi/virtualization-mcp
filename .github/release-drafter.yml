@@ -27,7 +27,7 @@ template: |
   
   ### Using pip
   ```bash
-  pip install vboxmcp==$RESOLVED_VERSION
+  pip install virtualization-mcp==$RESOLVED_VERSION
   ```
   
   ### Using Docker
@@ -50,3 +50,6 @@ exclude-labels:
   - 'duplicate'
   - 'wontfix'
   - 'invalid'
+
+
+

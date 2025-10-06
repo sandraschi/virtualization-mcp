@@ -36,7 +36,7 @@ __all__ = [
 
 # Package metadata
 PACKAGE_INFO = {
-    "name": "vboxmcp",
+    "name": "virtualization-mcp",
     "version": __version__,
     "description": "VirtualBox MCP Server - FastMCP-based VM management",
     "author": __author__,
@@ -46,3 +46,6 @@ PACKAGE_INFO = {
         "python-dotenv>=1.0.0"
     ]
 }
+
+
+

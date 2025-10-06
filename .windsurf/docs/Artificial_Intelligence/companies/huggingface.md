@@ -1,4 +1,4 @@
-﻿# Hugging Face
+# Hugging Face
 
 ## Overview: The GitHub of AI
 Hugging Face has established itself as the central platform and community hub for the modern AI ecosystem. Often described as "the GitHub of AI," its mission is to democratize good machine learning. It achieves this by providing the tools, infrastructure, and collaborative platform that enable developers and researchers to easily access, build, and share open-source models andatasets.
@@ -108,3 +108,6 @@ trainer.train()
 - [Hugging Face Documentation](https://huggingface.co/docs)
 - [Transformers Documentation](https://huggingface.co/transformers/)
 - [Hugging Face Course](https://huggingface.co/course/)
+
+
+

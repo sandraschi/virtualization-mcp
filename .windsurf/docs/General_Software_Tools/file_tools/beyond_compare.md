@@ -265,3 +265,6 @@ Beyond Compare is commercial software with a 30-day trial period. Licenses are a
 - [Knowledge Base](https://www.scootersoftware.com/kb/)
 - [Forums](https://www.scootersoftware.com/vbulletin/)
 - [Contact Support](https://www.scootersoftware.com/support/contactus.php)
+
+
+

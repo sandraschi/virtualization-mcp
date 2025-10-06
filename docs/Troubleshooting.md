@@ -117,7 +117,7 @@ This guide helps you identify and resolve common issues with the VirtualBox MCP 
 
 **Check Logs**
 ```bash
-tail -f /var/log/vboxmcp.log
+tail -f /var/log/virtualization-mcp.log
 ```
 
 **Common Causes**
@@ -174,10 +174,10 @@ Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
 
 ```bash
 # Linux/macOS
-tail -f /var/log/vboxmcp.log
+tail -f /var/log/virtualization-mcp.log
 
 # Windows
-Get-Content -Path "C:\ProgramData\vboxmcp\logs\vboxmcp.log" -Wait
+Get-Content -Path "C:\ProgramData\virtualization-mcp\logs\virtualization-mcp.log" -Wait
 ```
 
 ## Common Error Messages
@@ -197,8 +197,8 @@ Get-Content -Path "C:\ProgramData\vboxmcp\logs\vboxmcp.log" -Wait
 ## Getting Help
 
 1. Check the logs for detailed error messages
-2. Search the [GitHub Issues](https://github.com/yourusername/vboxmcp/issues)
-3. If the issue persists, [open a new issue](https://github.com/yourusername/vboxmcp/issues/new) with:
+2. Search the [GitHub Issues](https://github.com/yourusername/virtualization-mcp/issues)
+3. If the issue persists, [open a new issue](https://github.com/yourusername/virtualization-mcp/issues/new) with:
    - Error messages
    - Log output
    - Steps to reproduce
@@ -217,3 +217,6 @@ Get-Content -Path "C:\ProgramData\vboxmcp\logs\vboxmcp.log" -Wait
 ### Linux Hosts with Secure Boot
 - May require signing VirtualBox kernel modules
 - See [VirtualBox documentation](https://www.virtualbox.org/manual/ch02.html#install-linux-host) for details
+
+
+

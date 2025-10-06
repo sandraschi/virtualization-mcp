@@ -57,3 +57,6 @@ Its architecturemphasizescalability and reliability, separating storage from com
 
 *   Proprietary, Closed-Source.
 *   Fully Managed Cloud Service.
+
+
+

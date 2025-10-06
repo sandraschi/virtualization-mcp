@@ -24,3 +24,6 @@ class BaseSettings(BaseModel):
 
 # Create a default settings instance
 settings = BaseSettings()
+
+
+

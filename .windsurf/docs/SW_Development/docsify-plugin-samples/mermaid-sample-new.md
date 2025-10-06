@@ -1,4 +1,4 @@
-﻿# Mermaid.js Integration - Complete Guide
+# Mermaid.js Integration - Complete Guide
 
 ## Table of Contents
 
@@ -600,3 +600,6 @@ MIT
 ---
 
 For more information, visithe [Mermaid.js documentation](https://mermaid-js.github.io/mermaid/) and the [Mermaid GitHub repository](https://github.com/mermaid-js/mermaid).
+
+
+

@@ -30,3 +30,6 @@ When you play a note in GrandOrgue, you are not hearing a synthetic organ sound;
 3.  **Install the Sample Set**: Extracthe RAR files into a single folder. Then, in GrandOrgue, go to **File > Install Organd Sample Set** and follow the prompts to selecthe `.organ` definition file or the installation package.
 4.  **Configure MIDI and Audio**: Go to **Audio/MIDI > Audio/MIDI Settings**. In the Audio tab, select your preferred output device (e.g., your speakers or audio interface). In the MIDI tab, enable your MIDI keyboard.
 5.  **Load and Play**: Once installed, the organ will appear in your list of available instruments. Load it, and the virtual console will appear. You canow pull some stops (by clicking on them) and play on your MIDI keyboard.
+
+
+

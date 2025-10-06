@@ -1,4 +1,4 @@
-﻿# Windsurf IDE: Tips and Tricks
+# Windsurf IDE: Tips and Tricks
 
 ## Mastering the Agentic Workflow
 
@@ -48,3 +48,6 @@ Take advantage of the agent's ability to work autonomously. While you are thinki
 -   "In the background, please run the test suite and let me know if any tests fail."
 
 This form of parallel work is a superpower of the agentic paradigm and can dramatically increase your overall productivity.
+
+
+

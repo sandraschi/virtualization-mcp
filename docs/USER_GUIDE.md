@@ -1,4 +1,4 @@
-# vboxmcp User Guide
+# virtualization-mcp User Guide
 
 ## Table of Contents
 1. [Installation](#installation)
@@ -21,15 +21,15 @@
 #### Using pip (Recommended)
 
 ```bash
-pip install vboxmcp
+pip install virtualization-mcp
 ```
 
 #### From Source
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/sandraschi/vboxmcp.git
-   cd vboxmcp
+   git clone https://github.com/sandraschi/virtualization-mcp.git
+   cd virtualization-mcp
    ```
 
 2. Install with pip:
@@ -143,7 +143,7 @@ curl -X POST http://localhost:8080/api/vms/ubuntu-server/disks \
 Create a `config.yaml` file in the working directory:
 
 ```yaml
-# vboxmcp configuration
+# virtualization-mcp configuration
 server:
   host: 0.0.0.0
   port: 8080
@@ -158,7 +158,7 @@ security:
   
 logging:
   level: INFO
-  file: vboxmcp.log
+  file: virtualization-mcp.log
   max_size: 10  # MB
   backup_count: 5
 ```
@@ -184,7 +184,7 @@ logging:
 
 ### Logs
 
-Logs are stored in `vboxmcp.log` by default. Increase log level for more detailed information:
+Logs are stored in `virtualization-mcp.log` by default. Increase log level for more detailed information:
 
 ```bash
 VBOX_LOG_LEVEL=DEBUG vbox-mcp
@@ -192,12 +192,12 @@ VBOX_LOG_LEVEL=DEBUG vbox-mcp
 
 ## FAQs
 
-### Q: Can I run multiple instances of vboxmcp?
+### Q: Can I run multiple instances of virtualization-mcp?
 A: Yes, but each instance should use a different port and configuration.
 
-### Q: How do I update vboxmcp?
+### Q: How do I update virtualization-mcp?
 ```bash
-pip install --upgrade vboxmcp
+pip install --upgrade virtualization-mcp
 ```
 
 ### Q: Is there a web interface?
@@ -207,12 +207,15 @@ A: Not currently, but you can use tools like Postman or curl to interact with th
 A: Use the snapshot feature or back up the VirtualBox VM directory.
 
 ### Q: Can I use this in production?
-A: While vboxmcp is designed to be robust, always test thoroughly in a staging environment first.
+A: While virtualization-mcp is designed to be robust, always test thoroughly in a staging environment first.
 
 ## Support
 
-For support, please open an issue on the [GitHub repository](https://github.com/sandraschi/vboxmcp/issues).
+For support, please open an issue on the [GitHub repository](https://github.com/sandraschi/virtualization-mcp/issues).
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+

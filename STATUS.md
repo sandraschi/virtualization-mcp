@@ -1,11 +1,11 @@
-# vboxmcp Project Status
+# virtualization-mcp Project Status
 
 ## Current State (2025-07-25)
 
 ### ✅ Completed
 
 - Project restructured to follow FastMCP 2.11 conventions
-- Source code moved to `src/vboxmcp/`
+- Source code moved to `src/virtualization-mcp/`
 - Package structure with proper `__init__.py` files
 - `pyproject.toml` and `setup.py` created for package management
 - Fixed imports and initialization in `server.py`
@@ -41,3 +41,6 @@
 - VirtualBox 7.0+
 - python-dotenv
 - PyYAML
+
+
+

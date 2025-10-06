@@ -2,10 +2,10 @@
 * @sandraschi
 
 # Core VM functionality
-/src/vboxmcp/server/core/ @sandraschi @vm-experts
+/src/virtualization-mcp/server/core/ @sandraschi @vm-experts
 
 # Plugins
-/src/vboxmcp/server/plugins/ @sandraschi @plugin-maintainers
+/src/virtualization-mcp/server/plugins/ @sandraschi @plugin-maintainers
 
 # Documentation
 /docs/ @sandraschi @docs-team
@@ -15,3 +15,6 @@
 
 # Security
 SECURITY.md @sandraschi @security-team
+
+
+

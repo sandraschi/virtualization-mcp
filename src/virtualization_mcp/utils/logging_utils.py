@@ -8,7 +8,7 @@ from typing import Optional
 import logging.handlers
 from pathlib import Path
 
-def setup_logging(debug: bool = False, log_file: str = "logs/vboxmcp.log") -> None:
+def setup_logging(debug: bool = False, log_file: str = "logs/virtualization-mcp.log") -> None:
     """
     Configure logging with optional debug mode and file output.
 
@@ -46,3 +46,6 @@ def setup_logging(debug: bool = False, log_file: str = "logs/vboxmcp.log") -> No
 
     logging.getLogger('fastmcp').setLevel(logging.WARNING if not debug else logging.DEBUG)
     logger.info("Logging configured to file: %s", log_file)
+
+
+

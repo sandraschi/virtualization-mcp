@@ -721,3 +721,6 @@ MIT
 ---
 
 For more information, visithe [docsify-tabs GitHub repository](https://github.com/jhildenbiddle/docsify-tabs).
+
+
+

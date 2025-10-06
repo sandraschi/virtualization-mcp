@@ -1,6 +1,6 @@
 ---
 name: "🐛 Bug Report"
-description: "Report a bug in vboxmcp"
+description: "Report a bug in virtualization-mcp"
 labels: ["bug"]
 ---
 
@@ -21,7 +21,7 @@ labels: ["bug"]
 <!-- A clear and concise description of what actually happened. -->
 
 ### Environment
-- **vboxmcp Version**: 
+- **virtualization-mcp Version**: 
 - **Python Version**: 
 - **VirtualBox Version**: 
 - **Operating System**: 
@@ -36,3 +36,6 @@ Paste any relevant logs here
 
 ### Possible Solution
 <!-- If you have a suggestion for a fix or the cause of the bug, please describe it here. -->
+
+
+

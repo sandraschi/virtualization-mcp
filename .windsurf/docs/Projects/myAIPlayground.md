@@ -1,4 +1,4 @@
-﻿# myAIPlayground
+# myAIPlayground
 
 ## Overview
 An interactive playground for experimenting with various AI/ML models, including language models, image generationeration, and other machine learning applications. Designed for both learning and practical experimentation.
@@ -37,3 +37,6 @@ An interactive playground for experimenting with various AI/ML models, including
 
 ## License
 Apache 2.0 (will be added when repository is created)
+
+
+

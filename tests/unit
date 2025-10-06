@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Test script for vboxmcp Claude Desktop integration.
+Test script for virtualization-mcp Claude Desktop integration.
 
-This script tests the vboxmcp MCP server functionality and its integration
+This script tests the virtualization-mcp MCP server functionality and its integration
 with Claude Desktop. It verifies that all tools are properly exposed and
 functioning as expected.
 """
@@ -19,7 +19,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler()]
 )
-logger = logging.getLogger('vboxmcp-test')
+logger = logging.getLogger('virtualization-mcp-test')
 
 # Import FastMCP
 try:
@@ -28,8 +28,8 @@ except ImportError:
     logger.error("FastMCP not installed. Please install with: pip install fastmcp")
     sys.exit(1)
 
-class VBoxMCPTester:
-    """Test harness for vboxmcp MCP server."""
+class virtualization-mcpTester:
+    """Test harness for virtualization-mcp MCP server."""
     
     def __init__(self, debug: bool = False):
         """Initialize the test harness.
@@ -39,16 +39,16 @@ class VBoxMCPTester:
         """
         self.debug = debug
         self.mcp = FastMCP(
-            name="vboxmcp",
+            name="virtualization-mcp",
             description="VirtualBox Management Control Protocol Server",
             version="1.0.0",
             command=sys.executable,
-            args=["-m", "vboxmcp.main", "--debug"] if debug else ["-m", "vboxmcp.main"]
+            args=["-m", "virtualization-mcp.main", "--debug"] if debug else ["-m", "virtualization-mcp.main"]
         )
         
     async def start(self) -> None:
         """Start the MCP server and wait for it to be ready."""
-        logger.info("Starting vboxmcp MCP server...")
+        logger.info("Starting virtualization-mcp MCP server...")
         
         try:
             # Start the server
@@ -56,14 +56,14 @@ class VBoxMCPTester:
             
             # Wait for server to be ready
             await self.mcp.wait_ready(timeout=30)
-            logger.info("vboxmcp server is ready")
+            logger.info("virtualization-mcp server is ready")
         except Exception as e:
-            logger.error(f"Failed to start vboxmcp server: {e}")
+            logger.error(f"Failed to start virtualization-mcp server: {e}")
             raise
     
     async def stop(self) -> None:
         """Stop the MCP server."""
-        logger.info("Stopping vboxmcp MCP server...")
+        logger.info("Stopping virtualization-mcp MCP server...")
         await self.mcp.stop()
     
     async def test_tool(self, tool_name: str, params: Dict[str, Any], 
@@ -146,14 +146,14 @@ async def main():
     """Main entry point for the test script."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Test vboxmcp Claude Desktop integration")
+    parser = argparse.ArgumentParser(description="Test virtualization-mcp Claude Desktop integration")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args()
     
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
     
-    tester = VBoxMCPTester(debug=args.debug)
+    tester = virtualization-mcpTester(debug=args.debug)
     
     try:
         await tester.start()
@@ -167,3 +167,6 @@ async def main():
 
 if __name__ == "__main__":
     sys.exit(asyncio.run(main()))
+
+
+

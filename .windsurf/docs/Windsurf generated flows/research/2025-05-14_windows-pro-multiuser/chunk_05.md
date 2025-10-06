@@ -21,3 +21,6 @@
 - [VMware Horizon Cloud](https://www.vmware.com/products/horizon.html)
 - [Parallels RAS](https://www.parallels.com/products/ras/)
 - [LAN-Tech: Legal Issues](https://blog.lan-tech.ca/2013/10/31/multiple-rdp-sessions-on-a-pc-legal-or-not/)
+
+
+

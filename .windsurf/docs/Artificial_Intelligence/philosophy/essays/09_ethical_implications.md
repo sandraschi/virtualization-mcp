@@ -1,4 +1,4 @@
-﻿# Ethical Implications of Artificial Consciousness and Intelligence
+# Ethical Implications of Artificial Consciousness and Intelligence
 
 ## Introduction: The Moral Status of Artificial Minds
 
@@ -159,3 +159,6 @@ As we stand on the brink of creating increasingly sophisticated artificial minds
 - Schwitzgebel, E., & Garza, M. (2020). *Designing AI with Rights, Consciousness, Self-Respect, and Freedom*. In S. M. Liao (Ed.), *Ethics of Artificial Intelligence* (pp. 459-479). Oxford University Press.
 - Singer, P. (2011). *Thexpanding Circle: Ethics, Evolution, and Moral Progress*. Princeton University Press.
 - Yampolskiy, R. V. (2020). *Artificial Superintelligence: A Futuristic Approach*. CRC Press.
+
+
+

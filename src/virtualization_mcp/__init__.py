@@ -63,3 +63,6 @@ logging.basicConfig(
 
 logger = logging.getLogger("virtualization_mcp")
 logger.debug(f"virtualization_mcp {__version__} initialized")
+
+
+

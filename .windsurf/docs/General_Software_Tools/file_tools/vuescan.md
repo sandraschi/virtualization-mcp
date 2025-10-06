@@ -213,3 +213,6 @@ VueScan is commercial software with a free trial. Various licensing options are 
 - [Documentation](https://www.hamrick.com/vuescandoc.html)
 - [Forums](https://www.hamrick.com/vuescandoc/forum/)
 - [Contact Support](https://www.hamrick.com/support.html)
+
+
+

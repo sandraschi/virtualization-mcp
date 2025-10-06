@@ -1,4 +1,4 @@
-"""Main server implementation for VBoxMCP v2."""
+"""Main server implementation for virtualization-mcp v2."""
 import asyncio
 import logging
 import signal
@@ -15,11 +15,11 @@ from .utils import get_platform, ensure_dir
 
 logger = logging.getLogger(__name__)
 
-class VBoxMCPServer:
-    """Main server class for VBoxMCP."""
+class virtualization-mcpServer:
+    """Main server class for virtualization-mcp."""
     
     def __init__(self, config: Optional[ServerConfig] = None):
-        """Initialize the VBoxMCP server.
+        """Initialize the virtualization-mcp server.
         
         Args:
             config: Server configuration. If not provided, will load default config.
@@ -41,14 +41,14 @@ class VBoxMCPServer:
         )
         
         # Set log level for all our modules
-        for logger_name in ['vboxmcp', 'vboxmcp.server_v2']:
+        for logger_name in ['virtualization-mcp', 'virtualization-mcp.server_v2']:
             logging.getLogger(logger_name).setLevel(log_level)
     
     async def start(self) -> None:
-        """Start the VBoxMCP server."""
+        """Start the virtualization-mcp server."""
         try:
             logger.info("=" * 80)
-            logger.info(f"Starting VBoxMCP Server v{self.config.version}")
+            logger.info(f"Starting virtualization-mcp Server v{self.config.version}")
             logger.info(f"Platform: {get_platform()}")
             logger.info("=" * 80)
             
@@ -60,7 +60,7 @@ class VBoxMCPServer:
             
             # Create MCP instance
             self.mcp = FastMCP(
-                name="vboxmcp",
+                name="virtualization-mcp",
                 version=self.config.version,
                 description="VirtualBox Management and Control Protocol Server"
             )
@@ -71,7 +71,7 @@ class VBoxMCPServer:
             # Set up signal handlers
             self._setup_signal_handlers()
             
-            logger.info("VBoxMCP server started successfully")
+            logger.info("virtualization-mcp server started successfully")
             logger.info("Press Ctrl+C to stop the server")
             
             # Run the MCP server
@@ -83,7 +83,7 @@ class VBoxMCPServer:
         except asyncio.CancelledError:
             logger.info("Server shutdown requested")
         except Exception as e:
-            logger.critical(f"Fatal error in VBoxMCP server: {e}", exc_info=True)
+            logger.critical(f"Fatal error in virtualization-mcp server: {e}", exc_info=True)
             raise
         finally:
             await self.shutdown()
@@ -124,8 +124,8 @@ class VBoxMCPServer:
             return
         
         @self.mcp.tool(
-            name="vboxmcp_ping",
-            description="Check if the VBoxMCP server is running",
+            name="virtualization-mcp_ping",
+            description="Check if the virtualization-mcp server is running",
             parameters={},
             returns={"type": "string"}
         )
@@ -134,19 +134,19 @@ class VBoxMCPServer:
             return "pong"
         
         @self.mcp.tool(
-            name="vboxmcp_shutdown",
-            description="Shut down the VBoxMCP server",
+            name="virtualization-mcp_shutdown",
+            description="Shut down the virtualization-mcp server",
             parameters={},
             returns={"type": "string"}
         )
         async def shutdown_server() -> str:
-            """Shut down the VBoxMCP server."""
+            """Shut down the virtualization-mcp server."""
             logger.info("Received shutdown request via API")
             asyncio.create_task(self._graceful_shutdown())
-            return "Shutting down VBoxMCP server..."
+            return "Shutting down virtualization-mcp server..."
         
         @self.mcp.tool(
-            name="vboxmcp_list_tools",
+            name="virtualization-mcp_list_tools",
             description="List all available tools",
             parameters={
                 "include_docs": {
@@ -207,7 +207,7 @@ class VBoxMCPServer:
         if not hasattr(self, '_shutdown_complete') or self._shutdown_complete:
             return
             
-        logger.info("Shutting down VBoxMCP server...")
+        logger.info("Shutting down virtualization-mcp server...")
         
         # Shutdown plugins
         if hasattr(self, 'plugin_manager'):
@@ -223,28 +223,31 @@ class VBoxMCPServer:
             except Exception as e:
                 logger.error(f"Error shutting down services: {e}", exc_info=True)
         
-        logger.info("VBoxMCP server shutdown complete")
+        logger.info("virtualization-mcp server shutdown complete")
         self._shutdown_complete = True
 
 
 def main():
-    """Main entry point for the VBoxMCP server."""
+    """Main entry point for the virtualization-mcp server."""
     try:
         # Load configuration
         config = load_config()
         
         # Create and start the server
-        server = VBoxMCPServer(config)
+        server = virtualization-mcpServer(config)
         
         # Run the server
         asyncio.run(server.start())
         
     except KeyboardInterrupt:
-        print("\nShutting down VBoxMCP server...")
+        print("\nShutting down virtualization-mcp server...")
     except Exception as e:
-        logging.critical(f"Fatal error in VBoxMCP server: {e}", exc_info=True)
+        logging.critical(f"Fatal error in virtualization-mcp server: {e}", exc_info=True)
         sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
+
+
+

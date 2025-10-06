@@ -61,3 +61,6 @@ if (Test-Path -Path $OutputFile) {
     Write-Error "Failed to create DXT package: Output file not found"
     exit 1
 }
+
+
+

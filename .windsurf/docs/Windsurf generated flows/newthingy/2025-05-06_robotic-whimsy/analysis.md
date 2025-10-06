@@ -22,3 +22,6 @@
 - Define API contracts for each module
 - Prototype simulation endpoints (no real hardware at first)
 - Expand safety and consent documentation
+
+
+

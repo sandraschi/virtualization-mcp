@@ -276,3 +276,6 @@ class VBoxManager:
                 key, value = line.split(':', 1)
                 info[key.strip()] = value.strip()
         return info
+
+
+

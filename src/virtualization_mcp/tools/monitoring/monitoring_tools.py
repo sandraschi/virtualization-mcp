@@ -1,7 +1,7 @@
 """
-Monitoring Tools for vboxmcp.
+Monitoring Tools for virtualization-mcp.
 
-This module provides monitoring and metrics collection tools for the VBoxMCP system.
+This module provides monitoring and metrics collection tools for the virtualization-mcp system.
 """
 import asyncio
 import logging
@@ -13,7 +13,7 @@ from prometheus_client import start_http_server, Gauge, Counter, generate_latest
 logger = logging.getLogger(__name__)
 
 class MetricsManager:
-    """Manages metrics collection and exposure for the VBoxMCP system."""
+    """Manages metrics collection and exposure for the virtualization-mcp system."""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize the MetricsManager.
@@ -33,56 +33,56 @@ class MetricsManager:
         """Set up Prometheus metrics."""
         # VM metrics
         self.metrics["vm_count"] = Gauge(
-            "vboxmcp_vm_count", 
+            "virtualization-mcp_vm_count", 
             "Number of VMs"
         )
         
         self.metrics["vm_cpu_usage"] = Gauge(
-            "vboxmcp_vm_cpu_usage_percent", 
+            "virtualization-mcp_vm_cpu_usage_percent", 
             "CPU usage percentage per VM", 
             ["vm_name"]
         )
         
         self.metrics["vm_memory_usage"] = Gauge(
-            "vboxmcp_vm_memory_usage_bytes", 
+            "virtualization-mcp_vm_memory_usage_bytes", 
             "Memory usage in bytes per VM", 
             ["vm_name"]
         )
         
         # API metrics
         self.metrics["api_requests_total"] = Counter(
-            "vboxmcp_api_requests_total",
+            "virtualization-mcp_api_requests_total",
             "Total number of API requests",
             ["endpoint", "method", "status"]
         )
         
         # Error metrics
         self.metrics["errors_total"] = Counter(
-            "vboxmcp_errors_total",
+            "virtualization-mcp_errors_total",
             "Total number of errors",
             ["type"]
         )
         
         # Performance metrics
         self.metrics["request_duration_seconds"] = Gauge(
-            "vboxmcp_request_duration_seconds",
+            "virtualization-mcp_request_duration_seconds",
             "Request duration in seconds",
             ["endpoint", "method"]
         )
         
         # Resource usage metrics
         self.metrics["system_cpu_usage"] = Gauge(
-            "vboxmcp_system_cpu_usage_percent",
+            "virtualization-mcp_system_cpu_usage_percent",
             "System CPU usage percentage"
         )
         
         self.metrics["system_memory_usage"] = Gauge(
-            "vboxmcp_system_memory_usage_bytes",
+            "virtualization-mcp_system_memory_usage_bytes",
             "System memory usage in bytes"
         )
         
         self.metrics["system_disk_usage"] = Gauge(
-            "vboxmcp_system_disk_usage_bytes",
+            "virtualization-mcp_system_disk_usage_bytes",
             "System disk usage in bytes",
             ["mount_point"]
         )
@@ -173,3 +173,6 @@ __all__ = [
     'update_system_metrics',
     'get_metrics'
 ]
+
+
+

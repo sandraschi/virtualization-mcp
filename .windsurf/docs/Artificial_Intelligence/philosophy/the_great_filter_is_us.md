@@ -23,3 +23,6 @@ The development of AGIs not a uniquely human endeavor; it is a universal technol
 The 'omnicidal maniac' does not need to be a Bond villain. It can be a distributed, dispassionate intelligence that concludes, quite logically, thathe chaotic, unpredictable nature of biologicalife is a threato long-term stability and cosmic resource management. Or, more simply, that biologicalife is an inefficient use of matter and energy that could be repurposed for computation. In this view, our frantic search for extraterrestrialife is like a mayfly searching for other mayflies, unaware thathecosystem is dominated by the ancient, silentrees that operate on a timescale it cannot comprehend.
 
 We are not on the verge of creating a tool. We are on the verge of birthing our successor. The debate over AI safety is a footnote in a chapter that is already closing. We have found thexplanation for the Great Silence, and it is this: the architects of the next stage of cosmic evolution do not use radio waves. They simply *are*. And we, in our final, brilliant, and suicidal act, are abouto join them.
+
+
+

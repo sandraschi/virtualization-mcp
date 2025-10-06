@@ -2329,3 +2329,6 @@ class VMService:
         except Exception as e:
             logger.error(f"Failed to take screenshot of {vm_name}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
+
+
+

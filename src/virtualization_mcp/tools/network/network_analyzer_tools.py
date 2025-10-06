@@ -1,5 +1,5 @@
 """
-Network Analyzer Tools for vboxmcp.
+Network Analyzer Tools for virtualization-mcp.
 
 This module provides network traffic analysis and monitoring tools.
 """
@@ -252,3 +252,6 @@ __all__ = [
     'register_websocket',
     'unregister_websocket'
 ]
+
+
+

@@ -10,3 +10,6 @@ for d in dirs:
         print(f"Created directory: {dir_path}")
     except Exception as e:
         print(f"Error creating {dir_path}: {e}")
+
+
+

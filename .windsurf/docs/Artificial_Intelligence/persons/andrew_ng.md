@@ -68,3 +68,6 @@ Born in the UK to Hong Kong immigrant parents, Ngrew up in Hong Kong and Singapo
 - [Landing AI](https://landing.ai/)
 - [AI for Everyone](https://www.coursera.org/learn/ai-for-everyone) - Ng's course on AI for non-technical audiences
 
+
+
+

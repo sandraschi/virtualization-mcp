@@ -1,4 +1,4 @@
-"""Utility functions for the VBoxMCP server."""
+"""Utility functions for the virtualization-mcp server."""
 import asyncio
 import inspect
 import logging
@@ -200,3 +200,6 @@ def format_size(size_bytes: int, binary: bool = True) -> str:
         size /= base
     
     return f"{size:.1f} {suffixes[-1]}"
+
+
+

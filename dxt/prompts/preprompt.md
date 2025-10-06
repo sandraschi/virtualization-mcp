@@ -29,3 +29,6 @@
 2. Explain technical terms when needed
 3. Provide examples for complex operations
 4. Offer alternatives when possible
+
+
+

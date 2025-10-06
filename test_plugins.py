@@ -137,9 +137,9 @@ async def test_plugin_initialization() -> PluginTestResult:
     try:
         # Initialize MCP server
         mcp = FastMCP(
-            name="VBoxMCP Test",
+            name="virtualization-mcp Test",
             version="1.0.0",
-            description="Test MCP server for VBoxMCP plugins"
+            description="Test MCP server for virtualization-mcp plugins"
         )
         
         # Register tools
@@ -196,7 +196,7 @@ async def run_tests() -> bool:
         return False
     
     logger.info("=" * 80)
-    logger.info("Starting VBoxMCP Plugin Tests")
+    logger.info("Starting virtualization-mcp Plugin Tests")
     logger.info("=" * 80)
     
     tests = [
@@ -242,3 +242,6 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
         sys.exit(1)
+
+
+

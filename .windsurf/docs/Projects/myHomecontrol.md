@@ -29,3 +29,6 @@ A comprehensive home automation and control system designed for seamless IoT int
 
 ## License
 MIT License (will be added when repository is created)
+
+
+

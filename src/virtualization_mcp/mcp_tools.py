@@ -597,3 +597,6 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             width=width,
             height=height
         )
+
+
+

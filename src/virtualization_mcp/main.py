@@ -58,7 +58,7 @@ def main() -> None:
         # Initialize FastMCP first to avoid circular imports
         from fastmcp import FastMCP
         mcp = FastMCP(
-            name="vboxmcp",
+            name="virtualization-mcp",
             version="2.11.0"
         )
         
@@ -109,3 +109,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+

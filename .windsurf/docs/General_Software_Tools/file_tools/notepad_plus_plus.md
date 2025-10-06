@@ -255,3 +255,6 @@ Notepad++ is free software distributed under the GPL v3 license.
 - [Documentation](https://npp-user-manual.org/)
 - [Forums](https://community.notepad-plus-plus.org/)
 - [GitHub](https://github.com/notepad-plus-plus/notepad-plus-plus)
+
+
+

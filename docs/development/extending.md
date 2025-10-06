@@ -1,6 +1,6 @@
-# Extending vboxmcp
+# Extending virtualization-mcp
 
-This guide explains how to extend vboxmcp with custom functionality, including creating plugins, adding new VM operations, and integrating with other tools.
+This guide explains how to extend virtualization-mcp with custom functionality, including creating plugins, adding new VM operations, and integrating with other tools.
 
 ## Table of Contents
 1. [Plugin System](#plugin-system)
@@ -13,7 +13,7 @@ This guide explains how to extend vboxmcp with custom functionality, including c
 
 ## Plugin System
 
-vboxmcp uses a plugin architecture that allows you to add new functionality without modifying the core code. Plugins are Python modules that can:
+virtualization-mcp uses a plugin architecture that allows you to add new functionality without modifying the core code. Plugins are Python modules that can:
 
 - Add new API endpoints
 - Register new VM operations
@@ -22,10 +22,10 @@ vboxmcp uses a plugin architecture that allows you to add new functionality with
 
 ## Creating a New Plugin
 
-1. **Create a new Python package** in the `vboxmcp/plugins` directory:
+1. **Create a new Python package** in the `virtualization-mcp/plugins` directory:
 
 ```
-vboxmcp/
+virtualization-mcp/
 └── plugins/
     └── my_plugin/
         ├── __init__.py
@@ -38,7 +38,7 @@ vboxmcp/
 ```python
 from typing import Dict, Any
 from fastapi import APIRouter
-from vboxmcp.plugins.base import BasePlugin
+from virtualization-mcp.plugins.base import BasePlugin
 
 class MyPlugin(BasePlugin):
     def __init__(self, config: Dict[str, Any]):
@@ -55,7 +55,7 @@ class MyPlugin(BasePlugin):
         return self.router
 ```
 
-3. **Register your plugin** in `vboxmcp/plugins/__init__.py`:
+3. **Register your plugin** in `virtualization-mcp/plugins/__init__.py`:
 
 ```python
 from .my_plugin import MyPlugin
@@ -71,7 +71,7 @@ You can extend the VM operations by creating a new operation class:
 
 ```python
 from typing import Dict, Any
-from vboxmcp.vm_operations import VMOperation
+from virtualization-mcp.vm_operations import VMOperation
 
 class MyCustomOperation(VMOperation):
     """Custom VM operation for specialized tasks."""
@@ -119,7 +119,7 @@ class MyPlugin(BasePlugin):
 Create custom network configurations by extending the `NetworkManager`:
 
 ```python
-from vboxmcp.vbox.networking import NetworkManager
+from virtualization-mcp.vbox.networking import NetworkManager
 
 class CustomNetworkManager(NetworkManager):
     """Extended network manager with custom configurations."""
@@ -141,19 +141,19 @@ class CustomNetworkManager(NetworkManager):
 
 ```python
 from prometheus_client import start_http_server, Gauge
-from vboxmcp.plugins.base import BasePlugin
+from virtualization-mcp.plugins.base import BasePlugin
 
 class MonitoringPlugin(BasePlugin):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.metrics = {
             'vm_cpu_usage': Gauge(
-                'vboxmcp_vm_cpu_usage',
+                'virtualization-mcp_vm_cpu_usage',
                 'CPU usage per VM',
                 ['vm_name']
             ),
             'vm_memory_usage': Gauge(
-                'vboxmcp_vm_memory_usage',
+                'virtualization-mcp_vm_memory_usage',
                 'Memory usage per VM',
                 ['vm_name']
             )
@@ -177,7 +177,7 @@ Create tests in the `tests/plugins` directory:
 
 ```python
 import pytest
-from vboxmcp.plugins.my_plugin import MyPlugin
+from virtualization-mcp.plugins.my_plugin import MyPlugin
 
 @pytest.fixture
 def plugin_config():
@@ -239,7 +239,7 @@ logger = logging.getLogger(__name__)
 class MyPlugin(BasePlugin):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        self.logger = logging.getLogger(f"vboxmcp.plugins.{self.__class__.__name__}")
+        self.logger = logging.getLogger(f"virtualization-mcp.plugins.{self.__class__.__name__}")
     
     async def some_operation(self):
         try:
@@ -256,3 +256,6 @@ class MyPlugin(BasePlugin):
 - [API Reference](../api/README.md)
 - [Development Guide](guide.md)
 - [Contributing](../../CONTRIBUTING.md)
+
+
+

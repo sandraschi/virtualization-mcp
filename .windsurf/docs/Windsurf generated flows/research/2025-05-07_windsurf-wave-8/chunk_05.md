@@ -10,3 +10,6 @@ research: Windsurf Cascade Session Loss – User Experience and Impact :research
 
 **User Quote:**
 > "Long session, thousand line cascade, many interesting and memorable conversations, idea exchange, grandiose plan making... and then it completely vanishes. The horror!"
+
+
+

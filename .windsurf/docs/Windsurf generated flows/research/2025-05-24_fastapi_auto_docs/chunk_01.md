@@ -81,3 +81,6 @@ FastAPI offerseveral ways to customize the automatically generatedocumentation:
 ## Summary
 
 FastAPI's automatic documentation is a powerful feature that significantly aids API development and consumption. By leveraging OpenAPI, Pydantic, and Python type hints, it generates interactive and informative documentation with minimal effort from the developer, while still offering avenues for customization.
+
+
+

@@ -48,3 +48,6 @@ jobs:
           release_name: Version ${{ github.event.inputs.version }}
           draft: false
           prerelease: false
+
+
+

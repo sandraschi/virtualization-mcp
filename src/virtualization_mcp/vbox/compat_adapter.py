@@ -677,3 +677,6 @@ def get_vbox_manager() -> VBoxManager:
         VBoxManager instance
     """
     return VBoxManager()
+
+
+

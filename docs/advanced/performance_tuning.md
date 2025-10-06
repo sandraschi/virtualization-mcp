@@ -557,4 +557,7 @@ free -m
 - Perform regular maintenance and updates
 - Have a rollback plan for configuration changes
 
-By following these guidelines, you can achieve optimal performance for your vboxmcp deployment. Remember to test any changes in a controlled environment before applying them to production systems.
+By following these guidelines, you can achieve optimal performance for your virtualization-mcp deployment. Remember to test any changes in a controlled environment before applying them to production systems.
+
+
+

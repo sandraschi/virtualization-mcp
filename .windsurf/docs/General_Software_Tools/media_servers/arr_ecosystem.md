@@ -247,3 +247,6 @@ sqlite3 /path/to/sonarr/sonarr.db ".backup '/backup/sonarr.db.bak'"
 
 ## License
 All *arr applications areleased under the GPL-3.0 License.
+
+
+

@@ -1,8 +1,8 @@
-# vboxmcp API Documentation
+# virtualization-mcp API Documentation
 
 ## Introduction
 
-The vboxmcp API provides a comprehensive interface for managing virtual machines, containers, and related resources. The API follows RESTful principles and uses JSON for request and response bodies.
+The virtualization-mcp API provides a comprehensive interface for managing virtual machines, containers, and related resources. The API follows RESTful principles and uses JSON for request and response bodies.
 
 ## Base URL
 
@@ -14,7 +14,7 @@ http://localhost:8000/api/v1
 
 ## Authentication
 
-vboxmcp supports the following authentication methods:
+virtualization-mcp supports the following authentication methods:
 
 1. **API Key**
    - Include in the `X-API-Key` header
@@ -138,3 +138,6 @@ GET /api/v1/vms?fields=id,name,status
 - [API Reference](/api/reference)
 - [Authentication Guide](/docs/authentication)
 - [Rate Limiting](/docs/rate-limiting)
+
+
+

@@ -2,7 +2,7 @@
 
 ## Overview
 
-vboxmcp provides comprehensive API documentation using the OpenAPI 3.0 specification, which can be accessed through Swagger UI and ReDoc interfaces.
+virtualization-mcp provides comprehensive API documentation using the OpenAPI 3.0 specification, which can be accessed through Swagger UI and ReDoc interfaces.
 
 ## Accessing the Documentation
 
@@ -74,7 +74,7 @@ You can customize the API information in your FastAPI application:
 
 ```python
 app = FastAPI(
-    title="vboxmcp API",
+    title="virtualization-mcp API",
     description="Comprehensive API for managing virtual machines and containers",
     version="1.0.0",
     contact={
@@ -267,3 +267,6 @@ java -jar swagger-codegen-cli.jar generate \
 8. **Include Rate Limits**: Document any rate limiting
 9. **Use Enums**: For fixed sets of values, use enums instead of strings
 10. **Test Your Documentation**: Verify that all examples work as expected
+
+
+

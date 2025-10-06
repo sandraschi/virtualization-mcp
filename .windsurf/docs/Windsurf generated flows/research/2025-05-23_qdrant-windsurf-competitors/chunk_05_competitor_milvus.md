@@ -60,3 +60,6 @@ Built with a **cloud-native, distributed architecture**, Milvuseparates compute 
 *   Open-Source Core (Apache 2.0).
 *   Offers a Managed Cloud Service (Zilliz Cloud).
 *   Graduated project of LF AI & Data Foundation.
+
+
+

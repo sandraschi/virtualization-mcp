@@ -1,4 +1,4 @@
-﻿# Image and Video AI: An Overview
+# Image and Video AI: An Overview
 
 ## Introduction
 This document provides a comprehensive overview of AI technologies for image and video generation, editing, and analysis. It covers the current state of the art, popular tools, and practical applications.
@@ -183,3 +183,6 @@ image.save("sunset.png")
 
 ## 10. Conclusion
 AI-powered image and video generation is rapidly evolving, with new models and techniques emerging regularly. While the field offers exciting possibilities, it's importanto stay informed about the latest developments and consider the ethical implications of these powerful technologies.
+
+
+

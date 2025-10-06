@@ -1,4 +1,4 @@
-﻿# Quantum Consciousness: Bridging the Gap Between Mind and Matter
+# Quantum Consciousness: Bridging the Gap Between Mind and Matter
 
 ## Introduction
 
@@ -136,3 +136,6 @@ Quantum consciousness theories remain highly speculative but represent a bold at
 - McFadden, J. (2002). The conscious electromagnetic information (CEMI) field theory. *Journal of Consciousness Studies, 9*(4), 45-60.
 - Vitiello, G. (2001). *My Double Unveiled: The Dissipative Quantum Model of theBrain*. John Benjamins.
 - Chalmers, D. J. (1997). *The Conscious Mind: In Search of a Fundamental Theory*. Oxford University Press. (Chapter 8: Quantumechanics and Consciousness)
+
+
+

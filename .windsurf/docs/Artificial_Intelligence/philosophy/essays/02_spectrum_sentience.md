@@ -122,3 +122,6 @@ The spectrum of sentience challenges our anthropocentric views of consciousness.
 - Chalmers, D. J. (1996). *The Conscious Mind: In Search of a Fundamental Theory*. Oxford University Press.
 - Koch, C. (2012). *Consciousness: Confessions of a Romantic Reductionist*. MIT Press.
 - Bostrom, N. (2014). *Superintelligence: Paths, Dangers, Strategies*. Oxford University Press.
+
+
+

@@ -35,3 +35,6 @@ For manyears, v1.1 was the standard. However, as the language grew organically, 
 
 Now that younderstand the background, let's move on to [Getting Started](/automation_tools/autohotkey/./02_getting_started.md) with installing AutoHotkey and writing your first script.
 
+
+
+

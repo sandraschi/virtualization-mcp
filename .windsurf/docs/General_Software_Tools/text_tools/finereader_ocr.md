@@ -41,3 +41,6 @@ For high-volume tasks, FineReader's "Hot Folder" feature can monitor a network f
     -   **Microsoft Word (.docx)**: For when you need to extensively edithe text.
     -   **Microsoft Excel (.xlsx)**: Ideal for converting tables into an editable spreadsheet.
     -   **Plain Text (.txt)**: For extracting justhe raw text content.
+
+
+

@@ -1,4 +1,4 @@
-"""Windows Sandbox helper utilities for vboxmcp."""
+"""Windows Sandbox helper utilities for virtualization-mcp."""
 import asyncio
 import ctypes
 import logging
@@ -62,7 +62,7 @@ class WindowsSandboxHelper:
         if not os.path.exists(self.WSX_EXECUTABLE):
             raise WindowsSandboxError("Windows Sandbox is not installed or not available on this system")
         
-        self.sandbox_dir = Path(sandbox_dir or tempfile.gettempdir()) / "vboxmcp_sandboxes"
+        self.sandbox_dir = Path(sandbox_dir or tempfile.gettempdir()) / "virtualization-mcp_sandboxes"
         self.sandbox_dir.mkdir(parents=True, exist_ok=True)
         
         # Track running sandboxes
@@ -563,3 +563,6 @@ class WindowsSandboxHelper:
                 asyncio.create_task(self._cleanup_sandbox(name))
             except Exception as e:
                 logger.error(f"Error cleaning up sandbox {name}: {e}")
+
+
+

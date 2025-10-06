@@ -139,3 +139,6 @@ ConvertMiles(*)
 ```
 
 Thesexamples only scratch the surface of what is possible with AutoHotkey. The key is to identify the repetitive tasks in your own daily workflow and think about how you could automate them. Happy scripting!
+
+
+

@@ -1,4 +1,4 @@
-﻿# Media Generation Integration with Gemini CLI
+# Media Generation Integration with Gemini CLI
 
 **Document Version**: 1.0  
 **Last Updated**: 2025-07-04  
@@ -228,3 +228,6 @@ gemini "Generate a 10-second nature documentary clip with calm narration" --tool
 
 ---
 **Note**: This document should be reviewed and updated quarterly to reflect any changes in the Google Media Generation APIs and best practices.
+
+
+

@@ -87,3 +87,6 @@ pandoc my_report.md --reference-doc=template.docx -o my_report.docx
 ```
 
 In this example, Pandoc will use the styles (like Heading 1, Normal, etc.) defined in `template.docx` and apply them to the corresponding elements from `my_report.md`.
+
+
+

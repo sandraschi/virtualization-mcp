@@ -34,3 +34,6 @@ These steps are general and apply to users who wanto add external or customCP se
 4.  **Testhe Connection:** After adding a server, Windsurf usually provides a way to testhe connection to ensure it's working correctly and thathe AI agent can discover and use the tools exposed by that server.
 
 These guides emphasize that MCP makes Windsurf a more powerful and extensible AI development environment.
+
+
+

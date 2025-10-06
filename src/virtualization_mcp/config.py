@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     )
     
     # Application settings
-    APP_NAME: str = "VBoxMCP"
+    APP_NAME: str = "virtualization-mcp"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     
@@ -162,7 +162,7 @@ def setup_file_handlers(logger_name: str, log_level: int) -> List[logging.Handle
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # Main log file with rotation (10MB per file, keep 5 backups)
-    log_file = log_dir / f"vboxmcp_{timestamp}.log"
+    log_file = log_dir / f"virtualization-mcp_{timestamp}.log"
     file_handler = logging.handlers.RotatingFileHandler(
         log_file,
         maxBytes=10 * 1024 * 1024,  # 10MB
@@ -171,7 +171,7 @@ def setup_file_handlers(logger_name: str, log_level: int) -> List[logging.Handle
     )
     
     # Error log file (only ERROR and above)
-    error_file = log_dir / f"vboxmcp_error_{timestamp}.log"
+    error_file = log_dir / f"virtualization-mcp_error_{timestamp}.log"
     error_handler = logging.handlers.RotatingFileHandler(
         error_file,
         maxBytes=5 * 1024 * 1024,  # 5MB
@@ -231,7 +231,7 @@ def configure_logging():
     
     # Set up handlers
     log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
-    handlers = setup_file_handlers('vboxmcp', log_level)
+    handlers = setup_file_handlers('virtualization-mcp', log_level)
     
     # Add console handler in development or when explicitly enabled
     if settings.DEBUG or os.environ.get('ENABLE_CONSOLE_LOGGING', 'true').lower() == 'true':
@@ -283,3 +283,6 @@ LOG_LEVEL = settings.LOG_LEVEL
 
 # Export project root path
 project_root = Path(__file__).parent.parent.parent
+
+
+

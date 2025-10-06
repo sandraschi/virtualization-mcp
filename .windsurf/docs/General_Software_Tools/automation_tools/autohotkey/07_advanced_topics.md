@@ -121,3 +121,6 @@ By learning to use COM, you can move beyond simulating keystrokes and start inte
 
 This concludes our tour of the core language features. To see how these concepts are putogether, let's look at some [Practical Examples](/automation_tools/autohotkey/./08_practical_examples.md).
 
+
+
+

@@ -116,8 +116,8 @@ logging:
   
   # Log files
   files:
-    main: "logs/vboxmcp.log"
-    errors: "logs/vboxmcp_errors.log"
+    main: "logs/virtualization-mcp.log"
+    errors: "logs/virtualization-mcp_errors.log"
     
   # Rotation
   rotation:
@@ -206,3 +206,6 @@ integration:
   monitoring:
     enable_metrics_export: true
     prometheus_port: 9091
+
+
+

@@ -1,10 +1,10 @@
-# VBoxMCP Documentation
+# virtualization-mcp Documentation
 
-Welcome to the VBoxMCP documentation! VBoxMCP is a FastMCP 2.12+ compliant server that provides comprehensive management of VirtualBox virtual machines through a standardized MCP interface.
+Welcome to the virtualization-mcp documentation! virtualization-mcp is a FastMCP 2.12+ compliant server that provides comprehensive management of VirtualBox virtual machines through a standardized MCP interface.
 
 ## Quick Start
 
-1. **Install VBoxMCP**:
+1. **Install virtualization-mcp**:
    ```bash
    pip install virtualization-mcp
    ```
@@ -97,3 +97,5 @@ Welcome to the VBoxMCP documentation! VBoxMCP is a FastMCP 2.12+ compliant serve
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+

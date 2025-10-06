@@ -397,3 +397,6 @@ class SnapshotManager:
         except Exception as e:
             logger.error(f"Unexpected error cloning VM: {e}")
             raise VBoxManagerError(f"Failed to clone VM: {str(e)}")
+
+
+

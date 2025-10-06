@@ -1,4 +1,4 @@
-﻿# Windsurf Agentic AIDE: An Overview
+# Windsurf Agentic AIDE: An Overview
 
 ## Introduction: Redefining the Development Experience
 
@@ -29,3 +29,6 @@ The Windsurf IDE is packed with features that enable this new mode of developmen
 ## Vision for the Future
 
 The Windsurf Agentic AIDE is more than just a product; it is the firstep toward a new era of softwarengineering. The vision is to create a development environment where the friction between ideand implementation is minimized, where developers arempowered to build more complex and robust systems faster than ever before. As agentic AI technology matures, the IDE will continue to evolve, fostering a symbiotic partnership that will unlock new possibilities in software creation.
+
+
+

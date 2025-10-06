@@ -330,3 +330,6 @@ MIT
 ---
 
 For more information, visithe [docsify-chart GitHub repository](https://github.com/andrewda/docsify-chart).
+
+
+

@@ -347,3 +347,6 @@ assistant.run()
 - Join relevant Discord or Slack communities
 - Attend AI/ML meetups and conferences
 - Follow tutorials and courses on speech AI
+
+
+

@@ -320,3 +320,6 @@ class VMTemplateMixin:
         except Exception as e:
             logger.error(f"Failed to delete template {template_name}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
+
+
+

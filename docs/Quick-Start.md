@@ -12,7 +12,7 @@ This guide will help you quickly get started with the VirtualBox MCP Server.
 
 1. **Start the MCP Server**:
    ```bash
-   vboxmcp start
+   virtualization-mcp start
    ```
    This will start the server on `http://localhost:8000` by default.
 
@@ -110,5 +110,8 @@ curl http://localhost:8000/api/keys
 
 If you encounter any issues:
 1. Check the [Troubleshooting](Troubleshooting) guide
-2. Search the [GitHub Issues](https://github.com/yourusername/vboxmcp/issues)
-3. [Open a new issue](https://github.com/yourusername/vboxmcp/issues/new) if your problem isn't listed
+2. Search the [GitHub Issues](https://github.com/yourusername/virtualization-mcp/issues)
+3. [Open a new issue](https://github.com/yourusername/virtualization-mcp/issues/new) if your problem isn't listed
+
+
+

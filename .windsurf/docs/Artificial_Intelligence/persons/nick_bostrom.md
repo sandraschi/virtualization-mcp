@@ -58,3 +58,6 @@ Born in Helsingborg, Sweden, Bostrom received his PhD in philosophy from the Lon
 - [Effective Altruism](https://www.effectivealtruism.org/)
 - [Machine Intelligence Research Institute](https://intelligence.org/)
 
+
+
+

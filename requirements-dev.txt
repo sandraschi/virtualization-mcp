@@ -27,3 +27,6 @@ mkdocstrings[python]>=0.20.0
 pre-commit>=3.0.0
 ipython>=8.0.0
 codecov>=3.0.0
+
+
+

@@ -1,9 +1,9 @@
-"""Base plugin implementation for VBoxMCP."""
+"""Base plugin implementation for virtualization-mcp."""
 from typing import Dict, Any, Optional
 from fastmcp import FastMCP
 
 class BasePlugin:
-    """Base class for all VBoxMCP plugins.
+    """Base class for all virtualization-mcp plugins.
     
     Plugins should inherit from this class and implement the required methods.
     """
@@ -47,3 +47,6 @@ class BasePlugin:
             mcp: The MCP instance to register tools with
         """
         pass
+
+
+

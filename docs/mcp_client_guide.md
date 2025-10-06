@@ -1,9 +1,9 @@
-# vboxmcp MCP Client Guide
+# virtualization-mcp MCP Client Guide
 
-Welcome to the vboxmcp MCP Client Guide! This document explains how to use vboxmcp tools within MCP clients like Claude, using natural language interactions.
+Welcome to the virtualization-mcp MCP Client Guide! This document explains how to use virtualization-mcp tools within MCP clients like Claude, using natural language interactions.
 
 ## Table of Contents
-- [Introduction to vboxmcp Tools](#introduction-to-vboxmcp-tools)
+- [Introduction to virtualization-mcp Tools](#introduction-to-virtualization-mcp-tools)
 - [Basic Usage](#basic-usage)
 - [Virtual Machine Management](#virtual-machine-management)
 - [Storage Management](#storage-management)
@@ -14,9 +14,9 @@ Welcome to the vboxmcp MCP Client Guide! This document explains how to use vboxm
 - [Troubleshooting](#troubleshooting)
 - [Examples](#examples)
 
-## Introduction to vboxmcp Tools
+## Introduction to virtualization-mcp Tools
 
-vboxmcp provides a comprehensive set of tools for managing virtual machines, storage, networking, and security. These tools are available in MCP clients like Claude, allowing you to perform complex VM operations using natural language.
+virtualization-mcp provides a comprehensive set of tools for managing virtual machines, storage, networking, and security. These tools are available in MCP clients like Claude, allowing you to perform complex VM operations using natural language.
 
 ### Key Features
 - **Virtual Machine Lifecycle**: Create, start, stop, and manage VMs
@@ -184,10 +184,13 @@ Export documentation for sharing:
 
 ## Getting Help
 
-For additional help with vboxmcp tools:
+For additional help with virtualization-mcp tools:
 
 > "Show me all available commands"
 > "How do I back up a VM?"
 > "What's the best way to optimize VM performance?"
 
-Remember, you can always ask Claude for help with any vboxmcp task using natural language. The system will handle the complex commands for you!
+Remember, you can always ask Claude for help with any virtualization-mcp task using natural language. The system will handle the complex commands for you!
+
+
+

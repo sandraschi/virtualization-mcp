@@ -1,4 +1,4 @@
-﻿# Windsurf IDE: The Do's andon'ts
+# Windsurf IDE: The Do's andon'ts
 
 ## Best Practices for Agenticollaboration
 
@@ -49,3 +49,6 @@ While the agent has access to a vast amount of information, its knowledge is not
 
 ### ❌ Don't: Fighthe Agent
 If the agent is consistently misunderstanding a request, take a step back. Re-read your prompt and consider how it could be misinterpreted. Often, rephrasing the goal from a different perspective or providing a small example of what you want can resolve the confusion. Fighting it withe same prompt repeatedly willikely lead to the same result.
+
+
+

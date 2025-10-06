@@ -18,3 +18,6 @@
 4. Check for errors in the browser console and backend logs when a button is pressed.
 5. Write or update automated tests to cover the button-to-hub mapping andisplay flow.
 6. If recent refactors changed hub naming orouting, audithose changes for breakage.
+
+
+

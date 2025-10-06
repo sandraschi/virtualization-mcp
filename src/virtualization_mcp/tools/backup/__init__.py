@@ -1,5 +1,5 @@
 """
-Backup Tools for VBoxMCP
+Backup Tools for virtualization-mcp
 
 This package provides functionality for managing VM backups with retention policies
 and configuration management.
@@ -32,3 +32,6 @@ __all__ = [
     'get_backup_config',
     'save_backup_config',
 ]
+
+
+

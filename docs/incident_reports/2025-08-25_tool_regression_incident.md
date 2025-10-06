@@ -27,3 +27,6 @@ During the implementation of network tools, an incorrect tool registration appro
 - Always use `@mcp.tool()` decorators for FastMCP tools
 - Add tool discovery tests
 - Document tool registration patterns
+
+
+

@@ -9,7 +9,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in vboxmcp, we appreciate your help in disclosing it to us in a responsible manner.
+If you discover a security vulnerability in virtualization-mcp, we appreciate your help in disclosing it to us in a responsible manner.
 
 ### How to Report
 
@@ -38,10 +38,10 @@ We currently do not have a formal bug bounty program, but we are happy to recogn
 ## Security Best Practices
 
 ### For Users
-- Always run vboxmcp with the principle of least privilege
+- Always run virtualization-mcp with the principle of least privilege
 - Keep your VirtualBox installation up to date
-- Regularly update vboxmcp to the latest version
-- Review and understand the permissions you grant to vboxmcp
+- Regularly update virtualization-mcp to the latest version
+- Review and understand the permissions you grant to virtualization-mcp
 
 ### For Developers
 - Follow secure coding practices
@@ -58,3 +58,6 @@ Security updates will be released as patch versions (e.g., 1.0.1, 1.0.2). We rec
 - When a security vulnerability is reported, we will work on a fix as soon as possible
 - Once a fix is ready, we will release a new version and publish a security advisory
 - We will credit the reporter unless they wish to remain anonymous
+
+
+

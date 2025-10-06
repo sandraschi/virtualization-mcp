@@ -16,7 +16,7 @@ This project follows **Austrian efficiency principles**:
 ```bash
 # Clone and setup
 git clone <repository-url>
-cd vboxmcp
+cd virtualization-mcp
 pip install -r requirements.txt
 cp .env.example .env
 
@@ -328,3 +328,6 @@ return {
 **Contributing with Austrian efficiency: Direct, purposeful, immediately useful.** 🚀
 
 *Every contribution makes VirtualBox automation through Claude Desktop more powerful and reliable.*
+
+
+

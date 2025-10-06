@@ -1,4 +1,4 @@
-"""Configuration management for the VBoxMCP server."""
+"""Configuration management for the virtualization-mcp server."""
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -58,9 +58,9 @@ def load_config(config_path: Optional[str] = None) -> ServerConfig:
     config = ServerConfig()
     
     # Update from environment variables
-    config.debug = os.environ.get("VBOXMCP_DEBUG", "false").lower() in ("true", "1", "t")
+    config.debug = os.environ.get("virtualization-mcp_DEBUG", "false").lower() in ("true", "1", "t")
     
-    if log_level := os.environ.get("VBOXMCP_LOG_LEVEL"):
+    if log_level := os.environ.get("virtualization-mcp_LOG_LEVEL"):
         config.log_level = log_level.upper()
     
     if vbox_path := os.environ.get("VBOX_MANAGE_PATH"):
@@ -72,3 +72,6 @@ def load_config(config_path: Optional[str] = None) -> ServerConfig:
     # TODO: Load from config file if provided
     
     return config
+
+
+

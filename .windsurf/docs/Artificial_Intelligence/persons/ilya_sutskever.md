@@ -67,3 +67,6 @@ Born inizhny Novgorod, Russia (then Gorky, USSR), Sutskever moved to Israel as a
 - [Attention Is All You Need](https://arxiv.org/abs/1706.03762) - Transformers paper that influenced GPT models
 - [Deep Learning Book](https://www.deeplearningbook.org/) - Comprehensive resource on deep learning
 
+
+
+

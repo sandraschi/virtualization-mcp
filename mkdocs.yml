@@ -1,4 +1,4 @@
-site_name: VBoxMCP Documentation
+site_name: virtualization-mcp Documentation
 site_description: VirtualBox MCP Server Documentation
 site_url: https://sandraschi.github.io/virtualization-mcp
 repo_url: https://github.com/sandraschi/virtualization-mcp
@@ -74,3 +74,6 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+
+
+

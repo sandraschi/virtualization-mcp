@@ -238,3 +238,5 @@ app = FastAPI(
 ReDoc provides VeoGen with a powerful, modern API documentation interface that enhances developer experience and accelerates API integration. Its clean design, interactive features, and comprehensive schema documentation make it an essential tool for API development and client integration.
 
 The combination of FastAPI's automatic OpenAPI generation and ReDoc's beautiful presentation creates a seamless documentation experience that scales with the API's complexity while remaining accessible to developers of all skill levels. 
+
+

@@ -35,14 +35,14 @@ git --version
 ### Option A: Run PowerShell Script
 
 ```powershell
-cd d:\dev\repos\vboxmcp
+cd d:\dev\repos\virtualization-mcp
 .\init-git.ps1
 ```
 
 ### Option B: Manual Setup
 
 ```bash
-cd d:\dev\repos\vboxmcp
+cd d:\dev\repos\virtualization-mcp
 
 # Initialize repository
 git init
@@ -72,7 +72,7 @@ Ready for production deployment through Claude Desktop."
 ### GitHub
 
 1. Go to <https://github.com/new>
-2. Repository name: `vboxmcp` or `virtualbox-mcp-server`
+2. Repository name: `virtualization-mcp` or `virtualbox-mcp-server`
 3. Description: "FastMCP 2.0 server for VirtualBox management through Claude Desktop"
 4. Public/Private as needed
 5. Create repository
@@ -81,7 +81,7 @@ Ready for production deployment through Claude Desktop."
 
 ```bash
 # Add remote (replace with your repository URL)
-git remote add origin https://github.com/yourusername/vboxmcp.git
+git remote add origin https://github.com/yourusername/virtualization-mcp.git
 
 # Push to remote
 git push -u origin main
@@ -90,7 +90,7 @@ git push -u origin main
 ## 📋 Repository Structure Ready
 
 ```
-vboxmcp/
+virtualization-mcp/
 ├── .git/                   # Git repository data
 ├── .gitignore             # Git ignore rules
 ├── LICENSE                # MIT License
@@ -152,3 +152,6 @@ git push -u origin feature/advanced-networking
 ---
 
 **Austrian efficiency achieved: Repository ready for immediate collaboration and deployment!** 🚀
+
+
+

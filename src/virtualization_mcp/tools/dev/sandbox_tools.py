@@ -1,5 +1,5 @@
 """
-Sandbox Testing Tools for VBoxMCP
+Sandbox Testing Tools for virtualization-mcp
 
 Provides tools for quickly testing code in an isolated sandbox environment.
 """
@@ -117,7 +117,7 @@ class SandboxTester:
         Args:
             base_dir: Base directory for sandbox files (default: system temp)
         """
-        self.base_dir = Path(base_dir or tempfile.gettempdir()) / "vboxmcp_sandboxes"
+        self.base_dir = Path(base_dir or tempfile.gettempdir()) / "virtualization-mcp_sandboxes"
         self.base_dir.mkdir(exist_ok=True, parents=True)
         
         # Track active sandboxes and their locks
@@ -847,3 +847,6 @@ async def cleanup_sandbox(name: str) -> bool:
         True if cleanup was successful, False otherwise
     """
     return await sandbox_tester.cleanup_sandbox(name)
+
+
+

@@ -73,3 +73,6 @@ Sam Altman's leadership hasignificantly shaped the modern AI landscape. Under hi
 
 ## Last Updated
 *June 27, 2025*
+
+
+

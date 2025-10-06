@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Before installing vboxmcp, ensure you have the following:
+Before installing virtualization-mcp, ensure you have the following:
 
 - Python 3.8 or higher
 - VirtualBox 7.0 or higher (with Extension Pack recommended)
@@ -14,15 +14,15 @@ Before installing vboxmcp, ensure you have the following:
 ### Option 1: Install from PyPI (Recommended)
 
 ```bash
-pip install vboxmcp
+pip install virtualization-mcp
 ```
 
 ### Option 2: Install from Source
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/sandraschi/vboxmcp.git
-   cd vboxmcp
+   git clone https://github.com/sandraschi/virtualization-mcp.git
+   cd virtualization-mcp
    ```
 
 2. Install in development mode with all dependencies:
@@ -32,15 +32,15 @@ pip install vboxmcp
 
 ## Verifying Installation
 
-After installation, verify that vboxmcp is installed correctly:
+After installation, verify that virtualization-mcp is installed correctly:
 
 ```bash
-vboxmcp --version
+virtualization-mcp --version
 ```
 
 ## Configuration
 
-vboxmcp can be configured using environment variables or a configuration file.
+virtualization-mcp can be configured using environment variables or a configuration file.
 
 ### Environment Variables
 
@@ -54,7 +54,7 @@ export VBOX_USER_HOME="~/.VirtualBox"           # VirtualBox configuration direc
 Create a `config.ini` file in your working directory:
 
 ```ini
-[vboxmcp]
+[virtualization-mcp]
 vbox_manage_path = /usr/bin/VBoxManage
 vbox_user_home = ~/.VirtualBox
 log_level = INFO
@@ -65,7 +65,7 @@ log_level = INFO
 ### Development Mode
 
 ```bash
-python -m vboxmcp.minimal_server
+python -m virtualization-mcp.minimal_server
 ```
 
 ### Production Mode
@@ -73,7 +73,7 @@ python -m vboxmcp.minimal_server
 For production use, it's recommended to run behind a WSGI server like Gunicorn:
 
 ```bash
-gunicorn vboxmcp.minimal_server:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
+gunicorn virtualization-mcp.minimal_server:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
 ```
 
 ## Next Steps
@@ -81,3 +81,6 @@ gunicorn vboxmcp.minimal_server:app --workers 4 --worker-class uvicorn.workers.U
 - [Basic Usage](../getting_started/basic_usage.md)
 - [Configuration Reference](../advanced/configuration.md)
 - [API Documentation](../api/)
+
+
+

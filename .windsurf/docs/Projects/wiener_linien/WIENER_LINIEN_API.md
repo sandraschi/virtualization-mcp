@@ -1,4 +1,4 @@
-﻿# Wiener Linien API Guide & Vienna Public Transport System
+# Wiener Linien API Guide & Vienna Public Transport System
 
 ## Table of Contents
 1. [Wiener Linien API Overview](#wiener-linien-api-overview)
@@ -658,3 +658,5 @@ This comprehensive guide provides a complete overview of the Wiener Linien API a
 
 *Last updated: June 2024*
 *Sources: Wiener Linien official data, UITP reports, academic research, and international surveys* 
+
+

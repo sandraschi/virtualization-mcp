@@ -1,7 +1,7 @@
 """
-Helper functions for VBoxMCP.
+Helper functions for virtualization-mcp.
 
-This module provides utility functions used throughout the VBoxMCP application.
+This module provides utility functions used throughout the virtualization-mcp application.
 """
 
 import os
@@ -79,3 +79,6 @@ def ensure_dir_exists(path: Path) -> Path:
     """
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+

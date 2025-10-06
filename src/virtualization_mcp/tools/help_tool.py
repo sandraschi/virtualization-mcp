@@ -1,7 +1,7 @@
 """
-VBoxMCP Help System
+virtualization-mcp Help System
 
-Provides comprehensive help and examples for all vboxmcp functionality.
+Provides comprehensive help and examples for all virtualization-mcp functionality.
 This module includes the HelpTool class that handles all help-related operations,
 including command documentation, examples, and usage patterns.
 """
@@ -41,7 +41,7 @@ class HelpCategory(str, Enum):
 
 class HelpTool:
     """
-    Main help system for VBoxMCP that provides comprehensive documentation and examples.
+    Main help system for virtualization-mcp that provides comprehensive documentation and examples.
     
     This class handles all help-related functionality including command documentation,
     examples, and usage patterns. It integrates with the MCP system to provide
@@ -94,7 +94,7 @@ class HelpTool:
         
         @self.mcp.tool(
             name="get_help",
-            description="Get help with vboxmcp commands and features",
+            description="Get help with virtualization-mcp commands and features",
             endpoint="/help",
             category=HelpCategory.SYSTEM
         )
@@ -105,9 +105,9 @@ class HelpTool:
             format: str = "text"
         ) -> Dict[str, Union[str, List[Dict]]]:
             """
-            Get help for vboxmcp commands and features.
+            Get help for virtualization-mcp commands and features.
             
-            This function provides detailed documentation and examples for VBoxMCP commands.
+            This function provides detailed documentation and examples for virtualization-mcp commands.
             It can filter by topic or category and supports multiple output formats.
             
             Args:
@@ -146,8 +146,8 @@ class HelpTool:
     async def _get_general_help(self) -> Dict[str, Union[str, List[Dict]]]:
         """Return general help information."""
         return {
-            "title": "VBoxMCP Help System",
-            "description": "Welcome to VBoxMCP - A powerful VirtualBox management platform.\n\n"
+            "title": "virtualization-mcp Help System",
+            "description": "Welcome to virtualization-mcp - A powerful VirtualBox management platform.\n\n"
                          "Use the following commands to explore functionality:",
             "categories": [
                 {
@@ -273,3 +273,6 @@ def help_command():
 # Example usage:
 # help_tool = HelpTool(mcp_instance)
 # help_tool.register_help_tools()
+
+
+

@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for vboxmcp tests.
+Pytest configuration and fixtures for virtualization-mcp tests.
 """
 import asyncio
 import os
@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 @pytest.fixture
 def mock_vbox():
     """Mock the VirtualBox SDK."""
-    with patch('vboxmcp.vbox.manager.VBoxManager') as mock_vbox_manager:
+    with patch('virtualization-mcp.vbox.manager.VBoxManager') as mock_vbox_manager:
         # Mock the VirtualBox manager
         mock_mgr = MagicMock()
         mock_vbox_manager.return_value = mock_mgr
@@ -42,7 +42,7 @@ def mock_vbox():
 @pytest.fixture
 def mock_networking():
     """Mock the networking service."""
-    with patch('vboxmcp.services.vm.network.service.VMNetworkingService') as mock_service:
+    with patch('virtualization-mcp.services.vm.network.service.VMNetworkingService') as mock_service:
         mock_instance = MagicMock()
         mock_service.return_value = mock_instance
         yield mock_instance
@@ -50,7 +50,7 @@ def mock_networking():
 @pytest.fixture
 def mock_lifecycle():
     """Mock the VM lifecycle service."""
-    with patch('vboxmcp.services.vm.lifecycle.VMLifecycleMixin') as mock_mixin:
+    with patch('virtualization-mcp.services.vm.lifecycle.VMLifecycleMixin') as mock_mixin:
         mock_instance = MagicMock()
         mock_mixin.return_value = mock_instance
         yield mock_instance
@@ -58,7 +58,7 @@ def mock_lifecycle():
 @pytest.fixture
 def mock_storage():
     """Mock the storage service."""
-    with patch('vboxmcp.services.vm.storage.VMStorageMixin') as mock_mixin:
+    with patch('virtualization-mcp.services.vm.storage.VMStorageMixin') as mock_mixin:
         mock_instance = MagicMock()
         mock_mixin.return_value = mock_instance
         yield mock_instance
@@ -99,3 +99,6 @@ def test_vm_config():
             }
         ]
     }
+
+
+

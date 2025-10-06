@@ -1,4 +1,4 @@
-﻿
+
 __
 
 ## 4. Repo-Aware AI: Technical Foundations
@@ -31,3 +31,6 @@ A repo-aware AIs an agenthat can access, parse, and reason about thentire codeba
 
 
 [End of Chunk 2]
+
+
+

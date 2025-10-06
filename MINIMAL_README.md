@@ -1,6 +1,6 @@
-# Minimal VBoxMCP Server
+# Minimal virtualization-mcp Server
 
-This is a minimal implementation of the VBoxMCP server focused on FastMCP 2.10+ compatibility and basic functionality.
+This is a minimal implementation of the virtualization-mcp server focused on FastMCP 2.10+ compatibility and basic functionality.
 
 ## Features
 
@@ -31,8 +31,8 @@ This is a minimal implementation of the VBoxMCP server focused on FastMCP 2.10+ 
 ## Running the Server
 
 ```bash
-# From the src/vboxmcp directory
-python -m vboxmcp.minimal_server
+# From the src/virtualization-mcp directory
+python -m virtualization-mcp.minimal_server
 ```
 
 ## Testing
@@ -68,3 +68,6 @@ pytest tests/test_minimal_server.py -v
 ## License
 
 [Your License Here]
+
+
+

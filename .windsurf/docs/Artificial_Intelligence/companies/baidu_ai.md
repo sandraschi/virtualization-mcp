@@ -1,4 +1,4 @@
-﻿# Baidu AI
+# Baidu AI
 
 ## Overview
 Baidu AIs the artificial intelligence division of Baidu, Inc., often referred to as the "Google of China." It's one of the world's largest and most advanced AI companies, with significant contributions to deep learning, natural language processing, and autonomous driving technologies.
@@ -208,3 +208,6 @@ for epoch in range(100):
 - **LinkedIn**: [Baidu](https://www.linkedin.com/company/baidu/)
 - **Twitter**: [@Baidu_Inc](https://twitter.com/Baidu_Inc)
 - **WeChat**: Baidu (百度)
+
+
+

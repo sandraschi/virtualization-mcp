@@ -308,3 +308,6 @@ class DocumentationPlugin(BasePlugin):
         """Shutdown tasks."""
         await super().shutdown()
         logger.info("Documentation plugin stopped")
+
+
+

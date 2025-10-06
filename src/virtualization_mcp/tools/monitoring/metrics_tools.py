@@ -1,7 +1,7 @@
 """
-Metrics Collection and Monitoring Tools for VBoxMCP
+Metrics Collection and Monitoring Tools for virtualization-mcp
 
-This module provides tools for collecting and monitoring metrics related to VBoxMCP operations.
+This module provides tools for collecting and monitoring metrics related to virtualization-mcp operations.
 Combines functionality from the original metrics_tools.py and monitoring_tools.py.
 """
 
@@ -181,12 +181,12 @@ class PrometheusMetrics:
     def _register_metrics(self):
         """Register all Prometheus metrics."""
         self.metrics = {
-            'vm_cpu_usage': Gauge('vboxmcp_vm_cpu_usage', 'CPU usage per VM', ['vm_id']),
-            'vm_memory_usage': Gauge('vboxmcp_vm_memory_usage', 'Memory usage per VM', ['vm_id']),
-            'system_cpu_usage': Gauge('vboxmcp_system_cpu_usage', 'System CPU usage'),
-            'system_memory_usage': Gauge('vboxmcp_system_memory_usage', 'System memory usage'),
-            'api_requests_total': Counter('vboxmcp_api_requests_total', 'Total API requests', ['endpoint', 'method', 'status']),
-            'errors_total': Counter('vboxmcp_errors_total', 'Total errors', ['error_type'])
+            'vm_cpu_usage': Gauge('virtualization-mcp_vm_cpu_usage', 'CPU usage per VM', ['vm_id']),
+            'vm_memory_usage': Gauge('virtualization-mcp_vm_memory_usage', 'Memory usage per VM', ['vm_id']),
+            'system_cpu_usage': Gauge('virtualization-mcp_system_cpu_usage', 'System CPU usage'),
+            'system_memory_usage': Gauge('virtualization-mcp_system_memory_usage', 'System memory usage'),
+            'api_requests_total': Counter('virtualization-mcp_api_requests_total', 'Total API requests', ['endpoint', 'method', 'status']),
+            'errors_total': Counter('virtualization-mcp_errors_total', 'Total errors', ['error_type'])
         }
     
     def start_http_server(self):
@@ -357,3 +357,6 @@ class MetricsMiddleware:
                 status_code=status_code,
                 processing_time=processing_time
             )
+
+
+

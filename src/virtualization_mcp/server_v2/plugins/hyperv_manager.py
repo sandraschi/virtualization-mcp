@@ -560,3 +560,6 @@ class HyperVManagerPlugin(BasePlugin):
         
         await super().shutdown()
         logger.info("Hyper-V Manager plugin stopped")
+
+
+

@@ -252,3 +252,6 @@ class VMStorageMixin:
         except Exception as e:
             logger.error(f"Failed to resize disk {disk_path}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
+
+
+

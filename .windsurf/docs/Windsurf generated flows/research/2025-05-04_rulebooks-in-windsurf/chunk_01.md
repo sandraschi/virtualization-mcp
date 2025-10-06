@@ -23,3 +23,6 @@ This chunk explores how users create, manage, andeploy rulebooks in the Windsurf
 
 ## Next Chunk
 - Examples of rulebooks found on the web and comparison tother agentic IDEs' handling of rules.
+
+
+

@@ -6,19 +6,19 @@
 
 ```bash
 # Start the MCP server
-vboxmcp serve
+virtualization-mcp serve
 
 # Specify host and port
-vboxmcp serve --host 0.0.0.0 --port 8000
+virtualization-mcp serve --host 0.0.0.0 --port 8000
 
 # Enable debug mode
-vboxmcp serve --debug
+virtualization-mcp serve --debug
 ```
 
 ### Python API
 
 ```python
-from vboxmcp import VBoxManager
+from virtualization-mcp import VBoxManager
 
 # Initialize the manager
 manager = VBoxManager()
@@ -131,3 +131,6 @@ print(f"State: {vm_info['state']}")
 - [Advanced Usage](../advanced/)
 - [API Reference](../api/)
 - [Configuration Guide](../advanced/configuration.md)
+
+
+

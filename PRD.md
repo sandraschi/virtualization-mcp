@@ -1,7 +1,7 @@
-# VBoxMCP Product Requirements Document (PRD)
+# virtualization-mcp Product Requirements Document (PRD)
 
 ## 1. Overview
-VBoxMCP is a FastMCP 2.10+ compliant server that provides comprehensive management of VirtualBox virtual machines through a standardized interface. This document outlines the product requirements and specifications for the VBoxMCP project.
+virtualization-mcp is a FastMCP 2.10+ compliant server that provides comprehensive management of VirtualBox virtual machines through a standardized interface. This document outlines the product requirements and specifications for the virtualization-mcp project.
 
 ## 2. Product Vision
 To create a robust, secure, and extensible management interface for VirtualBox that integrates seamlessly with the MCP ecosystem, enabling automation and orchestration of virtual machine operations.
@@ -140,3 +140,6 @@ To create a robust, secure, and extensible management interface for VirtualBox t
 - [VirtualBox Documentation](https://www.virtualbox.org/wiki/Documentation)
 - [FastMCP Documentation](https://github.com/jlowin/fastmcp)
 - [OpenAPI Specification](https://swagger.io/specification/)
+
+
+

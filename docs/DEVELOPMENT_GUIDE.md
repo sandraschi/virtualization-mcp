@@ -1,6 +1,6 @@
 # MCP Server Development Guide
 
-This guide documents best practices, lessons learned, and troubleshooting tips for developing MCP (Model Control Protocol) servers, based on our experience with the vboxmcp project.
+This guide documents best practices, lessons learned, and troubleshooting tips for developing MCP (Model Control Protocol) servers, based on our experience with the virtualization-mcp project.
 
 ## Table of Contents
 
@@ -18,9 +18,9 @@ This guide documents best practices, lessons learned, and troubleshooting tips f
 A well-organized MCP server should follow this structure:
 
 ```
-vboxmcp/
+virtualization-mcp/
 ├── src/
-│   └── vboxmcp/
+│   └── virtualization-mcp/
 │       ├── __init__.py         # Package metadata and exports
 │       ├── main.py             # Main entry point
 │       ├── api/                # API endpoints and routes
@@ -43,15 +43,15 @@ Ensure consistency across all entry point configurations:
 1. **pyproject.toml**:
    ```toml
    [project.scripts]
-   vboxmcp = "vboxmcp.main:main"
+   virtualization-mcp = "virtualization-mcp.main:main"
    ```
 
 2. **mcp_config.json**:
    ```json
    {
-     "vboxmcp": {
+     "virtualization-mcp": {
        "command": "python",
-       "args": ["-m", "vboxmcp.main", "--debug"],
+       "args": ["-m", "virtualization-mcp.main", "--debug"],
        "env": {
          "PYTHONPATH": "${workspaceFolder}/src"
        }
@@ -66,8 +66,8 @@ Use environment variables for configuration:
 ```python
 import os
 
-DEBUG = os.getenv("VBOXMCP_DEBUG", "false").lower() == "true"
-LOG_LEVEL = os.getenv("VBOXMCP_LOG_LEVEL", "INFO")
+DEBUG = os.getenv("virtualization-mcp_DEBUG", "false").lower() == "true"
+LOG_LEVEL = os.getenv("virtualization-mcp_LOG_LEVEL", "INFO")
 ```
 
 ## Tool Registration
@@ -141,7 +141,7 @@ def setup_logging(debug=False):
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
     
-    file_handler = logging.FileHandler(log_dir / "vboxmcp.log")
+    file_handler = logging.FileHandler(log_dir / "virtualization-mcp.log")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(log_format))
     
@@ -164,7 +164,7 @@ def setup_logging(debug=False):
 
 2. Run with debug logging:
    ```bash
-   python -m vboxmcp.main --debug
+   python -m virtualization-mcp.main --debug
    ```
 
 3. Test tool registration:
@@ -260,3 +260,6 @@ async def test_tool_registration():
 ---
 
 *Last Updated: 2025-08-06*
+
+
+

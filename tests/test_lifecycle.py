@@ -1,5 +1,5 @@
 """
-Tests for the vboxmcp VM lifecycle functionality.
+Tests for the virtualization-mcp VM lifecycle functionality.
 """
 import pytest
 from unittest.mock import MagicMock, patch, call
@@ -110,3 +110,6 @@ class TestVMLifecycleMixin:
             snapshot_desc,
             False  # Not live
         )
+
+
+

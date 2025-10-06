@@ -1,4 +1,4 @@
-﻿# Seminal Papers in AI and Machine Learning
+# Seminal Papers in AI and Machine Learning
 
 ## Foundational Works
 
@@ -124,3 +124,6 @@
 - [Papers With Code](https://paperswithcode.com/)
 - [The AIndex Report](https://aiindex.stanford.edu/)
 - [Distill.pub](https://distill.pub/) - Clear explanations of ML concepts
+
+
+

@@ -1,4 +1,4 @@
-﻿# Transformer Models: Architecture and Applications
+# Transformer Models: Architecture and Applications
 
 ## Overview
 Transformer models have revolutionized natural language processing and beyond. This document covers the architecture, variants, and applications of transformer models.
@@ -130,3 +130,6 @@ class MultiHeadAttention(nn.Module):
 - [Attention Is All You Need (Original Paper)](https://arxiv.org/abs/1706.03762)
 - [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)
 - [Hugging Face Transformers](https://huggingface.co/docs/transformers/index)
+
+
+

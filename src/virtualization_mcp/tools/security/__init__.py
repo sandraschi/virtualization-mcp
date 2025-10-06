@@ -1,5 +1,5 @@
 """
-Security Tools for VBoxMCP
+Security Tools for virtualization-mcp
 
 This module provides security-related tools for virtual machine management,
 including AI-powered security analysis, malware detection, and security testing.
@@ -75,3 +75,6 @@ __all__ = [
     'list_available_tools',
     'generate_report'
 ]
+
+
+

@@ -1,4 +1,4 @@
-"""AI-Powered Security Analysis Tools for vboxmcp."""
+"""AI-Powered Security Analysis Tools for virtualization-mcp."""
 import asyncio
 import json
 import logging
@@ -171,3 +171,6 @@ security_analyzer = AISecurityAnalyzer()
 # Export the tool functions
 start_security_scan = security_analyzer.start_scan
 get_security_scan_status = security_analyzer.get_scan_status
+
+
+

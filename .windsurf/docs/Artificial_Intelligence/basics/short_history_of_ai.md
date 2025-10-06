@@ -1,4 +1,4 @@
-﻿# A Comprehensive History of Artificial Intelligence
+# A Comprehensive History of Artificial Intelligence
 
 ## The Dawn of AI: Theoretical Foundations (1940s-1950s)
 
@@ -113,3 +113,6 @@ Looking ahead to 2025 and beyond, several key trends aremerging:
 - [AI Timeline (Wikipedia)](https://en.wikipedia.org/wiki/Timeline_of_artificial_intelligence)
 - [The History of Artificial Intelligence (Harvard)](https://sitn.hms.harvard.edu/flash/2017/history-artificial-intelligence/)
 - [AI: 15 Key Moments in the Story of Artificial Intelligence (BBC)](https://www.bbc.com/future/article/20170307-the-extraordinary-link-between-deep-neural-networks-and-the-nature-of-the-universe)
+
+
+

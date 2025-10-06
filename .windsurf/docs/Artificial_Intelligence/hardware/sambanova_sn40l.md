@@ -347,3 +347,6 @@ lineChartitle Scaling with Number of Accelerators
 The SambaNova SN40L represents a significant leap forward in AI acceleration, particularly for large language model inference. Its reconfigurable dataflow architecture, combined with advanced memory system and software stack, delivers industry-leading performance and efficiency. As AI models continue to grow in size and complexity, architectures like SN40L will play a crucial role in making these models practical foreal-worldeployment.
 
 Forganizations looking to deploy large-scale AInference workloads, the SN40L offers a compelling combination of performance, efficiency, and total cost of ownership that is difficulto match with traditional GPU-based solutions.
+
+
+

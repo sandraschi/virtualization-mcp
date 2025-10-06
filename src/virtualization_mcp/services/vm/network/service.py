@@ -186,3 +186,6 @@ class VMNetworkingService:
             "adapters": result.get("adapters", []),
             "troubleshooting": []
         }
+
+
+

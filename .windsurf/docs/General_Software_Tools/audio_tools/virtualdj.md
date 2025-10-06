@@ -31,3 +31,6 @@ VirtualDJ caters to a very broad audience:
 4.  **Transition**: Use the crossfader (the horizontal slider between the decks) to smoothly mix from the track playing on Deck A to the new track on Deck B. You can also use the volume faders and EQ knobs (for bass, mid, and treble) to create a more seamless blend.
 5.  **Apply Effects**: Add effects like reverb, echo, or filters to make the mix more dynamic and interesting.
 6.  **Repeat**: Find the nextrack, load it into the now-free Deck A, and repeathe process to create a continuous mix of music.
+
+
+

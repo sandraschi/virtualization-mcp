@@ -69,3 +69,6 @@ The official state management library for Vue. It serves as a centralized store 
 - **Versatile**: Can be used to build anything from small widgets to large-scalenterprise applications.
 - **Excellent Documentation**: Widely praised for its clear, comprehensive, and well-structuredocumentation.
 - **Strong Community**: A large and active community provides a wealth of resources, libraries, and support.
+
+
+

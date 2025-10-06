@@ -323,7 +323,7 @@ if __name__ == "__main__":
         vbox = get_virtualbox()
         # Moved debug info to logs only
         import logging
-        logger = logging.getLogger("vboxmcp")
+        logger = logging.getLogger("virtualization-mcp")
         logger.info(f"VirtualBox Version: {vbox.version}")
         logger.info(f"API Version: {vbox.api_version}")
         
@@ -336,3 +336,6 @@ if __name__ == "__main__":
     except VirtualBoxError as e:
         logger.error(f"Error: {e}")
         sys.exit(1)
+
+
+

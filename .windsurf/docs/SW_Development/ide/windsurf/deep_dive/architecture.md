@@ -1,4 +1,4 @@
-﻿# Windsurf IDE: A Look athe Architecture
+# Windsurf IDE: A Look athe Architecture
 
 ## The Agenticore: A Multi-Layered System
 
@@ -40,3 +40,6 @@ The memory system is designed as a knowledge graph wherentities (like files, fun
 -   Apply knowledge from one part of a projecto another.
 
 This long-termemory is what allows the agent's performance to improver time, making it a moreffective and personalized partner.
+
+
+

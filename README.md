@@ -2,7 +2,7 @@
 
 **v1.0.0 - FastMCP 2.12+ compliant VirtualBox management server with full MCP client support**
 
-> **✅ Production Ready**: VBoxMCP is now fully functional and ready for production use with Claude Desktop and other MCP clients!
+> **✅ Production Ready**: virtualization-mcp is now fully functional and ready for production use with Claude Desktop and other MCP clients!
 
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.12.2-blue)](https://github.com/jlowin/fastmcp)
 [![Python](https://img.shields.io/badge/Python-3.8+-green)](https://python.org)
@@ -57,7 +57,7 @@ For detailed documentation, please visit our [documentation site](https://virtua
 
 ### 🛠️ Using with Claude Desktop
 
-1. **Install VBoxMCP**:
+1. **Install virtualization-mcp**:
    ```bash
    pip install virtualization-mcp
    ```
@@ -344,7 +344,7 @@ For questions and support, please open an issue on our [GitHub repository](https
 
 ## 📊 Project Status
 
-✅ **Production Ready**: VBoxMCP v1.0.0 is fully functional and ready for production use
+✅ **Production Ready**: virtualization-mcp v1.0.0 is fully functional and ready for production use
 - ✅ Server startup issues resolved
 - ✅ FastMCP 2.12.2+ compatibility verified
 - ✅ Claude Desktop integration working
@@ -366,3 +366,6 @@ For questions and support, please open an issue on our [GitHub repository](https
 **Built with Austrian efficiency for practical VirtualBox automation through Claude Desktop.** 🚀
 
 *Ready for production deployment in minutes, not hours.*
+
+
+

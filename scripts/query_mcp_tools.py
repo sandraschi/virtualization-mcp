@@ -66,3 +66,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     asyncio.run(query_mcp_tools(args.server))
+
+
+

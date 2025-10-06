@@ -136,3 +136,6 @@ Add this to your custom CSS file to style the image grid:
 - Optimize images for web to ensure fast loading times
 - Consider using responsive images with `srcset` for different screen sizes
 - Be mindful of copyright when using images from the web
+
+
+

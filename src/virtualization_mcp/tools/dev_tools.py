@@ -1,7 +1,7 @@
 """
-Development Tools for VBoxMCP
+Development Tools for virtualization-mcp
 
-This module provides development and documentation utilities for the VBoxMCP project.
+This module provides development and documentation utilities for the virtualization-mcp project.
 """
 
 import inspect
@@ -177,9 +177,9 @@ def get_api_documentation(modules=None) -> Dict[str, List[Dict]]:
     
     return docs
 
-def get_openapi_schema(title: str = "VBoxMCP API", version: str = "1.0.0") -> Dict:
+def get_openapi_schema(title: str = "virtualization-mcp API", version: str = "1.0.0") -> Dict:
     """
-    Generate an OpenAPI schema for the VBoxMCP API.
+    Generate an OpenAPI schema for the virtualization-mcp API.
     
     Args:
         title: The title of the API.
@@ -280,8 +280,11 @@ def get_openapi_schema(title: str = "VBoxMCP API", version: str = "1.0.0") -> Di
         "info": {
             "title": title,
             "version": version,
-            "description": "API documentation for VBoxMCP tools."
+            "description": "API documentation for virtualization-mcp tools."
         },
         "paths": paths,
         "components": components
     }
+
+
+

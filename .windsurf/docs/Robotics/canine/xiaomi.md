@@ -1,4 +1,4 @@
-﻿# Xiaomi CyberDog
+# Xiaomi CyberDog
 
 ## Overview
 Xiaomi's CyberDog is a series of bio-inspired quadruped robots created to foster a global open-source community of developers, engineers, and robotics enthusiasts. Rather than positioning it as a direct consumer or industrial product, Xiaomi has presented CyberDog as an advanced, accessible platform for exploring the future of robotics. Its primary goal is to spur innovation by providing powerful hardware and a customizable software stack to the community.
@@ -51,3 +51,6 @@ Unlike competitors focused on industrial or commercial sales, CyberDog is a deve
   - **Research**: A platform foresearch in locomotion, AI, computer vision, and human-robot interaction.
   - **Education**: A hands-on tool for teaching advanced robotics and programming.
   - **Custom Applications**: The possibilities are vast, from creating custom companion behaviors to developing novel service applications.
+
+
+

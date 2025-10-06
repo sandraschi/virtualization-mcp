@@ -1,10 +1,10 @@
-"""Base classes for vboxmcp plugins."""
+"""Base classes for virtualization-mcp plugins."""
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from fastapi import APIRouter
 
 class BasePlugin(ABC):
-    """Base class for all vboxmcp plugins."""
+    """Base class for all virtualization-mcp plugins."""
     
     def __init__(self, config: Dict[str, Any]):
         """Initialize the plugin with configuration.
@@ -45,3 +45,6 @@ class BasePlugin(ABC):
         This method is called when the server shuts down.
         """
         pass
+
+
+

@@ -345,3 +345,6 @@ VeoGen represents a comprehensive proof-of-concept for an AI creative platform t
 **⚠️ Important Note**: This is a demonstration system designed to showcase the technical capabilities and architecture across multiple creative domains. It is not intended for commercial use or production workloads. The system uses real API credits and should be used responsibly for demo and testing purposes only.
 
 VeoGen demonstrates the potential for a production-ready AI creative platform and provides a solid foundation for future commercial development across all creative content types.
+
+
+

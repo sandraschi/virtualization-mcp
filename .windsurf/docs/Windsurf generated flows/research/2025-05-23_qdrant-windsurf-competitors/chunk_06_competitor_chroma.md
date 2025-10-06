@@ -1,4 +1,4 @@
-﻿# Researchunk 06: Qdrant Competitor - Chroma
+# Researchunk 06: Qdrant Competitor - Chroma
 
 Date: 2025-05-23
 
@@ -57,3 +57,6 @@ Chromaims to simplify the development process by providing a Python-native (and 
 *   Open-Source Core (Apache 2.0).
 *   Offers a Managed Cloud Service (Chroma Cloud - in preview/early stages as of early 2025).
 *   Primarily Python-focused client libraries, with JavaScript support.
+
+
+

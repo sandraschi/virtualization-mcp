@@ -1,4 +1,4 @@
-"""Plugin management for the VBoxMCP server."""
+"""Plugin management for the virtualization-mcp server."""
 import importlib
 import inspect
 import logging
@@ -17,7 +17,7 @@ T = TypeVar('T')
 
 
 class PluginManager:
-    """Manages the loading and lifecycle of VBoxMCP plugins."""
+    """Manages the loading and lifecycle of virtualization-mcp plugins."""
     
     def __init__(self, config: ServerConfig):
         """Initialize the plugin manager.
@@ -114,3 +114,6 @@ class PluginManager:
         
         self.plugins.clear()
         logger.info("All plugins shut down")
+
+
+

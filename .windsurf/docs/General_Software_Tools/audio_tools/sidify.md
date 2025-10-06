@@ -219,3 +219,6 @@ Sidify is commercial software with a free trial period. Various licensing option
 - [Documentation](https://www.sidify.com/support/)
 - [FAQ](https://www.sidify.com/faq/)
 - [Contact Support](https://www.sidify.com/support/contact.html)
+
+
+

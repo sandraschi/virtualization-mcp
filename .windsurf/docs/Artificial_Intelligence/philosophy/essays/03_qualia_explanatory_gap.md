@@ -1,4 +1,4 @@
-﻿# Qualia and the xplanatory Gap: The Hardest Aspect of the Hard Problem
+# Qualia and the xplanatory Gap: The Hardest Aspect of the Hard Problem
 
 ## Introduction
 
@@ -118,3 +118,6 @@ Qualia and the xplanatory gap represent he most stubborn challenges to physicali
 - Churchland, P. M. (1985). Reduction, qualia, and the direct introspection of brain states. *The Journal of Philosophy, 82*(1), 8-28.
 - Stoljar, D. (2005). Physicalism and phenomenal concepts. *Mind & Language, 20*(5), 469-494.
 - Chalmers, D. J. (2018). The meta-problem of consciousness. *Journal of Consciousnesstudies, 25*(9-10), 6-61.
+
+
+

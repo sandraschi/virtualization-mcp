@@ -1,5 +1,5 @@
 """
-Tests for the vboxmcp VM devices functionality.
+Tests for the virtualization-mcp VM devices functionality.
 """
 import pytest
 from unittest.mock import MagicMock, patch, call
@@ -130,3 +130,6 @@ class TestVMDeviceMixin:
         # Assertions
         assert result["status"] == "success"
         mock_vbox.find_machine.assert_called_once_with(self.vm_name)
+
+
+

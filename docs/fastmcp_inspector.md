@@ -28,7 +28,7 @@ The FastMCP Inspector is a powerful web-based interface for testing and debuggin
 2. Start the inspector with your MCP server:
    ```bash
    # From the project root
-   fastmcp dev src/vboxmcp/all_tools_server.py
+   fastmcp dev src/virtualization-mcp/all_tools_server.py
    ```
 
 3. Open the web interface:
@@ -138,7 +138,7 @@ You can configure your IDE to launch the inspector with custom arguments. For ex
             "type": "python",
             "request": "launch",
             "module": "fastmcp",
-            "args": ["dev", "src/vboxmcp/all_tools_server.py"],
+            "args": ["dev", "src/virtualization-mcp/all_tools_server.py"],
             "console": "integratedTerminal"
         }
     ]
@@ -148,5 +148,8 @@ You can configure your IDE to launch the inspector with custom arguments. For ex
 ## Support
 For additional help, please refer to:
 - [FastMCP Documentation](https://fastmcp.readthedocs.io/)
-- [GitHub Issues](https://github.com/your-org/vboxmcp/issues)
+- [GitHub Issues](https://github.com/your-org/virtualization-mcp/issues)
 - [Community Forum](https://community.example.com)
+
+
+

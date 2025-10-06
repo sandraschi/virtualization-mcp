@@ -62,7 +62,7 @@ jobs:
         run: uv sync --dev
       - name: Run tests with coverage
         run: |
-          uv run pytest --cov=src/vboxmcp --cov-report=xml --cov-report=term-missing -v --maxfail=10 --tb=short --cov-fail-under=50
+          uv run pytest --cov=src/virtualization-mcp --cov-report=xml --cov-report=term-missing -v --maxfail=10 --tb=short --cov-fail-under=50
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.13'
         uses: codecov/codecov-action@v3
@@ -150,19 +150,19 @@ jobs:
         run: |
           if command -v mcpb >/dev/null 2>&1; then
             cd mcpb
-            mcpb pack . ../dist/vboxmcp-v1.0.0.mcpb
+            mcpb pack . ../dist/virtualization-mcp-v1.0.0.mcpb
             cd ..
           else
             echo "MCPB CLI not available, creating basic package"
             cd mcpb
-            zip -r ../dist/vboxmcp-v1.0.0.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
+            zip -r ../dist/virtualization-mcp-v1.0.0.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
             cd ..
           fi
       - name: Upload MCPB package
         uses: actions/upload-artifact@v4
         with:
           name: mcpb-package
-          path: dist/vboxmcp-v1.0.0.mcpb
+          path: dist/virtualization-mcp-v1.0.0.mcpb
 
   integration-test:
     name: Integration Tests
@@ -210,3 +210,6 @@ jobs:
             echo "❌ Quality gate failed"
             exit 1
           fi
+
+
+

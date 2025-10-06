@@ -140,3 +140,6 @@ class VideoSettingsManager(BasePlugin):
         """Update video settings for a VM."""
         # Implementation would update the actual VM's video settings
         return settings
+
+
+

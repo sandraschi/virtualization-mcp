@@ -21,7 +21,7 @@ All API requests require authentication using API keys. Include your API key in 
 
 ```http
 GET /api/v1/vms HTTP/1.1
-Host: api.vboxmcp.example.com
+Host: api.virtualization-mcp.example.com
 X-API-Key: your-api-key-here
 ```
 
@@ -30,7 +30,7 @@ X-API-Key: your-api-key-here
 The base URL for all API endpoints is:
 
 ```
-https://api.vboxmcp.example.com/api/v1
+https://api.virtualization-mcp.example.com/api/v1
 ```
 
 For local development:
@@ -448,7 +448,7 @@ API requests are rate limited to prevent abuse. The following headers are includ
 For real-time events and console access, use the WebSocket API:
 
 ```
-wss://api.vboxmcp.example.com/api/v1/ws
+wss://api.virtualization-mcp.example.com/api/v1/ws
 ```
 
 ### Authentication
@@ -491,7 +491,7 @@ Subscribe to VM events:
 ```python
 import requests
 
-class VBoxMCPClient:
+class virtualization-mcpClient:
     def __init__(self, base_url, api_key):
         self.base_url = base_url.rstrip('/')
         self.headers = {
@@ -533,7 +533,7 @@ class VBoxMCPClient:
         return response.json()
 
 # Usage
-client = VBoxMCPClient("http://localhost:8000/api/v1", "your-api-key")
+client = virtualization-mcpClient("http://localhost:8000/api/v1", "your-api-key")
 print(client.list_vms())
 ```
 
@@ -567,3 +567,6 @@ Start a VM:
 curl -X POST "http://localhost:8000/api/v1/vms/test-vm/start" \
   -H "X-API-Key: your-api-key"
 ```
+
+
+

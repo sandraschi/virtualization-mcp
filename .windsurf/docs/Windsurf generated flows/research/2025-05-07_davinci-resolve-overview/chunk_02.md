@@ -30,3 +30,6 @@
 ---
 
 **Most AI scripting and automation is possible in the free version. Studio unlocks more built-in AI tools and higher-end processing.**
+
+
+

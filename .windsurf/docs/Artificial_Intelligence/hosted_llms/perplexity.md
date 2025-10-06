@@ -172,3 +172,6 @@ exception as e:
 - [API Reference](https://docs.perplexity.ai/reference/getting-started)
 - [GitHub Repository](https://github.com/perplexity-ai/perplexity-ai-python)
 - [Pricing](https://www.perplexity.ai/pricing)
+
+
+

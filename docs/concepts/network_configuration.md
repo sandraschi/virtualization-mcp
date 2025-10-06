@@ -2,7 +2,7 @@
 
 ## Overview
 
-vboxmcp provides comprehensive networking capabilities for VirtualBox virtual machines, supporting various network modes and configurations to meet different use cases.
+virtualization-mcp provides comprehensive networking capabilities for VirtualBox virtual machines, supporting various network modes and configurations to meet different use cases.
 
 ## Network Adapter Types
 
@@ -306,3 +306,6 @@ manager.configure_dns_server(
 - [Snapshot Management](../concepts/snapshot_management.md)
 - [Advanced Configuration](../advanced/performance_tuning.md)
 - [Security Best Practices](../advanced/security.md)
+
+
+

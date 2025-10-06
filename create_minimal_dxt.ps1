@@ -16,7 +16,7 @@ New-Item -ItemType Directory -Path "$tempDir\vbox-mcp\vbox" | Out-Null
   "name": "vbox-mcp",
   "version": "0.1.0",
   "description": "Minimal test package for vbox-mcp",
-  "entry_point": "vboxmcp.server:app"
+  "entry_point": "virtualization-mcp.server:app"
 }
 '@ | Out-File -FilePath "$tempDir\manifest.json" -Encoding utf8
 
@@ -44,3 +44,6 @@ Compress-Archive -Path "$tempDir\*" -DestinationPath $outputFile -Force
 Remove-Item -Recurse -Force $tempDir
 
 Write-Host "Created minimal DXT package: $outputFile"
+
+
+

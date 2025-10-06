@@ -216,3 +216,6 @@ WizTree is available in both free and paid versions. The free version includes a
 - [Official Documentation](https://wiztreefree.com/help/)
 - [Forums](https://wiztreefree.com/forum/)
 - [Contact Support](https://wiztreefree.com/contact/)
+
+
+

@@ -1,4 +1,4 @@
-﻿# Amazon AI
+# Amazon AI
 
 ## Overview
 Amazon AI represents Amazon's comprehensive artificial intelligence initiatives, integrating machine learning across its e-commerce platform, cloud services, and consumer devices. The company focuses on practical AI applications that enhance customer experiences and business operations at scale.
@@ -145,3 +145,6 @@ Amazon AI represents Amazon's comprehensive artificial intelligence initiatives,
 - **AI for Sustainability**: Climate change solutions
 - **AI at Scale**: Larger, morefficient models
 - **Democratization**: Making AI accessible to all developers
+
+
+

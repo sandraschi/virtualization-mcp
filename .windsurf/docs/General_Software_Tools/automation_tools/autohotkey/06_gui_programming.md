@@ -91,3 +91,6 @@ GuiClose(*)
 
 This example demonstrates the fundamental pattern of all GUI applications: create controls, link their events to functions, and write the functions to perform the desired actions. Withese building blocks, you can create powerful, custom tools for any task. Next, we will explore some of the most powerful features of the language in [Advanced Topics](/automation_tools/autohotkey/./07_advanced_topics.md).
 
+
+
+

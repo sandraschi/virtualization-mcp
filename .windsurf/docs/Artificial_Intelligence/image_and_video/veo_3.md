@@ -1,4 +1,4 @@
-﻿# Veo 3: Advanced Video Generation by Google DeepMind
+# Veo 3: Advanced Video Generation by Google DeepMind
 
 ## Introduction
 Veo 3 is Google DeepMind's cutting-edge video generation model, representing a significant advancement in AI-powered video creation. This document provides a comprehensive guide to Veo 3's capabilities, technical aspects, and potential applications.
@@ -274,3 +274,6 @@ def video_inpainting(
 - Social Media Communities
 
 *Note: This document will be updated as more information about Veo 3 becomes publicly available and the API access expands.*
+
+
+

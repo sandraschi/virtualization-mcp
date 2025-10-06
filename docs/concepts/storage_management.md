@@ -2,7 +2,7 @@
 
 ## Overview
 
-vboxmcp provides comprehensive storage management capabilities for VirtualBox virtual machines, including disk management, storage controllers, and ISO handling.
+virtualization-mcp provides comprehensive storage management capabilities for VirtualBox virtual machines, including disk management, storage controllers, and ISO handling.
 
 ## Storage Controllers
 
@@ -226,3 +226,6 @@ manager.configure_shared_folder_automount(
 - [Network Configuration](../concepts/network_configuration.md)
 - [Snapshot Management](../concepts/snapshot_management.md)
 - [Advanced Configuration](../advanced/performance_tuning.md)
+
+
+

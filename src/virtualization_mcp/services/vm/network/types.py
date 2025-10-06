@@ -79,3 +79,6 @@ class NetworkOperationResult(TypedDict, total=False):
     current_state: Optional[NetworkAdapterState]
     rules: Optional[List[PortForwardingRule]]
     adapters: Optional[List[Dict[str, Any]]]
+
+
+

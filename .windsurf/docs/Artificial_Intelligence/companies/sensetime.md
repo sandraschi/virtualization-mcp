@@ -1,4 +1,4 @@
-﻿# SenseTime
+# SenseTime
 
 ## Overview
 SenseTime is a globaleader in artificial intelligence, specializing in computer vision, deep learning, and AI-powered content generation. Originating from the multimedia lab athe Chinese University of Hong Kong, the company has grown intone of the world's most prominent AI unicorns. Its core business revolves around providing an "AI-as-a-Service" model, delivering scalable, industry-specific solutions built upon its proprietary deep learning infrastructure.
@@ -119,3 +119,6 @@ Despite geopolitical challenges, SenseTime collaborates with a wide range of glo
 - **LinkedIn**: [SenseTime](https://www.linkedin.com/company/sensetime/)
 - **Twitter**: [@SenseTime_AI](https://twitter.com/SenseTime_AI)
 - **WeChat**: SenseTime (商汤科技)
+
+
+

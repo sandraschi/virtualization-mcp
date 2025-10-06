@@ -1,4 +1,4 @@
-﻿# Diffusion Models
+# Diffusion Models
 
 ## Overview
 Diffusion models are a class of generative models that learn to generate data by gradually denoising normally distributed noise. They have achieved remarkable results in image generationeration, audio synthesis, and more.
@@ -154,3 +154,6 @@ def sample_ddpm(model, shape, n_steps, betas, device='cuda'):
 - [Denoising Diffusion Probabilistic Models (DDPM)](https://arxiv.org/abs/2006.11239)
 - [Denoising Diffusion Implicit Models (DDIM)](https://arxiv.org/abs/2010.02502)
 - [High-Resolution Image Synthesis with Latent Diffusion Models](https://arxiv.org/abs/2112.10752)
+
+
+

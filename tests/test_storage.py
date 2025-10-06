@@ -1,5 +1,5 @@
 """
-Tests for the vboxmcp storage functionality.
+Tests for the virtualization-mcp storage functionality.
 """
 import pytest
 from unittest.mock import MagicMock, patch, call
@@ -112,3 +112,6 @@ class TestVMStorageMixin:
         assert isinstance(result, list)
         assert len(result) == 1
         assert result[0]["path"] == "/path/to/disk.vdi"
+
+
+

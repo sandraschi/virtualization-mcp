@@ -1,5 +1,5 @@
 """
-Windows Sandbox Helper for VBoxMCP
+Windows Sandbox Helper for virtualization-mcp
 
 This module provides Windows Sandbox management functionality.
 """
@@ -170,3 +170,6 @@ class WindowsSandboxHelper:
         """Stop a running Windows Sandbox instance."""
         # Implementation would stop the specified sandbox
         return {"status": "stopped", "sandbox_id": sandbox_id}
+
+
+

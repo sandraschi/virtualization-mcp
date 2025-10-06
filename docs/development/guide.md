@@ -1,4 +1,4 @@
-# vboxmcp Development Guide
+# virtualization-mcp Development Guide
 
 ## Table of Contents
 1. [Code Structure](#code-structure)
@@ -13,9 +13,9 @@
 ## Code Structure
 
 ```
-vboxmcp/
+virtualization-mcp/
 ├── src/
-│   └── vboxmcp/
+│   └── virtualization-mcp/
 │       ├── __init__.py         # Package initialization
 │       ├── server.py           # Main FastAPI application
 │       ├── config.py           # Configuration management
@@ -45,8 +45,8 @@ vboxmcp/
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/vboxmcp.git
-   cd vboxmcp
+   git clone https://github.com/yourusername/virtualization-mcp.git
+   cd virtualization-mcp
    ```
 
 2. Set up a virtual environment and install dependencies:
@@ -120,7 +120,7 @@ pytest
 pytest tests/test_vm_operations.py
 
 # Run tests with coverage report
-pytest --cov=vboxmcp tests/
+pytest --cov=virtualization-mcp tests/
 ```
 
 ### Writing Tests
@@ -129,7 +129,7 @@ Follow these patterns when writing tests:
 
 ```python
 import pytest
-from vboxmcp.vbox.manager import VBoxManager
+from virtualization-mcp.vbox.manager import VBoxManager
 
 class TestVMManagement:
     @pytest.fixture
@@ -160,7 +160,7 @@ class TestVMManagement:
 Start the server in debug mode:
 
 ```bash
-python -m vboxmcp.server --debug
+python -m virtualization-mcp.server --debug
 ```
 
 ### Using the Debugger
@@ -178,10 +178,10 @@ Or use VS Code's debugger by creating a `.vscode/launch.json`:
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: vboxmcp",
+            "name": "Python: virtualization-mcp",
             "type": "python",
             "request": "launch",
-            "module": "vboxmcp.server",
+            "module": "virtualization-mcp.server",
             "args": ["--debug"],
             "justMyCode": false
         }
@@ -208,10 +208,10 @@ black .
 isort .
 
 # Check for style issues
-pylint vboxmcp/
+pylint virtualization-mcp/
 
 # Check types
-mypy vboxmcp/
+mypy virtualization-mcp/
 ```
 
 ## Documentation
@@ -258,3 +258,6 @@ The generated documentation will be available in `docs/_build/html`.
 2. Manual code review by maintainers
 3. Address any feedback
 4. Merge after approval
+
+
+

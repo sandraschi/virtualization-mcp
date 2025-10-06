@@ -25,3 +25,6 @@ def register_signal_handlers() -> None:
     """Register signal handlers for graceful shutdown."""
     signal.signal(signal.SIGINT, handle_shutdown)
     signal.signal(signal.SIGTERM, handle_shutdown)
+
+
+

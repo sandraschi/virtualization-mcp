@@ -111,3 +111,6 @@
 - [AI's 10 to Watch](https://www.computer.org/csdl/magazine/expert/2018/03/mex2018030014/13rRUy08Rba)
 - [100 Brilliant Women in AI Ethics](https://alltechishuman.org/100-brilliant-women-in-ai-ethics-hall-of-fame)
 - [The AIndex Report](https://aiindex.stanford.edu/)
+
+
+

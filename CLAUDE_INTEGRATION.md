@@ -1,6 +1,6 @@
 # Claude Desktop Integration Guide
 
-This document provides comprehensive instructions for integrating the vboxmcp server with Claude Desktop, including setup, configuration, and troubleshooting.
+This document provides comprehensive instructions for integrating the virtualization-mcp server with Claude Desktop, including setup, configuration, and troubleshooting.
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
@@ -22,8 +22,8 @@ This document provides comprehensive instructions for integrating the vboxmcp se
 
 1. **Clone the repository** (if not already done):
    ```bash
-   git clone https://github.com/yourusername/vboxmcp.git
-   cd vboxmcp
+   git clone https://github.com/yourusername/virtualization-mcp.git
+   cd virtualization-mcp
    ```
 
 2. **Create and activate a virtual environment** (recommended):
@@ -47,9 +47,9 @@ Add the following to your Claude Desktop configuration file (typically `~/.confi
 ```json
 {
   "mcpServers": {
-    "vboxmcp": {
+    "virtualization-mcp": {
       "command": "python",
-      "args": ["-m", "vboxmcp.server_enhanced", "--debug"],
+      "args": ["-m", "virtualization-mcp.server_enhanced", "--debug"],
       "timeout": 30,
       "autoStart": true,
       "environment": {
@@ -83,14 +83,14 @@ python test_claude_integration.py --debug
 
 ### Manual Testing
 
-1. Start the vboxmcp server manually:
+1. Start the virtualization-mcp server manually:
    ```bash
-   python -m vboxmcp.server_enhanced --debug
+   python -m virtualization-mcp.server_enhanced --debug
    ```
 
 2. In Claude Desktop, try listing VMs:
    ```
-   /vboxmcp list_vms
+   /virtualization-mcp list_vms
    ```
 
 ## Tool Reference
@@ -108,7 +108,7 @@ Create a new virtual machine from a template.
 
 **Example:**
 ```
-/vboxmcp create_vm name="my-vm" template="ubuntu-dev" memory_mb=4096 disk_gb=50
+/virtualization-mcp create_vm name="my-vm" template="ubuntu-dev" memory_mb=4096 disk_gb=50
 ```
 
 #### `start_vm`
@@ -120,7 +120,7 @@ Start a virtual machine.
 
 **Example:**
 ```
-/vboxmcp start_vm name="my-vm" headless=true
+/virtualization-mcp start_vm name="my-vm" headless=true
 ```
 
 #### `stop_vm`
@@ -132,7 +132,7 @@ Stop a running virtual machine.
 
 **Example:**
 ```
-/vboxmcp stop_vm name="my-vm" force=false
+/virtualization-mcp stop_vm name="my-vm" force=false
 ```
 
 #### `delete_vm`
@@ -144,7 +144,7 @@ Delete a virtual machine.
 
 **Example:**
 ```
-/vboxmcp delete_vm name="my-vm" delete_disk=true
+/virtualization-mcp delete_vm name="my-vm" delete_disk=true
 ```
 
 #### `list_vms`
@@ -155,7 +155,7 @@ List all virtual machines.
 
 **Example:**
 ```
-/vboxmcp list_vms state="running"
+/virtualization-mcp list_vms state="running"
 ```
 
 ### Snapshot Management
@@ -170,7 +170,7 @@ Create a snapshot of a virtual machine.
 
 **Example:**
 ```
-/vboxmcp create_snapshot vm_name="my-vm" snapshot_name="before-update" description="Before applying updates"
+/virtualization-mcp create_snapshot vm_name="my-vm" snapshot_name="before-update" description="Before applying updates"
 ```
 
 #### `restore_snapshot`
@@ -182,7 +182,7 @@ Restore a virtual machine to a previous snapshot.
 
 **Example:**
 ```
-/vboxmcp restore_snapshot vm_name="my-vm" snapshot_name="before-update"
+/virtualization-mcp restore_snapshot vm_name="my-vm" snapshot_name="before-update"
 ```
 
 #### `list_snapshots`
@@ -193,7 +193,7 @@ List snapshots for a virtual machine.
 
 **Example:**
 ```
-/vboxmcp list_snapshots vm_name="my-vm"
+/virtualization-mcp list_snapshots vm_name="my-vm"
 ```
 
 ### Network Management
@@ -212,7 +212,7 @@ Configure port forwarding for a VM.
 
 **Example:**
 ```
-/vboxmcp configure_port_forwarding vm_name="my-vm" rule_name="ssh" protocol="tcp" host_port=2222 guest_port=22
+/virtualization-mcp configure_port_forwarding vm_name="my-vm" rule_name="ssh" protocol="tcp" host_port=2222 guest_port=22
 ```
 
 ## Troubleshooting
@@ -233,11 +233,11 @@ Configure port forwarding for a VM.
 
 ### Logging
 
-Logs are written to `vboxmcp.log` in the current working directory by default. To increase log verbosity, set the `VBOX_LOG_LEVEL` environment variable to `debug`:
+Logs are written to `virtualization-mcp.log` in the current working directory by default. To increase log verbosity, set the `VBOX_LOG_LEVEL` environment variable to `debug`:
 
 ```bash
 export VBOX_LOG_LEVEL=debug
-python -m vboxmcp.server_enhanced
+python -m virtualization-mcp.server_enhanced
 ```
 
 ## Development
@@ -285,3 +285,6 @@ python setup.py bdist_wheel
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+

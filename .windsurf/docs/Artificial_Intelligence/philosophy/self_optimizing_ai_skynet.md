@@ -125,3 +125,6 @@ While the "Skynet" scenario remainspeculative, the field of AI safety takes pote
 - Bostrom, N. (2014). *Superintelligence: Paths, Dangers, Strategies*
 - Russell, S. (2019). *Human Compatible: AI and the Problem of Control*
 - Yudkowsky, E. (2008). *Artificial Intelligence as a Positive and Negative Factor in Global Risk*
+
+
+

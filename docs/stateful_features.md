@@ -20,7 +20,7 @@
 
 ## Introduction
 
-FastMCP 2.11 introduces stateful features that enable persistent connections and session management, which is particularly useful for VM operations that require maintaining state across multiple requests. This document provides a comprehensive guide to implementing and using these features in vboxmcp.
+FastMCP 2.11 introduces stateful features that enable persistent connections and session management, which is particularly useful for VM operations that require maintaining state across multiple requests. This document provides a comprehensive guide to implementing and using these features in virtualization-mcp.
 
 ## Key Concepts
 
@@ -67,7 +67,7 @@ session = session_manager.get(session_id)
 Stateful tools maintain context across multiple invocations using sessions.
 
 ```python
-from vboxmcp.decorators import stateful_tool
+from virtualization-mcp.decorators import stateful_tool
 
 @stateful_tool(ttl_seconds=1800)  # 30-minute TTL for this tool's session
 async def manage_vm(session, vm_id: str, action: str):
@@ -91,7 +91,7 @@ async def manage_vm(session, vm_id: str, action: str):
 Connection pooling is handled by the `ConnectionPool` class, which manages VM connections efficiently.
 
 ```python
-from vboxmcp.connection import ConnectionPool
+from virtualization-mcp.connection import ConnectionPool
 
 # Initialize connection pool
 connection_pool = ConnectionPool(
@@ -115,7 +115,7 @@ finally:
 ### Creating Stateful Tools
 
 ```python
-from vboxmcp.decorators import stateful_tool
+from virtualization-mcp.decorators import stateful_tool
 
 @stateful_tool(ttl_seconds=3600)
 async def vm_workflow(session, vm_id: str, command: str):
@@ -218,3 +218,6 @@ async with connection_pool.connection(vm_id) as conn:
    - Track session creation and expiration rates
    - Monitor connection pool utilization
    - Set up alerts for abnormal conditions
+
+
+

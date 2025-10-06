@@ -42,3 +42,6 @@ For creating voice-overs for videos or audiobooks, Audacity provides all the nec
 5.  **Edit**: You can simply press `Delete` to remove a selected section, or use the buttons in theditoolbar for Cut, Copy, and Paste.
 6.  **Apply Effects**: With a section of audio selected, go to the **Effect** menu to apply changes like Noise Reduction or Amplify.
 7.  **Export**: Once you are happy with your project, go to **File > Export** and choose your desired format (e.g., Export as MP3, Export as WAV).
+
+
+

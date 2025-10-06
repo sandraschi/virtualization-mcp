@@ -1,4 +1,4 @@
-# vboxmcp Feature Roadmap
+# virtualization-mcp Feature Roadmap
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -10,7 +10,7 @@
 7. [Implementation Guidelines](#implementation-guidelines)
 
 ## Overview
-This document outlines the planned features and enhancements for vboxmcp, organized into development phases. Each phase builds upon the previous one to deliver increasing value.
+This document outlines the planned features and enhancements for virtualization-mcp, organized into development phases. Each phase builds upon the previous one to deliver increasing value.
 
 ## Phase 1: Core Enhancements
 
@@ -100,3 +100,6 @@ This document outlines the planned features and enhancements for vboxmcp, organi
    - Regular security audits
    - Secure defaults
    - Principle of least privilege
+
+
+

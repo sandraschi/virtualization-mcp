@@ -28,3 +28,6 @@ Welcome to the VirtualBox Management Assistant! You can interact with your virtu
 - "What are the system requirements for a new VM?"
 
 Feel free to ask questions or request actions in your own words. The assistant will guide you through any additional steps needed.
+
+
+

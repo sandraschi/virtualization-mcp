@@ -135,3 +135,6 @@ class MonitoringPlugin(BasePlugin):
         except Exception as e:
             self.metrics["errors_total"].labels(type="metrics_update").inc()
             raise
+
+
+

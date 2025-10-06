@@ -20,3 +20,6 @@ Remotely control DIY loudspeaker trucks to play surreal audio messages, AI-gener
 - Simulation/test harness for loudspeaker scenarios
 - Consent workflow integration
 - Logging and audit
+
+
+

@@ -1,4 +1,4 @@
-﻿# Stable Diffusion: Advanced image generationeration
+# Stable Diffusion: Advanced image generationeration
 
 ## Introduction
 Stable Diffusion is a powerful open-source text-to-image generationeration model that has revolutionized AI art creation. This document provides a comprehensive guide to using and customizing Stable Diffusion for various applications.
@@ -282,3 +282,6 @@ cd stable-diffusion-webui
 - [Hugging Face Course](https://huggingface.co/course/chapter1)
 - [Stable Diffusion with 🧨 Diffusers](https://huggingface.co/docs/diffusers/using-diffusers/stable_diffusion)
 - [The Last Ben's Notebooks](https://github.com/TheLastBen/fast-stable-diffusion)
+
+
+

@@ -1,7 +1,7 @@
 """
-Monitoring Tools for VBoxMCP
+Monitoring Tools for virtualization-mcp
 
-This module provides monitoring and metrics collection tools for the VBoxMCP system.
+This module provides monitoring and metrics collection tools for the virtualization-mcp system.
 """
 
 from virtualization_mcp.tools.monitoring.metrics_tools import (
@@ -41,3 +41,6 @@ __all__ = [
     'update_system_metrics',
     'get_metrics'
 ]
+
+
+

@@ -152,7 +152,7 @@ Configure log rotation in `logging.toml`:
 ```toml
 [handlers.file]
 class = "logging.handlers.RotatingFileHandler"
-filename = "vboxmcp.log"
+filename = "virtualization-mcp.log"
 maxBytes = 10485760  # 10MB
 backupCount = 5
 encoding = "utf8"
@@ -163,7 +163,7 @@ datefmt = "%Y-%m-%d %H:%M:%S"
 
 [loggers]
 "" = {level = "INFO", handlers = ["console", "file"]}
-"vboxmcp" = {level = "DEBUG", handlers = ["file"], propagate = false}
+"virtualization-mcp" = {level = "DEBUG", handlers = ["file"], propagate = false}
 ```
 
 ## Environment-Specific Configuration
@@ -202,3 +202,6 @@ curl http://localhost:8000/api/config
 ```
 
 This will return the current configuration with sources.
+
+
+

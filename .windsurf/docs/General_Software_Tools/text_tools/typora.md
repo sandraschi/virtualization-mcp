@@ -90,3 +90,6 @@ sudo apt-get install typora
 3. Use relative paths for images
 4. Use front matter for metadata
 5. Regularly save your work (Ctrl+S)
+
+
+

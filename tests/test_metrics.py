@@ -1,5 +1,5 @@
 """
-Tests for the vboxmcp VM metrics functionality.
+Tests for the virtualization-mcp VM metrics functionality.
 """
 import pytest
 from unittest.mock import MagicMock, patch, call
@@ -120,3 +120,6 @@ class TestVMMetricsMixin:
         assert result["memory"]["total_mb"] == 4096
         assert result["disk"]["total_gb"] == 30.0
         assert result["network"]["bytes_received"] == 1024 * 1024
+
+
+

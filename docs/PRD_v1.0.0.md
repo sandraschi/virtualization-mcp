@@ -3,14 +3,14 @@
 ## Version: 1.0.0
 **Last Updated**: August 10, 2025  
 **Status**: Release Candidate  
-**Author**: vboxmcp Team  
+**Author**: virtualization-mcp Team  
 **MCP Version**: 2.10+  
 **VirtualBox Version**: 7.0+
 
 ## 1. Executive Summary
 
 ### 1.1 Product Overview
-VirtualBox MCP Server (vboxmcp) is a FastMCP 2.10+ compliant server that provides comprehensive VirtualBox management capabilities through a standardized MCP (Model-Controller-Presenter) interface. It enables seamless integration with MCP clients like Claude Desktop, allowing natural language control over VirtualBox environments.
+VirtualBox MCP Server (virtualization-mcp) is a FastMCP 2.10+ compliant server that provides comprehensive VirtualBox management capabilities through a standardized MCP (Model-Controller-Presenter) interface. It enables seamless integration with MCP clients like Claude Desktop, allowing natural language control over VirtualBox environments.
 
 ### 1.2 Key Benefits
 - **Unified Management**: Control VirtualBox through a standardized MCP interface
@@ -288,7 +288,7 @@ All error responses follow the format:
 ### 9.1 Installation
 ```bash
 # Install from PyPI
-pip install vboxmcp
+pip install virtualization-mcp
 
 # Or from source
 pip install .
@@ -316,10 +316,10 @@ security:
 ### 9.3 Running the Server
 ```bash
 # Start the MCP server
-vboxmcp serve --config config.yaml
+virtualization-mcp serve --config config.yaml
 
 # Or using Python
-python -m vboxmcp.server --config config.yaml
+python -m virtualization-mcp.server --config config.yaml
 ```
 
 ## 10. Testing Strategy
@@ -497,3 +497,6 @@ Terminology and concepts
 ---
 *Document Version: 1.0.0*  
 *Last Updated: 2025-08-10*
+
+
+

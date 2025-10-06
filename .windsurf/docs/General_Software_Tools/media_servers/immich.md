@@ -1,4 +1,4 @@
-﻿# Immich: Self-Hosted Photo and Video Backup Solution
+# Immich: Self-Hosted Photo and Video Backup Solution
 
 ## Overview
 Immich is a high-performance, self-hosted photo and video backup solution that provides a Google Photos-likexperience. It's designed to be fast, reliable, and privacy-focused, allowing you to maintain full control over your personal media.
@@ -314,3 +314,6 @@ Content-Type: multipart/form-data
 
 ## License
 MIT License - See [LICENSE](https://github.com/immich-app/immich/blob/main/LICENSE) for details.
+
+
+

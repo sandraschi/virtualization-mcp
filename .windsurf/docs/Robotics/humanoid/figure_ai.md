@@ -35,3 +35,6 @@ Figure 01 is the company's first autonomous humanoid robot. It is designed to be
 
 ## Impact and Future Direction
 Figure has rapidly emerged as a major contender in the humanoid robotics race, largely due to its high-profile partnerships (BMW, OpenAI) and significant funding. Their focus on leveraging large-scale AI models to solve robotics challengesets them apart. The company's future direction is aimed at scaling the deployment ofigure 01 in manufacturing and logistics, withe long-term goal of creating a general-purpose workforce that can be deployed across variousectors of theconomy.
+
+
+

@@ -2,7 +2,7 @@
 
 ## Overview
 
-vboxmcp provides comprehensive snapshot management capabilities, allowing you to capture and restore the complete state of a virtual machine at any point in time.
+virtualization-mcp provides comprehensive snapshot management capabilities, allowing you to capture and restore the complete state of a virtual machine at any point in time.
 
 ## Core Operations
 
@@ -172,3 +172,6 @@ manager.export_snapshot(
 - [Advanced Configuration](../advanced/performance_tuning.md)
 - [Security Best Practices](../advanced/security.md)
 - [API Reference](../api/)
+
+
+

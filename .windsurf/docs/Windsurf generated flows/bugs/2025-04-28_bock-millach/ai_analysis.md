@@ -11,3 +11,6 @@
 1. **Spruch als Ironierkennen:** Dein Onkel meint vermutlich, dass du (oder jemanderes) sich um etwas bemühst, das von vornherein zum Scheitern verurteilt ist – wiein Bock, der keine Milch geben kann.
 2. **Nachfragen:** Du kannst deinen Onkel direkt fragen, in welchem Zusammenhang er den Spruch verwendet hat, um die genaue Bedeutung zu klären.
 3. **Humor annehmen:** Der Spruch ist meist augenzwinkernd gemeint – nimm ihn mit Humor!
+
+
+

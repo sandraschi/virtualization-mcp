@@ -143,3 +143,6 @@ def test_vm_lifecycle():
 if __name__ == "__main__":
     logger.info("Starting VirtualBox compatibility layer tests...")
     test_vm_lifecycle()
+
+
+

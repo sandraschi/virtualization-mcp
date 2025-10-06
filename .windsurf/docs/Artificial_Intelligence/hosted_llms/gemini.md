@@ -1,4 +1,4 @@
-﻿# Hosted LLM: Google Gemini
+# Hosted LLM: Google Gemini
 
 ## Overview: Google's AI Flagship
 Geminis Google's flagship family of multimodalarge language models, developed by Google DeepMind. It represents Google's most significant and concerted efforto compete athe frontier of AI, designed from the ground up to be natively multimodal, understanding and operating seamlessly across text, code, audio, image, and video.
@@ -216,3 +216,6 @@ genai.configure(api_key='YOUR_API_KEY')
 - [API Reference](https://ai.google.dev/api/rest/v1/)
 - [GitHub Repository](https://github.com/google-gemini/generative-ai-python)
 - [Model Card](https://ai.google.dev/gemini-api/docs/models/gemini)
+
+
+

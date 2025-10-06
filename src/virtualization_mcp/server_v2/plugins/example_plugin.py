@@ -1,4 +1,4 @@
-"""Example plugin for the VBoxMCP server."""
+"""Example plugin for the virtualization-mcp server."""
 import logging
 from typing import Dict, Any
 
@@ -54,3 +54,6 @@ class ExamplePlugin(BasePlugin):
             return {"count": self.counter}
         
         logger.info("Registered example tools")
+
+
+

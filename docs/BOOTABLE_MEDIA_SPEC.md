@@ -1,7 +1,7 @@
 # Bootable Media Technical Specification
 
 ## 1. Introduction
-This document outlines the technical specifications for implementing bootable media creation in vboxmcp, including ISO creation and USB boot media preparation.
+This document outlines the technical specifications for implementing bootable media creation in virtualization-mcp, including ISO creation and USB boot media preparation.
 
 ## 2. Requirements
 
@@ -110,3 +110,6 @@ class MediaManager:
 - Network boot (PXE) support
 - Custom boot menu creation
 - Automated testing in virtual environments
+
+
+

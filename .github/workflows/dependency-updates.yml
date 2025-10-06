@@ -28,7 +28,7 @@ jobs:
           uv sync --dev
       - name: Run tests
         run: |
-          uv run pytest --cov=src/vboxmcp -x
+          uv run pytest --cov=src/virtualization-mcp -x
       - name: Check for changes
         id: changes
         run: |
@@ -71,3 +71,6 @@ jobs:
           labels: |
             dependencies
             automated
+
+
+

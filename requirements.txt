@@ -24,3 +24,6 @@ pre-commit>=3.5.0
 # Optional: Enhanced error handling and logging
 rich>=13.0.0           # Better console output
 loguru>=0.7.0          # Advanced logging
+
+
+

@@ -1,7 +1,7 @@
 # Minimal MCP Server Implementation
 
 ## Overview
-This document outlines the minimal implementation approach for the VBoxMCP server, focusing on simplicity and reliability. The goal is to maintain a working MCP server with the bare minimum code required for Claude Desktop integration.
+This document outlines the minimal implementation approach for the virtualization-mcp server, focusing on simplicity and reliability. The goal is to maintain a working MCP server with the bare minimum code required for Claude Desktop integration.
 
 ## Core Principles
 
@@ -14,7 +14,7 @@ This document outlines the minimal implementation approach for the VBoxMCP serve
 
 ```
 src/
-  vboxmcp/
+  virtualization-mcp/
     __init__.py     # Package metadata and version
     __main__.py     # Main entry point and tool registration
 pyproject.toml      # Package configuration
@@ -29,10 +29,10 @@ By default, the MCP server runs with the banner disabled to ensure compatibility
 
 ```bash
 # Run with banner (development)
-VBOX_MCP_DEV=1 python -m vboxmcp
+VBOX_MCP_DEV=1 python -m virtualization-mcp
 
 # Run without banner (production)
-python -m vboxmcp
+python -m virtualization-mcp
 ```
 
 ### 1. __init__.py
@@ -50,13 +50,13 @@ from fastmcp import FastMCP
 
 def main():
     # Create MCP instance
-    mcp = FastMCP(name="vboxmcp")
+    mcp = FastMCP(name="virtualization-mcp")
     
     # Register a simple hello tool
     @mcp.tool(name="hello", description="A simple hello world tool")
     async def hello(name: str = "World") -> str:
         """Say hello to someone."""
-        return f"Hello, {name}! This is VBoxMCP."
+        return f"Hello, {name}! This is virtualization-mcp."
     
     # Run the MCP server with stdio transport
     asyncio.run(mcp.run(transport="stdio"))
@@ -72,7 +72,7 @@ requires = ["setuptools>=65.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vboxmcp"
+name = "virtualization-mcp"
 version = "0.1.0"
 description = "VirtualBox MCP Server for Claude Desktop"
 authors = [
@@ -99,7 +99,7 @@ dev = [
 ]
 
 [project.scripts]
-vboxmcp = "vboxmcp.__main__:main"
+virtualization-mcp = "virtualization-mcp.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -108,13 +108,13 @@ where = ["src"]
 ### 4. mcp_config.json
 ```json
 {
-  "name": "vboxmcp",
+  "name": "virtualization-mcp",
   "version": "0.1.0",
   "description": "VirtualBox MCP Server for Claude Desktop",
   "mcpServers": {
-    "vboxmcp": {
+    "virtualization-mcp": {
       "command": "python",
-      "args": ["-m", "vboxmcp"],
+      "args": ["-m", "virtualization-mcp"],
       "env": {
         "PYTHONPATH": "./src"
       }
@@ -132,7 +132,7 @@ where = ["src"]
 
 2. **Run the server**:
    ```bash
-   python -m vboxmcp
+   python -m virtualization-mcp
    ```
 
 3. **Test in Claude Desktop**:
@@ -178,3 +178,6 @@ async def list_vms() -> list[str]:
 3. Add logging
 4. Add tests
 5. Document API endpoints
+
+
+

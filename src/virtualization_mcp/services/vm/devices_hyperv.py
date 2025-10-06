@@ -124,3 +124,6 @@ $devices | ConvertTo-Json -Depth 10
         except Exception as e:
             logger.exception(f"Unexpected error listing devices for VM {vm_name}")
             return []
+
+
+

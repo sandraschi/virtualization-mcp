@@ -1,7 +1,7 @@
 # Hyper-V Manager Plugin
 
 ## Overview
-The Hyper-V Manager plugin provides comprehensive management of Hyper-V virtualization environments, including virtual machines, virtual switches, and storage. It follows the FastMCP 2.10 standard for API documentation and integrates with the vboxmcp ecosystem.
+The Hyper-V Manager plugin provides comprehensive management of Hyper-V virtualization environments, including virtual machines, virtual switches, and storage. It follows the FastMCP 2.10 standard for API documentation and integrates with the virtualization-mcp ecosystem.
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
@@ -37,9 +37,9 @@ The Hyper-V Manager plugin provides comprehensive management of Hyper-V virtuali
 
 2. Restart your computer if prompted.
 
-3. The plugin is enabled by default in vboxmcp. Verify it's running:
+3. The plugin is enabled by default in virtualization-mcp. Verify it's running:
    ```powershell
-   Get-Service vboxmcp | Select-Object Name, Status
+   Get-Service virtualization-mcp | Select-Object Name, Status
    ```
 
 ## Configuration
@@ -880,9 +880,12 @@ curl -X POST http://localhost:8000/api/hyperv/vms/TestVM/snapshots \
 
 ## Integration with Other Plugins
 
-The Hyper-V Manager plugin integrates with other vboxmcp plugins:
+The Hyper-V Manager plugin integrates with other virtualization-mcp plugins:
 
 - **Security Analyzer**: Scan VMs for vulnerabilities
 - **Network Analyzer**: Monitor VM network traffic
 - **Malware Analyzer**: Safely analyze suspicious files in isolated VMs
 - **Windows Sandbox**: Use as a lightweight alternative for quick tests
+
+
+

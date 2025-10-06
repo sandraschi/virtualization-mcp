@@ -1,6 +1,6 @@
-# VBoxMCP LLM Integration Guide
+# virtualization-mcp LLM Integration Guide
 
-This document outlines the integration of Large Language Models (LLMs) with VBoxMCP for enhanced automation and natural language processing capabilities.
+This document outlines the integration of Large Language Models (LLMs) with virtualization-mcp for enhanced automation and natural language processing capabilities.
 
 ## Supported LLM Providers
 
@@ -61,8 +61,8 @@ This document outlines the integration of Large Language Models (LLMs) with VBox
 
 ### Using OpenAI for VM Creation
 ```python
-from vboxmcp.llm import LLMClient
-from vboxmcp.vm import VMBuilder
+from virtualization-mcp.llm import LLMClient
+from virtualization-mcp.vm import VMBuilder
 
 # Initialize LLM client
 llm = LLMClient(provider="openai")
@@ -128,5 +128,8 @@ vm = VMBuilder().from_config(config).build()
 
 ## Version Information
 - Last Updated: 2025-08-25
-- VBoxMCP Version: 1.0.0
+- virtualization-mcp Version: 1.0.0
 - LLM Integration Version: 1.0.0
+
+
+

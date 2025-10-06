@@ -31,3 +31,6 @@ DaVinci Resolve is a professional video editing, color grading, VFX, and audio p
 - **Installablextensions:**
   - Custom panels, effects, and integrations via Developer API.
   - Third-party plugins for VFX, workflow, and more.
+
+
+

@@ -97,3 +97,6 @@ templates:
         port_count: 2
     iso_path: ""  # Set path to Ubuntu Server 22.04 ISO
     boot_order: ["dvd", "disk", "none"]
+
+
+

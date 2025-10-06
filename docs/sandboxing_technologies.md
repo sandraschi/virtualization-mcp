@@ -187,16 +187,16 @@ docker run -p 4000:80 myapp
 | System Requirements  | Python only       | Conda installed   | Docker installed  |
 | Use Case            | Python projects   | Data science      | Deployment        |
 
-## Integration with VBoxMCP
+## Integration with virtualization-mcp
 
-VBoxMCP provides enhanced sandboxing capabilities that can work alongside or as an alternative to traditional virtual environments. Here's how these technologies can be integrated:
+virtualization-mcp provides enhanced sandboxing capabilities that can work alongside or as an alternative to traditional virtual environments. Here's how these technologies can be integrated:
 
-### Using venv with VBoxMCP
+### Using venv with virtualization-mcp
 
 1. **Isolated Testing**
    ```python
-   # Create a venv for testing in VBoxMCP
-   from vboxmcp.tools.dev.sandbox_tools import SandboxTester
+   # Create a venv for testing in virtualization-mcp
+   from virtualization-mcp.tools.dev.sandbox_tools import SandboxTester
    
    async def test_with_venv():
        tester = SandboxTester()
@@ -220,7 +220,7 @@ VBoxMCP provides enhanced sandboxing capabilities that can work alongside or as 
    ```
 
 2. **Dependency Management**
-   - Use VBoxMCP to manage multiple venvs for different test scenarios
+   - Use virtualization-mcp to manage multiple venvs for different test scenarios
    - Automate environment creation and cleanup in CI/CD pipelines
    - Test package installations in isolated environments
 
@@ -229,7 +229,7 @@ VBoxMCP provides enhanced sandboxing capabilities that can work alongside or as 
    - Resource limiting and monitoring
    - Network isolation options
 
-### Best Practices for VBoxMCP Integration
+### Best Practices for virtualization-mcp Integration
 
 1. **Environment Templates**
    - Create reusable environment templates
@@ -445,7 +445,7 @@ Each sandboxing technology serves different purposes and has its own strengths:
   - ❌ Higher resource usage
   - ❌ More complex setup
 
-- **VBoxMCP Sandboxing**: Advanced isolation and resource control
+- **virtualization-mcp Sandboxing**: Advanced isolation and resource control
   - ✅ Fine-grained resource limits
   - ✅ Process isolation
   - ✅ Integration with virtual machines
@@ -471,7 +471,10 @@ Each sandboxing technology serves different purposes and has its own strengths:
 
 4. **For testing and CI/CD**
    - Use `venv` for simple Python testing
-   - Leverage VBoxMCP for isolated test environments
+   - Leverage virtualization-mcp for isolated test environments
    - Consider container-based testing for complex scenarios
 
-Remember that these tools are not mutually exclusive. A common pattern is to use `venv` for development and `docker` for deployment, with VBoxMCP providing additional isolation when needed for testing or security-sensitive applications.
+Remember that these tools are not mutually exclusive. A common pattern is to use `venv` for development and `docker` for deployment, with virtualization-mcp providing additional isolation when needed for testing or security-sensitive applications.
+
+
+

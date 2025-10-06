@@ -227,7 +227,7 @@
        format='%(asctime)s %(levelname)s %(name)s %(message)s',
        handlers=[
            logging.StreamHandler(),
-           logging.FileHandler('vboxmcp.log')
+           logging.FileHandler('virtualization-mcp.log')
        ]
    )
    
@@ -249,7 +249,7 @@
 
    ```bash
    # Logrotate configuration
-   /var/log/vboxmcp/*.log {
+   /var/log/virtualization-mcp/*.log {
        daily
        missingok
        rotate 90
@@ -390,7 +390,7 @@
    ```bash
    # Run static analysis
    bandit -r .
-   pylint vboxmcp/
+   pylint virtualization-mcp/
    ```
 
 2. **Peer Review**
@@ -457,4 +457,7 @@
 
 ## Conclusion
 
-Implementing these security best practices will significantly enhance the security posture of your vboxmcp deployment. Remember that security is an ongoing process, and you should regularly review and update your security measures to address emerging threats.
+Implementing these security best practices will significantly enhance the security posture of your virtualization-mcp deployment. Remember that security is an ongoing process, and you should regularly review and update your security measures to address emerging threats.
+
+
+

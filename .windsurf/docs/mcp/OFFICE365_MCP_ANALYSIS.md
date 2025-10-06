@@ -280,3 +280,5 @@ The Microsoft 365 MCP Server provides **enterprise-grade integration** with virt
 ---
 
 *Document prepared based on official Softeria documentation and Microsoft 365 capabilities research*
+
+

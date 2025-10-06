@@ -97,3 +97,6 @@ Mistral AIs actively hiring for various positions in:
 - Secured $415M in Series A funding
 - Expanded enterprise offerings
 - Announced partnerships with major cloud providers
+
+
+

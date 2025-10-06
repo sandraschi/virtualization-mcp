@@ -1,12 +1,12 @@
-# vboxmcp Plugins
+# virtualization-mcp Plugins
 
 ## Overview
 
-vboxmcp's plugin system allows you to extend and customize the functionality of the virtualization management platform. Plugins can add new API endpoints, background tasks, and integrate with external systems.
+virtualization-mcp's plugin system allows you to extend and customize the functionality of the virtualization management platform. Plugins can add new API endpoints, background tasks, and integrate with external systems.
 
 ## Plugin Types
 
-vboxmcp supports several types of plugins:
+virtualization-mcp supports several types of plugins:
 
 1. **Core Plugins**: Built-in functionality (VM management, networking, storage)
 2. **Security Plugins**: Security scanning, compliance checks, access control
@@ -104,11 +104,11 @@ my_plugin/
 
 ```python
 # my_plugin/plugin.py
-from vboxmcp.plugins.base import BasePlugin
+from virtualization-mcp.plugins.base import BasePlugin
 from .routes import router
 
 class MyPlugin(BasePlugin):
-    """My custom plugin for vboxmcp."""
+    """My custom plugin for virtualization-mcp."""
     
     def __init__(self, config):
         super().__init__(config)
@@ -127,7 +127,7 @@ class MyPlugin(BasePlugin):
 
 ### Registering a Plugin
 
-Plugins are automatically discovered if they're in the `vboxmcp.plugins` namespace package or in a directory listed in the `PLUGIN_DIRS` configuration.
+Plugins are automatically discovered if they're in the `virtualization-mcp.plugins` namespace package or in a directory listed in the `PLUGIN_DIRS` configuration.
 
 ## Plugin Hooks
 
@@ -169,10 +169,13 @@ See the [Plugin Development Guide](../development/plugins.md) for detailed instr
 For help with plugins, please:
 
 1. Check the [FAQ](../faq.md)
-2. Search the [GitHub issues](https://github.com/yourorg/vboxmcp/issues)
+2. Search the [GitHub issues](https://github.com/yourorg/virtualization-mcp/issues)
 3. Ask in the [community forum](https://community.example.com)
-4. Open a [GitHub issue](https://github.com/yourorg/vboxmcp/issues/new)
+4. Open a [GitHub issue](https://github.com/yourorg/virtualization-mcp/issues/new)
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](../CONTRIBUTING.md) for details on how to contribute plugins to the vboxmcp ecosystem.
+We welcome contributions! Please see our [Contributing Guide](../CONTRIBUTING.md) for details on how to contribute plugins to the virtualization-mcp ecosystem.
+
+
+

@@ -197,3 +197,6 @@ class NetworkAnalyzerPlugin(BasePlugin):
         
         await super().shutdown()
         logger.info("Network Analyzer plugin stopped")
+
+
+

@@ -1,10 +1,10 @@
 # Development Environment Setup Workflow
 
-This guide walks through setting up a complete development environment using vboxmcp, including VM creation, network configuration, and shared folders.
+This guide walks through setting up a complete development environment using virtualization-mcp, including VM creation, network configuration, and shared folders.
 
 ## Prerequisites
 
-- vboxmcp installed and configured
+- virtualization-mcp installed and configured
 - VirtualBox 7.0+ installed
 - Sufficient disk space for VMs
 - Development ISO (e.g., Ubuntu Server)
@@ -12,7 +12,7 @@ This guide walks through setting up a complete development environment using vbo
 ## Step 1: Create a Base Development VM
 
 ```python
-from vboxmcp import VBoxManager
+from virtualization-mcp import VBoxManager
 
 # Initialize the manager
 manager = VBoxManager()
@@ -318,3 +318,6 @@ manager.start_vm(project_vm)
 - [Advanced Configuration](../advanced/performance_tuning.md)
 - [Security Best Practices](../advanced/security.md)
 - [Backup and Recovery](../examples/workflows/backup_recovery.md)
+
+
+

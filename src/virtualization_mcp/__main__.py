@@ -1,7 +1,7 @@
 """
-VBoxMCP Entry Point - Fixed for Claude Desktop Compatibility
+virtualization-mcp Entry Point - Fixed for Claude Desktop Compatibility
 
-This module serves as the entry point when running 'python -m vboxmcp'.
+This module serves as the entry point when running 'python -m virtualization-mcp'.
 It uses the all_tools_server implementation.
 """
 
@@ -31,12 +31,15 @@ if __name__ == "__main__":
             logger.debug("Debug mode enabled")
         
         # Run the server (main is now synchronous)
-        logger.info("Starting VBoxMCP server...")
+        logger.info("Starting virtualization-mcp server...")
         exit_code = main()
         sys.exit(exit_code)
     except KeyboardInterrupt:
-        logger.info("Shutting down VBoxMCP server...")
+        logger.info("Shutting down virtualization-mcp server...")
         sys.exit(0)
     except Exception as e:
-        logger.error(f"Error in VBoxMCP server: {e}", exc_info=True)
+        logger.error(f"Error in virtualization-mcp server: {e}", exc_info=True)
         sys.exit(1)
+
+
+

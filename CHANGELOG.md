@@ -163,15 +163,15 @@ This is the first stable release of VirtualBox MCP Server, providing comprehensi
 #### Option 1: From PyPI (Recommended)
 
 ```bash
-pip install vboxmcp
+pip install virtualization-mcp
 ```
 
 #### Option 2: From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/sandraschi/vboxmcp.git
-cd vboxmcp
+git clone https://github.com/sandraschi/virtualization-mcp.git
+cd virtualization-mcp
 
 # Install in development mode
 pip install -e .
@@ -179,7 +179,7 @@ pip install -e .
 
 #### Option 3: DXT Package (For Claude Desktop)
 
-1. Download the latest `vboxmcp.dxt` package from the [releases page](https://github.com/sandraschi/vboxmcp/releases)
+1. Download the latest `virtualization-mcp.dxt` package from the [releases page](https://github.com/sandraschi/virtualization-mcp/releases)
 2. Drag and drop the file into your Claude Desktop window
 
 ### 🚀 Quick Start
@@ -187,7 +187,7 @@ pip install -e .
 1. Start the MCP server:
 
    ```bash
-   python -m vboxmcp.minimal_server
+   python -m virtualization-mcp.minimal_server
    ```
 
 2. In Claude Desktop, use MCP tools like:
@@ -200,7 +200,7 @@ pip install -e .
 
 ### 📚 Documentation
 
-For detailed documentation, please visit our [GitHub Wiki](https://github.com/sandraschi/vboxmcp/wiki).
+For detailed documentation, please visit our [GitHub Wiki](https://github.com/sandraschi/virtualization-mcp/wiki).
 
 ### 🤝 Contributing
 
@@ -226,7 +226,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 </details>
 
 ```bash
-dxt install vboxmcp.dxt
+dxt install virtualization-mcp.dxt
 ```
 
 #### Prerequisites
@@ -236,7 +236,7 @@ dxt install vboxmcp.dxt
 - Python 3.8+ (included with Claude Desktop)
 
 ### 📚 Documentation
-Full documentation is available in the [GitHub Wiki](https://github.com/sandraschi/vboxmcp/wiki)
+Full documentation is available in the [GitHub Wiki](https://github.com/sandraschi/virtualization-mcp/wiki)
 
 ## [0.9.0] - 2025-07-15
 
@@ -245,3 +245,6 @@ Full documentation is available in the [GitHub Wiki](https://github.com/sandrasc
 - Basic VM management
 - Snapshot support
 - Network configuration
+
+
+

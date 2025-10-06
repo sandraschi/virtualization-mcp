@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Minimal VBoxMCP Server Implementation
+Minimal virtualization-mcp Server Implementation
 
-A FastMCP 2.11+ compatible implementation of a VBoxMCP server with stdio transport.
+A FastMCP 2.11+ compatible implementation of a virtualization-mcp server with stdio transport.
 
 This module provides a minimal but functional MCP server for managing VirtualBox VMs.
 It follows the FastMCP 2.11+ patterns and best practices.
@@ -23,13 +23,13 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     stream=sys.stderr
 )
-logger = logging.getLogger("vboxmcp")
+logger = logging.getLogger("virtualization-mcp")
 
 def create_mcp_instance() -> FastMCP:
     """Create and configure the MCP instance."""
     # Initialize FastMCP with server metadata
     mcp = FastMCP(
-        name="vboxmcp",
+        name="virtualization-mcp",
         version="2.11.0"  # Should match the installed FastMCP version
     )
     
@@ -189,7 +189,7 @@ async def register_tools() -> None:
         )
         async def hello(name: str = "World") -> Dict[str, str]:
             """Say hello to the specified name."""
-            return {"message": f"Hello, {name}! This is the VBoxMCP server."}
+            return {"message": f"Hello, {name}! This is the virtualization-mcp server."}
             
         logger.info("Added default 'hello' tool for testing")
 
@@ -202,7 +202,7 @@ async def run_server() -> None:
             signal.signal(signal.SIGINT, handle_shutdown)
             signal.signal(signal.SIGTERM, handle_shutdown)
         
-        logger.info("Starting VBoxMCP server v%s", "2.10.1")
+        logger.info("Starting virtualization-mcp server v%s", "2.10.1")
         logger.debug("Debug mode: %s", "enabled" if mcp.settings.debug else "disabled")
         
         # Register tools
@@ -240,3 +240,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+

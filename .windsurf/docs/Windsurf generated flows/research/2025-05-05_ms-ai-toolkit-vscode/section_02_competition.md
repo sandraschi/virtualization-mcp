@@ -15,3 +15,6 @@
 - **Model fine-tuning** and local model support (ONNX, Ollama).
 - **Multi-provider catalog** (OpenAI, Anthropic, GitHub, etc.).
 - **Native integration** with Windows AI stack andirectML.
+
+
+

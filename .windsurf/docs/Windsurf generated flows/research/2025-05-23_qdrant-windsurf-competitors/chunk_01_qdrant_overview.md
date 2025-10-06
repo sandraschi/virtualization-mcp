@@ -36,3 +36,6 @@ Qdrant (read: quadrant) is a high-performance, open-source vector database and v
 *   **AI Agent Memory:** Serving as a long-term, semantic memory for AI agents, enabling them to recall past interactions and learned information.
 *   **Duplicate Detection:** Finding similar items in a dataset (e.g., duplicate images, similar documents).
 *   **Image/Audio/Video Search:** Searching for multimedia content based on visual or auditory similarity.
+
+
+

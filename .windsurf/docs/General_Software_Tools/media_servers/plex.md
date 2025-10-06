@@ -1,4 +1,4 @@
-﻿# Plex: Ultimate Media Server Solution
+# Plex: Ultimate Media Server Solution
 
 ## Overview
 Plex is a powerful media server platform that organizes and streams your personal media collection to all your devices. It automatically fetches rich metadata, artwork, and related contento create a beautiful, Netflix-likexperience for your personal media library.
@@ -183,3 +183,6 @@ dockerun -d \
 - [Official Documentation](https://support.plex.tv/)
 - [Plex Forums](https://forums.plex.tv/)
 - [Plex Subreddit](https://www.reddit.com/r/PleX/)
+
+
+

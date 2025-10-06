@@ -1,4 +1,4 @@
-﻿# Researchunk 02: Qdrant's Role in Windsurf AI and MCP
+# Researchunk 02: Qdrant's Role in Windsurf AI and MCP
 
 Date: 2025-05-23
 
@@ -39,3 +39,6 @@ Windsurf provides its own set of higher-level memory tools (e.g., `mcp3_create_e
 *   The issues encountered with `mcp3_read_graph` (being a known bug) and `mcp3_search_nodes` (failing to find memories) might stem from this abstraction layer or its interaction withe Qdrant backend, rather than Qdrant itself, especially if Qdrant is functioning correctly for other purposes or if the `mcp-server-qdrant` works as expected independently.
 
 In summary, Qdrant is foundational to Windsurf'semantic memory, and an official MCP server exists to bridge Qdrant with MCP-compliant agents. Windsurf likely leverages this or similar mechanisms for its integrated memory features.
+
+
+

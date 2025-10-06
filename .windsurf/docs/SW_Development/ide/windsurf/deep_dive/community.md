@@ -46,3 +46,6 @@ For more informal, real-time conversation, the official community chat server (e
 ### 5. The Windsurf Blog
 
 The official Windsurf blog is the best source for major announcements, deep dives into new features, and thought leadership on the future of AIn software development. The blog often features articles written by thengineers and researchers who are building the technology, providing unique insights into the product's vision andirection.
+
+
+

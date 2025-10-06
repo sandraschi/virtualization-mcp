@@ -22,7 +22,7 @@ BASE_OPENAPI_SPEC = {
         "version": "1.0.0",
         "contact": {
             "name": "VirtualBox MCP Support",
-            "url": "https://github.com/yourusername/vboxmcp"
+            "url": "https://github.com/yourusername/virtualization-mcp"
         },
         "license": {
             "name": "MIT",
@@ -694,3 +694,6 @@ def register_documentation_routes(mcp: FastMCP) -> None:
             "status": "success",
             "data": server_info
         }
+
+
+

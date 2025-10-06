@@ -461,3 +461,6 @@ tesseract image.png output -l eng
 ## License
 
 Tesseract.js is open source and licensed under the Apache 2.0 License. See the [LICENSE](https://github.com/naptha/tesseract.js/blob/master/LICENSE) file for more information.
+
+
+

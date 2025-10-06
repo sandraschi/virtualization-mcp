@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Async wrapper for the existing vboxmcp server.
+Async wrapper for the existing virtualization-mcp server.
 
 This module provides an async-compatible interface to the existing server implementation,
 allowing it to work with FastMCP 2.10's stdio transport without major refactoring.
@@ -21,11 +21,11 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('vboxmcp_async.log'),
+        logging.FileHandler('virtualization-mcp_async.log'),
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger("vboxmcp_async")
+logger = logging.getLogger("virtualization-mcp_async")
 
 # Type variables
 T = TypeVar('T')
@@ -120,11 +120,11 @@ async_enable_hyperv_integration = wrapper.wrap(enable_hyperv_integration)
 async_create_hyperv_export = wrapper.wrap(create_hyperv_export)
 
 async def main() -> None:
-    """Main async entry point for the vboxmcp server."""
+    """Main async entry point for the virtualization-mcp server."""
     try:
         # Create FastMCP instance with stdio transport
         mcp = FastMCP(
-            name="vboxmcp",
+            name="virtualization-mcp",
             version="1.0.0",
             transport='stdio',
             debug=True
@@ -142,20 +142,23 @@ async def main() -> None:
         mcp.tool()(async_create_hyperv_export)
         # Register all other wrapped functions...
         
-        logger.info("vboxmcp async wrapper started with stdio transport")
+        logger.info("virtualization-mcp async wrapper started with stdio transport")
         
         # Run the MCP server
         await mcp.run()
         
     except Exception as e:
-        logger.critical("Fatal error in vboxmcp async wrapper: %s", str(e), exc_info=True)
+        logger.critical("Fatal error in virtualization-mcp async wrapper: %s", str(e), exc_info=True)
         raise
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("Shutting down vboxmcp async wrapper")
+        logger.info("Shutting down virtualization-mcp async wrapper")
     except Exception as e:
         logger.critical("Unhandled exception: %s", str(e), exc_info=True)
         sys.exit(1)
+
+
+

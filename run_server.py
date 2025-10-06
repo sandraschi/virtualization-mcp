@@ -1,5 +1,5 @@
 """
-Run the VBoxMCP server with enhanced error handling and logging.
+Run the virtualization-mcp server with enhanced error handling and logging.
 """
 
 import asyncio
@@ -24,7 +24,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 async def run_server():
-    """Run the VBoxMCP server."""
+    """Run the virtualization-mcp server."""
     try:
         from virtualization_mcp.all_tools_server import main
         logger.info("Successfully imported all_tools_server")
@@ -34,16 +34,19 @@ async def run_server():
         logger.error("Please ensure all dependencies are installed and the module is in the Python path.")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Error running VBoxMCP server: {e}", exc_info=True)
+        logger.error(f"Error running virtualization-mcp server: {e}", exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":
     try:
-        logger.info("Starting VBoxMCP server...")
+        logger.info("Starting virtualization-mcp server...")
         asyncio.run(run_server())
     except KeyboardInterrupt:
-        logger.info("Shutting down VBoxMCP server...")
+        logger.info("Shutting down virtualization-mcp server...")
         sys.exit(0)
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
         sys.exit(1)
+
+
+

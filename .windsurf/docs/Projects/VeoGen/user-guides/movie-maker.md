@@ -443,3 +443,6 @@ A: Make sure all scenes use the same style setting. Check that scene description
 Ready to create your first movie? Start with a simple concept and watch the AI transform it into a complete cinematic experience!
 
 [Back to VeoGen Overview](../VeoGen.md) | [API Documentation](../api/README.md) | [Technical Details](../technical/)
+
+
+

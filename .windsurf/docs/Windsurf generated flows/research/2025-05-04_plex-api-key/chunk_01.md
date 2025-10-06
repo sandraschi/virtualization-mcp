@@ -144,3 +144,6 @@ If you're having trouble obtaining your Plex token:
 2. Try logging out and logging back in
 3. Check if your Plex server is running and accessible
 4. Ensure you have the latest version of Plex Media Server installed
+
+
+

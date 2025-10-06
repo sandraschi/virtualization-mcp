@@ -1,5 +1,5 @@
-# VBoxMCP MCPB Package Build Script
-# Builds and packages the VBoxMCP extension for Claude Desktop
+# virtualization-mcp MCPB Package Build Script
+# Builds and packages the virtualization-mcp extension for Claude Desktop
 
 param(
     [switch]$Help,
@@ -10,7 +10,7 @@ param(
 # Show help if requested
 if ($Help) {
     Write-Host @"
-VBoxMCP MCPB Package Build Script
+virtualization-mcp MCPB Package Build Script
 
 USAGE:
     .\scripts\build-mcpb-package.ps1 [OPTIONS]
@@ -26,7 +26,7 @@ EXAMPLES:
     .\scripts\build-mcpb-package.ps1 -OutputDir "C:\builds"  # Custom output directory
 
 DESCRIPTION:
-    This script builds a complete MCPB package for the VBoxMCP extension.
+    This script builds a complete MCPB package for the virtualization-mcp extension.
     It validates the manifest, builds the package, and optionally signs it.
     
     The resulting .mcpb file can be installed in Claude Desktop by dragging
@@ -47,7 +47,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptDir
 
-Write-Host "🚀 VBoxMCP MCPB Package Builder" -ForegroundColor Cyan
+Write-Host "🚀 virtualization-mcp MCPB Package Builder" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -157,3 +157,6 @@ Write-Host "   - VirtualBox User Home: %USERPROFILE%\\VirtualBox VMs" -Foregroun
 Write-Host "   - Debug Mode: false (recommended)" -ForegroundColor White
 Write-Host ""
 Write-Host "📚 Documentation: https://github.com/sandraschi/virtualization-mcp" -ForegroundColor Cyan
+
+
+

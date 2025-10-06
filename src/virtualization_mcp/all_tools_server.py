@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-VBoxMCP - Main MCP Server Implementation
+virtualization-mcp - Main MCP Server Implementation
 
-This is the main entry point for the VBoxMCP server, which provides
+This is the main entry point for the virtualization-mcp server, which provides
 a unified interface for managing VirtualBox VMs through MCP.
 """
 
@@ -10,9 +10,9 @@ import sys
 import os
 
 # Prevent multiple imports
-if 'VBOXMCP_IMPORTED' not in os.environ:
-    os.environ['VBOXMCP_IMPORTED'] = '1'
-    print("HELLO WORLD FROM VBOXMCP SERVER!", file=sys.stderr)
+if 'virtualization-mcp_IMPORTED' not in os.environ:
+    os.environ['virtualization-mcp_IMPORTED'] = '1'
+    print("HELLO WORLD FROM virtualization-mcp SERVER!", file=sys.stderr)
 
 import asyncio
 import logging
@@ -166,9 +166,9 @@ async def register_all_tools(mcp: FastMCP) -> None:
     from virtualization_mcp.tools.register_tools import register_all_tools as register_vbox_tools
     
     try:
-        # Register all VBoxMCP tools
+        # Register all virtualization-mcp tools
         register_vbox_tools(mcp)
-        logger.info("VBoxMCP tools registered successfully")
+        logger.info("virtualization-mcp tools registered successfully")
         
         # Initialize plugins if available
         if sys.platform == 'win32' and HYPERV_AVAILABLE:
@@ -325,3 +325,6 @@ async def main_async():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+

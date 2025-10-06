@@ -39,3 +39,6 @@ YuMi (You and Me) is a dual-arm cobot designed for small parts assembly and insp
 
 ## Impact and Future Direction
 ABB has been a driving force industrial automation for decades. The company is heavily invested in developing flexible and intelligent automation solutions for the 'factory of the future,' with a strong focus on AI-powered robotics, mobile robotics (through its acquisition of ASTI Mobile Robotics), and simplifying the programming andeployment of robots for small and medium-sized enterprises (SMEs). Their strategy emphasizesoftware, digital services, and collaborative automation to meethe growing demand for customized products and resilient supply chains.
+
+
+

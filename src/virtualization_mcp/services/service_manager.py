@@ -1,5 +1,5 @@
 """
-Service Manager for VBoxMCP
+Service Manager for virtualization-mcp
 
 Handles initialization and management of all services and their dependencies.
 """
@@ -94,3 +94,6 @@ def get_service_manager() -> ServiceManager:
     return service_manager
 
 __all__ = ['ServiceManager', 'get_service_manager', 'service_manager']
+
+
+

@@ -1,6 +1,6 @@
 ---
 name: "🚀 Feature Request"
-description: "Suggest an enhancement for vboxmcp"
+description: "Suggest an enhancement for virtualization-mcp"
 labels: ["enhancement"]
 ---
 
@@ -23,3 +23,6 @@ labels: ["enhancement"]
 
 ### Implementation Notes
 <!-- Any technical details, considerations, or implementation ideas. -->
+
+
+

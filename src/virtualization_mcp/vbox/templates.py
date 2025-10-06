@@ -381,3 +381,6 @@ class TemplateManager:
                 score += 2.0
         
         return score
+
+
+

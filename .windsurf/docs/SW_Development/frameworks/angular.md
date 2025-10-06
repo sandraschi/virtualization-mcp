@@ -57,3 +57,6 @@ Angular makes heavy use of RxJS, a library foreactive programming using Observab
 - **Scalability**: Designed with scalability in mind, making it a strong choice for complex applications.
 - **Cross-Platform**: Can be used to build web applications, native mobile apps (with NativeScript), andesktop applications (with Electron).
 - **Strong Corporate Backing**: Developed and maintained by Google, ensuring long-term support and a rich ecosystem.
+
+
+

@@ -1,4 +1,4 @@
-﻿# The Far Future of Mind: From Neutron Stars to the Singularity and Beyond
+# The Far Future of Mind: From Neutron Stars to the Singularity and Beyond
 
 ## Introduction: The Cosmic Scale of Mind
 
@@ -139,3 +139,6 @@ As we contemplate the far future of mind, we stand at a unique moment in cosmic 
 - Bostrom, N. (2009). The Future of Humanity. In *Newaves in Philosophy of Technology* (pp. 186-215). Palgrave Macmillan.
 - Chalmers, D. J. (2010). The Singularity: A Philosophical Analysis. *Journal of Consciousnesstudies, 17*(9-10), 7-65.
 - Lloyd, S. (2000). Ultimate physicalimits to computation. *Nature, 406*(6799), 1047-1054.
+
+
+

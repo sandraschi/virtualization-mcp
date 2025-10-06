@@ -1012,3 +1012,6 @@ class VMDeviceMixin:
         except Exception as e:
             logger.error(f"Failed to list devices for VM {vm_name}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
+
+
+

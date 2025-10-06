@@ -44,7 +44,7 @@ TEST_TEMPLATE = "ubuntu-server"
 @pytest.fixture
 def mock_vbox_manager():
     """Create a mock VBoxManager for testing."""
-    with patch('vboxmcp.vbox.manager.VBoxManager') as mock:
+    with patch('virtualization-mcp.vbox.manager.VBoxManager') as mock:
         # Configure the mock
         mock.return_value.get_host_info.return_value = {
             'Host processor': 'Test CPU',
@@ -60,7 +60,7 @@ def mock_vbox_manager():
 @pytest.fixture
 def mock_template_manager():
     """Create a mock TemplateManager for testing."""
-    with patch('vboxmcp.services.template_manager.TemplateManager') as mock:
+    with patch('virtualization-mcp.services.template_manager.TemplateManager') as mock:
         # Configure the mock
         mock.return_value.list_templates.return_value = [
             {'name': 'ubuntu-server', 'os_type': 'Ubuntu_64'},
@@ -157,8 +157,8 @@ class TestMainFunction:
     """Tests for the main function."""
     
     @patch('fastmcp.FastMCP')
-    @patch('vboxmcp.services.template_manager.TemplateManager')
-    @patch('vboxmcp.vbox.manager.VBoxManager')
+    @patch('virtualization-mcp.services.template_manager.TemplateManager')
+    @patch('virtualization-mcp.vbox.manager.VBoxManager')
     def test_main_function(self, mock_vbox, mock_template, mock_mcp, tmp_path):
         """Test the main function with a mock environment."""
         # This test is disabled because the main() function doesn't directly instantiate VBoxManager or TemplateManager
@@ -167,3 +167,6 @@ class TestMainFunction:
 # Run the tests
 if __name__ == "__main__":
     pytest.main(["-v", "test_server.py"])
+
+
+

@@ -241,3 +241,6 @@ def is_vm_resetting(vm_name: str) -> bool:
     # This is a simplified implementation
     # In a real implementation, you might track reset state
     return False
+
+
+

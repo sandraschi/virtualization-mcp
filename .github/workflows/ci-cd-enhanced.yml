@@ -15,8 +15,8 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/vboxmcp:${{ github.sha }}
-  DOCKER_LATEST: ghcr.io/${{ github.repository }}/vboxmcp:latest
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/virtualization-mcp:${{ github.sha }}
+  DOCKER_LATEST: ghcr.io/${{ github.repository }}/virtualization-mcp:latest
 
 jobs:
   test:
@@ -54,11 +54,11 @@ jobs:
     - name: Verify test setup
       run: |
         python -c "import pytest; print('pytest version:', pytest.__version__)"
-        python -c "import vboxmcp; print('vboxmcp imported successfully')"
+        python -c "import virtualization-mcp; print('virtualization-mcp imported successfully')"
     
     - name: Run tests
       run: |
-        python -m pytest tests/ -v --cov=vboxmcp --cov-report=xml
+        python -m pytest tests/ -v --cov=virtualization-mcp --cov-report=xml
     
     - name: Upload coverage to Codecov
       if: github.event_name == 'push' && matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
@@ -187,3 +187,6 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./public
         keep_files: true
+
+
+
