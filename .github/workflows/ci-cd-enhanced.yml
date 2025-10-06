@@ -111,7 +111,7 @@ jobs:
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
     
     - name: Generate changelog
-      uses: mikepenz/release-changelog-builder-action@v4
+      uses: mikepenz/release-changelog-builder-action@v5
       id: changelog
       with:
         configuration: |
