@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+"""
+Minimal VBoxMCP Server Implementation
+
+A FastMCP 2.11+ compatible implementation of a VBoxMCP server with stdio transport.
+
+This module provides a minimal but functional MCP server for managing VirtualBox VMs.
+It follows the FastMCP 2.11+ patterns and best practices.
+"""
+
+import asyncio
+import logging
+import os
+import signal
+import sys
+from typing import Any, Dict, List, Optional, Callable, Awaitable
+
+from fastmcp import FastMCP
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stderr
+)
+logger = logging.getLogger("vboxmcp")
+
+def create_mcp_instance() -> FastMCP:
+    """Create and configure the MCP instance."""
+    # Initialize FastMCP with server metadata
+    mcp = FastMCP(
+        name="vboxmcp",
+        version="2.11.0"  # Should match the installed FastMCP version
+    )
+    
+    # Configure debug mode from environment variable
+    debug = os.environ.get("DEBUG", "").lower() in ("1", "true", "yes", "y")
+    
+    # Set up logging level based on debug mode
+    log_level = logging.DEBUG if debug else logging.INFO
+    logging.getLogger().setLevel(log_level)
+    
+    return mcp
+
+# Global MCP instance
+mcp = create_mcp_instance()
+
+# Tool registry to store tool functions
+tool_registry: Dict[str, Callable[..., Awaitable[Any]]] = {}
+
+def register_tool(name: str, description: str = "") -> Callable:
+    """Decorator to register a tool function with the MCP server.
+    
+    Note: The decorated function must use explicit parameters (no *args or **kwargs)
+    as FastMCP doesn't support them in tool functions.
+    """
+    def decorator(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
+        # Store in our registry
+        tool_registry[name] = func
+        
+        # Get the function's signature to extract parameter names
+        import inspect
+        sig = inspect.signature(func)
+        param_names = list(sig.parameters.keys())
+        
+        # Create a wrapper that logs when the tool is called
+        # We need to create a wrapper with explicit parameters
+        # that match the original function's parameters
+        wrapper_code = f"""
+async def {name}_wrapper({', '.join(param_names)}):
+    logger.debug(f"Tool '{name}' called with {', '.join(f'{p}={{}}' for p in param_names)}".format({', '.join(param_names)}))
+    try:
+        result = await func({', '.join(param_names)})
+        logger.debug(f"Tool '{name}' completed successfully")
+        return result
+    except Exception as e:
+        logger.error(f"Error in tool '{name}': {str(e)}", exc_info=True)
+        raise
+"""
+        # Execute the wrapper code in a local namespace
+        local_vars = {'func': func, 'logger': logger}
+        exec(wrapper_code, globals(), local_vars)
+        wrapper = local_vars[f"{name}_wrapper"]
+        
+        # Copy the original function's docstring and signature to the wrapper
+        wrapper.__doc__ = func.__doc__
+        wrapper.__signature__ = sig
+        
+        # Register with FastMCP
+        mcp.tool(name=name, description=description)(wrapper)
+        
+        return wrapper
+    return decorator
+
+def get_tool(name: str) -> Callable[..., Awaitable[Any]]:
+    """Get a registered tool function by name."""
+    if name not in tool_registry:
+        raise KeyError(f"No tool registered with name: {name}")
+    return tool_registry[name]
+
+def handle_shutdown(signum: int, frame: Any) -> None:
+    """Handle shutdown signals gracefully."""
+    logger.info("Shutdown signal received. Shutting down gracefully...")
+    sys.exit(0)
+
+
+async def run_vboxmanage(command_args: List[str]) -> str:
+    """
+    Run VBoxManage command and return output.
+    
+    Args:
+        command_args: List of command line arguments to pass to VBoxManage
+        
+    Returns:
+        str: Command output or error message
+    """
+    proc = await asyncio.create_subprocess_exec(
+        "VBoxManage", 
+        *command_args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    
+    stdout, stderr = await proc.communicate()
+    
+    if proc.returncode != 0:
+        error_msg = stderr.decode().strip()
+        logger.error(f"VBoxManage failed with code {proc.returncode}: {error_msg}")
+        raise RuntimeError(f"VBoxManage command failed: {error_msg}")
+    
+    return stdout.decode().strip()
+
+
+@register_tool(
+    name="list_vms",
+    description="List all VirtualBox virtual machines with their current state"
+)
+async def list_vms() -> Dict[str, Any]:
+    """
+    List all VirtualBox VMs with their current state.
+    
+    Returns:
+        Dict containing status and list of VMs with their states
+    """
+    try:
+        # Get basic VM info
+        output = await run_vboxmanage(["list", "vms"])
+        vms = []
+        
+        # Parse the output
+        for line in output.splitlines():
+            if '"' in line:
+                name = line.split('"')[1]
+                vms.append({
+                    "name": name,
+                    "state": "unknown"  # We'll update this in the next step
+                })
+        
+        return {
+            "status": "success",
+            "count": len(vms),
+            "vms": vms
+        }
+    except Exception as e:
+        logger.error(f"Failed to list VMs: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+async def register_tools() -> None:
+    """Register all tools with the MCP instance.
+    
+    This function ensures that all tools are properly registered in the tool_registry.
+    The @register_tool decorator adds tools to the registry when the module is imported.
+    """
+    # The @register_tool decorator should have already populated tool_registry
+    # This is just a placeholder for any additional registration logic
+    logger.info(f"Registered {len(tool_registry)} tools: {list(tool_registry.keys())}")
+    
+    # If no tools are registered, add a default tool
+    if not tool_registry:
+        logger.warning("No tools were registered. Adding a default 'hello' tool.")
+        
+        @register_tool(
+            name="hello",
+            description="A simple hello world tool for testing the MCP server"
+        )
+        async def hello(name: str = "World") -> Dict[str, str]:
+            """Say hello to the specified name."""
+            return {"message": f"Hello, {name}! This is the VBoxMCP server."}
+            
+        logger.info("Added default 'hello' tool for testing")
+
+
+async def run_server() -> None:
+    """Initialize and start the MCP server."""
+    try:
+        # Set up signal handlers for graceful shutdown
+        if os.name == 'posix':  # Unix-based systems
+            signal.signal(signal.SIGINT, handle_shutdown)
+            signal.signal(signal.SIGTERM, handle_shutdown)
+        
+        logger.info("Starting VBoxMCP server v%s", "2.10.1")
+        logger.debug("Debug mode: %s", "enabled" if mcp.settings.debug else "disabled")
+        
+        # Register tools
+        logger.info("Registering tools...")
+        await register_tools()
+        
+        # Log registered tools for debugging
+        if hasattr(mcp, '_tools') and mcp._tools:
+            logger.info("Registered %d tools: %s", 
+                       len(mcp._tools), list(mcp._tools.keys()))
+        else:
+            logger.warning("No tools were registered!")
+        
+        # Start the server with stdio transport
+        logger.info("Starting server with stdio transport...")
+        mcp.run(transport="stdio")
+        
+    except Exception as e:
+        logger.error("Fatal error: %s", str(e), exc_info=True)
+        sys.exit(1)
+    finally:
+        logger.info("Server shutdown complete")
+
+
+def main() -> None:
+    """Main entry point for the MCP server."""
+    try:
+        asyncio.run(run_server())
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    except Exception as e:
+        logger.error("Unhandled exception: %s", str(e), exc_info=True)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

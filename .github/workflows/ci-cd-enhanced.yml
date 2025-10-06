@@ -1,0 +1,189 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, 'release/*' ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: true
+        default: 'Manual workflow trigger'
+
+env:
+  PYTHON_VERSION: '3.11'
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/vboxmcp:${{ github.sha }}
+  DOCKER_LATEST: ghcr.io/${{ github.repository }}/vboxmcp:latest
+
+jobs:
+  test:
+    name: Test with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+        exclude:
+          # Skip Python 3.8 on Windows due to VirtualBox compatibility
+          - os: windows-latest
+            python-version: '3.8'
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        npm install -g @anthropic-ai/mcpb
+    
+    - name: Verify test setup
+      run: |
+        python -c "import pytest; print('pytest version:', pytest.__version__)"
+        python -c "import vboxmcp; print('vboxmcp imported successfully')"
+    
+    - name: Run tests
+      run: |
+        python -m pytest tests/ -v --cov=vboxmcp --cov-report=xml
+    
+    - name: Upload coverage to Codecov
+      if: github.event_name == 'push' && matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  build-docker:
+    name: Build and Push Docker Image
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ env.DOCKER_IMAGE }}
+          ${{ env.DOCKER_LATEST }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  release:
+    name: Create Release
+    needs: [test, build-docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+    
+    - name: Generate changelog
+      uses: mikepenz/release-changelog-builder-action@v4
+      id: changelog
+      with:
+        configuration: |
+          changeTemplate: "- $TITLE (#$NUMBER) @$AUTHOR"
+          categories:
+            - title: '🚀 Features'
+              labels:
+                - 'feature'
+                - 'enhancement'
+            - title: '🐛 Bug Fixes'
+              labels:
+                - 'bug'
+                - 'bugfix'
+                - 'hotfix'
+            - title: '🧰 Maintenance'
+              labels:
+                - 'chore'
+                - 'refactor'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract version from tag
+      if: startsWith(github.ref, 'refs/tags/v')
+      id: extract_version
+      run: |
+        echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ startsWith(github.ref, 'refs/tags/v') && format('v{0}', steps.extract_version.outputs.version) || format('v0.0.0-{0}', github.sha) }}
+        body: |
+          ## What's Changed
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ## Docker Image
+          ```
+          docker pull ${{ env.DOCKER_IMAGE }}
+          ```
+        draft: false
+        prerelease: false
+
+  deploy-docs:
+    name: Deploy Documentation
+    needs: [test]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mkdocs-material mkdocstrings-python
+    
+    - name: Build docs
+      run: mkdocs build --strict --site-dir public
+    
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public
+        keep_files: true

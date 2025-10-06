@@ -1,0 +1,208 @@
+# VirtualBox MCP Server Configuration
+# Austrian dev efficiency with comprehensive settings
+
+server:
+  name: "VirtualBox MCP Server"
+  description: "FastMCP 2.0 server for comprehensive VirtualBox management"
+  version: "1.0.0"
+  
+  # MCP Server settings
+  mcp:
+    instructions: |
+      Provides comprehensive VirtualBox management through natural language commands.
+      Supports VM lifecycle, snapshots, networking, and template-based deployment.
+      
+      Key capabilities:
+      - Create VMs from templates (ubuntu-dev, windows-test, etc.)
+      - Manage VM state (start, stop, pause, resume)
+      - Snapshot management for testing workflows
+      - Network configuration and port forwarding
+      - Template-based rapid deployment
+      
+      Austrian efficiency: Working solutions in hours, not days.
+    
+    dependencies:
+      - fastmcp>=2.10.0
+      - pyyaml>=6.0.1
+      - python-dotenv>=1.0.0
+
+# VirtualBox configuration
+virtualbox:
+  # VBoxManage executable path (auto-detected if in PATH)
+  vboxmanage_path: "VBoxManage"
+  
+  # Default VM settings
+  defaults:
+    memory_mb: 2048
+    disk_gb: 20
+    network_type: "NAT"
+    os_type: "Ubuntu_64"
+    
+  # Timeouts and limits
+  timeouts:
+    command_timeout: 60
+    vm_start_timeout: 120
+    vm_stop_timeout: 60
+    snapshot_timeout: 180
+    
+  # VM naming and validation
+  naming:
+    max_length: 50
+    invalid_chars: ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+    reserved_names: ['con', 'prn', 'aux', 'nul']
+
+# Templates configuration
+templates:
+  # Templates file path
+  file_path: "config/vm_templates.yaml"
+  
+  # Auto-reload templates when file changes
+  auto_reload: true
+  
+  # Default template for new VMs
+  default_template: "ubuntu-dev"
+  
+  # Template validation
+  validation:
+    min_memory_mb: 128
+    max_memory_mb: 32768
+    min_disk_gb: 1
+    max_disk_gb: 1000
+
+# Networking configuration
+networking:
+  # Default port forwarding rules
+  default_port_forwards:
+    ssh:
+      guest_port: 22
+      host_port: 2222
+      protocol: "tcp"
+      
+  # Port range for automatic forwarding
+  port_range:
+    start: 8000
+    end: 9000
+    
+  # Network types
+  supported_networks:
+    - "NAT"
+    - "Bridged" 
+    - "Internal"
+    - "Host-only"
+    - "NAT Network"
+
+# Snapshots configuration
+snapshots:
+  # Automatic snapshot naming
+  auto_naming:
+    prefix: "auto"
+    timestamp_format: "%Y%m%d_%H%M%S"
+    
+  # Snapshot retention
+  retention:
+    max_snapshots_per_vm: 10
+    auto_cleanup: true
+    
+  # Default snapshot descriptions
+  default_descriptions:
+    before_start: "Snapshot before VM start"
+    before_test: "Snapshot before test execution"
+    after_install: "Snapshot after software installation"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Log files
+  files:
+    main: "logs/vboxmcp.log"
+    errors: "logs/vboxmcp_errors.log"
+    
+  # Rotation
+  rotation:
+    max_size_mb: 10
+    backup_count: 5
+
+# Performance and optimization
+performance:
+  # Parallel operations
+  max_concurrent_operations: 3
+  
+  # Caching
+  cache:
+    vm_info_ttl: 30  # seconds
+    template_ttl: 300  # seconds
+    
+  # Resource monitoring
+  monitoring:
+    check_host_resources: true
+    min_free_memory_mb: 1024
+    min_free_disk_gb: 5
+
+# Security settings
+security:
+  # VM access validation
+  vm_access:
+    require_confirmation_for_delete: true
+    allow_force_operations: true
+    
+  # Network security
+  network:
+    allowed_port_range: [1024, 65535]
+    block_privileged_ports: true
+    
+  # File operations
+  file_operations:
+    max_file_size_mb: 100
+    allowed_extensions: [".iso", ".vdi", ".vmdk", ".vhd"]
+
+# Development and testing
+development:
+  # Debug mode
+  debug: false
+  
+  # Test VMs
+  test_vms:
+    prefix: "test_"
+    auto_cleanup: true
+    max_age_hours: 24
+    
+  # Mock mode for testing without VirtualBox
+  mock_mode: false
+
+# Austrian efficiency settings
+austrian_dev:
+  # Rapid deployment patterns
+  rapid_deployment:
+    prefer_linked_clones: true
+    enable_parallel_creation: true
+    skip_unnecessary_validations: false
+    
+  # Template optimization
+  template_optimization:
+    preload_common_templates: true
+    cache_template_validation: true
+    
+  # Error handling
+  error_handling:
+    provide_solution_suggestions: true
+    include_relevant_documentation: true
+    austrian_directness: true  # Clear, direct error messages
+
+# Integration settings
+integration:
+  # Claude Desktop integration
+  claude_desktop:
+    enable_rich_responses: true
+    include_vm_screenshots: false  # Requires additional setup
+    
+  # External tools
+  external_tools:
+    enable_ssh_operations: true
+    enable_file_transfer: true  # Requires Guest Additions
+    
+  # Monitoring integration
+  monitoring:
+    enable_metrics_export: true
+    prometheus_port: 9091

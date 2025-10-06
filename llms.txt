@@ -1,0 +1,132 @@
+# VBoxMCP LLM Integration Guide
+
+This document outlines the integration of Large Language Models (LLMs) with VBoxMCP for enhanced automation and natural language processing capabilities.
+
+## Supported LLM Providers
+
+### 1. OpenAI
+- **Model**: GPT-4, GPT-3.5-turbo
+- **Features**: Natural language understanding, code generation, documentation
+- **Configuration**:
+  ```yaml
+  llm:
+    provider: openai
+    api_key: ${OPENAI_API_KEY}
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 2000
+  ```
+
+### 2. Anthropic Claude
+- **Model**: Claude 3 Opus, Claude 3 Sonnet
+- **Features**: Long context, document analysis
+- **Configuration**:
+  ```yaml
+  llm:
+    provider: anthropic
+    api_key: ${ANTHROPIC_API_KEY}
+    model: claude-3-opus-20240229
+    max_tokens: 4000
+  ```
+
+### 3. Local Models (via Ollama)
+- **Supported Models**: Llama 3, Mistral, CodeLlama
+- **Features**: Local execution, privacy-focused
+- **Configuration**:
+  ```yaml
+  llm:
+    provider: ollama
+    model: llama3:8b
+    base_url: http://localhost:11434
+  ```
+
+## Integration Points
+
+### 1. Code Generation
+- VM configuration templates
+- Automation scripts
+- API client code
+
+### 2. Documentation
+- Auto-generated API documentation
+- Example generation
+- Tutorial creation
+
+### 3. Error Analysis
+- Log analysis
+- Root cause identification
+- Solution suggestions
+
+## Example Usage
+
+### Using OpenAI for VM Creation
+```python
+from vboxmcp.llm import LLMClient
+from vboxmcp.vm import VMBuilder
+
+# Initialize LLM client
+llm = LLMClient(provider="openai")
+
+# Generate VM configuration
+prompt = """
+Create a VM configuration for a development environment with:
+- Ubuntu 22.04
+- 4 vCPUs
+- 8GB RAM
+- 100GB storage
+- Docker pre-installed
+"""
+
+config = llm.generate_config(prompt)
+
+# Create VM using generated config
+vm = VMBuilder().from_config(config).build()
+```
+
+## Best Practices
+
+1. **Security**
+   - Never hardcode API keys
+   - Use environment variables or secret management
+   - Validate LLM outputs before execution
+
+2. **Performance**
+   - Cache common responses
+   - Set appropriate timeouts
+   - Use streaming for long-running operations
+
+3. **Error Handling**
+   - Implement retry logic
+   - Handle rate limiting
+   - Provide fallback mechanisms
+
+## Rate Limiting and Quotas
+
+| Provider     | Requests/Minute | Tokens/Minute |
+|--------------|----------------|----------------|
+| OpenAI       | 3,500          | 90,000         |
+| Anthropic    | 1,000          | 100,000        |
+| Local (Ollama)| No limit       | Hardware-based  |
+
+## Troubleshooting
+
+### Common Issues
+1. **Authentication Failures**
+   - Verify API keys
+   - Check network connectivity
+   - Confirm service status
+
+2. **Rate Limiting**
+   - Implement exponential backoff
+   - Reduce request frequency
+   - Consider upgrading plan
+
+3. **Quality Issues**
+   - Adjust temperature
+   - Provide more context
+   - Use system prompts effectively
+
+## Version Information
+- Last Updated: 2025-08-25
+- VBoxMCP Version: 1.0.0
+- LLM Integration Version: 1.0.0

@@ -1,0 +1,182 @@
+"""
+Test script for the minimal VBoxMCP server.
+
+These tests verify the functionality of the minimal VBoxMCP server implementation
+using FastMCP 2.11.0 patterns and best practices.
+"""
+
+import os
+import sys
+import pytest
+import asyncio
+import logging
+from pathlib import Path
+from unittest.mock import patch, MagicMock, AsyncMock
+
+# Add the src directory to the path for imports
+src_path = str(Path(__file__).parent.parent / 'src')
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+# Configure test logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Test VBoxManage wrapper
+class TestVBoxManageWrapper:
+    """Test suite for the VBoxManage wrapper functionality."""
+    
+    @pytest.fixture(autouse=True)
+    def setup_teardown(self):
+        """Setup and teardown for each test."""
+        # Setup code if needed
+        yield
+        # Teardown: No need to manually close the loop as pytest-asyncio handles it
+        pass
+    
+    @pytest.mark.asyncio
+    async def test_run_vboxmanage_success(self):
+        """Test successful execution of VBoxManage command."""
+        from virtualization_mcp.minimal_server import run_vboxmanage
+        
+        # Test with a simple command that should work on all platforms
+        with patch('asyncio.create_subprocess_exec') as mock_subprocess:
+            # Mock successful subprocess execution
+            mock_process = AsyncMock()
+            mock_process.returncode = 0
+            mock_process.communicate = AsyncMock(return_value=(b'7.1.12r169651', b''))
+            mock_subprocess.return_value = mock_process
+            
+            result = await run_vboxmanage("--version")
+            assert isinstance(result, str), "Result should be a string"
+            assert result == "7.1.12r169651", "Should return the version string"
+    
+    @pytest.mark.asyncio
+    async def test_run_vboxmanage_failure(self):
+        """Test error handling in VBoxManage command execution."""
+        from virtualization_mcp.minimal_server import run_vboxmanage
+        
+        # Test with a command that should fail
+        with patch('asyncio.create_subprocess_exec') as mock_subprocess:
+            # Mock failed subprocess execution
+            mock_process = AsyncMock()
+            mock_process.returncode = 1
+            mock_process.communicate = AsyncMock(return_value=(b'', b'Command failed'))
+            mock_subprocess.return_value = mock_process
+            
+            with pytest.raises(RuntimeError, match="VBoxManage command failed"):
+                await run_vboxmanage("nonexistent-command")
+
+
+# Test list_vms tool
+class TestListVMsTool:
+    """Test suite for the list_vms tool functionality."""
+    
+    @pytest.fixture(autouse=True)
+    def setup_teardown(self):
+        """Setup and teardown for each test."""
+        # Setup code if needed
+        yield
+        # Teardown: No need to manually close the loop as pytest-asyncio handles it
+        pass
+    
+    @pytest.fixture
+    def mock_run_vboxmanage(self):
+        """Fixture to mock the run_vboxmanage function."""
+        with patch('vboxmcp.minimal_server.run_vboxmanage') as mock:
+            yield mock
+    
+    @pytest.mark.asyncio
+    async def test_list_vms_success(self, mock_run_vboxmanage):
+        """Test successful listing of VMs."""
+        from virtualization_mcp.minimal_server import get_tool
+        
+        # Mock VBoxManage output
+        mock_run_vboxmanage.return_value = '''
+        "test-vm-1" {12345678-1234-1234-1234-123456789abc}
+        "test-vm-2" {87654321-4321-4321-4321-210987654321}
+        '''
+        
+        # Get the registered tool function
+        list_vms = get_tool("list_vms")
+        
+        # Call the function
+        result = await list_vms()
+        
+        # Verify results
+        assert result["status"] == "success"
+        assert result["count"] == 2
+        assert len(result["vms"]) == 2
+        assert result["vms"][0]["name"] == "test-vm-1"
+        assert result["vms"][1]["name"] == "test-vm-2"
+    
+    @pytest.mark.asyncio
+    async def test_list_vms_empty(self, mock_run_vboxmanage):
+        """Test listing VMs when none exist."""
+        from virtualization_mcp.minimal_server import get_tool
+        
+        # Mock empty VBoxManage output
+        mock_run_vboxmanage.return_value = ""
+        
+        # Get the registered tool function
+        list_vms = get_tool("list_vms")
+        
+        # Call the function
+        result = await list_vms()
+        
+        # Verify results
+        assert result["status"] == "success"
+        assert result["count"] == 0
+        assert len(result["vms"]) == 0
+    
+    @pytest.mark.asyncio
+    async def test_list_vms_error(self, mock_run_vboxmanage):
+        """Test error handling in list_vms."""
+        from virtualization_mcp.minimal_server import get_tool
+        
+        # Simulate VBoxManage failure
+        mock_run_vboxmanage.side_effect = RuntimeError("VBoxManage command failed")
+        
+        # Get the registered tool function
+        list_vms = get_tool("list_vms")
+        
+        # Call the function
+        result = await list_vms()
+        
+        # Verify error handling
+        assert result["status"] == "error"
+        assert "message" in result
+        assert "VBoxManage command failed" in result["message"]
+
+
+# Test server initialization
+class TestServerInitialization:
+    """Test suite for server initialization and tool registration."""
+    
+    def test_mcp_instance_initialized(self):
+        """Test that the MCP instance is properly initialized."""
+        from virtualization_mcp.minimal_server import mcp
+        
+        assert mcp is not None, "MCP instance should be initialized"
+        assert mcp.name == "vboxmcp", "Incorrect MCP server name"
+    
+    def test_tools_registered(self):
+        """Test that all tools are properly registered."""
+        from virtualization_mcp.minimal_server import tool_registry, get_tool
+        
+        # Check that list_vms is registered in our registry
+        assert "list_vms" in tool_registry, "list_vms tool should be registered"
+        
+        # Get the registered function
+        list_vms = get_tool("list_vms")
+        assert callable(list_vms), "Registered tool should be callable"
+        
+        # Check the function has the expected attributes
+        assert hasattr(list_vms, "__name__"), "Tool function should have a name"
+        assert list_vms.__name__ == "list_vms", "Incorrect tool function name"
+
+
+if __name__ == "__main__":
+    # Run tests with increased verbosity and coverage reporting
+    import pytest
+    sys.exit(pytest.main(["-v", "--cov=vboxmcp", "--cov-report=term-missing", __file__]))

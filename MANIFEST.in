@@ -1,0 +1,18 @@
+# Include the README file
+include README.md
+include CHANGELOG.md
+include LICENSE
+
+# Include package data
+recursive-include src/virtualization_mcp/*.yaml
+recursive-include src/virtualization_mcp/*.json
+recursive-include src/virtualization_mcp/*.txt
+
+# Include documentation
+recursive-include docs *
+
+# Include tests
+recursive-include tests *
+
+# Include DXT manifest
+include dxt.yaml

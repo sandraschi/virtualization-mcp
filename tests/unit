@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""
+Test script for vboxmcp Claude Desktop integration.
+
+This script tests the vboxmcp MCP server functionality and its integration
+with Claude Desktop. It verifies that all tools are properly exposed and
+functioning as expected.
+"""
+
+import asyncio
+import json
+import logging
+import sys
+from typing import Dict, Any, List, Optional
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger('vboxmcp-test')
+
+# Import FastMCP
+try:
+    from fastmcp import FastMCP
+except ImportError:
+    logger.error("FastMCP not installed. Please install with: pip install fastmcp")
+    sys.exit(1)
+
+class VBoxMCPTester:
+    """Test harness for vboxmcp MCP server."""
+    
+    def __init__(self, debug: bool = False):
+        """Initialize the test harness.
+        
+        Args:
+            debug: If True, enable debug logging
+        """
+        self.debug = debug
+        self.mcp = FastMCP(
+            name="vboxmcp",
+            description="VirtualBox Management Control Protocol Server",
+            version="1.0.0",
+            command=sys.executable,
+            args=["-m", "vboxmcp.main", "--debug"] if debug else ["-m", "vboxmcp.main"]
+        )
+        
+    async def start(self) -> None:
+        """Start the MCP server and wait for it to be ready."""
+        logger.info("Starting vboxmcp MCP server...")
+        
+        try:
+            # Start the server
+            await self.mcp.start()
+            
+            # Wait for server to be ready
+            await self.mcp.wait_ready(timeout=30)
+            logger.info("vboxmcp server is ready")
+        except Exception as e:
+            logger.error(f"Failed to start vboxmcp server: {e}")
+            raise
+    
+    async def stop(self) -> None:
+        """Stop the MCP server."""
+        logger.info("Stopping vboxmcp MCP server...")
+        await self.mcp.stop()
+    
+    async def test_tool(self, tool_name: str, params: Dict[str, Any], 
+                       expected_status: str = "success") -> Dict[str, Any]:
+        """Test a single tool and verify the response.
+        
+        Args:
+            tool_name: Name of the tool to test
+            params: Parameters to pass to the tool
+            expected_status: Expected status in the response
+            
+        Returns:
+            The tool's response as a dictionary
+        """
+        logger.info(f"Testing tool: {tool_name} with params: {json.dumps(params, indent=2)}")
+        
+        try:
+            result = await self.mcp.call(tool_name, **params)
+            logger.info(f"Result: {json.dumps(result, indent=2)}")
+            
+            if result.get("status") != expected_status:
+                logger.error(f"Unexpected status. Expected {expected_status}, got {result.get('status')}")
+                if "error" in result:
+                    logger.error(f"Error: {result['error']}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error calling {tool_name}: {str(e)}")
+            raise
+    
+    async def run_tests(self) -> bool:
+        """Run all integration tests.
+        
+        Returns:
+            bool: True if all tests passed, False otherwise
+        """
+        tests_passed = 0
+        tests_failed = 0
+        
+        # Test cases
+        test_cases = [
+            {
+                "name": "list_vms",
+                "params": {},
+                "expected_status": "success"
+            },
+            {
+                "name": "list_templates",
+                "params": {},
+                "expected_status": "success"
+            },
+            # Add more test cases as needed
+        ]
+        
+        # Run tests
+        for test in test_cases:
+            try:
+                logger.info(f"\n=== Running test: {test['name']} ===")
+                await self.test_tool(
+                    tool_name=test["name"],
+                    params=test["params"],
+                    expected_status=test["expected_status"]
+                )
+                tests_passed += 1
+                logger.info(f"✅ Test passed: {test['name']}")
+            except Exception as e:
+                tests_failed += 1
+                logger.error(f"❌ Test failed: {test['name']} - {str(e)}")
+        
+        # Print summary
+        logger.info("\n=== Test Summary ===")
+        logger.info(f"Total tests: {tests_passed + tests_failed}")
+        logger.info(f"Passed: {tests_passed}")
+        logger.info(f"Failed: {tests_failed}")
+        
+        return tests_failed == 0
+
+async def main():
+    """Main entry point for the test script."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Test vboxmcp Claude Desktop integration")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    args = parser.parse_args()
+    
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+    
+    tester = VBoxMCPTester(debug=args.debug)
+    
+    try:
+        await tester.start()
+        success = await tester.run_tests()
+        return 0 if success else 1
+    except Exception as e:
+        logger.error(f"Test failed with error: {str(e)}")
+        return 1
+    finally:
+        await tester.stop()
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(main()))

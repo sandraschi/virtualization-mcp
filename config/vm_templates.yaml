@@ -1,0 +1,230 @@
+metadata:
+  version: "1.0"
+  description: "VirtualBox MCP Server VM Templates"
+  created_by: "VirtualBox MCP"
+  last_updated: "2025-07-21T00:00:00Z"
+
+templates:
+  ubuntu-dev:
+    os_type: "Ubuntu_64"
+    memory_mb: 4096
+    disk_gb: 25
+    network: "NAT"
+    description: "Ubuntu development environment with Docker"
+    post_install:
+      - docker
+      - git
+      - nodejs
+      - python3
+      - build-essential
+      - curl
+      - wget
+    recommended_snapshots:
+      - fresh-install
+      - dev-tools-ready
+    use_cases:
+      - development
+      - testing
+      - containerization
+
+  windows-test:
+    os_type: "Windows11_64"
+    memory_mb: 8192
+    disk_gb: 60
+    network: "NAT"
+    description: "Windows testing environment"
+    post_install:
+      - chocolatey
+      - visual-studio-code
+      - git
+      - firefox
+      - chrome
+    recommended_snapshots:
+      - clean-windows
+      - dev-ready
+    use_cases:
+      - windows-testing
+      - cross-platform
+      - gui-testing
+
+  minimal-linux:
+    os_type: "Ubuntu_64"
+    memory_mb: 1024
+    disk_gb: 10
+    network: "NAT"
+    description: "Minimal Linux for quick tests"
+    post_install:
+      - curl
+      - wget
+      - nano
+    use_cases:
+      - cli-testing
+      - service-validation
+      - quick-experiments
+      - lightweight-testing
+
+  database-server:
+    os_type: "Ubuntu_64"
+    memory_mb: 6144
+    disk_gb: 40
+    network: "NAT"
+    description: "Database server with PostgreSQL/MySQL"
+    post_install:
+      - postgresql
+      - mysql-server
+      - redis-server
+      - pgadmin4
+    port_forwards:
+      - guest: 5432
+        host: 5432
+        service: "PostgreSQL"
+      - guest: 3306
+        host: 3306
+        service: "MySQL"
+      - guest: 6379
+        host: 6379
+        service: "Redis"
+    use_cases:
+      - database-testing
+      - data-storage
+      - backend-services
+
+  web-server:
+    os_type: "Ubuntu_64"
+    memory_mb: 2048
+    disk_gb: 20
+    network: "NAT"
+    description: "Web server with Nginx and PHP"
+    post_install:
+      - nginx
+      - php8.1
+      - php8.1-fpm
+      - certbot
+      - composer
+    port_forwards:
+      - guest: 80
+        host: 8080
+        service: "HTTP"
+      - guest: 443
+        host: 8443
+        service: "HTTPS"
+    use_cases:
+      - web-development
+      - web-testing
+      - http-services
+
+  docker-host:
+    os_type: "Ubuntu_64"
+    memory_mb: 4096
+    disk_gb: 30
+    network: "NAT"
+    description: "Docker host for container testing"
+    post_install:
+      - docker
+      - docker-compose
+      - portainer
+      - ctop
+    port_forwards:
+      - guest: 2376
+        host: 2376
+        service: "Docker API"
+      - guest: 9000
+        host: 9000
+        service: "Portainer"
+    use_cases:
+      - container-testing
+      - microservices
+      - orchestration
+
+  security-test:
+    os_type: "Ubuntu_64"
+    memory_mb: 2048
+    disk_gb: 15
+    network: "NAT"
+    description: "Security testing environment"
+    post_install:
+      - nmap
+      - wireshark
+      - metasploit-framework
+      - john
+      - hashcat
+    use_cases:
+      - penetration-testing
+      - vulnerability-assessment
+      - network-analysis
+      - security-research
+
+  kubernetes-node:
+    os_type: "Ubuntu_64"
+    memory_mb: 6144
+    disk_gb: 35
+    network: "NAT"
+    description: "Kubernetes node for cluster testing"
+    post_install:
+      - docker
+      - kubectl
+      - kubeadm
+      - kubelet
+    port_forwards:
+      - guest: 6443
+        host: 6443
+        service: "Kubernetes API"
+      - guest: 10250
+        host: 10250
+        service: "Kubelet"
+    use_cases:
+      - kubernetes-testing
+      - cluster-development
+      - orchestration
+
+  monitoring-stack:
+    os_type: "Ubuntu_64"
+    memory_mb: 4096
+    disk_gb: 25
+    network: "NAT"
+    description: "Monitoring with Prometheus and Grafana"
+    post_install:
+      - prometheus
+      - grafana
+      - node-exporter
+      - alertmanager
+    port_forwards:
+      - guest: 9090
+        host: 9090
+        service: "Prometheus"
+      - guest: 3000
+        host: 3000
+        service: "Grafana"
+      - guest: 9100
+        host: 9100
+        service: "Node Exporter"
+    use_cases:
+      - monitoring
+      - metrics
+      - alerting
+      - observability
+
+  jenkins-ci:
+    os_type: "Ubuntu_64"
+    memory_mb: 3072
+    disk_gb: 30
+    network: "NAT"
+    description: "Jenkins CI/CD server"
+    post_install:
+      - jenkins
+      - docker
+      - git
+      - maven
+      - nodejs
+    port_forwards:
+      - guest: 8080
+        host: 8080
+        service: "Jenkins"
+      - guest: 50000
+        host: 50000
+        service: "Jenkins Agent"
+    use_cases:
+      - ci-cd
+      - build-automation
+      - deployment
+      - integration-testing

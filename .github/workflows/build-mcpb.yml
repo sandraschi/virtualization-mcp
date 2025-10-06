@@ -1,0 +1,91 @@
+name: Build and Release MCPB Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build-mcpb:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install MCPB CLI
+      run: npm install -g @anthropic-ai/mcpb
+      
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install "fastmcp>=2.12.2,<3.0.0"
+        pip install -e ".[dev]"
+        
+    - name: Create dist directory
+      run: mkdir -p dist
+        
+    - name: Validate manifest.json
+      run: mcpb validate mcpb/manifest.json
+      
+    - name: Build MCPB extension
+      run: |
+        mcpb pack mcpb/ dist/vboxmcp-v1.0.0.mcpb
+        
+    - name: Sign MCPB extension (optional)
+      if: ${{ secrets.MCPB_SIGNING_KEY }}
+      run: |
+        echo "${{ secrets.MCPB_SIGNING_KEY }}" > signing.key
+        mcpb sign --key signing.key dist/*.mcpb
+        rm signing.key
+        
+    - name: Upload MCPB artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mcpb-extension
+        path: dist/*.mcpb
+        retention-days: 30
+        
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/*.mcpb
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+        body: |
+          ## MCPB Extension Release
+          
+          Download the `.mcpb` file below and drag it to Claude Desktop for one-click installation.
+          
+          ### Installation
+          1. Download the `.mcpb` file from the assets below
+          2. Drag the file to Claude Desktop
+          3. Follow the configuration prompts
+          4. Restart Claude Desktop
+          
+          ### Dependencies
+          - FastMCP 2.12.2+ (bundled)
+          - Python 3.10+ (built into Claude Desktop)
+          
+          ### What's New
+          See the auto-generated release notes below.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

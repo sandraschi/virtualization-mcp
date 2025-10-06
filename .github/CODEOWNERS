@@ -1,0 +1,17 @@
+# Default owners for everything in the repo
+* @sandraschi
+
+# Core VM functionality
+/src/vboxmcp/server/core/ @sandraschi @vm-experts
+
+# Plugins
+/src/vboxmcp/server/plugins/ @sandraschi @plugin-maintainers
+
+# Documentation
+/docs/ @sandraschi @docs-team
+
+# CI/CD
+.github/workflows/ @sandraschi @devops-team
+
+# Security
+SECURITY.md @sandraschi @security-team

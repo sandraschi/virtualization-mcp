@@ -1,0 +1,29 @@
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-asyncio>=0.20.0
+pytest-mock>=3.10.0
+
+# Linting and code quality
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.0.0
+mypy>=1.0.0
+types-PyYAML>=6.0.0
+types-requests>=2.28.0
+
+# Build and packaging
+build>=0.10.0
+twine>=4.0.0
+setuptools>=65.0.0
+wheel>=0.38.0
+
+# Documentation
+mkdocs>=1.4.0
+mkdocs-material>=9.0.0
+mkdocstrings[python]>=0.20.0
+
+# Development tools
+pre-commit>=3.0.0
+ipython>=8.0.0
+codecov>=3.0.0

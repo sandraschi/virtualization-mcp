@@ -1,0 +1,39 @@
+{
+  "name": "virtualization-mcp",
+  "version": "1.0.0",
+  "description": "FastMCP 2.12+ compliant VirtualBox management server with full MCP client support",
+  "author": "Sandra Schi",
+  "license": "MIT",
+  "outputDir": "dist",
+  "mcp": {
+    "version": "2.12.2",
+    "server": {
+      "command": "python",
+      "args": ["-m", "virtualization_mcp"],
+      "transport": "stdio"
+    },
+    "capabilities": {
+      "tools": true,
+      "resources": true,
+      "prompts": true
+    }
+  },
+  "dependencies": {
+    "python": ">=3.10,<4.0"
+  },
+  "build": {
+    "include": [
+      "src/**/*",
+      "requirements.txt",
+      "README.md",
+      "LICENSE"
+    ],
+    "exclude": [
+      "tests/**/*",
+      "docs/**/*",
+      ".git/**/*",
+      "*.pyc",
+      "__pycache__/**/*"
+    ]
+  }
+}

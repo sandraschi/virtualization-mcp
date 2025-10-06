@@ -1,0 +1,76 @@
+site_name: VBoxMCP Documentation
+site_description: VirtualBox MCP Server Documentation
+site_url: https://sandraschi.github.io/virtualization-mcp
+repo_url: https://github.com/sandraschi/virtualization-mcp
+repo_name: sandraschi/virtualization-mcp
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - search.highlight
+    - search.share
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting_started/installation.md
+    - Configuration: getting_started/configuration.md
+    - First VM: getting_started/first_vm.md
+  - API Reference:
+    - Overview: api/overview.md
+    - Tools: api/reference.md
+    - OpenAPI: api/openapi.md
+  - Examples:
+    - Common Workflows: examples/workflows.md
+    - Sample Configurations: examples/configs.md
+  - Development:
+    - Contributing: development/contributing.md
+    - Development Guide: development/development.md
+  - Advanced:
+    - Security: advanced/security.md
+    - Performance: advanced/performance_tuning.md
+    - Plugins: advanced/plugins.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true

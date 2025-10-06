@@ -1,0 +1,109 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, master, 'feature/*' ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sunday
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint with flake8
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 flake8-docstrings flake8-bugbear flake8-import-order
+    
+    - name: Run flake8
+      run: |
+        flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/ tests/ --count --max-complexity=10 --max-line-length=120 --statistics
+
+  mypy:
+    name: Type checking with mypy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mypy types-requests types-python-dateutil types-pyyaml
+        pip install -e .
+    
+    - name: Run mypy
+      run: |
+        mypy --install-types --non-interactive
+        mypy src/ --strict --ignore-missing-imports --implicit-optional --disallow-untyped-defs --warn-return-any --warn-unused-ignores
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+    
+    - name: Run Bandit
+      run: |
+        bandit -r src/ -ll -x tests/ -f json -o bandit-results.json || true
+        echo "bandit_results=$(cat bandit-results.json | base64 -w 0)" >> $GITHUB_OUTPUT
+    
+    - name: Run Safety Check
+      run: |
+        safety check --full-report --json > safety-results.json || true
+        echo "safety_results=$(cat safety-results.json | base64 -w 0)" >> $GITHUB_OUTPUT
+    
+    - name: Upload Security Scan Results
+      if: always()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: security-scan-results.sarif
+
+  codeql-analysis:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: python
+        queries: security-extended,security-and-quality
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
