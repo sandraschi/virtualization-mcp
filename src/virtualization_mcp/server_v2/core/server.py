@@ -13,7 +13,7 @@ from ...config import ServerConfig
 
 logger = logging.getLogger(__name__)
 
-class virtualization-mcpServer:
+class VirtualizationMCPServer:
     """Main server class for virtualization-mcp."""
     
     def __init__(self, config: ServerConfig):

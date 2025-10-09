@@ -47,6 +47,12 @@ def register_all_tools(mcp: FastMCP) -> None:
     Args:
         mcp: The FastMCP instance to register tools with
     """
+    # Register portmanteau tools first (consolidated tools)
+    from virtualization_mcp.tools.portmanteau import register_all_portmanteau_tools
+    register_all_portmanteau_tools(mcp)
+    logger.info("Portmanteau tools registered successfully")
+    
+    # Register individual tools for backward compatibility
     # VM Tools
     mcp.tool(list_vms, name="list_vms", description="List all available VirtualBox VMs")
     mcp.tool(get_vm_info, name="get_vm_info", description="Get detailed information about a VM")
@@ -91,7 +97,7 @@ def register_all_tools(mcp: FastMCP) -> None:
     mcp.tool(list_backups, name="list_vm_backups", description="List all VM backups")
     mcp.tool(delete_backup, name="delete_vm_backup", description="Delete a VM backup")
     
-    logger.info("All virtualization-mcp tools registered successfully")
+    logger.info("All virtualization-mcp tools registered successfully (including portmanteau tools)")
 
 async def initialize_services():
     """Initialize services that need async initialization."""

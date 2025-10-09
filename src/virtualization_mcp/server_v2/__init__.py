@@ -11,7 +11,7 @@ Modules:
 """
 
 # Core exports
-from .core.server import virtualization-mcpServer
+from .core.server import VirtualizationMCPServer
 from .config import ServerConfig, load_config
 
 # Version information
@@ -22,7 +22,7 @@ def get_version() -> str:
     return __version__
 
 __all__ = [
-    'virtualization-mcpServer',
+    'VirtualizationMCPServer',
     'ServerConfig',
     'load_config',
     'get_version',

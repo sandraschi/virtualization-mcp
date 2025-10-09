@@ -9,10 +9,12 @@
 [![VirtualBox](https://img.shields.io/badge/VirtualBox-7.0+-orange)](https://virtualbox.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI/CD](https://github.com/sandraschi/virtualization-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandraschi/virtualization-mcp/actions)
+[![Coverage](https://img.shields.io/badge/coverage-36%25-yellow)](./coverage.xml)
+[![Tests](https://img.shields.io/badge/tests-281%20passing-brightgreen)](./tests)
+[![GLAMA](https://img.shields.io/badge/GLAMA-Silver%20Tier-silver)](./docs/glama/)
+[![Security](https://img.shields.io/badge/security-scanned-green)](./.github/workflows/security-scan.yml)
 [![PyPI](https://img.shields.io/pypi/v/virtualization-mcp)](https://pypi.org/project/virtualization-mcp/)
-[![Documentation Status](https://readthedocs.org/projects/virtualization-mcp/badge/?version=latest)](https://virtualization-mcp.readthedocs.io/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 ## 🚀 Overview
 

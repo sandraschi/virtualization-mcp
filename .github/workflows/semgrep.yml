@@ -1,0 +1,52 @@
+name: Semgrep Security Analysis
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main ]
+  schedule:
+    # Run Semgrep daily at 3 AM UTC
+    - cron: '0 3 * * *'
+
+jobs:
+  semgrep:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    
+    container:
+      image: returntocorp/semgrep
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Semgrep with custom rules
+      run: |
+        semgrep \
+          --config .semgrep.yml \
+          --config auto \
+          --json \
+          --output semgrep-results.json \
+          src/ || true
+    
+    - name: Run Semgrep with default rules
+      run: |
+        semgrep \
+          --config auto \
+          --verbose \
+          src/
+    
+    - name: Upload Semgrep Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: semgrep-results
+        path: semgrep-results.json
+    
+    - name: Semgrep SARIF Upload
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: semgrep-results.json
+      continue-on-error: true
+

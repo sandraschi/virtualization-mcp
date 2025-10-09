@@ -1,6 +1,6 @@
 # GitHub CI/CD Production Guide for MCP Servers
 
-A comprehensive guide to implementing production-ready GitHub CI/CD workflows and tooling for Model Context Protocol (MCP) server repositories, based on the Advanced Memory MCP implementation and GLAMA.ai standards.
+A comprehensive guide to implementing production-ready GitHub CI/CD workflows and tooling for Model Context Protocol (MCP) server repositories, based on the Virtualization MCP implementation and GLAMA.ai standards.
 
 ## Table of Contents
 
@@ -230,7 +230,7 @@ jobs:
         run: uv sync --dev
       - name: Run tests with coverage
         run: |
-          uv run pytest --cov=src/advanced_memory --cov-report=xml --cov-report=term-missing -v --maxfail=10 --tb=short --cov-fail-under=50
+          uv run pytest --cov=src/virtualization_mcp --cov-report=xml --cov-report=term-missing -v --maxfail=10 --tb=short --cov-fail-under=50
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v3
@@ -318,19 +318,19 @@ jobs:
         run: |
           if command -v mcpb >/dev/null 2>&1; then
             cd mcpb
-            mcpb pack . ../dist/advanced-memory-mcp.mcpb
+            mcpb pack . ../dist/virtualization-mcp.mcpb
             cd ..
           else
             echo "MCPB CLI not available, creating basic package"
             cd mcpb
-            zip -r ../dist/advanced-memory-mcp.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
+            zip -r ../dist/virtualization-mcp.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
             cd ..
           fi
       - name: Upload MCPB package
         uses: actions/upload-artifact@v4
         with:
           name: mcpb-package
-          path: dist/advanced-memory-mcp.mcpb
+          path: dist/virtualization-mcp.mcpb
 
   integration-test:
     name: Integration Tests
@@ -438,12 +438,12 @@ jobs:
         run: |
           if command -v mcpb >/dev/null 2>&1; then
             cd mcpb
-            mcpb pack . ../dist/advanced-memory-mcp.mcpb
+            mcpb pack . ../dist/virtualization-mcp.mcpb
             cd ..
           else
             echo "MCPB CLI not available, creating basic package"
             cd mcpb
-            zip -r ../dist/advanced-memory-mcp.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
+            zip -r ../dist/virtualization-mcp.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
             cd ..
           fi
       - name: Generate changelog
@@ -474,23 +474,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          release_name: Advanced Memory MCP ${{ steps.version.outputs.version }}
+          release_name: Virtualization MCP ${{ steps.version.outputs.version }}
           body: |
-            ## 🚀 What's New in Advanced Memory MCP ${{ steps.version.outputs.version }}
+            ## 🚀 What's New in Virtualization MCP ${{ steps.version.outputs.version }}
             
             ${{ steps.changelog.outputs.changelog }}
             
             ## 📦 Installation
             
             ### Claude Desktop Extension
-            1. Download `advanced-memory-mcp.mcpb` from the assets below
+            1. Download `virtualization-mcp.mcpb` from the assets below
             2. Open Claude Desktop
             3. Go to Settings > Extensions
             4. Drop the `.mcpb` file into the extensions page
             
             ### Python Package
             ```bash
-            pip install advanced-memory-mcp==${{ steps.version.outputs.version_number }}
+            pip install virtualization-mcp==${{ steps.version.outputs.version_number }}
             ```
           draft: false
           prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
@@ -500,8 +500,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/advanced-memory-mcp.mcpb
-          asset_name: advanced-memory-mcp.mcpb
+          asset_path: ./dist/virtualization-mcp.mcpb
+          asset_name: virtualization-mcp.mcpb
           asset_content_type: application/octet-stream
       - name: Upload Python Package
         uses: actions/upload-release-asset@v1
@@ -509,8 +509,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/advanced_memory_mcp-${{ steps.version.outputs.version_number }}-py3-none-any.whl
-          asset_name: advanced_memory_mcp-${{ steps.version.outputs.version_number }}-py3-none-any.whl
+          asset_path: ./dist/virtualization_mcp-${{ steps.version.outputs.version_number }}-py3-none-any.whl
+          asset_name: virtualization_mcp-${{ steps.version.outputs.version_number }}-py3-none-any.whl
           asset_content_type: application/zip
 
   publish-pypi:
@@ -660,8 +660,8 @@ jobs:
     - name: Test MCP server startup
       run: |
         uv run python -c "
-        from advanced_memory.mcp.mcp_instance import mcp
-        from advanced_memory.config import ConfigManager
+        from virtualization_mcp.mcp.mcp_instance import mcp
+        from virtualization_mcp.config import ConfigManager
         config = ConfigManager().config
         print('MCP server initialized successfully')
         print(f'Server name: {mcp.name}')
@@ -685,11 +685,11 @@ jobs:
     - name: Test installation
       run: |
         pip install dist/*.whl
-        python -c "import advanced_memory; print(f'Version: {advanced_memory.__version__}')"
+        python -c "import virtualization_mcp; print(f'Version: {virtualization_mcp.__version__}')"
     - name: Test CLI commands
       run: |
-        advanced-memory --help
-        advanced-memory --version
+        virtualization-mcp --help
+        virtualization-mcp --version
     - name: Create beta release notes
       run: |
         echo "# Beta Release Validation Report" > beta-report.md
@@ -742,7 +742,7 @@ jobs:
           uv sync --dev
       - name: Run tests
         run: |
-          uv run pytest --cov=src/advanced_memory -x
+          uv run pytest --cov=src/virtualization_mcp -x
       - name: Check for changes
         id: changes
         run: |
@@ -874,14 +874,14 @@ Comprehensive tool configuration for code quality:
 
 ```toml
 [project]
-name = "advanced-memory"
+name = "virtualization-mcp"
 version = "1.0.0b1"
-description = "Independent local-first knowledge management system combining Zettelkasten with knowledge graphs"
+description = "Professional VirtualBox management server with comprehensive VM operations, networking, storage, and security features"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0-or-later" }
 authors = [
-    { name = "Advanced Memory Community", email = "hello@advanced-memory.com" }
+    { name = "Sandra Schi", email = "sandra@sandraschi.dev" }
 ]
 
 [build-system]
@@ -1115,7 +1115,7 @@ updates:
 ```markdown
 ---
 name: Bug Report
-about: Create a report to help us improve Advanced Memory MCP
+about: Create a report to help us improve Virtualization MCP
 title: '[BUG] '
 labels: ['bug', 'needs-triage']
 assignees: ''
@@ -1144,7 +1144,7 @@ If applicable, add screenshots to help explain your problem.
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows 10, macOS 12.0, Ubuntu 20.04]
  - Claude Desktop Version: [e.g. 1.0.0]
- - Advanced Memory MCP Version: [e.g. 1.0.0]
+ - Virtualization MCP Version: [e.g. 1.0.0]
  - Python Version: [e.g. 3.12.0]
 
 ## 📋 Additional Context
@@ -1159,7 +1159,7 @@ If applicable, please include:
 ```markdown
 ---
 name: Feature Request
-about: Suggest an idea for Advanced Memory MCP
+about: Suggest an idea for Virtualization MCP
 title: '[FEATURE] '
 labels: ['enhancement', 'needs-triage']
 assignees: ''
@@ -1192,11 +1192,11 @@ If you have ideas about how this could be implemented, please share them here.
 ```yaml
 blank_issues_enabled: false
 contact_links:
-  - name: Advanced Memory MCP Community Discussions
-    url: https://github.com/sandraschi/advanced-memory-mcp/discussions
+  - name: Virtualization MCP Community Discussions
+    url: https://github.com/sandraschi/virtualization-mcp/discussions
     about: Ask questions and discuss ideas with the community
   - name: Documentation
-    url: https://github.com/sandraschi/advanced-memory-mcp/blob/main/README.md
+    url: https://github.com/sandraschi/virtualization-mcp/blob/main/README.md
     about: Check our comprehensive documentation and guides
 ```
 
@@ -1496,7 +1496,7 @@ This comprehensive GitHub CI/CD setup provides production-ready workflows for MC
 - **Beta Testing**: Dedicated workflows for pre-release validation
 - **Quality Metrics Tracking**: Comprehensive monitoring for GLAMA.ai Gold Status compliance
 
-By following this guide, MCP server repositories can achieve the same production-ready standards as the Advanced Memory MCP implementation while meeting GLAMA.ai's highest quality requirements. This ensures:
+By following this guide, MCP server repositories can achieve the same production-ready standards as the Virtualization MCP implementation while meeting GLAMA.ai's highest quality requirements. This ensures:
 
 - **Code Quality**: 80%+ test coverage and comprehensive quality gates
 - **Security**: Zero critical vulnerabilities and automated security scanning

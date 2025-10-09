@@ -253,10 +253,13 @@ class VMSandboxManager:
         
         try:
             # Create the export script
+            # Escape backslashes for PowerShell
+            escaped_path = str(target_path).replace('\\', '\\\\')
+            
             script_lines = [
                 "$ErrorActionPreference = 'Stop'",
                 f"$sourceVM = Get-VM -Name '{source_vm}' -ErrorAction Stop",
-                f"$clonePath = '{target_path.replace('\\', '\\\\')}'",
+                f"$clonePath = '{escaped_path}'",
                 f"$cloneName = '{clone_name}'",
                 "",
                 "# Create a snapshot for cloning",

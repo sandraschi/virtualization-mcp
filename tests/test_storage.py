@@ -10,6 +10,11 @@ from virtualization_mcp.services.vm.types import StorageControllerType, StorageB
 class TestVMStorageMixin:
     """Tests for the VMStorageMixin class."""
     
+    @pytest.fixture
+    def mock_vbox(self):
+        """Create mock VBox manager."""
+        return MagicMock()
+    
     @pytest.fixture(autouse=True)
     def setup(self, mock_vbox):
         """Set up test fixtures."""

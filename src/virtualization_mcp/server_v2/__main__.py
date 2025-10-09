@@ -5,7 +5,7 @@ import signal
 import sys
 from pathlib import Path
 
-from .core.server import virtualization-mcpServer
+from .core.server import VirtualizationMCPServer
 from .config import load_config
 
 def main():
@@ -15,7 +15,7 @@ def main():
         config = load_config()
         
         # Create and start the server
-        server = virtualization-mcpServer(config)
+        server = VirtualizationMCPServer(config)
         
         # Run the server
         asyncio.run(server.start())

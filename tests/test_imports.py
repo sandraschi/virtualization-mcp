@@ -16,7 +16,7 @@ def test_basic_imports():
     """Test that basic modules can be imported."""
     try:
         import virtualization_mcp
-        assert virtualization-mcp is not None
+        assert virtualization_mcp is not None
     except ImportError as e:
         pytest.fail(f"Failed to import virtualization_mcp: {e}")
 

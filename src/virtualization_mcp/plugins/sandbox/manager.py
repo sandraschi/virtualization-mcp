@@ -143,20 +143,27 @@ class WindowsSandboxHelper:
         """Generate WSX configuration XML for Windows Sandbox."""
         # This is a simplified example - a real implementation would generate
         # proper XML based on the configuration
+        
+        # Generate mapped folders XML
+        mapped_folders_xml = "".join(
+            f'<MappedFolder><HostFolder>{f["host_path"]}</HostFolder>'
+            f'<ReadOnly>{"true" if f.get("readonly", False) else "false"}</ReadOnly>'
+            '</MappedFolder>' for f in config.mapped_folders
+        )
+        
+        # Generate logon commands XML
+        logon_commands_xml = "</Command><Command>".join(config.logon_commands)
+        
         return f"""
         <Configuration>
             <VGpu>{'Enable' if config.vgpu else 'Disable'}</VGpu>
             <Networking>{'Enable' if config.networking else 'Disable'}</Networking>
             <MemoryInMB>{config.memory_mb}</MemoryInMB>
             <MappedFolders>
-                {"".join(
-                    f'<MappedFolder><HostFolder>{f["host_path"]}</HostFolder>' \
-                    f'<ReadOnly>{"true" if f.get("readonly", False) else "false"}</ReadOnly>' \
-                    '</MappedFolder>' for f in config.mapped_folders
-                )}
+                {mapped_folders_xml}
             </MappedFolders>
             <LogonCommand>
-                <Command>{"</Command><Command>".join(config.logon_commands)}</Command>
+                <Command>{logon_commands_xml}</Command>
             </LogonCommand>
         </Configuration>
         """.strip()

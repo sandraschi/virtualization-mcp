@@ -2,6 +2,8 @@
 
 ## Supported Versions
 
+We release patches for security vulnerabilities for the following versions:
+
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.0.x   | :white_check_mark: |
@@ -9,55 +11,70 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in virtualization-mcp, we appreciate your help in disclosing it to us in a responsible manner.
+We take the security of virtualization-mcp seriously. If you believe you have found a security vulnerability, please report it to us as described below.
 
 ### How to Report
 
-Please report security vulnerabilities by emailing our security team at [security@example.com](mailto:security@example.com). You should receive a response within 48 hours. If you don't receive a response, please follow up via email to ensure we received your original message.
+**Please do NOT report security vulnerabilities through public GitHub issues.**
+
+Instead, please report them via email to:
+- **Email:** sandra@sandraschi.dev
+- **Subject:** [SECURITY] Virtualization-MCP Security Issue
 
 ### What to Include
 
-When reporting a vulnerability, please include:
-- A description of the vulnerability
-- Steps to reproduce the issue
-- Any potential impact
-- Your contact information (optional)
+Please include the following information:
+- Type of issue (e.g. buffer overflow, SQL injection, cross-site scripting, etc.)
+- Full paths of source file(s) related to the manifestation of the issue
+- The location of the affected source code (tag/branch/commit or direct URL)
+- Any special configuration required to reproduce the issue
+- Step-by-step instructions to reproduce the issue
+- Proof-of-concept or exploit code (if possible)
+- Impact of the issue, including how an attacker might exploit the issue
 
-### Our Pledge
+### Response Timeline
 
-We will:
-- Acknowledge receipt of your report within 48 hours
-- Work on a fix as soon as possible
-- Keep you informed about the progress
-- Credit you in our security advisories (unless you prefer to remain anonymous)
+- **Initial Response:** Within 48 hours
+- **Status Update:** Within 7 days
+- **Fix Timeline:** Critical vulnerabilities within 30 days
 
-### Bug Bounty
+## Security Measures
 
-We currently do not have a formal bug bounty program, but we are happy to recognize and thank researchers who help us keep our users safe.
+### Current Implementation
 
-## Security Best Practices
+1. **Input Validation:** All tool parameters are validated
+2. **Sandboxing:** VM operations are isolated
+3. **Access Control:** Path traversal protection
+4. **Dependency Scanning:** Automated with Dependabot
+5. **Code Scanning:** Bandit, Safety, and Semgrep in CI/CD
 
-### For Users
-- Always run virtualization-mcp with the principle of least privilege
-- Keep your VirtualBox installation up to date
-- Regularly update virtualization-mcp to the latest version
-- Review and understand the permissions you grant to virtualization-mcp
+### Security Best Practices
 
-### For Developers
-- Follow secure coding practices
-- Keep dependencies up to date
-- Use the security scanning tools provided in the CI/CD pipeline
-- Review and address security alerts from GitHub's Dependabot
+When using virtualization-mcp:
+- Keep VirtualBox updated to the latest version
+- Use strong VM passwords
+- Limit network exposure of VMs
+- Regular security audits of VM configurations
+- Monitor VM resource usage
+- Keep the MCP server updated
 
-## Security Updates
+## Security Scanning
 
-Security updates will be released as patch versions (e.g., 1.0.1, 1.0.2). We recommend always running the latest patch version of your installed major.minor version.
+We use automated security scanning:
+- **Bandit:** Python security linting
+- **Safety:** Dependency vulnerability scanning  
+- **Semgrep:** Static analysis security testing
+- **Dependabot:** Automated dependency updates
 
 ## Disclosure Policy
 
-- When a security vulnerability is reported, we will work on a fix as soon as possible
-- Once a fix is ready, we will release a new version and publish a security advisory
-- We will credit the reporter unless they wish to remain anonymous
+When we receive a security bug report, we will:
 
+1. Confirm the problem and determine affected versions
+2. Audit code to find any similar problems
+3. Prepare fixes for all supported versions
+4. Release new versions as soon as possible
 
+## Credits
 
+We appreciate security researchers who responsibly disclose vulnerabilities. With your permission, we will publicly acknowledge your contribution.

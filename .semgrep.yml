@@ -1,0 +1,176 @@
+# Semgrep Security Rules for virtualization-mcp
+# GLAMA Gold Standard Security Configuration
+
+rules:
+  # Python Security Rules
+  - id: python-subprocess-shell-true
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+    message: "Avoid using shell=True in subprocess calls - potential command injection vulnerability"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+      owasp: "A1: Injection"
+      
+  - id: python-exec-eval-usage
+    patterns:
+      - pattern-either:
+          - pattern: exec(...)
+          - pattern: eval(...)
+    message: "Avoid using exec() or eval() - code injection risk"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-95: Code Injection"
+      
+  - id: python-hardcoded-password
+    patterns:
+      - pattern-either:
+          - pattern: password = "..."
+          - pattern: PASSWORD = "..."
+          - pattern: api_key = "..."
+          - pattern: API_KEY = "..."
+    message: "Potential hardcoded secret detected"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-798: Hard-coded Credentials"
+      
+  - id: python-path-traversal
+    patterns:
+      - pattern: open($PATH, ...)
+      - pattern-not: open($PATH, ..., encoding=..., ...)
+      - metavariable-pattern:
+          metavariable: $PATH
+          pattern-regex: .*\+.*
+    message: "Potential path traversal vulnerability - validate user input in file paths"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-22: Path Traversal"
+      
+  - id: python-sql-injection
+    pattern: |
+      cursor.execute($SQL + ...)
+    message: "Potential SQL injection - use parameterized queries"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      
+  - id: python-unsafe-yaml-load
+    pattern: yaml.load($DATA, ...)
+    message: "Use yaml.safe_load() instead of yaml.load() to prevent code execution"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-502: Deserialization"
+      
+  - id: python-insecure-random
+    patterns:
+      - pattern-either:
+          - pattern: random.random()
+          - pattern: random.randint(...)
+      - pattern-inside: |
+          import random
+          ...
+    message: "Use secrets module instead of random for security-sensitive operations"
+    severity: INFO
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-330: Weak Random"
+      
+  - id: python-request-verify-false
+    pattern: requests.$METHOD(..., verify=False, ...)
+    message: "SSL verification is disabled - security risk"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-295: Certificate Validation"
+      
+  - id: python-assert-used
+    pattern: assert $CONDITION
+    message: "Avoid using assert for data validation - use explicit conditionals"
+    severity: INFO
+    languages: [python]
+    metadata:
+      category: best-practice
+      
+  # MCP-Specific Security Rules
+  - id: mcp-input-validation
+    pattern: |
+      async def $FUNC(..., $PARAM: str, ...):
+        ...
+        subprocess.run([$PARAM, ...])
+    message: "MCP tool parameter used in subprocess without validation - potential command injection"
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+      technology: [mcp, fastmcp]
+      
+  - id: mcp-path-validation
+    pattern: |
+      async def $FUNC(..., $PATH: str, ...):
+        ...
+        open($PATH, ...)
+    message: "MCP tool uses file path parameter without validation - path traversal risk"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-22: Path Traversal"
+      technology: [mcp, fastmcp]
+
+  # Code Quality Rules
+  - id: python-broad-exception
+    pattern: |
+      try:
+        ...
+      except Exception:
+        pass
+    message: "Broad exception caught and silently ignored - use specific exceptions"
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: best-practice
+      
+  - id: python-print-statement
+    pattern: print(...)
+    message: "Use logging instead of print() for production code"
+    severity: INFO
+    languages: [python]
+    metadata:
+      category: best-practice
+      
+  - id: python-unused-import
+    pattern: import $MODULE
+    message: "Check for unused imports"
+    severity: INFO
+    languages: [python]
+    metadata:
+      category: code-quality
+
+# Global settings
+options:
+  # Paths to exclude from scanning
+  exclude:
+    - "tests/"
+    - "__pycache__/"
+    - "*.pyc"
+    - "build/"
+    - "dist/"
+    - ".git/"
+    - "venv/"
+    - ".venv/"
+    - "*.egg-info/"
+

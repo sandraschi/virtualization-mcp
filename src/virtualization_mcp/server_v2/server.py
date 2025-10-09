@@ -15,7 +15,7 @@ from .utils import get_platform, ensure_dir
 
 logger = logging.getLogger(__name__)
 
-class virtualization-mcpServer:
+class VirtualizationMCPServer:
     """Main server class for virtualization-mcp."""
     
     def __init__(self, config: Optional[ServerConfig] = None):
@@ -41,7 +41,7 @@ class virtualization-mcpServer:
         )
         
         # Set log level for all our modules
-        for logger_name in ['virtualization-mcp', 'virtualization-mcp.server_v2']:
+        for logger_name in ['virtualization_mcp', 'virtualization_mcp.server_v2']:
             logging.getLogger(logger_name).setLevel(log_level)
     
     async def start(self) -> None:
