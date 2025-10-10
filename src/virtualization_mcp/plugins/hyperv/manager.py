@@ -79,13 +79,13 @@ class HyperVManagerPlugin:
         if not self.initialized:
             raise RuntimeError("Plugin not initialized. Call initialize() first.")
             
-        @mcp.tool("List Hyper-V VMs")
+        @mcp.tool("list_hyperv_vms")
         async def list_hyperv_vms() -> List[Dict[str, Any]]:
             """List all Hyper-V virtual machines."""
             # Implementation will use powershell to list VMs
             return await self._list_vms()
             
-        @mcp.tool("Get Hyper-V VM")
+        @mcp.tool("get_hyperv_vm")
         async def get_hyperv_vm(vm_name: str) -> Dict[str, Any]:
             """Get details about a specific Hyper-V VM.
             
@@ -94,7 +94,7 @@ class HyperVManagerPlugin:
             """
             return await self._get_vm(vm_name)
             
-        @mcp.tool("Start Hyper-V VM")
+        @mcp.tool("start_hyperv_vm")
         async def start_hyperv_vm(vm_name: str) -> Dict[str, Any]:
             """Start a Hyper-V virtual machine.
             
@@ -103,7 +103,7 @@ class HyperVManagerPlugin:
             """
             return await self._start_vm(vm_name)
             
-        @mcp.tool("Stop Hyper-V VM")
+        @mcp.tool("stop_hyperv_vm")
         async def stop_hyperv_vm(vm_name: str, force: bool = False) -> Dict[str, Any]:
             """Stop a Hyper-V virtual machine.
             

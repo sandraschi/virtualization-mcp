@@ -58,7 +58,7 @@ def main() -> None:
         # Initialize FastMCP first to avoid circular imports
         from fastmcp import FastMCP
         mcp = FastMCP(
-            name="virtualization-mcp",
+            name="virtualization_mcp",
             version="2.11.0"
         )
         

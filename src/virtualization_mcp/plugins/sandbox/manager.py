@@ -67,7 +67,7 @@ class WindowsSandboxHelper:
         if not self.initialized:
             raise RuntimeError("Helper not initialized. Call initialize() first.")
         
-        @mcp.tool("Create Windows Sandbox")
+        @mcp.tool("create_windows_sandbox")
         async def create_sandbox(
             config: SandboxConfig,
             wait_for_completion: bool = False
@@ -80,12 +80,12 @@ class WindowsSandboxHelper:
             """
             return await self._create_sandbox(config, wait_for_completion)
             
-        @mcp.tool("List Running Sandboxes")
+        @mcp.tool("list_running_sandboxes")
         async def list_sandboxes() -> List[Dict[str, Any]]:
             """List all running Windows Sandbox instances."""
             return await self._list_sandboxes()
             
-        @mcp.tool("Stop Sandbox")
+        @mcp.tool("stop_sandbox")
         async def stop_sandbox(sandbox_id: str, force: bool = False) -> Dict[str, Any]:
             """Stop a running Windows Sandbox instance.
             

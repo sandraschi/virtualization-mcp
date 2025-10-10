@@ -27,7 +27,7 @@ virtualization-mcp/
 │           ├── snapshots.py    # Snapshot management
 │           └── networking.py   # Network configuration
 ├── tests/                     # Test suite
-├── dxt/                       # DXT packaging files
+├── mcpb/                      # MCPB packaging files
 └── docs/                      # Documentation
 ```
 

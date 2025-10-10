@@ -1,9 +1,9 @@
 {
-  "name": "virtualization-mcp",
+  "name": "virtualization_mcp",
   "version": "1.0.0",
   "description": "VirtualBox MCP Server for Claude Desktop",
   "mcpServers": {
-    "virtualization-mcp": {
+    "virtualization_mcp": {
       "command": "python",
       "args": ["-m", "virtualization_mcp"],
       "env": {

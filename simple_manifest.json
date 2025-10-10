@@ -2,7 +2,7 @@
   "name": "vbox-mcp-test",
   "version": "0.1.0",
   "description": "Minimal test package for vbox-mcp",
-  "entry_point": "virtualization-mcp.server:app",
+  "entry_point": "virtualization_mcp.server:app",
   "prompts": [
     {
       "name": "test_prompt",

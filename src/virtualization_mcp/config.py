@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     )
     
     # Application settings
-    APP_NAME: str = "virtualization-mcp"
+    APP_NAME: str = "virtualization_mcp"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     
@@ -242,8 +242,8 @@ def configure_logging():
     for handler in handlers:
         root_logger.addHandler(handler)
     
-    # Configure third-party loggers
-    for logger_name in ['uvicorn', 'fastapi', 'asyncio']:
+    # Configure third-party loggers to reduce spam
+    for logger_name in ['uvicorn', 'fastapi', 'asyncio', 'mcp', 'mcp.server', 'mcp.server.lowlevel', 'mcp.server.lowlevel.server', 'fastmcp']:
         logging.getLogger(logger_name).setLevel(logging.WARNING)
     
     # Log configuration

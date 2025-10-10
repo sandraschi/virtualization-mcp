@@ -1,6 +1,6 @@
 {
   "manifest_version": "0.2",
-  "name": "virtualization-mcp",
+  "name": "virtualization_mcp",
   "version": "1.0.0",
   "description": "Professional VirtualBox management server with comprehensive VM operations, networking, storage, and security features",
   "long_description": "VirtualizationMCP is a production-ready MCP server that provides comprehensive VirtualBox management capabilities including VM lifecycle management, networking configuration, storage operations, snapshots, templates, and advanced security features. Built with FastMCP 2.12+ for maximum compatibility and performance.",

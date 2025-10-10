@@ -53,7 +53,7 @@ class VirtualizationMCPServer:
             
             # Create and configure MCP instance
             self.mcp = FastMCP(
-                name="virtualization-mcp",
+                name="virtualization_mcp",
                 version="2.11.2",
                 description="VirtualBox Management and Control Protocol Server"
             )

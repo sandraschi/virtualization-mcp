@@ -106,12 +106,12 @@ client.execute_command(vm_name, "chmod +x /tmp/install_claude.sh && /tmp/install
 
 ## Automated Claude Deployment
 
-### Using DXT Packages
+### Using MCPB Packages
 
-1. **Create a DXT package for Claude deployment**
+1. **Create an MCPB package for Claude deployment**
 
 ```python
-# dxt/claude_deploy.py
+# scripts/claude_deploy.py
 def deploy_claude(vm_name, api_key):
     """Deploy Claude to a VM."""
     # 1. Check if VM exists

@@ -124,7 +124,7 @@ async def main() -> None:
     try:
         # Create FastMCP instance with stdio transport
         mcp = FastMCP(
-            name="virtualization-mcp",
+            name="virtualization_mcp",
             version="1.0.0",
             transport='stdio',
             debug=True

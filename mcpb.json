@@ -1,5 +1,5 @@
 {
-  "name": "virtualization-mcp",
+  "name": "virtualization_mcp",
   "version": "1.0.0",
   "description": "FastMCP 2.12+ compliant VirtualBox management server with full MCP client support",
   "author": "Sandra Schi",
