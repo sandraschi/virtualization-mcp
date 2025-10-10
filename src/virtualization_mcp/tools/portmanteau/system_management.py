@@ -34,8 +34,7 @@ def register_system_management_tool(mcp: FastMCP) -> None:
     )
     async def system_management(
         action: str,
-        vm_name: Optional[str] = None,
-        **kwargs
+        vm_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Get system information and diagnostics with various actions.

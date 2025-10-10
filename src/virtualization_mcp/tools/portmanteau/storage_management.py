@@ -40,8 +40,7 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
         controller_type: Optional[str] = None,
         disk_name: Optional[str] = None,
         disk_size_gb: Optional[int] = None,
-        disk_path: Optional[str] = None,
-        **kwargs
+        disk_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Manage storage configurations with various actions.

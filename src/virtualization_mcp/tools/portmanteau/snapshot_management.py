@@ -35,8 +35,7 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
         action: str,
         vm_name: str,
         snapshot_name: Optional[str] = None,
-        description: Optional[str] = None,
-        **kwargs
+        description: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Manage VM snapshots with various actions.

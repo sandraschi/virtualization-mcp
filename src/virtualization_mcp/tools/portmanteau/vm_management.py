@@ -45,8 +45,7 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
         new_vm_name: Optional[str] = None,
         os_type: Optional[str] = None,
         memory_mb: Optional[int] = None,
-        disk_size_gb: Optional[int] = None,
-        **kwargs
+        disk_size_gb: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Manage virtual machines with various actions.
@@ -70,7 +69,6 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
             os_type: Operating system type (e.g., "Windows10_64", "Ubuntu_64")
             memory_mb: Memory in MB for new VMs
             disk_size_gb: Disk size in GB for new VMs
-            **kwargs: Additional parameters for specific actions
             
         Returns:
             Dict containing the result of the operation

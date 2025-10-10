@@ -39,8 +39,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
         adapter_slot: Optional[int] = None,
         network_type: Optional[str] = None,
         ip_address: Optional[str] = None,
-        netmask: Optional[str] = None,
-        **kwargs
+        netmask: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Manage network configurations with various actions.
