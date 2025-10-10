@@ -9,8 +9,8 @@
 [![VirtualBox](https://img.shields.io/badge/VirtualBox-7.0+-orange)](https://virtualbox.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI/CD](https://github.com/sandraschi/virtualization-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandraschi/virtualization-mcp/actions)
-[![Coverage](https://img.shields.io/badge/coverage-36%25-yellow)](./coverage.xml)
-[![Tests](https://img.shields.io/badge/tests-281%20passing-brightgreen)](./tests)
+[![Coverage](https://img.shields.io/badge/coverage-38%25-yellow)](./coverage.xml)
+[![Tests](https://img.shields.io/badge/tests-358%20passing-brightgreen)](./tests)
 [![GLAMA](https://img.shields.io/badge/GLAMA-Silver%20Tier-silver)](./docs/glama/)
 [![Security](https://img.shields.io/badge/security-scanned-green)](./.github/workflows/security-scan.yml)
 [![PyPI](https://img.shields.io/pypi/v/virtualization-mcp)](https://pypi.org/project/virtualization-mcp/)
@@ -71,9 +71,11 @@ For detailed documentation, please visit our [documentation site](https://virtua
      "mcpServers": {
        "virtualization-mcp": {
          "command": "python",
-         "args": ["-m", "virtualization-mcp"],
+         "args": ["-m", "virtualization_mcp"],
+         "cwd": "path/to/virtualization-mcp",
          "env": {
-           "PYTHONPATH": "src",
+           "PYTHONPATH": "path/to/virtualization-mcp/src",
+           "PYTHONUNBUFFERED": "1",
            "VBOX_INSTALL_PATH": "C:\\Program Files\\Oracle\\VirtualBox",
            "VBOX_USER_HOME": "%USERPROFILE%\\VirtualBox VMs",
            "DEBUG": "true"
