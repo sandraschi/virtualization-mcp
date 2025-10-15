@@ -36,10 +36,13 @@ from virtualization_mcp.exceptions import VirtualizationMCPError
 
 ## Testing Requirements
 - **Coverage Target**: 80% (GLAMA Gold Standard)
-- **Current**: 39% (keep improving!)
+- **Current**: 39% (5,439/8,901 lines covered)
+- **Tests**: 605 total (409 passing, 161 failing, 21 errors, 14 skipped)
+- **Success Rate**: 70% (improving to 100%)
 - **Framework**: pytest with pytest-cov
 - **Markers**: Use @pytest.mark.integration for integration tests
 - **Mocking**: Use `patch('subprocess.run')` for VBoxManage calls
+- **Non-blocking**: Tests run but don't fail CI builds (continue-on-error: true)
 
 ### Test Patterns
 ```python
@@ -102,15 +105,28 @@ async def tool_name(param: str) -> Dict[str, Any]:
 
 ## CI/CD Workflows
 
-### Active Workflows
-1. **ci.yml**: Main CI/CD (lint, test, build)
-2. **release.yml**: Automated releases on tags
-3. **security-scan.yml**: Daily security scans
-4. **coverage-report.yml**: Coverage tracking
-5. **glama-integration.yml**: GLAMA quality checks
-6. **code-quality.yml**: Code quality metrics
-7. **build-mcpb.yml**: MCPB package building
-8. **codeql.yml, security.yml, semgrep.yml**: Security analysis
+### Active Workflows (13 Total)
+
+**Core CI/CD:**
+1. **ci.yml**: Main CI/CD pipeline (lint, test, build, quality gate)
+2. **ci-cd.yml**: Legacy CI/CD (being modernized)
+3. **ci-cd-enhanced.yml**: Enhanced CI/CD variant
+4. **release.yml**: Automated GitHub + PyPI + MCPB releases on tags
+5. **build-mcpb.yml**: MCPB package building and validation
+
+**Quality & Coverage:**
+6. **code-quality.yml**: Ruff, mypy, bandit, safety checks
+7. **coverage-report.yml**: Test coverage tracking (39% → 80%)
+8. **glama-integration.yml**: GLAMA Gold Standard checks
+
+**Security:**
+9. **security-scan.yml**: Daily bandit + safety scans
+10. **codeql.yml**: GitHub Advanced Security (CodeQL)
+11. **security.yml**: Additional security analysis
+12. **semgrep.yml**: Semgrep static analysis
+
+**Testing:**
+13. **beta-testing.yml**: Beta testing workflows
 
 ### Workflow Requirements
 - **Always use UV**: `uv sync --dev`, `uv run`
