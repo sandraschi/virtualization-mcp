@@ -41,13 +41,17 @@ class TestVMLifecycleIntegration:
     async def test_snapshot_workflow(self):
         """Test snapshot workflow: create → restore → delete."""
         with patch('subprocess.run') as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="success")
+            # Mock with proper UUID output for snapshot operations
+            mock_run.return_value = MagicMock(
+                returncode=0, 
+                stdout="Snapshot taken. UUID: {12345678-1234-5678-1234-567812345678}"
+            )
             
             from virtualization_mcp.vbox.compat_adapter import VBoxManager
             manager = VBoxManager()
             
             # Create snapshot
-            result = manager.create_snapshot("test-vm", "snap1", "Test snapshot")
+            result = manager.take_snapshot("test-vm", "snap1", "Test snapshot")
             assert result is not None
             
             # Restore snapshot  

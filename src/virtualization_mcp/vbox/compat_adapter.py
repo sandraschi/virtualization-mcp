@@ -5,6 +5,7 @@ This module provides a compatibility layer between the existing VBoxManager clas
 and our new vbox_compat module, allowing for a smooth transition.
 """
 import logging
+from datetime import datetime
 from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
 
@@ -548,7 +549,7 @@ class VBoxManager:
                 'name': snapshot_name,
                 'uuid': snapshot_uuid,
                 'description': description,
-                'timestamp': datetime.datetime.now().isoformat(),
+                'timestamp': datetime.now().isoformat(),
                 'vm_name': vm_name
             }
             

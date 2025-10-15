@@ -51,8 +51,8 @@ class TestVMToolsComprehensive:
             
             from virtualization_mcp.tools.vm.vm_tools import create_vm
             result = await create_vm(
-                vm_name="new-vm",
-                os_type="Linux_64",
+                name="new-vm",
+                ostype="Linux_64",
                 memory_mb=2048,
                 cpu_count=2,
                 disk_size_gb=20
@@ -63,21 +63,25 @@ class TestVMToolsComprehensive:
     async def test_start_vm_with_mock(self):
         """Test start_vm with full mock."""
         with patch('subprocess.run') as mock_run:
-            mock_mgr = MagicMock()
-            mock_mgr.start_vm = MagicMock(return_value={"status": "started"})
-            mock_get.return_value = mock_mgr
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='VM started successfully',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import start_vm
-            result = await start_vm(vm_name="vm1", headless=True)
+            result = await start_vm(vm_name="vm1", start_type="headless")
             assert result is not None
     
     @pytest.mark.asyncio
     async def test_stop_vm_with_mock(self):
         """Test stop_vm with full mock."""
         with patch('subprocess.run') as mock_run:
-            mock_mgr = MagicMock()
-            mock_mgr.stop_vm = MagicMock(return_value={"status": "stopped"})
-            mock_get.return_value = mock_mgr
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='VM stopped successfully',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import stop_vm
             result = await stop_vm(vm_name="vm1")
@@ -87,33 +91,39 @@ class TestVMToolsComprehensive:
     async def test_delete_vm_with_mock(self):
         """Test delete_vm with full mock."""
         with patch('subprocess.run') as mock_run:
-            mock_mgr = MagicMock()
-            mock_mgr.delete_vm = MagicMock(return_value={"status": "deleted"})
-            mock_get.return_value = mock_mgr
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='VM deleted successfully',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import delete_vm
-            result = await delete_vm(vm_name="vm1", delete_disks=True)
+            result = await delete_vm(vm_name="vm1", delete_files=True)
             assert result is not None
     
     @pytest.mark.asyncio
     async def test_clone_vm_with_mock(self):
         """Test clone_vm with full mock."""
         with patch('subprocess.run') as mock_run:
-            mock_mgr = MagicMock()
-            mock_mgr.clone_vm = MagicMock(return_value={"name": "clone"})
-            mock_get.return_value = mock_mgr
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='VM cloned successfully',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import clone_vm
-            result = await clone_vm(source_vm="vm1", clone_name="clone")
+            result = await clone_vm(source_vm="vm1", new_name="clone")
             assert result is not None
     
     @pytest.mark.asyncio
     async def test_reset_vm_with_mock(self):
         """Test reset_vm with full mock."""
         with patch('subprocess.run') as mock_run:
-            mock_mgr = MagicMock()
-            mock_mgr.reset_vm = MagicMock(return_value={"status": "reset"})
-            mock_get.return_value = mock_mgr
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='VM reset successfully',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import reset_vm
             result = await reset_vm(vm_name="vm1")
@@ -123,9 +133,11 @@ class TestVMToolsComprehensive:
     async def test_pause_vm_with_mock(self):
         """Test pause_vm with full mock."""
         with patch('subprocess.run') as mock_run:
-            mock_mgr = MagicMock()
-            mock_mgr.pause_vm = MagicMock(return_value={"status": "paused"})
-            mock_get.return_value = mock_mgr
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='VM paused successfully',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import pause_vm
             result = await pause_vm(vm_name="vm1")
@@ -135,9 +147,11 @@ class TestVMToolsComprehensive:
     async def test_resume_vm_with_mock(self):
         """Test resume_vm with full mock."""
         with patch('subprocess.run') as mock_run:
-            mock_mgr = MagicMock()
-            mock_mgr.resume_vm = MagicMock(return_value={"status": "resumed"})
-            mock_get.return_value = mock_mgr
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='VM resumed successfully',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import resume_vm
             result = await resume_vm(vm_name="vm1")
@@ -150,10 +164,12 @@ class TestSnapshotToolsComprehensive:
     @pytest.mark.asyncio
     async def test_list_snapshots_with_mock(self):
         """Test list_snapshots."""
-        with patch('virtualization_mcp.tools.snapshot.snapshot_tools.get_vbox_manager') as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.list_snapshots = MagicMock(return_value=[{"name": "snap1"}])
-            mock_get.return_value = mock_mgr
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='SnapshotName="snap1"\nSnapshotUUID="uuid-123"',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.snapshot.snapshot_tools import list_snapshots
             result = await list_snapshots(vm_name="vm1")
