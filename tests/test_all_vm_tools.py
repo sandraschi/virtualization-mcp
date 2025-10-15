@@ -14,10 +14,12 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_list_vms_with_mock(self):
         """Test list_vms with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.list_vms = MagicMock(return_value=[{"name": "vm1"}])
-            mock_get.return_value = mock_mgr
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, 
+                stdout='"vm1" {uuid-123}\n"vm2" {uuid-456}',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import list_vms
             result = await list_vms()
@@ -26,10 +28,12 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_get_vm_info_with_mock(self):
         """Test get_vm_info with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.get_vm_info = MagicMock(return_value={"name": "vm1", "state": "running"})
-            mock_get.return_value = mock_mgr
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='Name: vm1\nState: running\nMemory: 2048\n',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import get_vm_info
             result = await get_vm_info(vm_name="vm1")
@@ -38,10 +42,12 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_create_vm_with_mock(self):
         """Test create_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.create_vm = MagicMock(return_value={"name": "new-vm"})
-            mock_get.return_value = mock_mgr
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='Virtual machine "new-vm" is created and registered.',
+                stderr=""
+            )
             
             from virtualization_mcp.tools.vm.vm_tools import create_vm
             result = await create_vm(
@@ -56,7 +62,7 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_start_vm_with_mock(self):
         """Test start_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
+        with patch('subprocess.run') as mock_run:
             mock_mgr = MagicMock()
             mock_mgr.start_vm = MagicMock(return_value={"status": "started"})
             mock_get.return_value = mock_mgr
@@ -68,7 +74,7 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_stop_vm_with_mock(self):
         """Test stop_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
+        with patch('subprocess.run') as mock_run:
             mock_mgr = MagicMock()
             mock_mgr.stop_vm = MagicMock(return_value={"status": "stopped"})
             mock_get.return_value = mock_mgr
@@ -80,7 +86,7 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_delete_vm_with_mock(self):
         """Test delete_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
+        with patch('subprocess.run') as mock_run:
             mock_mgr = MagicMock()
             mock_mgr.delete_vm = MagicMock(return_value={"status": "deleted"})
             mock_get.return_value = mock_mgr
@@ -92,7 +98,7 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_clone_vm_with_mock(self):
         """Test clone_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
+        with patch('subprocess.run') as mock_run:
             mock_mgr = MagicMock()
             mock_mgr.clone_vm = MagicMock(return_value={"name": "clone"})
             mock_get.return_value = mock_mgr
@@ -104,7 +110,7 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_reset_vm_with_mock(self):
         """Test reset_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
+        with patch('subprocess.run') as mock_run:
             mock_mgr = MagicMock()
             mock_mgr.reset_vm = MagicMock(return_value={"status": "reset"})
             mock_get.return_value = mock_mgr
@@ -116,7 +122,7 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_pause_vm_with_mock(self):
         """Test pause_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
+        with patch('subprocess.run') as mock_run:
             mock_mgr = MagicMock()
             mock_mgr.pause_vm = MagicMock(return_value={"status": "paused"})
             mock_get.return_value = mock_mgr
@@ -128,7 +134,7 @@ class TestVMToolsComprehensive:
     @pytest.mark.asyncio
     async def test_resume_vm_with_mock(self):
         """Test resume_vm with full mock."""
-        with patch('virtualization_mcp.tools.vm.vm_tools.get_vbox_manager') as mock_get:
+        with patch('subprocess.run') as mock_run:
             mock_mgr = MagicMock()
             mock_mgr.resume_vm = MagicMock(return_value={"status": "resumed"})
             mock_get.return_value = mock_mgr

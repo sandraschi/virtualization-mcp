@@ -15,7 +15,7 @@ class TestVMLifecycleIntegration:
     @pytest.mark.asyncio
     async def test_create_start_stop_delete_workflow(self):
         """Test complete VM lifecycle: create → start → stop → delete."""
-        with patch('virtualization_mcp.vbox.compat_adapter.subprocess.run') as mock_run:
+        with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout="success")
             
             from virtualization_mcp.vbox.compat_adapter import VBoxManager
@@ -40,7 +40,7 @@ class TestVMLifecycleIntegration:
     @pytest.mark.asyncio
     async def test_snapshot_workflow(self):
         """Test snapshot workflow: create → restore → delete."""
-        with patch('virtualization_mcp.vbox.compat_adapter.subprocess.run') as mock_run:
+        with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout="success")
             
             from virtualization_mcp.vbox.compat_adapter import VBoxManager
