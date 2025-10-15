@@ -50,7 +50,7 @@ jobs:
       - name: Build MCPB package
         run: |
           if command -v mcpb >/dev/null 2>&1; then
-            mcpb pack mcpb dist/virtualization-mcp-${GITHUB_REF_NAME#v}.mcpb
+            mcpb pack . dist/virtualization-mcp-${GITHUB_REF_NAME#v}.mcpb
           else
             echo "MCPB CLI not available, creating basic package"
             cd mcpb

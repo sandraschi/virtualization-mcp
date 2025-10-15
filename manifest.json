@@ -1,0 +1,155 @@
+{
+  "manifest_version": "0.2",
+  "name": "virtualization_mcp",
+  "version": "1.0.1b1",
+  "description": "Professional VirtualBox management server with comprehensive VM operations, networking, storage, and security features",
+  "long_description": "VirtualizationMCP is a production-ready MCP server that provides comprehensive VirtualBox management capabilities including VM lifecycle management, networking configuration, storage operations, snapshots, templates, and advanced security features. Built with FastMCP 2.12+ for maximum compatibility and performance.",
+  "author": {
+    "name": "Sandra Schi",
+    "email": "sandra@sandraschi.dev",
+    "url": "https://github.com/sandraschi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/virtualization-mcp"
+  },
+  "homepage": "https://github.com/sandraschi/virtualization-mcp",
+  "documentation": "https://github.com/sandraschi/virtualization-mcp/blob/main/README.md",
+  "support": "https://github.com/sandraschi/virtualization-mcp/issues",
+  "license": "MIT",
+  "keywords": ["mcp", "virtualbox", "vm", "virtualization", "automation", "fastmcp", "hypervisor"],
+  "icon": "assets/icon.png",
+  "screenshots": [
+    "assets/screenshots/main-interface.png",
+    "assets/screenshots/vm-management.png"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "src/virtualization_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "virtualization_mcp"],
+      "env": {
+        "PYTHONPATH": "src",
+        "VBOX_INSTALL_PATH": "${user_config.vbox_install_path}",
+        "VBOX_USER_HOME": "${user_config.vbox_user_home}",
+        "DEBUG": "${user_config.debug_mode}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "user_config": {
+    "vbox_install_path": {
+      "type": "directory",
+      "title": "VirtualBox Installation Directory",
+      "description": "Directory where VirtualBox is installed (e.g., C:\\Program Files\\Oracle\\VirtualBox)",
+      "required": true,
+      "default": "C:\\Program Files\\Oracle\\VirtualBox"
+    },
+    "vbox_user_home": {
+      "type": "directory",
+      "title": "VirtualBox User Home",
+      "description": "Directory where VirtualBox stores VM files and settings",
+      "required": true,
+      "default": "${HOME}\\VirtualBox VMs"
+    },
+    "debug_mode": {
+      "type": "boolean",
+      "title": "Debug Mode",
+      "description": "Enable detailed logging for troubleshooting",
+      "required": false,
+      "default": false
+    }
+  },
+  "tools": [
+    {
+      "name": "list_vms",
+      "description": "List all virtual machines with their current status"
+    },
+    {
+      "name": "create_vm",
+      "description": "Create a new virtual machine with specified configuration"
+    },
+    {
+      "name": "start_vm",
+      "description": "Start a virtual machine"
+    },
+    {
+      "name": "stop_vm",
+      "description": "Stop a virtual machine gracefully"
+    },
+    {
+      "name": "get_vm_info",
+      "description": "Get detailed information about a virtual machine"
+    },
+    {
+      "name": "create_snapshot",
+      "description": "Create a snapshot of a virtual machine"
+    },
+    {
+      "name": "restore_snapshot",
+      "description": "Restore a virtual machine from a snapshot"
+    },
+    {
+      "name": "list_snapshots",
+      "description": "List all snapshots for a virtual machine"
+    },
+    {
+      "name": "configure_network",
+      "description": "Configure network settings for a virtual machine"
+    },
+    {
+      "name": "attach_storage",
+      "description": "Attach storage devices to a virtual machine"
+    },
+    {
+      "name": "get_host_info",
+      "description": "Get information about the host system"
+    },
+    {
+      "name": "create_backup",
+      "description": "Create a backup of a virtual machine"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "create_vm_guided",
+      "description": "Get guided help for creating a virtual machine based on your use case",
+      "arguments": ["use_case", "os_type"],
+      "text": "I need help creating a ${arguments.os_type} virtual machine for ${arguments.use_case}. Please recommend appropriate configuration (memory, CPU, disk, network) and guide me through the setup process."
+    },
+    {
+      "name": "troubleshoot_vm",
+      "description": "Get help diagnosing and fixing virtual machine issues",
+      "arguments": ["vm_name", "problem_type"],
+      "text": "I'm having ${arguments.problem_type} issues with virtual machine ${arguments.vm_name}. Please help me diagnose the problem and provide step-by-step troubleshooting guidance."
+    },
+    {
+      "name": "setup_network",
+      "description": "Get guidance on network configuration for your use case",
+      "arguments": ["network_type", "use_case"],
+      "text": "I need to configure ${arguments.network_type} networking for ${arguments.use_case}. Please explain the configuration and guide me through the setup process."
+    },
+    {
+      "name": "snapshot_best_practices",
+      "description": "Get recommendations for snapshot management strategy",
+      "arguments": ["vm_name"],
+      "text": "I need help with snapshot management for ${arguments.vm_name}. Please recommend a snapshot strategy including when to create snapshots, naming conventions, and cleanup policies."
+    },
+    {
+      "name": "multi_vm_deployment",
+      "description": "Get guidance for deploying multi-VM architectures",
+      "arguments": ["deployment_type"],
+      "text": "I want to deploy a ${arguments.deployment_type} multi-VM architecture. Please recommend the VM configuration, network topology, and guide me through the deployment process step by step."
+    }
+  ],
+  "tools_generated": true,
+  "prompts_generated": false,
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "python_version": ">=3.10"
+  }
+}
+
+
+

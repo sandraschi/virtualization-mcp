@@ -1,0 +1,85 @@
+# Build and distribution
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+coverage.xml
+coverage.json
+htmlcov/
+junit/
+.tox/
+
+# Documentation (keep only README and LICENSE)
+docs/
+*.md
+!README.md
+!LICENSE
+
+# IDE and editors
+.vscode/
+.idea/
+.windsurf/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+
+# Scripts
+scripts/
+*.ps1
+*.sh
+
+# Config files not needed in package
+.editorconfig
+.pre-commit-config.yaml
+pytest.ini
+mypy.ini
+.ruff.toml
+pyproject.toml
+
+# Logs
+*.log
+
+# Temporary files
+temp*/
+*.tmp
+
+# Other Python packaging
+setup.py
+setup.cfg
+MANIFEST.in
+
+# Old status files
+*STATUS*.md
+*SUMMARY*.md
+*COMPLETE*.md
+*PLAN*.md
+*CHECKLIST*.md
+
+# MCP config (users will configure)
+mcp_config.json
+
+# Test data
+test*.py
+check*.py
+run_*.py
+create_dirs.py
+update_*.py
+
