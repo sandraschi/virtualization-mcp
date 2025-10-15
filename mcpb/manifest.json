@@ -111,20 +111,18 @@
       "description": "Create a backup of a virtual machine"
     }
   ],
-  "prompts": [
-    {
-      "name": "vm_management",
-      "description": "Comprehensive virtual machine management and operations",
-      "arguments": ["operation", "vm_name"],
-      "text": "Perform ${arguments.operation} operation on virtual machine ${arguments.vm_name}. Provide detailed status and results."
-    },
-    {
-      "name": "vm_troubleshooting",
-      "description": "Diagnose and resolve virtual machine issues",
-      "arguments": ["vm_name", "issue_type"],
-      "text": "Diagnose ${arguments.issue_type} issue with virtual machine ${arguments.vm_name}. Provide step-by-step troubleshooting guidance."
+  "prompts": {
+    "system": "prompts/system.md",
+    "user": "prompts/user.md",
+    "examples": "prompts/examples.json",
+    "templates": {
+      "vm_creation_wizard": "prompts/vm-creation-wizard.md",
+      "snapshot_strategy": "prompts/snapshot-strategy.md",
+      "network_configuration": "prompts/network-configuration.md",
+      "troubleshooting_guide": "prompts/troubleshooting-guide.md",
+      "advanced_workflows": "prompts/advanced-workflows.md"
     }
-  ],
+  },
   "tools_generated": true,
   "prompts_generated": false,
   "compatibility": {
