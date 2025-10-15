@@ -35,10 +35,10 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           version: "latest"
-      - name: Install build dependencies
-        run: uv add --dev build twine
+      - name: Install dependencies
+        run: uv sync --dev
       - name: Build package
-        run: uv run python -m build
+        run: uv build
       - name: Check package
         run: uv run twine check dist/*
       - name: Set up Node.js
