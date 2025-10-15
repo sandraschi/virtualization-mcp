@@ -50,13 +50,11 @@ jobs:
       - name: Build MCPB package
         run: |
           if command -v mcpb >/dev/null 2>&1; then
-            cd mcpb
-            mcpb pack . ../dist/virtualization-mcp-v1.0.0.mcpb
-            cd ..
+            mcpb pack mcpb dist/virtualization-mcp-${GITHUB_REF_NAME#v}.mcpb
           else
             echo "MCPB CLI not available, creating basic package"
             cd mcpb
-            zip -r ../dist/virtualization-mcp-v1.0.0.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
+            zip -r ../dist/virtualization-mcp-${GITHUB_REF_NAME#v}.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
             cd ..
           fi
       - name: Generate changelog

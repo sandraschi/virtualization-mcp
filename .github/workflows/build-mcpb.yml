@@ -46,7 +46,7 @@ jobs:
       
     - name: Build MCPB extension
       run: |
-        mcpb pack mcpb/ dist/virtualization-mcp-v1.0.0.mcpb
+        mcpb pack mcpb dist/virtualization-mcp-v${{ github.ref_name }}.mcpb
         
     - name: Sign MCPB extension (optional)
       if: ${{ secrets.MCPB_SIGNING_KEY }}
