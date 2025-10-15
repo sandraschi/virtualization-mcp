@@ -166,41 +166,50 @@ class TestSnapshotToolsComprehensive:
     @pytest.mark.asyncio
     async def test_create_snapshot_with_mock(self):
         """Test create_snapshot."""
-        with patch("virtualization_mcp.tools.snapshot.snapshot_tools.get_vbox_manager") as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.create_snapshot = MagicMock(return_value={"name": "snap1"})
-            mock_get.return_value = mock_mgr
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="Snapshot taken. UUID: 12345678-1234-1234-1234-123456789012",
+                stderr=""
+            )
 
             from virtualization_mcp.tools.snapshot.snapshot_tools import create_snapshot
 
             result = await create_snapshot(vm_name="vm1", snapshot_name="snap1")
             assert result is not None
+            assert result.get("status") == "success"
 
     @pytest.mark.asyncio
     async def test_restore_snapshot_with_mock(self):
         """Test restore_snapshot."""
-        with patch("virtualization_mcp.tools.snapshot.snapshot_tools.get_vbox_manager") as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.restore_snapshot = MagicMock(return_value={"status": "restored"})
-            mock_get.return_value = mock_mgr
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="Restoring snapshot 'snap1'",
+                stderr=""
+            )
 
             from virtualization_mcp.tools.snapshot.snapshot_tools import restore_snapshot
 
             result = await restore_snapshot(vm_name="vm1", snapshot_name="snap1")
             assert result is not None
+            assert result.get("status") == "success"
 
     @pytest.mark.asyncio
     async def test_delete_snapshot_with_mock(self):
         """Test delete_snapshot."""
-        with patch("virtualization_mcp.tools.snapshot.snapshot_tools.get_vbox_manager") as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.delete_snapshot = MagicMock(return_value={"status": "deleted"})
-            mock_get.return_value = mock_mgr
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="Deleting snapshot 'snap1'",
+                stderr=""
+            )
 
             from virtualization_mcp.tools.snapshot.snapshot_tools import delete_snapshot
 
             result = await delete_snapshot(vm_name="vm1", snapshot_name="snap1")
             assert result is not None
+            assert result.get("status") == "success"
 
 
 class TestStorageToolsComprehensive:
@@ -209,10 +218,12 @@ class TestStorageToolsComprehensive:
     @pytest.mark.asyncio
     async def test_list_storage_controllers_with_mock(self):
         """Test list_storage_controllers."""
-        with patch("virtualization_mcp.tools.storage.storage_tools.get_vbox_manager") as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.list_storage_controllers = MagicMock(return_value=[{"name": "SATA"}])
-            mock_get.return_value = mock_mgr
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="StorageControllerName0=SATA\nStorageControllerType0=IntelAhci",
+                stderr=""
+            )
 
             from virtualization_mcp.tools.storage.storage_tools import list_storage_controllers
 
@@ -236,28 +247,32 @@ class TestSystemToolsComprehensive:
 
     @pytest.mark.asyncio
     async def test_get_vbox_version_with_mock(self):
-        """Test get_vbox_version."""
-        with patch("virtualization_mcp.tools.system.system_tools.get_vbox_manager") as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.get_version = MagicMock(return_value={"version": "7.0"})
-            mock_get.return_value = mock_mgr
+        """Test get_vbox_version via get_vbox_info."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="7.0.14r161095",
+                stderr=""
+            )
 
-            from virtualization_mcp.tools.system.system_tools import get_vbox_version
+            from virtualization_mcp.tools.system.system_tools import get_vbox_info
 
-            result = await get_vbox_version()
+            result = await get_vbox_info()
             assert result is not None
 
     @pytest.mark.asyncio
     async def test_list_os_types_with_mock(self):
-        """Test list_os_types."""
-        with patch("virtualization_mcp.tools.system.system_tools.get_vbox_manager") as mock_get:
-            mock_mgr = MagicMock()
-            mock_mgr.list_ostypes = MagicMock(return_value=[{"id": "Linux_64"}])
-            mock_get.return_value = mock_mgr
+        """Test list_ostypes."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="ID: Linux_64\nDescription: Linux (64-bit)",
+                stderr=""
+            )
 
-            from virtualization_mcp.tools.system.system_tools import list_os_types
+            from virtualization_mcp.tools.system.system_tools import list_ostypes
 
-            result = await list_os_types()
+            result = await list_ostypes()
             assert result is not None
 
 
