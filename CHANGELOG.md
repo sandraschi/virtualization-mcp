@@ -2,6 +2,46 @@
 
 All notable changes to the VirtualBox MCP Server will be documented in this file.
 
+## [1.0.1b1] - 2025-10-15
+
+### 🎉 CI/CD Implementation Beta
+
+First beta release with complete CI/CD and automated release infrastructure.
+
+### 🚀 New Features
+
+#### Infrastructure
+- **Complete CI/CD Pipeline**: Automated linting, testing, security scanning, and building
+- **Automated Releases**: GitHub releases created automatically from version tags
+- **Security Scanning**: Daily automated scans with Bandit, Safety, and Semgrep
+- **Modern Build System**: UV-based dependency management and building
+- **Quality Gates**: Automated quality checks before merging
+
+#### Documentation
+- **Comprehensive GitHub Docs**: Complete setup guides, troubleshooting, and best practices
+- **Quick Start Guide**: Get started in 5 minutes
+- **Release Checklist**: Pre-release validation process
+- **Security Hardening Guide**: Best practices for secure MCP servers
+
+### 🛠️ Improvements
+- Modernized all GitHub workflows to use UV native commands
+- Added critical build dependencies (build, twine, pyright)
+- Configured resilient security scanning that never blocks workflows
+- Updated to modern `safety scan` command (deprecated `safety check` removed)
+- Consistent dependency management across all workflows
+
+### 📦 Dependencies
+- Added `build>=1.0.0` for package building
+- Added `twine>=5.0.0` for package validation
+- Added `pyright>=1.1.390` for type checking support
+
+### 📚 Documentation
+- Created comprehensive CI/CD documentation in `docs/github/`
+- Added implementation summary and quick start guides
+- Documented all workflows and troubleshooting steps
+
+---
+
 ## [0.1.0b1] - 2025-08-11
 
 ### 🎉 Beta Release
