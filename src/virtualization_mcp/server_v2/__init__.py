@@ -11,23 +11,22 @@ Modules:
 """
 
 # Core exports
-from .core.server import VirtualizationMCPServer
 from .config import ServerConfig, load_config
+from .core.server import VirtualizationMCPServer
 
 # Version information
 __version__ = "2.11.2"
+
 
 def get_version() -> str:
     """Get the current version of the virtualization-mcp server."""
     return __version__
 
+
 __all__ = [
-    'VirtualizationMCPServer',
-    'ServerConfig',
-    'load_config',
-    'get_version',
-    '__version__',
+    "VirtualizationMCPServer",
+    "ServerConfig",
+    "load_config",
+    "get_version",
+    "__version__",
 ]
-
-
-

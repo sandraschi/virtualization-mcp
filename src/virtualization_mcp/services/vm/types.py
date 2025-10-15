@@ -5,14 +5,15 @@ This module contains all the data models and type definitions used throughout
 the VM services package.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, TypedDict, Union, Literal
+from typing import Any, Literal, TypedDict
 
 
 # VM State Enums
 class VMState(str, Enum):
     """Virtual machine states."""
+
     POWERED_OFF = "PoweredOff"
     RUNNING = "Running"
     PAUSED = "Paused"
@@ -25,6 +26,7 @@ class VMState(str, Enum):
 
 class VMPowerState(str, Enum):
     """VM power states for lifecycle operations."""
+
     ON = "on"
     OFF = "off"
     PAUSED = "paused"
@@ -34,6 +36,7 @@ class VMPowerState(str, Enum):
 # Device Types
 class DeviceType(str, Enum):
     """Types of devices that can be attached to VMs."""
+
     USB = "usb"
     STORAGE = "storage"
     NETWORK = "network"
@@ -46,19 +49,21 @@ class DeviceType(str, Enum):
 @dataclass
 class USBDeviceFilter:
     """USB device filter for device passthrough."""
-    name: Optional[str] = None
-    vendor_id: Optional[str] = None
-    product_id: Optional[str] = None
-    revision: Optional[str] = None
-    manufacturer: Optional[str] = None
-    product: Optional[str] = None
-    serial_number: Optional[str] = None
+
+    name: str | None = None
+    vendor_id: str | None = None
+    product_id: str | None = None
+    revision: str | None = None
+    manufacturer: str | None = None
+    product: str | None = None
+    serial_number: str | None = None
     active: bool = True
 
 
 # Storage Types
 class StorageControllerType(str, Enum):
     """Storage controller types supported by VirtualBox."""
+
     IDE = "IDE"
     SATA = "SATA"
     SCSI = "SCSI"
@@ -76,6 +81,7 @@ class StorageControllerType(str, Enum):
 
 class StorageBus(str, Enum):
     """Storage bus types."""
+
     IDE = "IDE"
     SATA = "SATA"
     SCSI = "SCSI"
@@ -89,15 +95,17 @@ class StorageBus(str, Enum):
 @dataclass
 class StorageMedium:
     """Storage medium definition."""
+
     path: str
     format_: str = "VDI"  # VDI, VMDK, VHD, etc.
     type_: str = "normal"  # normal, writethrough, immutable, etc.
-    size_mb: Optional[int] = None
+    size_mb: int | None = None
 
 
 # Network Types (re-export from network module)
 class NetworkAttachmentType(str, Enum):
     """Network attachment types."""
+
     NAT = "nat"
     NAT_NETWORK = "natnetwork"
     BRIDGED = "bridged"
@@ -110,32 +118,31 @@ class NetworkAttachmentType(str, Enum):
 # Operation Result Types
 class VMOperationResult(TypedDict, total=False):
     """Standard response format for VM operations."""
+
     status: Literal["success", "error"]
     vm_name: str
     message: str
-    error: Optional[str]
-    details: Dict[str, Any]
+    error: str | None
+    details: dict[str, Any]
 
 
 class DeviceOperationResult(TypedDict, total=False):
     """Standard response format for device operations."""
+
     status: Literal["success", "error"]
     vm_name: str
     device_type: DeviceType
     message: str
-    error: Optional[str]
-    device_info: Optional[Dict[str, Any]]
+    error: str | None
+    device_info: dict[str, Any] | None
 
 
 class StorageOperationResult(TypedDict, total=False):
     """Standard response format for storage operations."""
+
     status: Literal["success", "error"]
     vm_name: str
-    controller_name: Optional[str]
+    controller_name: str | None
     message: str
-    error: Optional[str]
-    storage_info: Optional[Dict[str, Any]]
-
-
-
-
+    error: str | None
+    storage_info: dict[str, Any] | None

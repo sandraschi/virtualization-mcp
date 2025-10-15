@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Script to update imports in plugin files after moving to server_v2/plugins."""
-import os
+
 from pathlib import Path
 
 # Directory containing the plugin files
@@ -16,7 +16,7 @@ plugin_files = [
     "monitoring.py",
     "network_analyzer.py",
     "security_testing.py",
-    "windows_sandbox.py"
+    "windows_sandbox.py",
 ]
 
 # Update imports in each file
@@ -27,27 +27,24 @@ for filename in plugin_files:
         continue
 
     # Read the file content
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
     # Update import statements
     updated_content = content.replace(
-        'from .base import BasePlugin',
-        'from virtualization-mcp.server_v2.plugins.base import BasePlugin'
+        "from .base import BasePlugin",
+        "from virtualization-mcp.server_v2.plugins.base import BasePlugin",
     ).replace(
-        'from . import register_plugin',
-        'from virtualization-mcp.server_v2.plugins import register_plugin'
+        "from . import register_plugin",
+        "from virtualization-mcp.server_v2.plugins import register_plugin",
     )
 
     # Write the updated content back to the file
     if updated_content != content:
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(updated_content)
         print(f"Updated imports in {filename}")
     else:
         print(f"No import updates needed for {filename}")
 
 print("\nAll plugin imports have been updated.")
-
-
-

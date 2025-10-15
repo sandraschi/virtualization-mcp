@@ -5,23 +5,24 @@ This module provides functionality for managing VM devices in a Hyper-V environm
 """
 
 import json
-import subprocess
 import logging
-from typing import Dict, List, Any, Optional
+import subprocess
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
+
 class HyperVDeviceManager:
     """Manages VM devices in a Hyper-V environment."""
-    
+
     @staticmethod
-    def list_devices(vm_name: str) -> List[Dict[str, Any]]:
+    def list_devices(vm_name: str) -> list[dict[str, Any]]:
         """
         List all devices for a Hyper-V VM.
-        
+
         Args:
             vm_name: Name of the VM to list devices for
-            
+
         Returns:
             List of device dictionaries, or empty list on error
         """
@@ -90,13 +91,10 @@ if ($scsi) {{
 # Return the devices as JSON
 $devices | ConvertTo-Json -Depth 10
 """
-            
+
             # Execute the PowerShell script
             result = subprocess.run(
-                ['powershell', '-Command', ps_script],
-                capture_output=True,
-                text=True,
-                check=True
+                ["powershell", "-Command", ps_script], capture_output=True, text=True, check=True
             )
 
             if result.returncode != 0:
@@ -105,25 +103,22 @@ $devices | ConvertTo-Json -Depth 10
 
             # Parse the JSON output
             devices = json.loads(result.stdout)
-            
+
             # Convert to list of dicts if it's not already
             if not isinstance(devices, list):
                 if isinstance(devices, dict):
                     return [devices]
                 logger.warning(f"Unexpected device list format: {type(devices)}")
                 return []
-                    
+
             return devices
-            
+
         except subprocess.CalledProcessError as e:
             logger.error(f"PowerShell command failed: {e.stderr}")
             return []
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse device list JSON: {e}")
             return []
-        except Exception as e:
+        except Exception:
             logger.exception(f"Unexpected error listing devices for VM {vm_name}")
             return []
-
-
-
