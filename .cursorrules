@@ -1,0 +1,197 @@
+# Virtualization-MCP Cursor Rules
+
+## Project Overview
+This is virtualization-mcp, a professional VirtualBox management MCP server built with FastMCP 2.12+. It provides comprehensive VM operations, networking, storage, snapshots, templates, and security features.
+
+## Code Standards
+
+### Python
+- **Style**: Use ruff for linting and formatting
+- **Type Hints**: Add type hints for all function signatures
+- **Async**: All MCP tools must be async functions
+- **Error Handling**: Always use try/except with proper error messages
+
+### Naming Conventions
+- **Package**: `virtualization_mcp` (underscore, not hyphen!)
+- **Modules**: lowercase with underscores (snake_case)
+- **Classes**: PascalCase (e.g., `VBoxManager`, `VMService`)
+- **Functions**: snake_case (e.g., `list_vms`, `create_snapshot`)
+- **Constants**: UPPER_CASE (e.g., `DEBUG`, `LOG_LEVEL`)
+
+### Import Organization
+```python
+# Standard library
+import os
+import sys
+from typing import Any, Dict, List
+
+# Third-party
+from fastmcp import FastMCP
+import psutil
+
+# Local imports
+from virtualization_mcp.vbox.manager import VBoxManager
+from virtualization_mcp.exceptions import VirtualizationMCPError
+```
+
+## Testing Requirements
+- **Coverage Target**: 80% (GLAMA Gold Standard)
+- **Current**: 39% (keep improving!)
+- **Framework**: pytest with pytest-cov
+- **Markers**: Use @pytest.mark.integration for integration tests
+- **Mocking**: Use `patch('subprocess.run')` for VBoxManage calls
+
+### Test Patterns
+```python
+@pytest.mark.asyncio
+async def test_function_name():
+    """Test description."""
+    with patch('subprocess.run') as mock_run:
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout='expected output',
+            stderr=""
+        )
+        
+        result = await function_to_test()
+        assert result is not None
+```
+
+## MCP Tool Development
+
+### Tool Registration
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP("virtualization-mcp")
+
+@mcp.tool()
+async def tool_name(param: str) -> Dict[str, Any]:
+    """
+    Tool description for Claude.
+    
+    Args:
+        param: Parameter description
+        
+    Returns:
+        Dictionary with results
+    """
+    # Implementation
+    return {"status": "success", "data": result}
+```
+
+### Common Patterns
+- **Always**: Return Dict[str, Any] with status/error fields
+- **Validate**: Check parameters before operations
+- **Log**: Use logger.info/error for operations
+- **Error Handling**: Return error dict, don't raise unless critical
+
+## Build System
+
+### UV-Based Dependency Management
+- **Install**: `uv sync --dev`
+- **Run**: `uv run <command>`
+- **Build**: `uv build`
+- **Test**: `uv run pytest`
+
+### MCPB Packaging
+- **Manifest**: `mcpb/manifest.json` (runtime config)
+- **Build Config**: `mcpb.json` (root, build settings)
+- **Build Command**: `mcpb pack . dist/virtualization-mcp-v{version}.mcpb`
+- **Prompts**: All in `mcpb/prompts/` folder
+
+## CI/CD Workflows
+
+### Active Workflows
+1. **ci.yml**: Main CI/CD (lint, test, build)
+2. **release.yml**: Automated releases on tags
+3. **security-scan.yml**: Daily security scans
+4. **coverage-report.yml**: Coverage tracking
+5. **glama-integration.yml**: GLAMA quality checks
+6. **code-quality.yml**: Code quality metrics
+7. **build-mcpb.yml**: MCPB package building
+8. **codeql.yml, security.yml, semgrep.yml**: Security analysis
+
+### Workflow Requirements
+- **Always use UV**: `uv sync --dev`, `uv run`
+- **Non-blocking**: Add `continue-on-error: true` for quality checks
+- **Correct paths**: `virtualization_mcp` (underscore!)
+- **Modern commands**: `safety scan` not `safety check`
+
+## VirtualBox Integration
+
+### VBoxManage Calls
+- **Always mock**: Use `patch('subprocess.run')` in tests
+- **Error handling**: Check returncode, parse stdout/stderr
+- **Path**: Auto-detect VBoxManage.exe location
+- **Compatibility**: Support Windows, macOS, Linux
+
+### VM Operations
+- **State check**: Always verify VM exists and is in correct state
+- **Resource validation**: Check memory, disk space before operations
+- **Snapshots**: Create before risky operations
+- **Cleanup**: Always clean up on errors
+
+## File Organization
+
+```
+virtualization-mcp/
+├── src/virtualization_mcp/    # Main source code
+│   ├── __init__.py            # Version = pyproject.toml version
+│   ├── vbox/                  # VirtualBox operations
+│   ├── services/              # VM service layer
+│   ├── tools/                 # MCP tools
+│   └── utils/                 # Utilities
+├── mcpb/                      # MCPB packaging
+│   ├── manifest.json          # Runtime config
+│   ├── prompts/               # AI prompts (8 templates)
+│   └── assets/                # Icons, screenshots
+├── tests/                     # Test suite
+├── docs/                      # Documentation
+├── .github/workflows/         # CI/CD workflows
+├── pyproject.toml             # Python project config
+├── mcpb.json                  # MCPB build config
+└── manifest.json              # Copy of mcpb/manifest.json (for building)
+```
+
+## Common Issues & Solutions
+
+### Import Errors
+- ❌ `import virtualization-mcp` (hyphen is wrong!)
+- ✅ `import virtualization_mcp` (underscore!)
+- ❌ `from virtualization_mcp.vbox.compat_adapter.subprocess import run` (wrong!)
+- ✅ `patch('subprocess.run')` (correct!)
+
+### Build Errors
+- Use `uv sync --dev` not `pip install -r requirements.txt`
+- Version must match in: pyproject.toml, __init__.py, mcpb/manifest.json, mcpb.json
+- MCPB build from root: `mcpb pack . dist/...` not `mcpb pack mcpb dist/...`
+
+### Test Failures
+- Mock subprocess.run, not internal functions
+- Use correct function parameter names (check signature!)
+- Add pytest markers to pytest.ini
+
+## Version Management
+When bumping version, update ALL of:
+1. `pyproject.toml` - version field
+2. `src/virtualization_mcp/__init__.py` - __version__
+3. `mcpb/manifest.json` - version field  
+4. `mcpb.json` - version field
+5. `CHANGELOG.md` - Add release notes
+
+## Documentation
+- Keep docs/github/ updated for CI/CD
+- Keep docs/mcpb-packaging/ updated for MCPB
+- Update COVERAGE_PROGRESS.md after coverage improvements
+- Create/update docs for new features
+
+## AI Assistant Guidelines
+- Be systematic and thorough
+- Fix errors, don't just disable
+- Test locally before committing
+- Update documentation when making changes
+- Keep version numbers synchronized
+- Use UV for all Python operations
+- Make workflows resilient with continue-on-error
+
