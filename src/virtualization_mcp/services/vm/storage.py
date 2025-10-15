@@ -221,7 +221,6 @@ class VMStorageMixin:
 
         finally:
             session.unlock_machine()
-            return {"status": "error", "error": str(e)}
 
     def create_disk(self, disk_path: str, size_gb: int, format_type: str = "vdi") -> dict[str, Any]:
         """

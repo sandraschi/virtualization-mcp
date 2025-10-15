@@ -6,6 +6,7 @@ This plugin provides integration with Windows Sandbox for running applications i
 import asyncio
 import logging
 import uuid
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 

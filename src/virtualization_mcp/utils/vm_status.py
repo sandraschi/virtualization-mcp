@@ -4,7 +4,6 @@ VM Status Utilities
 This module provides utility functions for checking the status of VirtualBox VMs.
 """
 
-
 # Import the VBoxManager only when needed to avoid circular imports
 # We'll use a lazy import pattern to handle the dependency
 _vbox_manager = None

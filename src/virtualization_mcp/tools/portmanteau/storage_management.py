@@ -44,6 +44,7 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
         disk_name: str | None = None,
         disk_size_gb: int | None = None,
         disk_path: str | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Manage storage configurations with various actions.

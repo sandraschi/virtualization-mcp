@@ -4,7 +4,6 @@ Comprehensive test suite to achieve GLAMA Gold Standard 80% coverage.
 This test file focuses on testing currently uncovered modules, especially portmanteau tools.
 """
 
-
 import pytest
 
 

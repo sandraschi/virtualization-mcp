@@ -1176,7 +1176,7 @@ class VMService:
                 "status": "success",
                 "vm_name": vm_name,
                 "adapter_count": len(adapter_configs),
-                "message": f"✓ Network configuration updated for VM '{vm}'",
+                "message": f"✓ Network configuration updated for VM '{vm_name}'",
                 "troubleshooting": [
                     "Network changes take effect after the VM is restarted",
                     "Verify network connectivity from within the guest OS",

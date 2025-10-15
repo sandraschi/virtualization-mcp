@@ -238,7 +238,7 @@ def main():
         config = load_config()
 
         # Create and start the server
-        server = virtualization - mcpServer(config)
+        server = VirtualizationMCPServer(config)
 
         # Run the server
         asyncio.run(server.start())

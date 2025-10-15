@@ -32,7 +32,8 @@ async def list_available_tools():
             # Print the method name and first line of docstring
             print(f"\n{name}()")
             print("-" * (len(name) + 2))
-            print(f"  {doc.split('\n')[0]}")
+            first_line = doc.split("\n")[0]
+            print(f"  {first_line}")
 
     except Exception as e:
         print(f"Error: {e}")

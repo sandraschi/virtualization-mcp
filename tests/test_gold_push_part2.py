@@ -5,7 +5,6 @@ Targeting vm_service.py (446 lines, 11%) and devices.py (386 lines, 19%)
 These 2 files alone = 832 lines! If we hit 70% on them = 582 lines = +6.5% total coverage!
 """
 
-
 import pytest
 
 # =============================================================================

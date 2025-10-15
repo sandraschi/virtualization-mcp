@@ -340,7 +340,7 @@ class VMMetricsMixin:
                 "vm_name": vm_name,
                 "timestamp": timestamp,
                 "cpu_usage_percent": cpu_usage_percent,
-                "memory_total_mb": memory // (1024 * 1024),
+                "memory_total_mb": memory_total // (1024 * 1024),
                 "memory_used_mb": memory_used // (1024 * 1024),
                 "memory_free_mb": memory_free // (1024 * 1024),
                 "disk_read_mb": disk_read_bytes // (1024 * 1024),

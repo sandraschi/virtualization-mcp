@@ -43,6 +43,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
         network_type: str | None = None,
         ip_address: str | None = None,
         netmask: str | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Manage network configurations with various actions.

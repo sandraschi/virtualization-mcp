@@ -35,7 +35,9 @@ def register_system_management_tool(mcp: FastMCP) -> None:
     @mcp.tool(
         name="system_management", description="Comprehensive system information and diagnostics"
     )
-    async def system_management(action: str, vm_name: str | None = None) -> dict[str, Any]:
+    async def system_management(
+        action: str, vm_name: str | None = None, **kwargs
+    ) -> dict[str, Any]:
         """
         Get system information and diagnostics with various actions.
 

@@ -6,11 +6,15 @@ following the FastMCP 2.11 standard for MCP servers.
 """
 
 import inspect
+import logging
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Any
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 from virtualization_mcp.server_v2.plugins import register_plugin
 from virtualization_mcp.server_v2.plugins.base import BasePlugin

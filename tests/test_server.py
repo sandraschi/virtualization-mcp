@@ -85,10 +85,11 @@ class TestServerInitialization:
         # This test is disabled because the main() function doesn't directly instantiate VBoxManager
         pytest.skip("Test disabled - main() function doesn't directly instantiate VBoxManager")
 
+        # Note: The following assertions are not reachable due to the skip above
         # Verify the TemplateManager was initialized correctly
-        mock_template_manager.assert_called_once_with(
-            templates_path=Path(temp_dir) / "config" / "vm_templates.yaml"
-        )
+        # mock_template_manager.assert_called_once_with(
+        #     templates_path=Path(temp_dir) / "config" / "vm_templates.yaml"
+        # )
 
         # Verify FastMCP was initialized with the correct parameters
         mock_fastmcp.assert_called_once_with(

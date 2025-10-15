@@ -55,6 +55,7 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
         os_type: str | None = None,
         memory_mb: int | None = None,
         disk_size_gb: int | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Manage virtual machines with various actions.
