@@ -107,7 +107,7 @@ jobs:
     - name: Test MCP server startup
       run: |
         uv run python -c "
-        from virtualization-mcp.all_tools_server import main
+        from virtualization_mcp.all_tools_server import main
         print('MCP server initialized successfully')
         "
 
@@ -129,10 +129,10 @@ jobs:
     - name: Test installation
       run: |
         pip install dist/*.whl
-        python -c "import virtualization-mcp; print(f'Version: {virtualization-mcp.__version__}')"
+        python -c "import virtualization_mcp; print(f'Version: {virtualization_mcp.__version__}')"
     - name: Test CLI commands
       run: |
-        python -m virtualization-mcp --help
+        python -m virtualization_mcp --help
     - name: Create beta release notes
       run: |
         echo "# Beta Release Validation Report" > beta-report.md
