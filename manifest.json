@@ -6,7 +6,7 @@
   "long_description": "VirtualizationMCP is a production-ready MCP server that provides comprehensive VirtualBox management capabilities including VM lifecycle management, networking configuration, storage operations, snapshots, templates, and advanced security features. Built with FastMCP 2.12+ for maximum compatibility and performance.",
   "author": {
     "name": "Sandra Schi",
-    "email": "sandra@sandraschi.dev",
+    "email": "sandraschipal@protonmail.com",
     "url": "https://github.com/sandraschi"
   },
   "repository": {

@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10,<4.0"
 license = { text = "MIT" }
 authors = [
-    { name = "Sandra Schi", email = "sandra@sandraschi.dev" }
+    { name = "Sandra Schi", email = "sandraschipal@protonmail.com" }
 ]
 maintainers = [
     { name = "Sandra Schi", email = "sandra@sandraschi.dev" }
