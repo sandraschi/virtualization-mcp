@@ -2,7 +2,7 @@
 Virtualization MCP Server - Complete Implementation
 """
 
-__version__ = "1.0.1b1"
+__version__ = "1.0.1b2"
 
 # Ensure the src directory is in the Python path
 import os
