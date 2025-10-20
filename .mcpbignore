@@ -8,6 +8,17 @@ __pycache__/
 *.pyd
 .Python
 
+# Virtual environments (CRITICAL - 40MB!)
+.venv/
+venv/
+env/
+.env/
+
+# Cache directories (CRITICAL - large!)
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
 # Testing
 tests/
 .pytest_cache/
@@ -49,10 +60,23 @@ scripts/
 # Config files not needed in package
 .editorconfig
 .pre-commit-config.yaml
-pytest.ini
 mypy.ini
 .ruff.toml
-pyproject.toml
+
+# VirtualBox files (CRITICAL - multi-GB!)
+.vbox/
+*.vdi
+*.vmdk
+*.vhd
+*.vbox
+*.vbox-prev
+
+# Test artifacts and data (CRITICAL - large!)
+MagicMock/
+sandboxes/
+quarantine/
+analysis/
+backups/
 
 # Logs
 *.log
@@ -82,4 +106,52 @@ check*.py
 run_*.py
 create_dirs.py
 update_*.py
+
+# Virtual environments and caches (CRITICAL - very large!)
+.venv/
+venv/
+env/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+__pycache__/
+
+# VirtualBox files (test artifacts)
+.vbox/
+*.vdi
+*.vmdk
+*.vbox
+*.vbox-prev
+
+# Test artifacts and mock data
+MagicMock/
+sandboxes/
+quarantine/
+backups/
+analysis/
+
+# Security reports
+security_reports/
+security_tools/
+
+# Examples (documented separately)
+examples/
+
+# Log directories
+logs/
+
+# Build artifacts
+*.whl
+*.tar.gz
+uv.lock
+Dockerfile
+
+# Additional status files
+*.json
+!manifest.json
+!mcpb.json
+!mcpb/manifest.json
+!requirements*.txt
+!package.json
+!config/*.yaml
 
