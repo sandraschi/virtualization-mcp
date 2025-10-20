@@ -68,9 +68,13 @@ jobs:
           version: "latest"
       - name: Install dependencies
         run: uv sync --dev
+      
+      - name: Verify pytest installation
+        run: uv run python -m pytest --version
+      
       - name: Run tests with coverage
         run: |
-          uv run pytest --cov=virtualization_mcp --cov-report=xml --cov-report=term-missing -v --maxfail=10 --tb=short || echo "Tests completed with warnings"
+          uv run python -m pytest --cov=virtualization_mcp --cov-report=xml --cov-report=term-missing -v --maxfail=10 --tb=short || echo "Tests completed with warnings"
         continue-on-error: true
       
       - name: Upload coverage to Codecov
