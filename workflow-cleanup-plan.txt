@@ -1,0 +1,16 @@
+# REDUNDANT WORKFLOWS TO DISABLE:
+ci-cd.yml - Old, replaced by ci.yml
+ci-cd-enhanced.yml - Variant, not needed
+build-mcpb.yml - Redundant (in release.yml)
+beta-testing.yml - Not needed
+code-quality.yml - Redundant (in ci.yml)
+security.yml - Duplicate
+security-scan.yml - Duplicate
+
+# KEEP THESE:
+ci.yml - Main CI/CD
+release.yml - Releases
+codeql.yml - GitHub security
+semgrep.yml - Security scanning
+glama-integration.yml - GLAMA quality
+coverage-report.yml - Coverage tracking
