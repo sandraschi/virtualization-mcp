@@ -16,8 +16,8 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-from virtualization_mcp.server_v2.plugins import register_plugin
-from virtualization_mcp.server_v2.plugins.base import BasePlugin
+from virtualization_mcp.server_v2.plugins import register_plugin  # noqa: E402
+from virtualization_mcp.server_v2.plugins.base import BasePlugin  # noqa: E402
 
 # FastMCP 2.11 Documentation Standard Constants
 MCP_DOC_VERSION = "2.11.3"

@@ -161,7 +161,7 @@ class VMSnapshotMixin:
 
             # Get current VM state
             vm_info = self.vbox_manager.get_vm_info(vm_name)
-            current_state = vm_info.get("VMState", "").lower()
+            vm_info.get("VMState", "").lower()
 
             # Restore the snapshot using VMOperations
             result = self.vm_operations.restore_snapshot(

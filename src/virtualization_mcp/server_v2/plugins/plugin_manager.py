@@ -52,13 +52,12 @@ class PluginManager:
         plugins_path = Path(__file__).parent
 
         # Find all Python modules in the plugins directory
-        for finder, name, _ in pkgutil.iter_modules([str(plugins_path)]):
+        for _finder, name, _ in pkgutil.iter_modules([str(plugins_path)]):
             if name.startswith("_") or name in ("base_plugin", "plugin_manager"):
                 continue
 
             try:
                 # Import the plugin module
-                full_name = f"{plugins_pkg}.{name}"
                 module = importlib.import_module(f"{plugins_pkg}.{name}")
 
                 # Find all classes that inherit from BasePlugin

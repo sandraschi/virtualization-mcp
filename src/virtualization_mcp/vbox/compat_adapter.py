@@ -48,9 +48,9 @@ class VBoxManager:
     def _validate_vboxmanage(self) -> None:
         """Validate that VBoxManage is accessible."""
         try:
-            self.vbox.version
+            _ = self.vbox.version
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to access VBoxManage: {e}")
+            raise VBoxManagerError(f"Failed to access VBoxManage: {e}") from e
 
     def vm_exists(self, vm_name: str) -> bool:
         """Check if a VM with the given name exists."""
@@ -58,7 +58,7 @@ class VBoxManager:
             vms = self.list_vms()
             return any(vm["name"] == vm_name for vm in vms)
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to check if VM exists: {e}")
+            raise VBoxManagerError(f"Failed to check if VM exists: {e}") from e
 
     def _execute(self, command: list[str], parse_json: bool = False) -> Any:
         """
@@ -99,7 +99,7 @@ class VBoxManager:
             vm_info = self.get_vm_info(vm_name)
             return self._normalize_vm_state(vm_info.get("VMState", "poweroff"))
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to get VM state: {e}")
+            raise VBoxManagerError(f"Failed to get VM state: {e}") from e
 
     def _normalize_vm_state(self, state: str) -> str:
         """Normalize VM state to match the expected format."""
@@ -128,9 +128,9 @@ class VBoxManager:
     def _validate_vboxmanage(self) -> None:
         """Validate that VBoxManage is accessible (stub for compatibility)."""
         try:
-            self.vbox.version
+            _ = self.vbox.version
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to access VBoxManage: {e}")
+            raise VBoxManagerError(f"Failed to access VBoxManage: {e}") from e
 
     def list_vms(self, **kwargs) -> list[dict[str, Any]]:
         """
@@ -165,7 +165,7 @@ class VBoxManager:
 
             return result
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to list VMs: {e}")
+            raise VBoxManagerError(f"Failed to list VMs: {e}") from e
 
     def get_vm_info(self, vm_name: str) -> dict[str, Any]:
         """
@@ -192,7 +192,7 @@ class VBoxManager:
 
             return info
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to get VM info: {e}")
+            raise VBoxManagerError(f"Failed to get VM info: {e}") from e
 
     def get_vm_config(self, vm_name: str) -> dict[str, Any]:
         """
@@ -229,7 +229,7 @@ class VBoxManager:
 
             return config
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to get VM config: {e}")
+            raise VBoxManagerError(f"Failed to get VM config: {e}") from e
 
     def start_vm(self, vm_name: str, headless: bool = False, **kwargs) -> bool:
         """
@@ -253,7 +253,7 @@ class VBoxManager:
             self.vbox._run_command(f"startvm {vm_name} --type {start_type}")
             return True
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to start VM: {e}")
+            raise VBoxManagerError(f"Failed to start VM: {e}") from e
 
     def stop_vm(self, vm_name: str, force: bool = False, **kwargs) -> bool:
         """
@@ -280,7 +280,7 @@ class VBoxManager:
 
             return True
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to stop VM: {e}")
+            raise VBoxManagerError(f"Failed to stop VM: {e}") from e
 
     def create_vm(
         self, name: str = None, ostype: str = None, memory: int = None, cpus: int = None, **kwargs
@@ -311,11 +311,11 @@ class VBoxManager:
             For backward compatibility, the first four parameters can be passed as positional arguments:
             create_vm(name, ostype, memory, cpus, **kwargs)
         """
-        # Handle both named and positional parameters
+        # Handle both named and positional parameters with aliases
         name = name or kwargs.get("name")
-        ostype = ostype or kwargs.get("ostype")
-        memory = memory or kwargs.get("memory")
-        cpus = cpus or kwargs.get("cpus")
+        ostype = ostype or kwargs.get("ostype") or kwargs.get("os_type")
+        memory = memory or kwargs.get("memory") or kwargs.get("memory_mb")
+        cpus = cpus or kwargs.get("cpus") or kwargs.get("cpu_count")
 
         # Validate required parameters
         if not all([name, ostype, memory is not None, cpus is not None]):
@@ -395,7 +395,7 @@ class VBoxManager:
             except Exception:
                 pass
 
-            raise VBoxManagerError(f"Failed to create VM: {e}")
+            raise VBoxManagerError(f"Failed to create VM: {e}") from e
 
     def delete_vm(self, vm_name: str, delete_disks: bool = False) -> bool:
         """
@@ -446,7 +446,7 @@ class VBoxManager:
 
             return True
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to delete VM: {e}")
+            raise VBoxManagerError(f"Failed to delete VM: {e}") from e
 
     def execute_in_vm(self, vm_name: str, command: list[str], **kwargs) -> str:
         """
@@ -476,7 +476,7 @@ class VBoxManager:
             # Get required parameters
             username = kwargs.get("username")
             password = kwargs.get("password")
-            wait = kwargs.get("wait", True)
+            kwargs.get("wait", True)
             timeout_ms = kwargs.get("timeout_ms", 30000)
 
             if not username or not password:
@@ -519,7 +519,7 @@ class VBoxManager:
             )
 
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to execute command in VM: {e}")
+            raise VBoxManagerError(f"Failed to execute command in VM: {e}") from e
 
     def take_snapshot(
         self, vm_name: str, snapshot_name: str, description: str = "", **kwargs
@@ -579,7 +579,7 @@ class VBoxManager:
             }
 
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to take snapshot: {e}")
+            raise VBoxManagerError(f"Failed to take snapshot: {e}") from e
 
     def restore_snapshot(
         self,
@@ -626,7 +626,7 @@ class VBoxManager:
             return True
 
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to restore snapshot: {e}")
+            raise VBoxManagerError(f"Failed to restore snapshot: {e}") from e
 
     def list_snapshots(self, vm_name: str) -> list[dict[str, Any]]:
         """
@@ -671,7 +671,7 @@ class VBoxManager:
             return snapshots
 
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to list snapshots: {e}")
+            raise VBoxManagerError(f"Failed to list snapshots: {e}") from e
 
     def delete_snapshot(
         self, vm_name: str, snapshot_name: str | None = None, snapshot_uuid: str | None = None
@@ -700,7 +700,59 @@ class VBoxManager:
             return True
 
         except VirtualBoxError as e:
-            raise VBoxManagerError(f"Failed to delete snapshot: {e}")
+            raise VBoxManagerError(f"Failed to delete snapshot: {e}") from e
+
+    def clone_vm(
+        self,
+        source_vm: str,
+        target_vm: str,
+        linked: bool = True,
+        snapshot_name: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Clone VM for testing (linked clones save space).
+
+        Args:
+            source_vm: Source VM name
+            target_vm: Target VM name
+            linked: Create linked clone (saves disk space)
+            snapshot_name: Clone from specific snapshot
+
+        Returns:
+            Dict with clone result
+        """
+        try:
+            if not self.vm_exists(source_vm):
+                raise VBoxManagerError(f"Source VM '{source_vm}' not found")
+
+            if self.vm_exists(target_vm):
+                raise VBoxManagerError(f"Target VM '{target_vm}' already exists")
+
+            logger.info(f"Cloning VM '{source_vm}' to '{target_vm}' (linked={linked})")
+
+            cmd = ["clonevm", source_vm, "--name", target_vm, "--register"]
+
+            # Add clone options
+            if linked:
+                cmd.extend(["--mode", "link"])
+            else:
+                cmd.extend(["--mode", "all"])
+
+            if snapshot_name:
+                cmd.extend(["--snapshot", snapshot_name])
+
+            self._execute(cmd)
+
+            return {
+                "source_vm": source_vm,
+                "target_vm": target_vm,
+                "linked": linked,
+                "snapshot": snapshot_name,
+                "status": "cloned",
+            }
+
+        except VirtualBoxError as e:
+            raise VBoxManagerError(f"Failed to clone VM: {e}") from e
 
 
 # For backward compatibility

@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 # Lazy imports to avoid circular imports
-import importlib
+import importlib  # noqa: E402
 
 
 def _lazy_import():
@@ -60,7 +60,7 @@ def get_version() -> str:
 
 
 # Initialize logging when the package is imported
-import logging
+import logging  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

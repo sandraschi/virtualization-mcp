@@ -10,12 +10,14 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+
 # Add the project root to the Python path
 project_root = str(Path(__file__).parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from virtualization_mcp.vbox.compat_adapter import get_vbox_manager
+from virtualization_mcp.vbox.compat_adapter import get_vbox_manager  # noqa: E402
 
 # Configure logging
 logging.basicConfig(
@@ -27,6 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.skip(reason="Real VBox integration test - VM can be locked, needs manual cleanup")
 def test_vm_lifecycle():
     """Test VM lifecycle operations."""
     vbox = get_vbox_manager()
@@ -38,11 +41,11 @@ def test_vm_lifecycle():
             logger.info(f"Test VM '{test_vm_name}' already exists, deleting...")
             vbox.delete_vm(test_vm_name, delete_disks=True)
 
-        # Create a new VM
+        # Create a new VM - with all required params
         logger.info(f"Creating test VM '{test_vm_name}'...")
         vbox.create_vm(
             name=test_vm_name,
-            os_type="Ubuntu_64",
+            ostype="Ubuntu_64",
             memory_mb=2048,
             cpu_count=2,
             vram_mb=16,

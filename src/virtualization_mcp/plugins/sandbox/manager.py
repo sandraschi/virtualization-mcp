@@ -25,6 +25,26 @@ class SandboxState(str, Enum):
     ERROR = "Error"
 
 
+class MappedFolder(BaseModel):
+    """Model for Windows Sandbox folder mapping."""
+
+    host_path: str = Field(..., description="Path on host machine (must exist and be absolute)")
+    sandbox_path: str = Field(default="", description="Path in sandbox (optional, defaults to Desktop)")
+    read_only: bool = Field(default=False, description="Whether folder is read-only in sandbox")
+
+    @field_validator("host_path")
+    @classmethod
+    def validate_host_path(cls, v: str) -> str:
+        """Validate that host path exists and is absolute."""
+        from pathlib import Path
+        path = Path(v)
+        if not path.is_absolute():
+            raise ValueError(f"Host path must be absolute: {v}")
+        if not path.exists():
+            raise ValueError(f"Host path does not exist: {v}")
+        return str(path)
+
+
 class SandboxConfig(BaseModel):
     """Configuration for Windows Sandbox."""
 
@@ -32,7 +52,7 @@ class SandboxConfig(BaseModel):
     memory_mb: int = Field(4096, ge=1024, le=32768, description="Memory in MB (1024-32768)")
     vgpu: bool = Field(True, description="Enable virtual GPU")
     networking: bool = Field(True, description="Enable networking")
-    mapped_folders: list[dict[str, str]] = Field(
+    mapped_folders: list[MappedFolder] = Field(
         default_factory=list, description="List of folders to map into the sandbox"
     )
     logon_commands: list[str] = Field(
@@ -113,7 +133,7 @@ class WindowsSandboxHelper:
 
             # Start the sandbox
             cmd = f'Start-Process -FilePath "{wsx_path}" -Wait'
-            proc = await asyncio.create_subprocess_shell(
+            await asyncio.create_subprocess_shell(
                 f'powershell -Command "{cmd}"',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -137,33 +157,35 @@ class WindowsSandboxHelper:
 
     def _generate_wsx_config(self, config: SandboxConfig) -> str:
         """Generate WSX configuration XML for Windows Sandbox."""
-        # This is a simplified example - a real implementation would generate
-        # proper XML based on the configuration
+        import xml.sax.saxutils as saxutils
 
-        # Generate mapped folders XML
-        mapped_folders_xml = "".join(
-            f"<MappedFolder><HostFolder>{f['host_path']}</HostFolder>"
-            f"<ReadOnly>{'true' if f.get('readonly', False) else 'false'}</ReadOnly>"
-            "</MappedFolder>"
-            for f in config.mapped_folders
-        )
+        # Start building XML
+        xml_parts = ["<Configuration>"]
+        xml_parts.append(f"<VGpu>{'Enable' if config.vgpu else 'Disable'}</VGpu>")
+        xml_parts.append(f"<Networking>{'Enable' if config.networking else 'Disable'}</Networking>")
+        xml_parts.append(f"<MemoryInMB>{config.memory_mb}</MemoryInMB>")
 
-        # Generate logon commands XML
-        logon_commands_xml = "</Command><Command>".join(config.logon_commands)
+        # Add mapped folders only if present
+        if config.mapped_folders:
+            xml_parts.append("<MappedFolders>")
+            for folder in config.mapped_folders:
+                xml_parts.append("<MappedFolder>")
+                xml_parts.append(f"<HostFolder>{saxutils.escape(folder.host_path)}</HostFolder>")
+                if folder.sandbox_path:
+                    xml_parts.append(f"<SandboxFolder>{saxutils.escape(folder.sandbox_path)}</SandboxFolder>")
+                xml_parts.append(f"<ReadOnly>{'true' if folder.read_only else 'false'}</ReadOnly>")
+                xml_parts.append("</MappedFolder>")
+            xml_parts.append("</MappedFolders>")
 
-        return f"""
-        <Configuration>
-            <VGpu>{"Enable" if config.vgpu else "Disable"}</VGpu>
-            <Networking>{"Enable" if config.networking else "Disable"}</Networking>
-            <MemoryInMB>{config.memory_mb}</MemoryInMB>
-            <MappedFolders>
-                {mapped_folders_xml}
-            </MappedFolders>
-            <LogonCommand>
-                <Command>{logon_commands_xml}</Command>
-            </LogonCommand>
-        </Configuration>
-        """.strip()
+        # Add logon commands only if present
+        if config.logon_commands:
+            for command in config.logon_commands:
+                xml_parts.append("<LogonCommand>")
+                xml_parts.append(f"<Command>{saxutils.escape(command)}</Command>")
+                xml_parts.append("</LogonCommand>")
+
+        xml_parts.append("</Configuration>")
+        return "\n".join(xml_parts)
 
     async def _list_sandboxes(self) -> list[dict[str, Any]]:
         """List all running Windows Sandbox instances."""

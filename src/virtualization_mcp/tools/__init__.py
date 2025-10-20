@@ -89,7 +89,6 @@ from virtualization_mcp.tools.security import (
     # Security Testing Tools
     TestStatus,
     ThreatLevel,
-    analyze_file,
     cancel_test,
     delete_analysis,
     generate_report,

@@ -108,7 +108,7 @@ class VMDeviceMixin:
                 )
                 if "Enabled" in result.stdout:
                     return "hyperv"
-            except:
+            except Exception:
                 pass
 
         # Default to VirtualBox
@@ -264,7 +264,7 @@ class VMDeviceMixin:
             }
 
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to attach ISO in Hyper-V: {e.stderr}")
+            raise RuntimeError(f"Failed to attach ISO in Hyper-V: {e.stderr}") from e
 
     @device_operation
     def detach_iso(
@@ -372,7 +372,7 @@ class VMDeviceMixin:
             }
 
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to detach ISO in Hyper-V: {e.stderr}")
+            raise RuntimeError(f"Failed to detach ISO in Hyper-V: {e.stderr}") from e
 
     @device_operation
     def attach_usb(
@@ -476,7 +476,7 @@ class VMDeviceMixin:
             }
 
         except Exception as e:
-            raise RuntimeError(f"Failed to attach USB device: {str(e)}")
+            raise RuntimeError(f"Failed to attach USB device: {str(e)}") from e
         finally:
             if session.state == self.vbox_manager.constants.SessionState_Locked:
                 session.unlock_machine()
@@ -519,9 +519,9 @@ class VMDeviceMixin:
             }
 
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to attach USB device in Hyper-V: {e.stderr}")
+            raise RuntimeError(f"Failed to attach USB device in Hyper-V: {e.stderr}") from e
         except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse USB device info from Hyper-V: {e}")
+            raise RuntimeError(f"Failed to parse USB device info from Hyper-V: {e}") from e
 
     @device_operation
     def detach_usb(self, vm_name: str, usb_filter: str = None, port: int = None) -> dict[str, Any]:
@@ -603,7 +603,7 @@ class VMDeviceMixin:
             return {"status": "success", "vm_name": vm_name, "usb_filter": usb_filter, "port": port}
 
         except Exception as e:
-            raise RuntimeError(f"Failed to detach USB device: {str(e)}")
+            raise RuntimeError(f"Failed to detach USB device: {str(e)}") from e
         finally:
             if session.state == self.vbox_manager.constants.SessionState_Locked:
                 session.unlock_machine()
@@ -636,7 +636,7 @@ class VMDeviceMixin:
             }
 
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to detach USB device in Hyper-V: {e.stderr}")
+            raise RuntimeError(f"Failed to detach USB device in Hyper-V: {e.stderr}") from e
 
     def _list_devices_virtualbox(self, vm_name: str) -> list[dict[str, Any]]:
         """Internal method to list devices in VirtualBox."""
@@ -724,7 +724,7 @@ class VMDeviceMixin:
                         logger.error(f"Error unlocking session: {str(unlock_error)}")
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list devices for VM {vm_name}: {str(e)}")
+            raise RuntimeError(f"Failed to list devices for VM {vm_name}: {str(e)}") from e
 
     def _list_devices_hyperv(self, vm_name: str) -> dict[str, Any]:
         """
@@ -820,7 +820,7 @@ class VMDeviceMixin:
             try:
                 adapter = session.machine.get_network_adapter(adapter_number)
             except Exception as e:
-                raise RuntimeError(f"Network adapter {adapter_number} not found: {str(e)}")
+                raise RuntimeError(f"Network adapter {adapter_number} not found: {str(e)}") from e
 
             # Update adapter settings
             if "enabled" in kwargs:
@@ -894,7 +894,7 @@ class VMDeviceMixin:
             }
 
         except Exception as e:
-            raise RuntimeError(f"Failed to update network adapter: {str(e)}")
+            raise RuntimeError(f"Failed to update network adapter: {str(e)}") from e
         finally:
             if session.state == self.vbox_manager.constants.SessionState_Locked:
                 session.unlock_machine()
@@ -960,9 +960,9 @@ class VMDeviceMixin:
             }
 
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to update network adapter in Hyper-V: {e.stderr}")
+            raise RuntimeError(f"Failed to update network adapter in Hyper-V: {e.stderr}") from e
         except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse network adapter info from Hyper-V: {e}")
+            raise RuntimeError(f"Failed to parse network adapter info from Hyper-V: {e}") from e
 
     @device_operation
     def add_disk(
@@ -1026,41 +1026,6 @@ class VMDeviceMixin:
                 vm_name, disk_path, disk_type, size_mb, controller, port, device
             )
 
-    def attach_usb(self, vm_name: str, usb_filter: str) -> dict[str, Any]:
-        """
-        Attach a USB device to a virtual machine.
-
-        Args:
-            vm_name: Name of the VM
-            usb_filter: USB device filter string (vendor:product)
-
-        Returns:
-            Dict containing status and attachment details
-        """
-        try:
-            # Implementation will be moved from vm_service.py
-            pass
-        except Exception as e:
-            logger.error(f"Failed to attach USB device to VM {vm_name}: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
-
-    def detach_usb(self, vm_name: str, usb_filter: str) -> dict[str, Any]:
-        """
-        Detach a USB device from a virtual machine.
-
-        Args:
-            vm_name: Name of the VM
-            usb_filter: USB device filter string (vendor:product)
-
-        Returns:
-            Dict containing status and operation result
-        """
-        try:
-            # Implementation will be moved from vm_service.py
-            pass
-        except Exception as e:
-            logger.error(f"Failed to detach USB device from VM {vm_name}: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
 
     def list_attached_devices(self, vm_name: str) -> dict[str, Any]:
         """

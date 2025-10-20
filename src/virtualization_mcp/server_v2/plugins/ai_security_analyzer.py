@@ -131,7 +131,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail=f"Error loading report: {str(e)}",
-                    )
+                    ) from e
 
             return self.reports[scan_id]
 
@@ -194,7 +194,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Error analyzing network behavior: {str(e)}",
-                )
+                ) from e
 
     async def _run_scan(
         self, report: SecurityReport, vm_names: list[str], scan_types: list[str]

@@ -1,16 +1,23 @@
 {
   "name": "virtualization_mcp",
-  "version": "1.0.0",
+  "version": "1.0.1b1",
   "description": "VirtualBox MCP Server for Claude Desktop",
   "mcpServers": {
     "virtualization_mcp": {
-      "command": "python",
-      "args": ["-m", "virtualization_mcp"],
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "d:\\Dev\\repos\\virtualization-mcp",
+        "python",
+        "-m",
+        "virtualization_mcp"
+      ],
       "env": {
-        "PYTHONPATH": "src",
         "VBOX_INSTALL_PATH": "C:\\Program Files\\Oracle\\VirtualBox",
         "VBOX_USER_HOME": "%USERPROFILE%\\VirtualBox VMs",
-        "DEBUG": "true"
+        "DEBUG": "true",
+        "PYTHONUNBUFFERED": "1"
       }
     }
   }

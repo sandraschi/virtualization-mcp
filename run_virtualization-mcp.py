@@ -30,7 +30,7 @@ async def run_server():
         from virtualization_mcp.all_tools_server import start_mcp_server
 
         logger.info("Starting virtualization-mcp server...")
-        server = await start_mcp_server(host="0.0.0.0", port=8000)
+        await start_mcp_server(host="0.0.0.0", port=8000)
         logger.info("virtualization-mcp server started successfully")
 
         # Keep the server running

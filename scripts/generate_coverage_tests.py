@@ -68,7 +68,7 @@ def generate_test_for_function(module_path: str, func_info: dict[str, Any]) -> s
     {decorator}async def {test_name}(self):
         """Test {func_name} function execution."""
         from {module_path} import {func_name}
-        
+
         with patch('virtualization_mcp.vbox.compat_adapter.VBoxManager'):
             try:
                 result = {await_str}{func_name}({params_str})

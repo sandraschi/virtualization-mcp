@@ -52,9 +52,34 @@ def mock_vbox_manager():
 
 
 @pytest.fixture
-def mock_network_manager():
-    """Mock network manager for testing."""
+def mock_vbox():
+    """Synchronous mock VBox manager for tests that don't use async."""
+    from unittest.mock import MagicMock
+    mock = MagicMock()
+    mock.list_vms.return_value = []
+    mock.vm_exists.return_value = True
+    mock.get_vm_info.return_value = {"name": "test-vm", "state": "poweroff", "VMState": "poweroff"}
+    mock.get_vm_state.return_value = "poweroff"
+    mock.start_vm.return_value = {"status": "success"}
+    mock.stop_vm.return_value = {"status": "success"}
+    mock.create_snapshot.return_value = {"name": "test-snapshot", "uuid": "test-uuid"}
+    mock.restore_snapshot.return_value = True
+    mock.delete_snapshot.return_value = True
+    mock.list_snapshots.return_value = []
+
+    # Add Python API-style attributes for networking/metrics tests
+    mock.find_machine.return_value = MagicMock()
+    mock.machine = MagicMock()
+    mock.machine.get_network_adapter.return_value.enabled = True
+
+    return mock
+
+
+@pytest.fixture
+def mock_networking():
+    """Mock networking service for testing."""
     manager = Mock()
+    manager.configure_network_adapter = AsyncMock(return_value={"status": "success"})
     manager.list_networks = AsyncMock(
         return_value=[
             {"name": "vboxnet0", "ip": "192.168.56.1", "netmask": "255.255.255.0"},
@@ -305,3 +330,10 @@ def performance_helpers():
             )
 
     return PerformanceHelpers()
+
+
+@pytest.fixture
+def vbox_manager():
+    """Provide VBoxManager instance (real or mock based on availability)."""
+    from tests.vbox_testing import get_vbox_manager_or_mock
+    return get_vbox_manager_or_mock()

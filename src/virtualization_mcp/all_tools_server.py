@@ -55,7 +55,7 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 # Import our configuration
-from virtualization_mcp.config import configure_logging, settings
+from virtualization_mcp.config import configure_logging, settings  # noqa: E402
 
 # Create type aliases
 T = TypeVar("T")
@@ -90,30 +90,30 @@ try:
     # Handle both direct execution and module imports
     try:
         # First try absolute imports (for direct execution)
-        from virtualization_mcp.tools.help_tool import help_command
-        from virtualization_mcp.tools.network.network_tools import (
+        from virtualization_mcp.tools.help_tool import help_command  # noqa: F401
+        from virtualization_mcp.tools.network.network_tools import (  # noqa: F401
             create_hostonly_network,
             list_hostonly_networks,
             remove_hostonly_network,
         )
         from virtualization_mcp.tools.register_tools import register_all_tools
-        from virtualization_mcp.tools.snapshot.snapshot_tools import (
+        from virtualization_mcp.tools.snapshot.snapshot_tools import (  # noqa: F401
             create_snapshot,
             delete_snapshot,
             list_snapshots,
             restore_snapshot,
         )
-        from virtualization_mcp.tools.storage.storage_tools import (
+        from virtualization_mcp.tools.storage.storage_tools import (  # noqa: F401
             create_storage_controller,
             list_storage_controllers,
             remove_storage_controller,
         )
-        from virtualization_mcp.tools.system.system_tools import (
+        from virtualization_mcp.tools.system.system_tools import (  # noqa: F401
             get_system_info,
             get_vbox_version,
             list_ostypes,
         )
-        from virtualization_mcp.tools.vm.vm_tools import (
+        from virtualization_mcp.tools.vm.vm_tools import (  # noqa: F401
             clone_vm,
             create_vm,
             delete_vm,
@@ -130,7 +130,7 @@ try:
         # Import plugins
         if sys.platform == "win32":
             try:
-                from virtualization_mcp.plugins import initialize_plugins
+                from virtualization_mcp.plugins import initialize_plugins  # noqa: F401
 
                 HYPERV_AVAILABLE = True
             except ImportError as e:
@@ -141,26 +141,30 @@ try:
 
     except ImportError:
         # Fall back to relative imports (for module import)
-        from .tools.help_tool import help_command
-        from .tools.network.network_tools import (
+        from .tools.help_tool import help_command  # noqa: F401
+        from .tools.network.network_tools import (  # noqa: F401
             create_hostonly_network,
             list_hostonly_networks,
             remove_hostonly_network,
         )
         from .tools.register_tools import register_all_tools
-        from .tools.snapshot.snapshot_tools import (
+        from .tools.snapshot.snapshot_tools import (  # noqa: F401
             create_snapshot,
             delete_snapshot,
             list_snapshots,
             restore_snapshot,
         )
-        from .tools.storage.storage_tools import (
+        from .tools.storage.storage_tools import (  # noqa: F401
             create_storage_controller,
             list_storage_controllers,
             remove_storage_controller,
         )
-        from .tools.system.system_tools import get_system_info, get_vbox_version, list_ostypes
-        from .tools.vm.vm_tools import (
+        from .tools.system.system_tools import (  # noqa: F401
+            get_system_info,
+            get_vbox_version,
+            list_ostypes,
+        )
+        from .tools.vm.vm_tools import (  # noqa: F401
             clone_vm,
             create_vm,
             delete_vm,
@@ -177,7 +181,7 @@ try:
         # Import plugins
         if sys.platform == "win32":
             try:
-                from virtualization_mcp.plugins import initialize_plugins
+                from virtualization_mcp.plugins import initialize_plugins  # noqa: F401
 
                 HYPERV_AVAILABLE = True
             except ImportError as e:
@@ -280,7 +284,7 @@ async def start_mcp_server(host: str = None, port: int = None) -> FastMCP:
 
             await asyncio.wait_for(initialize_services(), timeout=settings.VM_OPERATION_TIMEOUT)
         except asyncio.TimeoutError:
-            raise RuntimeError("Tool registration and initialization timed out")
+            raise RuntimeError("Tool registration and initialization timed out") from None
 
         # Start the server
         logger.info(f"Starting server on {host}:{port}")

@@ -159,7 +159,6 @@ class WindowsSandboxHelper:
         )
 
         # Create a command to run the batch file and capture output
-        cmd = f'cmd.exe /c "{temp_bat} > %TEMP%\\cmd_output.txt 2>&1 & type %TEMP%\\cmd_output.txt & type %TEMP%\\cmd_exit_code.txt"'
 
         # Execute the command
         process = await asyncio.create_subprocess_exec(
@@ -342,7 +341,7 @@ class WindowsSandboxHelper:
             return {"status": "terminated", "sandbox": sandbox_name, "force": force}
 
         except Exception as e:
-            raise WindowsSandboxError(f"Failed to terminate sandbox: {str(e)}")
+            raise WindowsSandboxError(f"Failed to terminate sandbox: {str(e)}") from e
 
     async def list_sandboxes(self) -> list[dict[str, Any]]:
         """List all active sandboxes.

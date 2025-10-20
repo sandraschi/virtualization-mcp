@@ -36,7 +36,7 @@ def register_system_management_tool(mcp: FastMCP) -> None:
         name="system_management", description="Comprehensive system information and diagnostics"
     )
     async def system_management(
-        action: str, vm_name: str | None = None, **kwargs
+        action: str, vm_name: str | None = None
     ) -> dict[str, Any]:
         """
         Get system information and diagnostics with various actions.
@@ -50,7 +50,6 @@ def register_system_management_tool(mcp: FastMCP) -> None:
                 - screenshot: Take a screenshot of a running VM (requires vm_name)
 
             vm_name: Name of the virtual machine (required for metrics and screenshot)
-            **kwargs: Additional parameters for specific actions
 
         Returns:
             Dict containing the result of the operation
@@ -90,19 +89,19 @@ def register_system_management_tool(mcp: FastMCP) -> None:
 
             # Route to appropriate function based on action
             if action == "host_info":
-                return await _handle_host_info(**kwargs)
+                return await _handle_host_info()
 
             elif action == "vbox_version":
-                return await _handle_vbox_version(**kwargs)
+                return await _handle_vbox_version()
 
             elif action == "ostypes":
-                return await _handle_ostypes(**kwargs)
+                return await _handle_ostypes()
 
             elif action == "metrics":
-                return await _handle_metrics(vm_name=vm_name, **kwargs)
+                return await _handle_metrics(vm_name=vm_name)
 
             elif action == "screenshot":
-                return await _handle_screenshot(vm_name=vm_name, **kwargs)
+                return await _handle_screenshot(vm_name=vm_name)
 
             else:
                 return {
@@ -121,10 +120,10 @@ def register_system_management_tool(mcp: FastMCP) -> None:
             }
 
 
-async def _handle_host_info(**kwargs) -> dict[str, Any]:
+async def _handle_host_info() -> dict[str, Any]:
     """Handle host info action."""
     try:
-        result = await get_system_info(**kwargs)
+        result = await get_system_info()
         return {"success": True, "action": "host_info", "data": result}
     except Exception as e:
         return {
@@ -134,10 +133,10 @@ async def _handle_host_info(**kwargs) -> dict[str, Any]:
         }
 
 
-async def _handle_vbox_version(**kwargs) -> dict[str, Any]:
+async def _handle_vbox_version() -> dict[str, Any]:
     """Handle vbox version action."""
     try:
-        result = await get_vbox_version(**kwargs)
+        result = await get_vbox_version()
         return {"success": True, "action": "vbox_version", "data": result}
     except Exception as e:
         return {
@@ -147,10 +146,10 @@ async def _handle_vbox_version(**kwargs) -> dict[str, Any]:
         }
 
 
-async def _handle_ostypes(**kwargs) -> dict[str, Any]:
+async def _handle_ostypes() -> dict[str, Any]:
     """Handle ostypes action."""
     try:
-        result = await list_ostypes(**kwargs)
+        result = await list_ostypes()
         return {
             "success": True,
             "action": "ostypes",
@@ -165,7 +164,7 @@ async def _handle_ostypes(**kwargs) -> dict[str, Any]:
         }
 
 
-async def _handle_metrics(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_metrics(vm_name: str | None = None) -> dict[str, Any]:
     """Handle metrics action."""
     if not vm_name:
         return {
@@ -197,7 +196,7 @@ async def _handle_metrics(vm_name: str | None = None, **kwargs) -> dict[str, Any
         }
 
 
-async def _handle_screenshot(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_screenshot(vm_name: str | None = None) -> dict[str, Any]:
     """Handle screenshot action."""
     if not vm_name:
         return {

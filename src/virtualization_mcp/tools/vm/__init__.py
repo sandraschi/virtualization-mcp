@@ -18,9 +18,9 @@ from .hyperv_tools import (
     start_hyperv_vm,
     stop_hyperv_vm,
 )
-from .vm_tools import *
+from .vm_tools import *  # noqa: F403
 
-__all__ = [
+__all__ = [  # noqa: F405
     # Base VM tools
     "list_vms",
     "get_vm_info",

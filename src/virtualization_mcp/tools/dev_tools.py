@@ -177,7 +177,7 @@ def get_api_documentation(modules=None) -> dict[str, list[dict]]:
         module_name = module.__name__.split(".")[-1]
         module_docs = []
 
-        for name, obj in inspect.getmembers(module):
+        for _name, obj in inspect.getmembers(module):
             if (inspect.isfunction(obj) or inspect.ismethod(obj)) and hasattr(obj, "__tool_docs__"):
                 module_docs.append(obj.__tool_docs__.to_dict())
 

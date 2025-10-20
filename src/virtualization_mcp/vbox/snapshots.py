@@ -90,7 +90,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error creating snapshot: {e}")
-            raise VBoxManagerError(f"Failed to create snapshot: {str(e)}")
+            raise VBoxManagerError(f"Failed to create snapshot: {str(e)}") from e
 
     def restore_snapshot(self, vm_name: str, snapshot_name: str) -> dict[str, Any]:
         """
@@ -149,7 +149,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error restoring snapshot: {e}")
-            raise VBoxManagerError(f"Failed to restore snapshot: {str(e)}")
+            raise VBoxManagerError(f"Failed to restore snapshot: {str(e)}") from e
 
     def delete_snapshot(self, vm_name: str, snapshot_name: str) -> dict[str, Any]:
         """
@@ -192,7 +192,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error deleting snapshot: {e}")
-            raise VBoxManagerError(f"Failed to delete snapshot: {str(e)}")
+            raise VBoxManagerError(f"Failed to delete snapshot: {str(e)}") from e
 
     def list_snapshots(self, vm_name: str) -> list[dict[str, Any]]:
         """
@@ -221,7 +221,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error listing snapshots: {e}")
-            raise VBoxManagerError(f"Failed to list snapshots: {str(e)}")
+            raise VBoxManagerError(f"Failed to list snapshots: {str(e)}") from e
 
     def _parse_snapshots_list(self, output: str) -> list[dict[str, Any]]:
         """Parse VBoxManage snapshot list output"""
@@ -301,7 +301,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error in rollback and restart: {e}")
-            raise VBoxManagerError(f"Failed rollback and restart: {str(e)}")
+            raise VBoxManagerError(f"Failed rollback and restart: {str(e)}") from e
 
     def get_current_snapshot(self, vm_name: str) -> dict[str, Any] | None:
         """
@@ -401,4 +401,4 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error cloning VM: {e}")
-            raise VBoxManagerError(f"Failed to clone VM: {str(e)}")
+            raise VBoxManagerError(f"Failed to clone VM: {str(e)}") from e

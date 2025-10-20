@@ -180,7 +180,7 @@ class VMOperations:
         except Exception as e:
             logger.error(f"Unexpected error creating VM '{name}': {e}")
             self._cleanup_failed_vm(name)
-            raise VBoxManagerError(f"Failed to create VM: {str(e)}")
+            raise VBoxManagerError(f"Failed to create VM: {str(e)}") from e
 
     def _create_disk(self, vm_name: str, size_gb: int) -> str:
         """Create virtual disk for VM"""

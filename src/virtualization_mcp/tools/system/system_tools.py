@@ -253,14 +253,14 @@ async def get_host_info() -> dict[str, Any]:
 # Public functions
 
 
-def get_vbox_version() -> dict[str, Any]:
+async def get_vbox_version() -> dict[str, Any]:
     """
     Get VirtualBox version information.
 
     Returns:
         Dictionary containing VirtualBox version information
     """
-    return asyncio.run(_get_vbox_version())
+    return await _get_vbox_version()
 
 
 # Helper functions

@@ -38,7 +38,7 @@ class VBoxJSONEncoder(json.JSONEncoder):
 
             # Register VirtualBox type handlers
             vbox_manager = VirtualBoxManager(None, None)
-            vbox = vbox_manager.getVirtualBox()
+            vbox_manager.getVirtualBox()
 
             # Common VirtualBox types
             vbox_types = [

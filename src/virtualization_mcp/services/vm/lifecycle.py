@@ -629,7 +629,7 @@ class VMLifecycleMixin:
             elif not filtered_vms and state_filter != "all":
                 response["message"] = f"No VMs found with state '{state_filter}'"
                 response["troubleshooting"] = [
-                    f"Available states: {', '.join(set(vm.get('state', 'unknown') for vm in vms))}",
+                    f"Available states: {', '.join({vm.get('state', 'unknown') for vm in vms})}",
                     "Use list_vms(details=True) to see all VMs",
                 ]
 

@@ -765,7 +765,7 @@ class SandboxTester:
         except asyncio.TimeoutError:
             process.kill()
             await process.wait()
-            raise TimeoutError(f"Command timed out after {timeout} seconds")
+            raise TimeoutError(f"Command timed out after {timeout} seconds") from None
 
 
 # Create a singleton instance

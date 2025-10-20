@@ -171,11 +171,11 @@ class VMTemplateMixin:
             # Clean up on error
             if os.path.exists(template_path):
                 shutil.rmtree(template_path, ignore_errors=True)
-            raise RuntimeError(f"Failed to create template: {e}")
+            raise RuntimeError(f"Failed to create template: {e}") from e
 
     @template_operation
-    def deploy_from_template(
-        self, template_name: str, new_vm_name: str, **kwargs
+    async def deploy_from_template(
+        self, new_vm_name: str, template_name: str, overrides: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """
         Deploy a new virtual machine from a template.
@@ -261,11 +261,11 @@ class VMTemplateMixin:
             if not vm:
                 raise RuntimeError(f"Failed to find imported VM '{new_vm_name}'")
 
-            # Apply any overrides from kwargs
-            if "memory_mb" in kwargs:
-                vm.memory_size = int(kwargs["memory_mb"])
-            if "cpus" in kwargs:
-                vm.CPU_count = int(kwargs["cpus"])
+            # Apply any overrides from overrides dict
+            if overrides and "memory_mb" in overrides:
+                vm.memory_size = int(overrides["memory_mb"])
+            if overrides and "cpus" in overrides:
+                vm.CPU_count = int(overrides["cpus"])
 
             # Save VM settings
             session = self.vbox_manager.mgr.get_session_object()
@@ -276,7 +276,7 @@ class VMTemplateMixin:
                 session.unlock_machine()
 
             # Start the VM if requested
-            start_vm = kwargs.get("start_vm", False)
+            start_vm = overrides.get("start_vm", False) if overrides else False
             if start_vm:
                 self.vm_operations.start_vm(new_vm_name)
 
@@ -295,33 +295,51 @@ class VMTemplateMixin:
             if vm:
                 # Use unregister mode 1 (delete all files)
                 vm.unregister(1)
-            raise RuntimeError(f"Failed to deploy VM from template: {e}")
+            raise RuntimeError(f"Failed to deploy VM from template: {e}") from e
 
     @template_operation
-    def list_templates(self) -> dict[str, Any]:
+    def list_templates(self) -> list[dict[str, Any]]:
         """List all available VM templates."""
-        try:
-            # Get all templates
-            templates = []
-            for template_name in os.listdir(self.template_dir):
-                template_path = os.path.join(self.template_dir, template_name)
-                if os.path.isdir(template_path):
-                    metadata_path = os.path.join(template_path, "metadata.json")
-                    if os.path.isfile(metadata_path):
+        templates = []
+        if not os.path.exists(self.template_dir):
+            return templates
+
+        for template_name in os.listdir(self.template_dir):
+            template_path = os.path.join(self.template_dir, template_name)
+            if os.path.isdir(template_path):
+                metadata_path = os.path.join(template_path, "metadata.json")
+                if os.path.isfile(metadata_path):
+                    try:
                         with open(metadata_path) as f:
                             metadata = json.load(f)
-                            templates.append(metadata)
+                        templates.append(metadata)
+                    except Exception:
+                        templates.append({"name": template_name, "path": template_path})
 
-            return {"status": "success", "templates": templates}
-        except Exception as e:
-            logger.error(f"Failed to list templates: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
+        return templates
 
+    @template_operation
     def delete_template(self, template_name: str) -> dict[str, Any]:
         """Delete a VM template."""
-        try:
-            # Implementation will be moved from vm_service.py
-            pass
-        except Exception as e:
-            logger.error(f"Failed to delete template {template_name}: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
+        template_path = os.path.join(self.template_dir, template_name)
+        if not os.path.exists(template_path):
+            return {"status": "error", "error": f"Template '{template_name}' not found"}
+
+        import shutil
+        shutil.rmtree(template_path)
+        return {"status": "success", "template": template_name}
+
+    def get_template(self, template_name: str) -> dict[str, Any]:
+        """Get a specific template by name."""
+        templates = self.list_templates()
+        for template in templates:
+            if template.get("name") == template_name:
+                return template
+        raise ValueError(f"Template '{template_name}' not found")
+
+    def _validate_template(self, template_data: dict[str, Any]) -> None:
+        """Validate template structure."""
+        required_fields = ["name", "os_type", "memory_mb", "cpus"]
+        for field in required_fields:
+            if field not in template_data:
+                raise ValueError(f"Template missing required field: {field}")

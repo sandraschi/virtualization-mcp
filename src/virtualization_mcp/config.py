@@ -300,3 +300,6 @@ LOG_LEVEL = settings.LOG_LEVEL
 
 # Export project root path
 project_root = Path(__file__).parent.parent.parent
+
+# Alias for server_v2 compatibility
+ServerConfig = Settings

@@ -96,8 +96,7 @@ class VBoxManage:
             result = subprocess.run(
                 full_command,
                 check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 shell=True,
             )

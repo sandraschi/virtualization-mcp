@@ -5,7 +5,7 @@ This package contains all plugin modules for virtualization-mcp.
 """
 
 import logging
-from typing import Optional, Type
+from typing import Optional
 
 from fastmcp import FastMCP
 
@@ -46,6 +46,7 @@ __all__ = [
     "initialize_plugins",
     "get_hyperv_manager",
     "get_windows_sandbox",
+    "register_plugin",
     "PLUGINS_AVAILABLE",
 ]
 
@@ -114,3 +115,24 @@ def get_windows_sandbox() -> WindowsSandboxHelper | None:
         Optional[WindowsSandboxHelper]: The Windows Sandbox helper instance, or None if not available.
     """
     return _windows_sandbox
+
+
+def register_plugin(name: str, description: str = "", category: str = "general"):
+    """Decorator for registering plugins (stub for compatibility).
+
+    This is a stub decorator for compatibility with code that expects the
+    register_plugin decorator. In the current architecture, plugins are
+    registered through the PluginManager instead.
+
+    Args:
+        name: Plugin name
+        description: Plugin description
+        category: Plugin category
+
+    Returns:
+        Decorator function that returns the class unchanged
+    """
+    def decorator(cls):
+        logger.debug(f"Plugin registration stub called for {name}")
+        return cls
+    return decorator

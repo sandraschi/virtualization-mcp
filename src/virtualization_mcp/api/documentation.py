@@ -120,7 +120,6 @@ class APIDocumentation:
         tools = self.mcp._tools if hasattr(self.mcp, "_tools") else {}
 
         # Group tools by path
-        endpoints = {}
         for name, tool in tools.items():
             # Skip internal tools
             if name.startswith("_") or not hasattr(tool, "endpoint"):
@@ -158,7 +157,7 @@ class APIDocumentation:
         description = "\n".join(lines[1:]) if len(lines) > 1 else ""
 
         # Get parameters from function signature
-        sig = inspect.signature(func)
+        inspect.signature(func)
         parameters = []
         request_body = None
 

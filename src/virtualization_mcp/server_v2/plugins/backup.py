@@ -110,7 +110,7 @@ class BackupPlugin(BasePlugin):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Failed to delete backup: {str(e)}",
-                )
+                ) from e
 
     async def _create_backup(
         self, vm_name: str, backup_name: str, description: str = ""
@@ -164,7 +164,7 @@ class BackupPlugin(BasePlugin):
             )
             self._write_metadata(backup_path, metadata)
 
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg)
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg) from e
 
     def _write_metadata(self, backup_path: Path, metadata: dict[str, Any]) -> None:
         """Write metadata to backup directory."""

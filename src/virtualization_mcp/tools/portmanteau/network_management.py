@@ -43,7 +43,6 @@ def register_network_management_tool(mcp: FastMCP) -> None:
         network_type: str | None = None,
         ip_address: str | None = None,
         netmask: str | None = None,
-        **kwargs,
     ) -> dict[str, Any]:
         """
         Manage network configurations with various actions.
@@ -62,7 +61,6 @@ def register_network_management_tool(mcp: FastMCP) -> None:
             network_type: Network type (nat, bridged, hostonly, internal)
             ip_address: IP address for network configuration
             netmask: Network mask for network configuration
-            **kwargs: Additional parameters for specific actions
 
         Returns:
             Dict containing the result of the operation
@@ -111,14 +109,14 @@ def register_network_management_tool(mcp: FastMCP) -> None:
 
             elif action == "create_network":
                 return await _handle_create_network(
-                    network_name=network_name, ip_address=ip_address, netmask=netmask, **kwargs
+                    network_name=network_name, ip_address=ip_address, netmask=netmask
                 )
 
             elif action == "remove_network":
-                return await _handle_remove_network(network_name=network_name, **kwargs)
+                return await _handle_remove_network(network_name=network_name)
 
             elif action == "list_adapters":
-                return await _handle_list_adapters(vm_name=vm_name, **kwargs)
+                return await _handle_list_adapters(vm_name=vm_name)
 
             elif action == "configure_adapter":
                 return await _handle_configure_adapter(
@@ -126,7 +124,6 @@ def register_network_management_tool(mcp: FastMCP) -> None:
                     adapter_slot=adapter_slot,
                     network_type=network_type,
                     network_name=network_name,
-                    **kwargs,
                 )
 
             else:
@@ -168,7 +165,6 @@ async def _handle_create_network(
     network_name: str | None = None,
     ip_address: str | None = None,
     netmask: str | None = None,
-    **kwargs,
 ) -> dict[str, Any]:
     """Handle create network action."""
     if not network_name:
@@ -180,7 +176,7 @@ async def _handle_create_network(
 
     try:
         result = await create_hostonly_network(
-            network_name=network_name, ip_address=ip_address, netmask=netmask, **kwargs
+            network_name=network_name, ip_address=ip_address, netmask=netmask
         )
         return {
             "success": True,
@@ -197,7 +193,7 @@ async def _handle_create_network(
         }
 
 
-async def _handle_remove_network(network_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_remove_network(network_name: str | None = None) -> dict[str, Any]:
     """Handle remove network action."""
     if not network_name:
         return {
@@ -207,7 +203,7 @@ async def _handle_remove_network(network_name: str | None = None, **kwargs) -> d
         }
 
     try:
-        result = await remove_hostonly_network(network_name=network_name, **kwargs)
+        result = await remove_hostonly_network(network_name=network_name)
         return {
             "success": True,
             "action": "remove_network",
@@ -223,7 +219,7 @@ async def _handle_remove_network(network_name: str | None = None, **kwargs) -> d
         }
 
 
-async def _handle_list_adapters(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_list_adapters(vm_name: str | None = None) -> dict[str, Any]:
     """Handle list adapters action."""
     if not vm_name:
         return {
@@ -259,7 +255,6 @@ async def _handle_configure_adapter(
     adapter_slot: int | None = None,
     network_type: str | None = None,
     network_name: str | None = None,
-    **kwargs,
 ) -> dict[str, Any]:
     """Handle configure adapter action."""
     if not vm_name:

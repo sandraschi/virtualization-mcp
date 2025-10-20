@@ -154,7 +154,7 @@ class SecurityTestingPlugin(BasePlugin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to start security scan: {str(e)}",
-            )
+            ) from e
 
     async def _run_scan(
         self,
@@ -273,7 +273,7 @@ class SecurityTestingPlugin(BasePlugin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to read scan report: {str(e)}",
-            )
+            ) from e
 
     async def _get_vm_info(self, vm_name: str) -> dict[str, Any]:
         """Get information about a VM.

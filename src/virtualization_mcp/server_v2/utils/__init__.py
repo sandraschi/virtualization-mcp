@@ -11,7 +11,7 @@ import sys
 from collections.abc import Callable, Coroutine
 from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar
 
 import psutil
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 # Type aliases
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 def ensure_path(path: PathLike) -> Path:

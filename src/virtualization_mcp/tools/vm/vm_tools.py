@@ -376,7 +376,7 @@ async def delete_vm(vm_name: str, delete_files: bool = True) -> dict[str, Any]:
         if delete_files:
             cmd.append("--delete")
 
-        result = await asyncio.to_thread(
+        await asyncio.to_thread(
             subprocess.run, cmd, capture_output=True, text=True, check=True
         )
 

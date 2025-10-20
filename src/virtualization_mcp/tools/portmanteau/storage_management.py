@@ -44,7 +44,6 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
         disk_name: str | None = None,
         disk_size_gb: int | None = None,
         disk_path: str | None = None,
-        **kwargs,
     ) -> dict[str, Any]:
         """
         Manage storage configurations with various actions.
@@ -64,7 +63,6 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
             disk_name: Name of the virtual disk
             disk_size_gb: Size of the disk in GB
             disk_path: Path to the disk file
-            **kwargs: Additional parameters for specific actions
 
         Returns:
             Dict containing the result of the operation
@@ -111,31 +109,30 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
 
             # Route to appropriate function based on action
             if action == "list_controllers":
-                return await _handle_list_controllers(vm_name=vm_name, **kwargs)
+                return await _handle_list_controllers(vm_name=vm_name)
 
             elif action == "create_controller":
                 return await _handle_create_controller(
                     vm_name=vm_name,
                     controller_name=controller_name,
                     controller_type=controller_type,
-                    **kwargs,
                 )
 
             elif action == "remove_controller":
                 return await _handle_remove_controller(
-                    vm_name=vm_name, controller_name=controller_name, **kwargs
+                    vm_name=vm_name, controller_name=controller_name
                 )
 
             elif action == "list_disks":
-                return await _handle_list_disks(vm_name=vm_name, **kwargs)
+                return await _handle_list_disks(vm_name=vm_name)
 
             elif action == "create_disk":
                 return await _handle_create_disk(
-                    disk_name=disk_name, disk_size_gb=disk_size_gb, **kwargs
+                    disk_name=disk_name, disk_size_gb=disk_size_gb
                 )
 
             elif action == "attach_disk":
-                return await _handle_attach_disk(vm_name=vm_name, disk_path=disk_path, **kwargs)
+                return await _handle_attach_disk(vm_name=vm_name, disk_path=disk_path)
 
             else:
                 return {
@@ -154,7 +151,7 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
             }
 
 
-async def _handle_list_controllers(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_list_controllers(vm_name: str | None = None) -> dict[str, Any]:
     """Handle list controllers action."""
     if not vm_name:
         return {
@@ -164,7 +161,7 @@ async def _handle_list_controllers(vm_name: str | None = None, **kwargs) -> dict
         }
 
     try:
-        result = await list_storage_controllers(vm_name=vm_name, **kwargs)
+        result = await list_storage_controllers(vm_name=vm_name)
         return {
             "success": True,
             "action": "list_controllers",
@@ -185,7 +182,6 @@ async def _handle_create_controller(
     vm_name: str | None = None,
     controller_name: str | None = None,
     controller_type: str | None = None,
-    **kwargs,
 ) -> dict[str, Any]:
     """Handle create controller action."""
     if not vm_name:
@@ -214,7 +210,6 @@ async def _handle_create_controller(
             vm_name=vm_name,
             controller_name=controller_name,
             controller_type=controller_type,
-            **kwargs,
         )
         return {
             "success": True,
@@ -234,7 +229,7 @@ async def _handle_create_controller(
 
 
 async def _handle_remove_controller(
-    vm_name: str | None = None, controller_name: str | None = None, **kwargs
+    vm_name: str | None = None, controller_name: str | None = None
 ) -> dict[str, Any]:
     """Handle remove controller action."""
     if not vm_name:
@@ -253,7 +248,7 @@ async def _handle_remove_controller(
 
     try:
         result = await remove_storage_controller(
-            vm_name=vm_name, controller_name=controller_name, **kwargs
+            vm_name=vm_name, controller_name=controller_name
         )
         return {
             "success": True,
@@ -272,7 +267,7 @@ async def _handle_remove_controller(
         }
 
 
-async def _handle_list_disks(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_list_disks(vm_name: str | None = None) -> dict[str, Any]:
     """Handle list disks action."""
     if not vm_name:
         return {
@@ -302,7 +297,7 @@ async def _handle_list_disks(vm_name: str | None = None, **kwargs) -> dict[str, 
 
 
 async def _handle_create_disk(
-    disk_name: str | None = None, disk_size_gb: int | None = None, **kwargs
+    disk_name: str | None = None, disk_size_gb: int | None = None
 ) -> dict[str, Any]:
     """Handle create disk action."""
     if not disk_name:
@@ -339,7 +334,7 @@ async def _handle_create_disk(
 
 
 async def _handle_attach_disk(
-    vm_name: str | None = None, disk_path: str | None = None, **kwargs
+    vm_name: str | None = None, disk_path: str | None = None
 ) -> dict[str, Any]:
     """Handle attach disk action."""
     if not vm_name:

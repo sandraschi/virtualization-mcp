@@ -191,10 +191,10 @@ class VMMetricsMixin:
                     swap_total = mem_stats.get("total_swap", 0)
                 except Exception as e:
                     logger.warning(f"Could not get detailed memory stats: {e}")
-                    try:
-                        memory_free = console.get_memory_usage()
-                    except:
-                        pass
+                try:
+                    memory_free = console.get_memory_usage()
+                except Exception:
+                    pass
 
             memory_used = memory_total - memory_free - memory_cached - memory_buffer
             if memory_used < 0:

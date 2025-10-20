@@ -109,7 +109,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error configuring port forwarding: {e}")
-            raise VBoxManagerError(f"Failed to configure port forwarding: {str(e)}")
+            raise VBoxManagerError(f"Failed to configure port forwarding: {str(e)}") from e
 
     def remove_port_forwarding(self, vm_name: str, rule_name: str) -> dict[str, Any]:
         """
@@ -150,7 +150,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error removing port forwarding: {e}")
-            raise VBoxManagerError(f"Failed to remove port forwarding: {str(e)}")
+            raise VBoxManagerError(f"Failed to remove port forwarding: {str(e)}") from e
 
     def list_port_forwarding(self, vm_name: str) -> list[dict[str, Any]]:
         """
@@ -184,7 +184,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error listing port forwarding: {e}")
-            raise VBoxManagerError(f"Failed to list port forwarding: {str(e)}")
+            raise VBoxManagerError(f"Failed to list port forwarding: {str(e)}") from e
 
     def _parse_forwarding_rule(self, key: str, value: str) -> dict[str, Any] | None:
         """Parse VBoxManage port forwarding rule output"""
@@ -262,7 +262,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error configuring network: {e}")
-            raise VBoxManagerError(f"Failed to configure network: {str(e)}")
+            raise VBoxManagerError(f"Failed to configure network: {str(e)}") from e
 
     def get_vm_ip_address(self, vm_name: str) -> dict[str, Any]:
         """
@@ -313,7 +313,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error getting IP address: {e}")
-            raise VBoxManagerError(f"Failed to get IP address: {str(e)}")
+            raise VBoxManagerError(f"Failed to get IP address: {str(e)}") from e
 
     def _get_ip_fallback(self, vm_name: str) -> dict[str, Any]:
         """Fallback method to get IP address"""
@@ -454,8 +454,8 @@ class NetworkManager:
             if "not supported" in str(e).lower() or "guest additions" in str(e).lower():
                 raise VBoxManagerError(
                     f"Command execution requires Guest Additions to be installed in VM '{vm_name}'"
-                )
+                ) from e
             raise
         except Exception as e:
             logger.error(f"Unexpected error executing command: {e}")
-            raise VBoxManagerError(f"Failed to execute command: {str(e)}")
+            raise VBoxManagerError(f"Failed to execute command: {str(e)}") from e

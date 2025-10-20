@@ -41,7 +41,6 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
         vm_name: str,
         snapshot_name: str | None = None,
         description: str | None = None,
-        **kwargs,
     ) -> dict[str, Any]:
         """
         Manage VM snapshots with various actions.
@@ -56,7 +55,6 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
             vm_name: Name of the virtual machine (required for all actions)
             snapshot_name: Name of the snapshot (required for create, restore, delete)
             description: Description for the snapshot (optional for create)
-            **kwargs: Additional parameters for specific actions
 
         Returns:
             Dict containing the result of the operation
@@ -111,21 +109,21 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
 
             # Route to appropriate function based on action
             if action == "list":
-                return await _handle_list_snapshots(vm_name=vm_name, **kwargs)
+                return await _handle_list_snapshots(vm_name=vm_name)
 
             elif action == "create":
                 return await _handle_create_snapshot(
-                    vm_name=vm_name, snapshot_name=snapshot_name, description=description, **kwargs
+                    vm_name=vm_name, snapshot_name=snapshot_name, description=description
                 )
 
             elif action == "restore":
                 return await _handle_restore_snapshot(
-                    vm_name=vm_name, snapshot_name=snapshot_name, **kwargs
+                    vm_name=vm_name, snapshot_name=snapshot_name
                 )
 
             elif action == "delete":
                 return await _handle_delete_snapshot(
-                    vm_name=vm_name, snapshot_name=snapshot_name, **kwargs
+                    vm_name=vm_name, snapshot_name=snapshot_name
                 )
 
             else:
@@ -149,10 +147,10 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
             }
 
 
-async def _handle_list_snapshots(vm_name: str, **kwargs) -> dict[str, Any]:
+async def _handle_list_snapshots(vm_name: str) -> dict[str, Any]:
     """Handle list snapshots action."""
     try:
-        result = await list_snapshots(vm_name=vm_name, **kwargs)
+        result = await list_snapshots(vm_name=vm_name)
         return {
             "success": True,
             "action": "list",
@@ -170,7 +168,7 @@ async def _handle_list_snapshots(vm_name: str, **kwargs) -> dict[str, Any]:
 
 
 async def _handle_create_snapshot(
-    vm_name: str, snapshot_name: str | None = None, description: str | None = None, **kwargs
+    vm_name: str, snapshot_name: str | None = None, description: str | None = None
 ) -> dict[str, Any]:
     """Handle create snapshot action."""
     if not snapshot_name:
@@ -183,7 +181,7 @@ async def _handle_create_snapshot(
 
     try:
         result = await create_snapshot(
-            vm_name=vm_name, snapshot_name=snapshot_name, description=description, **kwargs
+            vm_name=vm_name, snapshot_name=snapshot_name, description=description
         )
         return {
             "success": True,
@@ -203,7 +201,7 @@ async def _handle_create_snapshot(
 
 
 async def _handle_restore_snapshot(
-    vm_name: str, snapshot_name: str | None = None, **kwargs
+    vm_name: str, snapshot_name: str | None = None
 ) -> dict[str, Any]:
     """Handle restore snapshot action."""
     if not snapshot_name:
@@ -215,7 +213,7 @@ async def _handle_restore_snapshot(
         }
 
     try:
-        result = await restore_snapshot(vm_name=vm_name, snapshot_name=snapshot_name, **kwargs)
+        result = await restore_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
         return {
             "success": True,
             "action": "restore",
@@ -234,7 +232,7 @@ async def _handle_restore_snapshot(
 
 
 async def _handle_delete_snapshot(
-    vm_name: str, snapshot_name: str | None = None, **kwargs
+    vm_name: str, snapshot_name: str | None = None
 ) -> dict[str, Any]:
     """Handle delete snapshot action."""
     if not snapshot_name:
@@ -246,7 +244,7 @@ async def _handle_delete_snapshot(
         }
 
     try:
-        result = await delete_snapshot(vm_name=vm_name, snapshot_name=snapshot_name, **kwargs)
+        result = await delete_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
         return {
             "success": True,
             "action": "delete",

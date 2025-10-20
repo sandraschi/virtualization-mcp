@@ -1,8 +1,9 @@
 """
 Test coverage boost for network and storage modules with low coverage.
 """
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestNetworkAdapters:

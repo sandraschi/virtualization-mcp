@@ -70,7 +70,7 @@ def parse_port_forwarding_rule(rule_str: str) -> tuple[str, str, str, str, str, 
         int(host_port)
         int(guest_port)
     except ValueError:
-        raise ValueError("Ports must be integers")
+        raise ValueError("Ports must be integers") from None
 
     return name, proto, host_ip, host_port, guest_ip, guest_port
 

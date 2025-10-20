@@ -35,6 +35,7 @@ class BasePlugin(ABC):
         """
         return self.router
 
+    @abstractmethod
     async def startup(self) -> None:
         """Perform any startup tasks for the plugin.
 
@@ -42,6 +43,7 @@ class BasePlugin(ABC):
         """
         pass
 
+    @abstractmethod
     async def shutdown(self) -> None:
         """Perform any cleanup tasks for the plugin.
 

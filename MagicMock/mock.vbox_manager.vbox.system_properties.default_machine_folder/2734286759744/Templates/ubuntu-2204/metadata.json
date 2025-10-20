@@ -1,0 +1,8 @@
+{
+  "name": "ubuntu-2204",
+  "description": "Ubuntu 22.04 LTS",
+  "source_vm": "test-vm",
+  "created": "2025-10-19T18:46:57+0200",
+  "includes_disks": true,
+  "ovf_path": "ubuntu-2204.ovf"
+}

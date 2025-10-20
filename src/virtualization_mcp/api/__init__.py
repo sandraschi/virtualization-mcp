@@ -9,7 +9,7 @@ import logging
 import time
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Dict, List, Optional, Type, TypeVar, cast
+from typing import Any, Optional, TypeVar, cast
 
 from fastmcp import FastMCP
 
@@ -89,7 +89,7 @@ def validate_input(schema: dict) -> Callable:
                 return await func(*args, **kwargs)
 
             except JsonValidationError as e:
-                raise ValidationError(f"Invalid input: {e.message}")
+                raise ValidationError(f"Invalid input: {e.message}") from e
 
         return wrapper
 

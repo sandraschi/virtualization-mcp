@@ -55,7 +55,6 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
         os_type: str | None = None,
         memory_mb: int | None = None,
         disk_size_gb: int | None = None,
-        **kwargs,
     ) -> dict[str, Any]:
         """
         Manage virtual machines with various actions.
@@ -123,34 +122,33 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
                     os_type=os_type,
                     memory_mb=memory_mb,
                     disk_size_gb=disk_size_gb,
-                    **kwargs,
                 )
 
             elif action == "start":
-                return await _handle_start_vm(vm_name=vm_name, **kwargs)
+                return await _handle_start_vm(vm_name=vm_name)
 
             elif action == "stop":
-                return await _handle_stop_vm(vm_name=vm_name, **kwargs)
+                return await _handle_stop_vm(vm_name=vm_name)
 
             elif action == "delete":
-                return await _handle_delete_vm(vm_name=vm_name, **kwargs)
+                return await _handle_delete_vm(vm_name=vm_name)
 
             elif action == "clone":
                 return await _handle_clone_vm(
-                    source_vm=source_vm, new_vm_name=new_vm_name, **kwargs
+                    source_vm=source_vm, new_vm_name=new_vm_name
                 )
 
             elif action == "reset":
-                return await _handle_reset_vm(vm_name=vm_name, **kwargs)
+                return await _handle_reset_vm(vm_name=vm_name)
 
             elif action == "pause":
-                return await _handle_pause_vm(vm_name=vm_name, **kwargs)
+                return await _handle_pause_vm(vm_name=vm_name)
 
             elif action == "resume":
-                return await _handle_resume_vm(vm_name=vm_name, **kwargs)
+                return await _handle_resume_vm(vm_name=vm_name)
 
             elif action == "info":
-                return await _handle_get_vm_info(vm_name=vm_name, **kwargs)
+                return await _handle_get_vm_info(vm_name=vm_name)
 
             else:
                 return {
@@ -188,7 +186,6 @@ async def _handle_create_vm(
     os_type: str | None = None,
     memory_mb: int | None = None,
     disk_size_gb: int | None = None,
-    **kwargs,
 ) -> dict[str, Any]:
     """Handle create VM action."""
     if not vm_name:
@@ -211,7 +208,6 @@ async def _handle_create_vm(
             os_type=os_type,
             memory_mb=memory_mb or 1024,
             disk_size_gb=disk_size_gb or 20,
-            **kwargs,
         )
         return {"success": True, "action": "create", "vm_name": vm_name, "data": result}
     except Exception as e:
@@ -223,7 +219,7 @@ async def _handle_create_vm(
         }
 
 
-async def _handle_start_vm(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_start_vm(vm_name: str | None = None) -> dict[str, Any]:
     """Handle start VM action."""
     if not vm_name:
         return {
@@ -233,7 +229,7 @@ async def _handle_start_vm(vm_name: str | None = None, **kwargs) -> dict[str, An
         }
 
     try:
-        result = await start_vm(vm_name=vm_name, **kwargs)
+        result = await start_vm(vm_name=vm_name)
         return {"success": True, "action": "start", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
@@ -244,13 +240,13 @@ async def _handle_start_vm(vm_name: str | None = None, **kwargs) -> dict[str, An
         }
 
 
-async def _handle_stop_vm(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_stop_vm(vm_name: str | None = None) -> dict[str, Any]:
     """Handle stop VM action."""
     if not vm_name:
         return {"success": False, "action": "stop", "error": "vm_name is required for stop action"}
 
     try:
-        result = await stop_vm(vm_name=vm_name, **kwargs)
+        result = await stop_vm(vm_name=vm_name)
         return {"success": True, "action": "stop", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
@@ -261,7 +257,7 @@ async def _handle_stop_vm(vm_name: str | None = None, **kwargs) -> dict[str, Any
         }
 
 
-async def _handle_delete_vm(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_delete_vm(vm_name: str | None = None) -> dict[str, Any]:
     """Handle delete VM action."""
     if not vm_name:
         return {
@@ -271,7 +267,7 @@ async def _handle_delete_vm(vm_name: str | None = None, **kwargs) -> dict[str, A
         }
 
     try:
-        result = await delete_vm(vm_name=vm_name, **kwargs)
+        result = await delete_vm(vm_name=vm_name)
         return {"success": True, "action": "delete", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
@@ -283,7 +279,7 @@ async def _handle_delete_vm(vm_name: str | None = None, **kwargs) -> dict[str, A
 
 
 async def _handle_clone_vm(
-    source_vm: str | None = None, new_vm_name: str | None = None, **kwargs
+    source_vm: str | None = None, new_vm_name: str | None = None
 ) -> dict[str, Any]:
     """Handle clone VM action."""
     if not source_vm:
@@ -301,7 +297,7 @@ async def _handle_clone_vm(
         }
 
     try:
-        result = await clone_vm(source_vm=source_vm, new_vm_name=new_vm_name, **kwargs)
+        result = await clone_vm(source_vm=source_vm, new_vm_name=new_vm_name)
         return {
             "success": True,
             "action": "clone",
@@ -319,7 +315,7 @@ async def _handle_clone_vm(
         }
 
 
-async def _handle_reset_vm(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_reset_vm(vm_name: str | None = None) -> dict[str, Any]:
     """Handle reset VM action."""
     if not vm_name:
         return {
@@ -329,7 +325,7 @@ async def _handle_reset_vm(vm_name: str | None = None, **kwargs) -> dict[str, An
         }
 
     try:
-        result = await reset_vm(vm_name=vm_name, **kwargs)
+        result = await reset_vm(vm_name=vm_name)
         return {"success": True, "action": "reset", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
@@ -340,7 +336,7 @@ async def _handle_reset_vm(vm_name: str | None = None, **kwargs) -> dict[str, An
         }
 
 
-async def _handle_pause_vm(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_pause_vm(vm_name: str | None = None) -> dict[str, Any]:
     """Handle pause VM action."""
     if not vm_name:
         return {
@@ -350,7 +346,7 @@ async def _handle_pause_vm(vm_name: str | None = None, **kwargs) -> dict[str, An
         }
 
     try:
-        result = await pause_vm(vm_name=vm_name, **kwargs)
+        result = await pause_vm(vm_name=vm_name)
         return {"success": True, "action": "pause", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
@@ -361,7 +357,7 @@ async def _handle_pause_vm(vm_name: str | None = None, **kwargs) -> dict[str, An
         }
 
 
-async def _handle_resume_vm(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_resume_vm(vm_name: str | None = None) -> dict[str, Any]:
     """Handle resume VM action."""
     if not vm_name:
         return {
@@ -371,7 +367,7 @@ async def _handle_resume_vm(vm_name: str | None = None, **kwargs) -> dict[str, A
         }
 
     try:
-        result = await resume_vm(vm_name=vm_name, **kwargs)
+        result = await resume_vm(vm_name=vm_name)
         return {"success": True, "action": "resume", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
@@ -382,13 +378,13 @@ async def _handle_resume_vm(vm_name: str | None = None, **kwargs) -> dict[str, A
         }
 
 
-async def _handle_get_vm_info(vm_name: str | None = None, **kwargs) -> dict[str, Any]:
+async def _handle_get_vm_info(vm_name: str | None = None) -> dict[str, Any]:
     """Handle get VM info action."""
     if not vm_name:
         return {"success": False, "action": "info", "error": "vm_name is required for info action"}
 
     try:
-        result = await get_vm_info(vm_name=vm_name, **kwargs)
+        result = await get_vm_info(vm_name=vm_name)
         return {"success": True, "action": "info", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {

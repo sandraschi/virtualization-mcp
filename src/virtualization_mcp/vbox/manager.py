@@ -96,7 +96,7 @@ class VBoxManager:
             raise VBoxManagerError(
                 f"VBoxManage not found at '{self.vboxmanage_path}'. "
                 "Ensure VirtualBox is installed and in PATH."
-            )
+            ) from None
 
     def run_command(self, args: list[str], capture_json: bool = False) -> dict[str, Any]:
         """
@@ -144,13 +144,13 @@ class VBoxManager:
             return {"success": True, "output": parsed_output, "raw_output": output, "command": cmd}
 
         except subprocess.TimeoutExpired:
-            raise VBoxManagerError("VBoxManage command timed out after 60 seconds", command=cmd)
+            raise VBoxManagerError("VBoxManage command timed out after 60 seconds", command=cmd) from None
         except FileNotFoundError:
             raise VBoxManagerError(
                 f"VBoxManage executable not found: {self.vboxmanage_path}", command=cmd
-            )
+            ) from None
         except Exception as e:
-            raise VBoxManagerError(f"Unexpected error running VBoxManage: {str(e)}", command=cmd)
+            raise VBoxManagerError(f"Unexpected error running VBoxManage: {str(e)}", command=cmd) from e
 
     def list_vms(self, state_filter: str = "all") -> list[dict[str, str]]:
         """
@@ -208,7 +208,7 @@ class VBoxManager:
             return self._parse_machine_readable(result["output"])
         except VBoxManagerError as e:
             if "not find" in str(e).lower():
-                raise VBoxManagerError(f"VM '{vm_name}' not found")
+                raise VBoxManagerError(f"VM '{vm_name}' not found") from e
             raise
 
     def _parse_machine_readable(self, output: str) -> dict[str, Any]:

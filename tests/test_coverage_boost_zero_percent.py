@@ -3,8 +3,9 @@ Test coverage boost for 0% coverage modules.
 
 This test file targets modules with 0% coverage to quickly boost overall coverage.
 """
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestServerV2Modules:
@@ -244,7 +245,7 @@ class TestMetricsModule:
         """Test metrics module system metrics function."""
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
         mock_memory.return_value = MagicMock(total=8000000000, available=4000000000, percent=50.0)
-        
+
         from virtualization_mcp.services.vm import metrics
         # Just verify module loaded
         assert metrics is not None

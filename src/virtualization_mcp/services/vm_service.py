@@ -708,7 +708,7 @@ class VMService:
             if filtered_count == 0 and total_count > 0 and state_filter.lower() != "all":
                 response["warning"] = (
                     f"No VMs found with state '{state_filter}'. "
-                    f"Available states: {', '.join(set(vm.get('state', 'unknown') for vm in all_vms))}"
+                    f"Available states: {', '.join({vm.get('state', 'unknown') for vm in all_vms})}"
                 )
 
             return response
@@ -2236,41 +2236,6 @@ class VMService:
             logger.error(f"Failed to create disk at {disk_path}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
 
-    def attach_disk(
-        self,
-        vm_name: str,
-        disk_path: str,
-        controller_name: str = "SATA Controller",
-        port: int = 0,
-        device: int = 0,
-        disk_type: str = "hdd",
-    ) -> dict[str, Any]:
-        """
-        Attach a disk to a VM.
-
-        Args:
-            vm_name: Name of the VM
-            disk_path: Path to the disk to attach
-            controller_name: Name of the storage controller
-            port: Controller port number
-            device: Device number on the port
-            disk_type: Type of disk ('hdd', 'dvd', 'fdd')
-
-        Returns:
-            Status of the operation
-        """
-        try:
-            # Implementation will be added
-            return {
-                "status": "success",
-                "vm_name": vm_name,
-                "disk_path": disk_path,
-                "message": f"Attached {disk_path} to {vm_name}",
-            }
-        except Exception as e:
-            logger.error(f"Failed to attach disk to {vm_name}: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
-
     # --- System Information ---
     def get_system_info(self) -> dict[str, Any]:
         """
@@ -2297,35 +2262,6 @@ class VMService:
             }
         except Exception as e:
             logger.error(f"Failed to get system info: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
-
-    def get_vm_metrics(self, vm_name: str) -> dict[str, Any]:
-        """
-        Get performance metrics for a running VM.
-
-        Args:
-            vm_name: Name of the VM
-
-        Returns:
-            Dict containing VM performance metrics
-        """
-        try:
-            # Implementation will be added
-            return {
-                "status": "success",
-                "vm_name": vm_name,
-                "metrics": {
-                    "cpu_usage_percent": 0.0,
-                    "memory_usage_mb": 0,
-                    "disk_read_bytes": 0,
-                    "disk_write_bytes": 0,
-                    "network_in_bytes": 0,
-                    "network_out_bytes": 0,
-                },
-                "message": f"Metrics for {vm_name}",
-            }
-        except Exception as e:
-            logger.error(f"Failed to get metrics for {vm_name}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
 
     def take_screenshot(

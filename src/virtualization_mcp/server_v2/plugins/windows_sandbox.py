@@ -131,7 +131,7 @@ class WindowsSandboxPlugin(BasePlugin):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Error executing command: {str(e)}",
-                )
+                ) from e
 
         @self.router.post("/sandboxes/{name}/upload")
         async def upload_to_sandbox(
@@ -160,7 +160,7 @@ class WindowsSandboxPlugin(BasePlugin):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Error uploading file: {str(e)}",
-                )
+                ) from e
 
         @self.router.post("/sandboxes/{name}/terminate")
         async def terminate_sandbox(name: str, force: bool = False) -> dict[str, Any]:
@@ -181,7 +181,7 @@ class WindowsSandboxPlugin(BasePlugin):
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Error terminating sandbox: {str(e)}",
-                )
+                ) from e
 
     async def _create_sandbox(
         self,
@@ -230,13 +230,13 @@ class WindowsSandboxPlugin(BasePlugin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to create sandbox: {str(e)}",
-            )
+            ) from e
         except Exception as e:
             logger.error(f"Unexpected error creating sandbox: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Unexpected error creating sandbox: {str(e)}",
-            )
+            ) from e
 
     async def _execute_in_sandbox(
         self, name: str, command: str, wait: bool = True, timeout: int = 60
@@ -258,18 +258,18 @@ class WindowsSandboxPlugin(BasePlugin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to execute command in sandbox: {str(e)}",
-            )
-        except asyncio.TimeoutError:
+            ) from e
+        except asyncio.TimeoutError as e:
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
                 detail=f"Command timed out after {timeout} seconds",
-            )
+            ) from e
         except Exception as e:
             logger.error(f"Unexpected error executing command: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Unexpected error executing command: {str(e)}",
-            )
+            ) from e
 
     async def _upload_to_sandbox(self, name: str, file: UploadFile, destination: str) -> str:
         """Upload a file to the sandbox."""
@@ -306,13 +306,13 @@ class WindowsSandboxPlugin(BasePlugin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to upload file to sandbox: {str(e)}",
-            )
+            ) from e
         except Exception as e:
             logger.error(f"Unexpected error uploading file: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Unexpected error uploading file: {str(e)}",
-            )
+            ) from e
 
     async def _terminate_sandbox(self, name: str, force: bool = False) -> None:
         """Terminate a running sandbox."""
@@ -334,13 +334,13 @@ class WindowsSandboxPlugin(BasePlugin):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to terminate sandbox: {str(e)}",
-            )
+            ) from e
         except Exception as e:
             logger.error(f"Unexpected error terminating sandbox: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Unexpected error terminating sandbox: {str(e)}",
-            )
+            ) from e
 
     async def _cleanup_sandbox(self, name: str) -> None:
         """Clean up resources for a sandbox."""
