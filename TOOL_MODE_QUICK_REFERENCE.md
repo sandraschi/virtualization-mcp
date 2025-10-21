@@ -1,6 +1,6 @@
 # Tool Mode Quick Reference
 
-## 🎯 Production Mode (Default) - 5-6 Tools
+## 🎯 Production Mode (Default) - 6-7 Tools
 
 **For:** End users, Claude Desktop  
 **Setting:** `TOOL_MODE=production` (or omit - this is default)
@@ -11,9 +11,10 @@
 3. snapshot_management (4 operations)
 4. storage_management (6 operations)
 5. system_management (5 operations)
-6. hyperv_management (4 operations, Windows only)
+6. discovery_management (4 operations - app help/info)
+7. hyperv_management (4 operations, Windows only)
 
-**Note:** Tool discovery handled by MCP protocol (tools/list) - no custom tool needed
+**Note:** discovery_management = app-specific help portmanteau (separate from MCP tools/list)
 
 **Example:**
 ```
