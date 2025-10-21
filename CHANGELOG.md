@@ -15,6 +15,19 @@ Second beta release with major quality improvements, FastMCP compliance fixes, a
 
 ### ✨ New Features
 
+#### Portmanteau Tool Expansion
+- **discovery_management** - New tool for tool introspection and discovery
+  - list: List all available tools with filtering
+  - info: Get detailed tool information  
+  - schema: Get JSON schema for tool parameters
+- **hyperv_management** - New Windows-only Hyper-V management tool
+  - list: List all Hyper-V VMs
+  - get: Get detailed Hyper-V VM info
+  - start: Start Hyper-V VM
+  - stop: Stop Hyper-V VM (graceful or forced)
+- **Production mode now has 6-7 tools** (was 5): 33 operations total
+- **Platform-aware registration**: Hyper-V tool auto-registers on Windows only
+
 #### Tool Mode Configuration
 - **Switchable Tool Modes**: Choose between production (5 tools) and testing (60+ tools)
   - Production mode: Clean 5-tool interface for end users (default)
