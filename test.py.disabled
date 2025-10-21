@@ -1,4 +1,0 @@
-import sys; sys.path.insert(0, "src"); from virtualization-mcp.vbox.manager import VBoxManager; print("✅ Import test passed!")
-
-
-
