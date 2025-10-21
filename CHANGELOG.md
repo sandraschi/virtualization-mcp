@@ -16,17 +16,22 @@ Second beta release with major quality improvements, FastMCP compliance fixes, a
 ### ✨ New Features
 
 #### Portmanteau Tool Expansion
+- **discovery_management** - New portmanteau for help/status/tool-info operations
+  - list_tools: List all virtualization-mcp tools
+  - tool_info: Get detailed tool information
+  - tool_schema: Get JSON schema for parameters
+  - help: Get general help information
 - **hyperv_management** - New Windows-only Hyper-V management tool
   - list: List all Hyper-V VMs
   - get: Get detailed Hyper-V VM info
   - start: Start Hyper-V VM
   - stop: Stop Hyper-V VM (graceful or forced)
-- **Production mode now has 5-6 tools**: 30 operations total
+- **Production mode now has 6-7 tools**: 33 operations total
 - **Platform-aware registration**: Hyper-V tool auto-registers on Windows only
-- **Tool discovery**: Uses standard MCP protocol (tools/list) - no custom discovery tool
+- **Note**: discovery_management is app-specific (MCP protocol has its own tools/list)
 
 #### Tool Mode Configuration
-- **Switchable Tool Modes**: Choose between production (5-6 tools) and testing (60+ tools)
+- **Switchable Tool Modes**: Choose between production (6-7 tools) and testing (60+ tools)
   - Production mode: Clean 5-tool interface for end users (default)
   - Testing mode: All 60+ individual tools + portmanteau for development
 - **Environment Variable Control**: `TOOL_MODE=production|testing`
