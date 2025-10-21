@@ -104,6 +104,9 @@ vms/
 !SECURITY.md
 !TROUBLESHOOTING.md
 
+# Private documentation (internal dev notes, not for public)
+docs-private/
+
 # Documentation builds
 docs/_build/
 .readthedocs.yml
