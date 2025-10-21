@@ -32,9 +32,7 @@ SYSTEM_ACTIONS = {
 def register_system_management_tool(mcp: FastMCP) -> None:
     """Register the system management portmanteau tool."""
 
-    @mcp.tool(
-        name="system_management", description="Comprehensive system information and diagnostics"
-    )
+    @mcp.tool()
     async def system_management(
         action: str, vm_name: str | None = None
     ) -> dict[str, Any]:

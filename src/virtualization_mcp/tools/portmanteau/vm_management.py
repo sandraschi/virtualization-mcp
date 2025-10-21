@@ -44,9 +44,7 @@ VM_ACTIONS = {
 def register_vm_management_tool(mcp: FastMCP) -> None:
     """Register the VM management portmanteau tool."""
 
-    @mcp.tool(
-        name="vm_management", description="Comprehensive virtual machine management operations"
-    )
+    @mcp.tool()
     async def vm_management(
         action: str,
         vm_name: str | None = None,

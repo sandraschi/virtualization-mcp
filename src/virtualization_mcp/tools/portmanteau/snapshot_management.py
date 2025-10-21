@@ -32,10 +32,7 @@ SNAPSHOT_ACTIONS = {
 def register_snapshot_management_tool(mcp: FastMCP) -> None:
     """Register the snapshot management portmanteau tool."""
 
-    @mcp.tool(
-        name="snapshot_management",
-        description="Comprehensive snapshot operations for virtual machines",
-    )
+    @mcp.tool()
     async def snapshot_management(
         action: str,
         vm_name: str,

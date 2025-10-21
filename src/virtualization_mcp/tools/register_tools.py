@@ -67,79 +67,48 @@ def register_all_tools(mcp: FastMCP) -> None:
     logger.info("Portmanteau tools registered successfully")
 
     # Register individual tools for backward compatibility
-    # VM Tools
-    mcp.tool(list_vms, name="list_vms", description="List all available VirtualBox VMs")
-    mcp.tool(get_vm_info, name="get_vm_info", description="Get detailed information about a VM")
-    mcp.tool(start_vm, name="start_vm", description="Start a virtual machine")
-    mcp.tool(stop_vm, name="stop_vm", description="Stop a running virtual machine")
-    mcp.tool(create_vm, name="create_vm", description="Create a new virtual machine")
-    mcp.tool(delete_vm, name="delete_vm", description="Delete a virtual machine")
-    mcp.tool(clone_vm, name="clone_vm", description="Clone a virtual machine")
-    # mcp.tool(modify_vm, name="modify_vm", description="Modify VM settings")  # Disabled due to **kwargs
-    mcp.tool(reset_vm, name="reset_vm", description="Reset a virtual machine")
-    mcp.tool(pause_vm, name="pause_vm", description="Pause a virtual machine")
-    mcp.tool(resume_vm, name="resume_vm", description="Resume a paused virtual machine")
+    # VM Tools - using function docstrings automatically
+    mcp.tool(list_vms)
+    mcp.tool(get_vm_info)
+    mcp.tool(start_vm)
+    mcp.tool(stop_vm)
+    mcp.tool(create_vm)
+    mcp.tool(delete_vm)
+    mcp.tool(clone_vm)
+    mcp.tool(reset_vm)
+    mcp.tool(pause_vm)
+    mcp.tool(resume_vm)
 
-    # Storage Tools
-    mcp.tool(
-        list_storage_controllers,
-        name="list_storage_controllers",
-        description="List storage controllers for a VM",
-    )
-    mcp.tool(
-        create_storage_controller,
-        name="create_storage_controller",
-        description="Create a storage controller for a VM",
-    )
-    mcp.tool(
-        remove_storage_controller,
-        name="remove_storage_controller",
-        description="Remove a storage controller from a VM",
-    )
+    # Storage Tools - using function docstrings automatically
+    mcp.tool(list_storage_controllers)
+    mcp.tool(create_storage_controller)
+    mcp.tool(remove_storage_controller)
 
-    # Network Tools
-    mcp.tool(
-        list_hostonly_networks,
-        name="list_hostonly_networks",
-        description="List all host-only networks",
-    )
-    mcp.tool(
-        create_hostonly_network,
-        name="create_hostonly_network",
-        description="Create a host-only network",
-    )
-    mcp.tool(
-        remove_hostonly_network,
-        name="remove_hostonly_network",
-        description="Remove a host-only network",
-    )
+    # Network Tools - using function docstrings automatically
+    mcp.tool(list_hostonly_networks)
+    mcp.tool(create_hostonly_network)
+    mcp.tool(remove_hostonly_network)
 
-    # Snapshot Tools
-    mcp.tool(list_snapshots, name="list_snapshots", description="List snapshots for a VM")
-    mcp.tool(create_snapshot, name="create_snapshot", description="Create a snapshot of a VM")
-    mcp.tool(restore_snapshot, name="restore_snapshot", description="Restore a VM to a snapshot")
-    mcp.tool(delete_snapshot, name="delete_snapshot", description="Delete a snapshot")
+    # Snapshot Tools - using function docstrings automatically
+    mcp.tool(list_snapshots)
+    mcp.tool(create_snapshot)
+    mcp.tool(restore_snapshot)
+    mcp.tool(delete_snapshot)
 
-    # System Tools
-    mcp.tool(get_system_info, name="get_system_info", description="Get system information")
-    mcp.tool(
-        get_vbox_version, name="get_vbox_version", description="Get VirtualBox version information"
-    )
-    mcp.tool(list_ostypes, name="list_ostypes", description="List available OS types")
+    # System Tools - using function docstrings automatically
+    mcp.tool(get_system_info)
+    mcp.tool(get_vbox_version)
+    mcp.tool(list_ostypes)
 
     # Example Tools
-    mcp.tool(greet, name="example_greet", description="A simple example tool that greets someone")
-    mcp.tool(get_counter, name="get_counter", description="Get the current counter value")
-    mcp.tool(analyze_file, name="analyze_file", description="Analyze a file for potential malware")
+    mcp.tool(greet)
+    mcp.tool(get_counter)
+    mcp.tool(analyze_file)
 
-    # Backup Tools
-    mcp.tool(
-        create_backup_legacy,
-        name="create_vm_backup",
-        description="Create a backup of a virtual machine",
-    )
-    mcp.tool(list_backups, name="list_vm_backups", description="List all VM backups")
-    mcp.tool(delete_backup, name="delete_vm_backup", description="Delete a VM backup")
+    # Backup Tools - using function docstrings automatically
+    mcp.tool(create_backup_legacy)
+    mcp.tool(list_backups)
+    mcp.tool(delete_backup)
 
     logger.info(
         "All virtualization-mcp tools registered successfully (including portmanteau tools)"

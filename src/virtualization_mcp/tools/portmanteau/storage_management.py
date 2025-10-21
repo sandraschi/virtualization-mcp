@@ -33,9 +33,7 @@ STORAGE_ACTIONS = {
 def register_storage_management_tool(mcp: FastMCP) -> None:
     """Register the storage management portmanteau tool."""
 
-    @mcp.tool(
-        name="storage_management", description="Comprehensive storage configuration and management"
-    )
+    @mcp.tool()
     async def storage_management(
         action: str,
         vm_name: str | None = None,

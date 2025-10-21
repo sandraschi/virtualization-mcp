@@ -32,9 +32,7 @@ NETWORK_ACTIONS = {
 def register_network_management_tool(mcp: FastMCP) -> None:
     """Register the network management portmanteau tool."""
 
-    @mcp.tool(
-        name="network_management", description="Comprehensive network configuration and management"
-    )
+    @mcp.tool()
     async def network_management(
         action: str,
         network_name: str | None = None,
