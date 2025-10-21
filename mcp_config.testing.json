@@ -9,8 +9,9 @@
         "virtualization-mcp"
       ],
       "env": {
-        "TOOL_MODE": "production"
+        "TOOL_MODE": "testing"
       }
     }
   }
 }
+

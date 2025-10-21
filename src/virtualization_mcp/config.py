@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     # Feature flags
     ENABLE_EXPERIMENTAL_FEATURES: bool = False
     ENABLE_METRICS: bool = True
+    
+    # Tool registration mode
+    # - "production": Only portmanteau tools (5 tools, cleaner for users)
+    # - "testing" or "all": All individual tools + portmanteau (60+ tools)
+    TOOL_MODE: str = "production"
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod

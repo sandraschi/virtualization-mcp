@@ -213,9 +213,14 @@ async def register_all_tools(mcp: FastMCP) -> None:
     from virtualization_mcp.tools.register_tools import register_all_tools as register_vbox_tools
 
     try:
-        # Register all virtualization-mcp tools
-        register_vbox_tools(mcp)
-        logger.info("virtualization-mcp tools registered successfully")
+        # Register virtualization-mcp tools based on TOOL_MODE setting
+        tool_mode = getattr(settings, 'TOOL_MODE', 'production')
+        register_vbox_tools(mcp, tool_mode=tool_mode)
+        
+        if tool_mode.lower() in ["testing", "all"]:
+            logger.info(f"Registered ALL tools (portmanteau + individual) - {tool_mode} mode")
+        else:
+            logger.info(f"Registered portmanteau tools only - {tool_mode} mode")
 
         # Initialize plugins if available
         if sys.platform == "win32" and HYPERV_AVAILABLE:

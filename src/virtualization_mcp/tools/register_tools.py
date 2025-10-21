@@ -54,19 +54,35 @@ from virtualization_mcp.tools.vm.vm_tools import (
 logger = logging.getLogger(__name__)
 
 
-def register_all_tools(mcp: FastMCP) -> None:
-    """Register all virtualization-mcp tools with the FastMCP server.
+def register_all_tools(mcp: FastMCP, tool_mode: str = "production") -> None:
+    """Register virtualization-mcp tools with the FastMCP server.
 
     Args:
         mcp: The FastMCP instance to register tools with
+        tool_mode: Registration mode:
+            - "production": Only portmanteau tools (5 tools, cleaner UI)
+            - "testing" or "all": Individual + portmanteau tools (60+ tools)
     """
-    # Register portmanteau tools first (consolidated tools)
+    # Always register portmanteau tools (consolidated tools)
     from virtualization_mcp.tools.portmanteau import register_all_portmanteau_tools
 
     register_all_portmanteau_tools(mcp)
     logger.info("Portmanteau tools registered successfully")
 
-    # Register individual tools for backward compatibility
+    # Register individual tools only in testing/all mode
+    if tool_mode.lower() in ["testing", "all"]:
+        logger.info(f"Tool mode: {tool_mode} - Registering individual tools for testing")
+        _register_individual_tools(mcp)
+    else:
+        logger.info(f"Tool mode: {tool_mode} - Using portmanteau tools only (production mode)")
+
+
+def _register_individual_tools(mcp: FastMCP) -> None:
+    """Register individual tools for backward compatibility and testing.
+    
+    Args:
+        mcp: The FastMCP instance to register tools with
+    """
     # VM Tools - using function docstrings automatically
     mcp.tool(list_vms)
     mcp.tool(get_vm_info)
@@ -110,9 +126,7 @@ def register_all_tools(mcp: FastMCP) -> None:
     mcp.tool(list_backups)
     mcp.tool(delete_backup)
 
-    logger.info(
-        "All virtualization-mcp tools registered successfully (including portmanteau tools)"
-    )
+    logger.info("Individual tools registered successfully (testing mode)")
 
 
 async def initialize_services():
