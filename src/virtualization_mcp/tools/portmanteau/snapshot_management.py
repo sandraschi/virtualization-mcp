@@ -6,7 +6,7 @@ Replaces 4 individual snapshot tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 
@@ -34,7 +34,7 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def snapshot_management(
-        action: str,
+        action: Literal["list", "create", "restore", "delete"],
         vm_name: str,
         snapshot_name: str | None = None,
         description: str | None = None,

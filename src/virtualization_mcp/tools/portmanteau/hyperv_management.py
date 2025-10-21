@@ -6,7 +6,7 @@ Provides Windows Hyper-V VM management capabilities.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 
@@ -26,7 +26,7 @@ def register_hyperv_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def hyperv_management(
-        action: str,
+        action: Literal["list", "get", "start", "stop"],
         vm_name: str | None = None,
         force: bool = False,
         wait: bool = False,

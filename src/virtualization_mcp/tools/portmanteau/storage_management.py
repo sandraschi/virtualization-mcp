@@ -6,7 +6,7 @@ Replaces 6 individual storage tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 
@@ -35,7 +35,7 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def storage_management(
-        action: str,
+        action: Literal["list_controllers", "create_controller", "remove_controller", "list_disks", "create_disk", "attach_disk"],
         vm_name: str | None = None,
         controller_name: str | None = None,
         controller_type: str | None = None,

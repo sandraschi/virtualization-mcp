@@ -6,7 +6,7 @@ Replaces 5 individual network tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 
@@ -34,7 +34,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def network_management(
-        action: str,
+        action: Literal["list_networks", "create_network", "remove_network", "list_adapters", "configure_adapter"],
         network_name: str | None = None,
         vm_name: str | None = None,
         adapter_slot: int | None = None,

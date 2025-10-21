@@ -6,7 +6,7 @@ Replaces 11 individual VM tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 
@@ -46,7 +46,7 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def vm_management(
-        action: str,
+        action: Literal["list", "create", "start", "stop", "delete", "clone", "reset", "pause", "resume", "info"],
         vm_name: str | None = None,
         source_vm: str | None = None,
         new_vm_name: str | None = None,

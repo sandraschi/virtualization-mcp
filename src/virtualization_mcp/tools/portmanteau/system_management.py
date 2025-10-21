@@ -6,7 +6,7 @@ Replaces 5 individual system tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 
@@ -34,7 +34,8 @@ def register_system_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def system_management(
-        action: str, vm_name: str | None = None
+        action: Literal["host_info", "vbox_version", "ostypes", "metrics", "screenshot"],
+        vm_name: str | None = None
     ) -> dict[str, Any]:
         """
         Get system information and diagnostics with various actions.

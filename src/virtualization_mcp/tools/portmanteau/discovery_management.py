@@ -6,7 +6,7 @@ Helps users and AI assistants discover available tools and their capabilities.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from fastmcp import FastMCP
 
@@ -25,7 +25,7 @@ def register_discovery_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def discovery_management(
-        action: str,
+        action: Literal["list", "info", "schema"],
         tool_name: str | None = None,
         category: str | None = None,
         search: str | None = None,
