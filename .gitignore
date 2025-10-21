@@ -90,13 +90,13 @@ security_reports/
 security_tools/
 vms/
 
-# Status and progress markdown files (keep in docs/archive/)
-*STATUS*.md
-*SUMMARY*.md
-*PROGRESS*.md
-*REPORT*.md
-*CHECKLIST*.md
-*PLAN*.md
+# Status and progress markdown files in root only (keep organized in docs/)
+/*STATUS*.md
+/*SUMMARY*.md
+/*PROGRESS*.md
+/*REPORT*.md
+/*CHECKLIST*.md
+/*PLAN*.md
 !README.md
 !CHANGELOG.md
 !LICENSE.md
