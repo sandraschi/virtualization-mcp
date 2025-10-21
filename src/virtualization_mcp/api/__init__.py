@@ -152,7 +152,7 @@ class APIRegistrar:
             "required": ["name"],
         }
 
-        @mcp.tool(description="Create a new VM")
+        @mcp.tool()
         @validate_input(vm_schema)
         @handle_errors
         async def create_vm(params: dict) -> dict:

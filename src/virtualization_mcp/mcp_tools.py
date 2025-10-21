@@ -239,7 +239,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
     # Get VM service using get_service() method
     vm_service = service_manager.get_service("vm_service")
 
-    @mcp.tool(name="ListTools", description="List all available MCP tools with optional filtering")
+    @mcp.tool()
     async def list_tools(
         category: str | None = None, search: str | None = None
     ) -> list[dict[str, Any]]:
@@ -263,7 +263,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         """
         return discovery.list_tools(category=category, search=search)
 
-    @mcp.tool(name="GetToolInfo", description="Get detailed information about a specific tool")
+    @mcp.tool()
     async def get_tool_info(tool_name: str) -> dict[str, Any]:
         """Get detailed information about a specific tool.
 
@@ -282,7 +282,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         """
         return discovery.get_tool_info(tool_name)
 
-    @mcp.tool(name="GetToolSchema", description="Get the JSON schema for a tool's parameters")
+    @mcp.tool()
     async def get_tool_schema(tool_name: str) -> dict[str, Any]:
         """Get the JSON schema for a tool's parameters.
 
@@ -325,7 +325,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             vm_service.list_vms, details=details, state_filter=state_filter
         )
 
-    @mcp.tool(name="GetVmState", description="Get the current state of a virtual machine.")
+    @mcp.tool()
     async def get_vm_state(vm_name: str) -> dict[str, Any]:
         """Get the current state of a virtual machine.
 
@@ -337,7 +337,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         """
         return await asyncio.to_thread(vm_service.get_vm_state, vm_name=vm_name)
 
-    @mcp.tool(name="CreateVm", description="Create a new VirtualBox virtual machine.")
+    @mcp.tool()
     async def create_vm(
         name: str,
         template: str = "ubuntu-dev",
@@ -348,19 +348,19 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             vm_service.create_vm, name=name, template=template, memory_mb=memory_mb, disk_gb=disk_gb
         )
 
-    @mcp.tool(name="StartVm", description="Start a VirtualBox virtual machine.")
+    @mcp.tool()
     async def start_vm(name: str, headless: bool = True) -> dict[str, Any]:
         return await asyncio.to_thread(vm_service.start_vm, name=name, headless=headless)
 
-    @mcp.tool(name="StopVm", description="Stop a running VirtualBox virtual machine.")
+    @mcp.tool()
     async def stop_vm(name: str, force: bool = False) -> dict[str, Any]:
         return await asyncio.to_thread(vm_service.stop_vm, name=name, force=force)
 
-    @mcp.tool(name="DeleteVm", description="Delete a VirtualBox virtual machine.")
+    @mcp.tool()
     async def delete_vm(name: str, delete_disk: bool = True) -> dict[str, Any]:
         return await asyncio.to_thread(vm_service.delete_vm, name=name, delete_disk=delete_disk)
 
-    @mcp.tool(name="CreateSnapshot", description="Create a snapshot of a virtual machine.")
+    @mcp.tool()
     async def create_snapshot(
         vm_name: str, snapshot_name: str, description: str = ""
     ) -> dict[str, Any]:
@@ -371,7 +371,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             description=description,
         )
 
-    @mcp.tool(name="ListSnapshots", description="List all snapshots for a virtual machine.")
+    @mcp.tool()
     async def list_snapshots(vm_name: str) -> dict[str, Any]:
         return await asyncio.to_thread(vm_service.list_snapshots, vm_name=vm_name)
 
@@ -388,7 +388,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             start_vm=start_vm,
         )
 
-    @mcp.tool(name="DeleteSnapshot", description="Delete a snapshot from a virtual machine.")
+    @mcp.tool()
     async def delete_snapshot(vm_name: str, snapshot_name: str) -> dict[str, Any]:
         return await asyncio.to_thread(
             vm_service.delete_snapshot, vm_name=vm_name, snapshot_name=snapshot_name
@@ -484,7 +484,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         """List all storage controllers for a VM."""
         return await asyncio.to_thread(vm_service.list_storage_controllers, vm_name=vm_name)
 
-    @mcp.tool(name="CreateDisk", description="Create a new virtual disk.")
+    @mcp.tool()
     async def create_disk(
         disk_path: str,
         size_gb: int,
@@ -502,7 +502,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             resizeable=resizeable,
         )
 
-    @mcp.tool(name="AttachDisk", description="Attach a disk to a virtual machine.")
+    @mcp.tool()
     async def attach_disk(
         vm_name: str,
         disk_path: str,
@@ -523,7 +523,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         )
 
     # --- VM Configuration ---
-    @mcp.tool(name="ModifyVm", description="Modify virtual machine settings.")
+    @mcp.tool()
     async def modify_vm(
         vm_name: str,
         memory_mb: int | None = None,
@@ -559,7 +559,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         """Get VM performance metrics."""
         return await asyncio.to_thread(vm_service.get_vm_metrics, vm_name=vm_name)
 
-    @mcp.tool(name="GetVmScreenshot", description="Take a screenshot of a running virtual machine.")
+    @mcp.tool()
     async def get_vm_screenshot(
         vm_name: str,
         output_file: str | None = None,
