@@ -1,6 +1,6 @@
 # Tool Mode Quick Reference
 
-## 🎯 Production Mode (Default) - 5 Tools
+## 🎯 Production Mode (Default) - 6-7 Tools
 
 **For:** End users, Claude Desktop  
 **Setting:** `TOOL_MODE=production` (or omit - this is default)
@@ -11,6 +11,8 @@
 3. snapshot_management (4 operations)
 4. storage_management (6 operations)
 5. system_management (5 operations)
+6. discovery_management (3 operations)
+7. hyperv_management (4 operations, Windows only)
 
 **Example:**
 ```

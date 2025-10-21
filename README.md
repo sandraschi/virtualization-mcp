@@ -115,7 +115,7 @@ uv sync --dev
 
 ## 🛠️ Tool Modes
 
-### Production Mode (Default) - 5 Tools
+### Production Mode (Default) - 6-7 Tools
 
 Clean, organized interface perfect for daily use:
 
@@ -124,8 +124,10 @@ Clean, organized interface perfect for daily use:
 3. **snapshot_management** - Snapshot operations (4 operations)
 4. **storage_management** - Storage & disk management (6 operations)
 5. **system_management** - System info & diagnostics (5 operations)
+6. **discovery_management** - Tool discovery & introspection (3 operations)
+7. **hyperv_management** - Hyper-V VMs (4 operations, Windows only)
 
-**Total:** 30 operations in 5 intuitive tools
+**Total:** 33 operations in 6 tools (7 on Windows)
 
 ### Testing Mode - 60+ Tools
 
