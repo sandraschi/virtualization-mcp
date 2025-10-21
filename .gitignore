@@ -74,6 +74,35 @@ config/local_settings.yaml
 htmlcov/
 .tox/
 .nox/
+coverage.json
+coverage.xml
+test_results.txt
+ruff_errors.json
+junit/
+
+# Test artifacts and temporary data
+MagicMock/
+sandboxes/
+quarantine/
+analysis/
+backups/
+security_reports/
+security_tools/
+vms/
+
+# Status and progress markdown files (keep in docs/archive/)
+*STATUS*.md
+*SUMMARY*.md
+*PROGRESS*.md
+*REPORT*.md
+*CHECKLIST*.md
+*PLAN*.md
+!README.md
+!CHANGELOG.md
+!LICENSE.md
+!CONTRIBUTING.md
+!SECURITY.md
+!TROUBLESHOOTING.md
 
 # Documentation builds
 docs/_build/
