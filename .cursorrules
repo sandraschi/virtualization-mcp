@@ -1,5 +1,21 @@
 # Virtualization-MCP Cursor Rules
 
+## 🎯 Triple Initiatives (Active)
+
+**This repo is part of three parallel improvement initiatives:**
+
+1. **Great Doc Bash** - Documentation Quality (Target: 9.0+/10)
+2. **GitHub Dash** - CI/CD Modernization (Target: 8.0+/10)  
+3. **Release Flash** - Successful Releases (Target: Zero errors)
+
+**Priority**: HIGH (CI workflows + ruff needed)
+
+📋 **Improvement Plan**: `docs-private/TRIPLE_INITIATIVES_GUIDE.md`  
+📚 **Central Docs**: `D:\Dev\repos\mcp-central-docs\`  
+🔗 **Standards**: `mcp-central-docs/STANDARDS.md`
+
+---
+
 ## Project Overview
 This is virtualization-mcp, a professional VirtualBox management MCP server built with FastMCP 2.12+. It provides comprehensive VM operations, networking, storage, snapshots, templates, and security features.
 
