@@ -86,7 +86,7 @@ class Settings(BaseSettings):
 
 ## Tool Lists
 
-### Production Mode (6-7 Tools):
+### Production Mode (5-6 Tools):
 
 1. **vm_management**
    - 10 sub-operations: list, create, start, stop, delete, clone, reset, pause, resume, info
@@ -103,13 +103,12 @@ class Settings(BaseSettings):
 5. **system_management**
    - 5 sub-operations: host_info, vbox_version, ostypes, metrics, screenshot
 
-6. **discovery_management**
-   - 3 sub-operations: list, info, schema
-
-7. **hyperv_management** (Windows only)
+6. **hyperv_management** (Windows only)
    - 4 sub-operations: list, get, start, stop
 
-**Total:** 6 tools (7 on Windows), 33 sub-operations
+**Total:** 5 tools (6 on Windows), 30 sub-operations
+
+**Tool Discovery:** MCP protocol provides `tools/list` method natively - use that instead of custom discovery tools!
 
 ### Testing Mode (60+ Tools):
 
