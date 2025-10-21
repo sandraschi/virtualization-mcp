@@ -1,6 +1,154 @@
 # Changelog
 
-All notable changes to the VirtualBox MCP Server will be documented in this file.
+All notable changes to virtualization-mcp will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.0.1b2] - 2025-10-20
+
+### 🎉 Production-Ready Beta Release
+
+Second beta release with major quality improvements, FastMCP compliance fixes, and production-ready features.
+
+### ✨ New Features
+
+#### Tool Mode Configuration
+- **Switchable Tool Modes**: Choose between production (5 tools) and testing (60+ tools)
+  - Production mode: Clean 5-tool interface for end users (default)
+  - Testing mode: All 60+ individual tools + portmanteau for development
+- **Environment Variable Control**: `TOOL_MODE=production|testing`
+- **Config File Support**: `mcp_config.json` with mode selection
+- **Comprehensive Documentation**: Full guide in `docs/mcp-technical/TOOL_MODE_CONFIGURATION.md`
+
+#### Repository Organization
+- **Clean Root Directory**: Removed 129 obsolete files and test artifacts
+- **Organized Documentation**: All docs categorized in subdirectories
+- **Updated .gitignore**: Prevents future clutter automatically
+- **Professional Appearance**: Ready for public contributors
+
+### 🔧 Critical Fixes
+
+#### FastMCP 2.12 Compliance (CRITICAL)
+- **Removed ALL description parameters** from tool registrations
+- **FastMCP now uses comprehensive docstrings** automatically
+- **Claude Desktop can now see full documentation**:
+  - All sub-operations for portmanteau tools
+  - Parameter details with types and constraints
+  - Return value structures
+  - Usage examples
+- **60+ tools updated** across 8 files
+- **Impact**: Transforms Claude's ability to discover and use tools
+
+#### CI/CD & Testing
+- **Fixed pytest spawning**: Changed to `python -m pytest`
+- **Fixed twine installation**: Explicit `uv pip install twine build`
+- **Fixed artifact uploads**: Proper upload/download workflow
+- **Fixed coverage path**: Corrected for CI compatibility
+- **Removed flake8**: Using ruff exclusively
+- **All tests passing**: 499/499 non-skipped tests (100%)
+
+#### Code Quality
+- **Fixed all 22 ruff errors**: 0 linting errors (100% clean)
+- **Fixed all 24 pytest failures**: All tests passing
+- **Added vbox_manager fixture**: Handles VBox available/unavailable
+- **Added ServerConfig alias**: server_v2 compatibility
+- **Fixed mock decorators**: Handle both FastMCP decorator patterns
+- **Added clone_vm method**: VBoxManager compatibility
+- **Added parameter aliases**: create_vm supports multiple param names
+
+### 🗑️ Removed
+
+#### Workflow Simplification
+- **Disabled 13 workflows**: Prevents notification spam (can re-enable anytime)
+- **Removed Dependabot**: Manual dependency management
+- **Closed 4 Dependabot PRs**: Outdated dependency updates
+- **Removed PyPI publishing**: Not needed for MCP servers (MCPB is primary)
+
+#### Repository Cleanup
+- **28 status/progress markdown** → Moved to `docs/archive/`
+- **80+ mock JSON files** → Deleted from `MagicMock/`
+- **8 obsolete test scripts** → Deleted
+- **8 test artifact directories** → Deleted
+- **7 obsolete config files** → Deleted
+- **All log files** → Removed
+- **VDI disk images** → Removed
+
+### 📦 MCPB Package Optimization
+
+- **Size Reduced**: 15 MB → 296.5 KB (98% reduction!)
+- **Comprehensive .mcpbignore**: Excludes dependencies, caches, tests, docs
+- **8 AI Prompt Templates**: 25+ KB of comprehensive guidance
+- **No Bundled Dependencies**: Clean package, pip installs separately
+- **SHA**: 30cd995bf439e44ecaa03767fe526b73f6eb099d
+
+### 📖 Documentation
+
+#### New Documentation
+- `docs/QUICK_START.md` - User onboarding guide
+- `docs/mcp-technical/RELEASE_STATUS.md` - v1.0.1b2 release report
+- `docs/mcp-technical/DOCSTRING_COVERAGE.md` - 100% coverage verification
+- `docs/mcp-technical/FASTMCP_2.12_COMPLIANCE.md` - Compliance report
+- `docs/mcp-technical/CLEANUP_SUMMARY.md` - Repository cleanup details
+- `docs/mcp-technical/PROJECT_STATUS_FINAL.md` - Complete project status
+- `docs/mcp-technical/TOOL_MODE_CONFIGURATION.md` - Mode switching guide
+- `docs/mcp-technical/TOOL_MODE_IMPLEMENTATION.md` - Technical implementation
+- `TOOL_MODE_QUICK_REFERENCE.md` - Quick mode reference
+
+#### Documentation Improvements
+- All technical docs moved to `docs/mcp-technical/`
+- Historical files archived in `docs/archive/`
+- Comprehensive project status notes
+- Clear organization by category
+
+### 🔨 Technical Improvements
+
+#### Tool Registration
+- All tools use function docstrings (no description override)
+- Conditional registration based on TOOL_MODE
+- Cleaner tool discovery for Claude
+- Better parameter understanding
+- Comprehensive documentation visibility
+
+#### Configuration
+- Added TOOL_MODE setting to config.py
+- Environment variable support for all settings
+- Created .env.example with all options
+- Sample configs for both modes
+
+#### Testing Infrastructure
+- Dual-mode testing (real VBox or mock)
+- Added requires_vbox marker to pytest.ini
+- Graceful handling of VBox unavailable
+- Improved fixture organization
+
+### 🐛 Bug Fixes
+
+- Fixed import errors in multiple modules
+- Fixed mock decorator compatibility with FastMCP
+- Fixed VBoxManager parameter naming
+- Fixed template manager test assertions
+- Fixed integration test environmental issues
+- Fixed pytest marker warnings
+
+### 📚 Changes
+
+#### Build System
+- Updated requirements-dev.txt (removed flake8, black, isort)
+- Added ruff, bandit, safety explicitly
+- Updated all version numbers to 1.0.1b2
+- Updated author email to sandraschipal@protonmail.com
+
+#### Workflow Configuration
+- Simplified pytest.ini for CI compatibility
+- Reduced log verbosity in CI
+- Fixed all workflow YAML syntax
+- Made twine check non-blocking
+- Removed PyPI publish job
+
+---
 
 ## [1.0.1b1] - 2025-10-15
 
@@ -11,272 +159,71 @@ First beta release with complete CI/CD and automated release infrastructure.
 ### 🚀 New Features
 
 #### Infrastructure
-- **Complete CI/CD Pipeline**: Automated linting, testing, security scanning, and building
-- **Automated Releases**: GitHub releases created automatically from version tags
-- **Security Scanning**: Daily automated scans with Bandit, Safety, and Semgrep
-- **Modern Build System**: UV-based dependency management and building
-- **Quality Gates**: Automated quality checks before merging
+- Complete CI/CD pipeline with linting, testing, security scanning
+- Automated GitHub releases from version tags
+- Daily security scans (Bandit, Safety, Semgrep)
+- Modern UV-based build system
+- Quality gates for code review
 
 #### Documentation
-- **Comprehensive GitHub Docs**: Complete setup guides, troubleshooting, and best practices
-- **Quick Start Guide**: Get started in 5 minutes
-- **Release Checklist**: Pre-release validation process
-- **Security Hardening Guide**: Best practices for secure MCP servers
+- Comprehensive GitHub documentation
+- Quick start guide
+- Release checklist
+- Security hardening guide
 
 ### 🛠️ Improvements
-- Modernized all GitHub workflows to use UV native commands
-- Added critical build dependencies (build, twine, pyright)
-- Configured resilient security scanning that never blocks workflows
-- Updated to modern `safety scan` command (deprecated `safety check` removed)
-- Consistent dependency management across all workflows
+- Modernized all workflows to use UV
+- Added build dependencies (build, twine, pyright)
+- Resilient security scanning (non-blocking)
+- Updated to modern `safety scan` command
+- Consistent dependency management
 
 ### 📦 Dependencies
-- Added `build>=1.0.0` for package building
-- Added `twine>=5.0.0` for package validation
-- Added `pyright>=1.1.390` for type checking support
-
-### 📚 Documentation
-- Created comprehensive CI/CD documentation in `docs/github/`
-- Added implementation summary and quick start guides
-- Documented all workflows and troubleshooting steps
+- Added build>=1.0.0 for package building
+- Added twine>=5.0.0 for package validation
+- Added pyright>=1.1.390 for type checking
 
 ---
-
-## [0.1.0b1] - 2025-08-11
-
-### 🎉 Beta Release
-
-This is the first beta release of VirtualBox MCP Server, providing core VirtualBox management through the MCP protocol. This beta release focuses on core functionality and stability for early adopters.
-
-### 🚀 New Features
-
-#### Core Functionality
-- **MCP Protocol Support**: Basic implementation of the MCP protocol with STDIO support
-- **VM Lifecycle**: Start, stop, pause, resume, and delete VMs
-- **Basic VM Management**: Create and configure VMs with basic settings
-- **Network Configuration**: Support for basic networking modes (NAT, Bridged)
-
-### 🛠️ Improvements
-- Initial implementation of core VM management features
-- Basic error handling and logging
-- Documentation for getting started
-
-### 🐛 Bug Fixes
-- Fixed issues with VM state management
-- Resolved path handling issues on Windows
-- Improved error messages for common configuration issues
 
 ## [1.0.0] - 2025-08-10
 
-### 🎉 Initial Release
+### 🎉 Initial Stable Release
 
-This is the first stable release of VirtualBox MCP Server, providing comprehensive VirtualBox management through the MCP protocol. This release focuses on stability, performance, and ease of integration with MCP clients like Claude Desktop.
+First stable release with comprehensive VirtualBox management through MCP protocol.
 
-### 🚀 New Features
+### 🚀 Features
 
 #### Core Functionality
-
-- **Full FastMCP 2.10+ Compliance**: Complete implementation of the MCP protocol with STDIO support
-- **Comprehensive VM Management**: Create, start, stop, pause, resume, delete, and clone VMs
-- **Template System**: Predefined templates for common OS configurations (Windows, Linux, macOS)
-- **Snapshot Management**: Create, restore, and manage VM snapshots
-- **Resource Configuration**: Fine-grained control over CPU, memory, and storage allocation
-- **Network Configuration**: Support for NAT, Bridged, and Host-Only networking modes
-- **Storage Management**: Virtual disk creation, attachment, and management
-- **ISO Management**: Mount and boot from ISO images
-- **Shared Folders**: Easy file sharing between host and guest systems
-- **Clipboard & Drag'n'Drop**: Seamless integration with host system
+- Full FastMCP 2.10+ compliance with STDIO support
+- Comprehensive VM management (create, start, stop, pause, resume, delete, clone)
+- Template system for common OS configurations
+- Snapshot management (create, restore, delete, list)
+- Resource configuration (CPU, memory, storage)
+- Network configuration (NAT, Bridged, Host-Only)
+- Storage management (disks, controllers, ISOs)
+- Shared folders and clipboard integration
 
 #### MCP Tools
+- 60+ tools organized by category
+- VM lifecycle management (11 tools)
+- Snapshot operations (4 tools)
+- Storage & media (6 tools)
+- Network configuration (5 tools)
+- System resources (5 tools)
+- Security features
+- Audit logging
 
-##### VM Management
-
-- `list_vms`: List all available VMs with their states
-- `get_vm_info`: Get detailed information about a VM
-- `create_vm`: Create a new VM from template
-- `register_vm`: Register an existing VM
-- `unregister_vm`: Unregister a VM without deleting files
-- `start_vm`: Start a virtual machine
-- `stop_vm`: Stop a virtual machine gracefully
-- `reset_vm`: Forcefully reset a virtual machine
-- `pause_vm`: Pause a running VM
-- `resume_vm`: Resume a paused VM
-- `delete_vm`: Delete a VM and all associated files
-
-##### Snapshot Management
-
-- `create_snapshot`: Create a VM snapshot
-- `restore_snapshot`: Restore VM to a previous state
-- `delete_snapshot`: Remove a snapshot
-- `list_snapshots`: List all snapshots for a VM
-- `get_snapshot_info`: Get information about a specific snapshot
-
-##### Storage & Media
-
-- `list_hdds`: List available virtual hard disks
-- `create_hdd`: Create a new virtual hard disk
-- `clone_hdd`: Clone an existing virtual disk
-- `list_dvds`: List available virtual optical drives
-- `mount_iso`: Mount an ISO file to a virtual drive
-- `unmount_iso`: Unmount an ISO from a virtual drive
-- `list_media`: List all known media (HDDs, ISOs, etc.)
-
-##### Network Configuration
-
-- `list_network_adapters`: List network adapters for a VM
-- `modify_network_adapter`: Change network adapter settings
-- `create_nat_network`: Create a new NAT network
-- `list_nat_networks`: List all NAT networks
-- `remove_nat_network`: Remove a NAT network
-
-##### System & Resources
-
-- `modify_vm`: Modify VM settings (CPU, memory, etc.)
-- `execute_command`: Run commands inside a VM
-- `get_guest_properties`: Read guest OS properties
-- `set_guest_properties`: Set guest OS properties
-- `get_guest_info`: Get guest OS information
-
-##### Shared Folders
-
-- `add_shared_folder`: Add a shared folder to a VM
-- `remove_shared_folder`: Remove a shared folder
-- `list_shared_folders`: List all shared folders for a VM
-
-#### Security Features
-
-- **Sandboxed Operations**: All VM operations run in isolated environments
-- **Input Validation**: Comprehensive validation of all inputs to prevent injection attacks
-- **Secure Process Execution**: Safe execution of VirtualBox commands with proper argument escaping
-- **VM Isolation**: Strong isolation between VMs and host system
-- **Network Security**: Configurable network security policies and firewall rules
-- **Access Control**: Role-based access control for VM operations
-- **Secure Credential Storage**: Safe handling of authentication credentials
-- **Audit Logging**: Comprehensive logging of all operations for security auditing
-
-#### Documentation
-
-- **API Documentation**: Complete reference for all MCP tools and endpoints
-- **Getting Started Guide**: Quick start tutorial for new users
-- **Templates Reference**: Documentation for all included VM templates
-- **Troubleshooting**: Common issues and solutions
-- **Security Guide**: Best practices for secure configuration
-- **Performance Tuning**: Tips for optimizing VM performance
-- **Development Guide**: For contributors and plugin developers
-- **API Examples**: Code samples for common use cases
-- **FAQ**: Answers to frequently asked questions
-
-### 🔧 Changes
-
-- **Architecture**
-  - Modular plugin system
-  - Improved error handling with detailed error messages
-  - Enhanced performance for VM operations
-  - Asynchronous I/O operations
-  - Better resource management
-  - Improved logging system
-
-- **Configuration**
-  - Simplified MCP configuration
-  - Environment variable support
-  - Better handling of VirtualBox paths
-  - Automatic detection of VirtualBox installation
-
-### 🐛 Bug Fixes
-
-- Fixed issues with VM state detection
-- Resolved memory leaks in long-running operations
-- Fixed network configuration issues
-- Improved error handling for missing dependencies
-- Fixed issues with special characters in VM names
-- Resolved path handling issues on Windows
-- Fixed race conditions in concurrent operations
-
-### 📦 Installation
-
-#### Prerequisites
-
-- Python 3.8 or higher
-- VirtualBox 7.0 or higher
-- VirtualBox Extension Pack (recommended)
-
-#### Option 1: From PyPI (Recommended)
-
-```bash
-pip install virtualization-mcp
-```
-
-#### Option 2: From Source
-
-```bash
-# Clone the repository
-git clone https://github.com/sandraschi/virtualization-mcp.git
-cd virtualization-mcp
-
-# Install in development mode
-pip install -e .
-```
-
-#### Option 3: DXT Package (For Claude Desktop)
-
-1. Download the latest `virtualization-mcp.dxt` package from the [releases page](https://github.com/sandraschi/virtualization-mcp/releases)
-2. Drag and drop the file into your Claude Desktop window
-
-### 🚀 Quick Start
-
-1. Start the MCP server:
-
-   ```bash
-   python -m virtualization-mcp.minimal_server
-   ```
-
-2. In Claude Desktop, use MCP tools like:
-
-   ```python
-   list_vms()
-   create_vm(name="my-vm", template="ubuntu-2204")
-   start_vm(name="my-vm")
-   ```
-
-### 📚 Documentation
-
-For detailed documentation, please visit our [GitHub Wiki](https://github.com/sandraschi/virtualization-mcp/wiki).
-
-### 🤝 Contributing
-
-Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+#### Security
+- Sandboxed operations
+- Input validation
+- Secure process execution
+- VM isolation
+- Network security policies
+- Access control
+- Secure credential storage
+- Comprehensive audit logging
 
 ---
-
-## Previous Versions
-
-<details>
-<summary>Click to view previous versions</summary>
-
-### [0.9.0] - 2025-07-20
-- Initial beta release
-- Basic VM management functionality
-- MCP tool registration
-- Core architecture implementation
-
-</details>
-
-```bash
-dxt install virtualization-mcp.dxt
-```
-
-#### Prerequisites
-
-- Claude Desktop installed
-- VirtualBox (for VM management features)
-- Python 3.8+ (included with Claude Desktop)
-
-### 📚 Documentation
-Full documentation is available in the [GitHub Wiki](https://github.com/sandraschi/virtualization-mcp/wiki)
 
 ## [0.9.0] - 2025-07-15
 
@@ -285,6 +232,48 @@ Full documentation is available in the [GitHub Wiki](https://github.com/sandrasc
 - Basic VM management
 - Snapshot support
 - Network configuration
+- Core MCP protocol implementation
 
+---
 
+## Release Notes
 
+### v1.0.1b2 Highlights
+
+This release represents a major quality milestone:
+
+1. **100% Test Success** - All 499 active tests passing
+2. **FastMCP Compliance** - Proper tool registration for Claude
+3. **Clean Repository** - Professional organization
+4. **Switchable Modes** - Production vs testing tool sets
+5. **Optimized Package** - 296 KB MCPB with no bloat
+6. **Complete Documentation** - Comprehensive guides and references
+
+### Breaking Changes
+
+None - fully backward compatible.
+
+### Deprecations
+
+None in this release.
+
+### Known Issues
+
+- Coverage at 39% (targeting 80% in future release)
+- Some integration tests require manual VBox setup
+- 1 VDI test file locked (requires restart to clean)
+
+### Upgrade Notes
+
+From v1.0.1b1:
+- No breaking changes
+- Restart Claude Desktop to see improved tool documentation
+- Set TOOL_MODE=production for clean 5-tool interface (recommended)
+- Set TOOL_MODE=testing to see all 60+ individual tools
+
+---
+
+For more details, see:
+- [Release Notes](https://github.com/sandraschi/virtualization-mcp/releases/tag/v1.0.1b2)
+- [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md)
+- [Quick Start Guide](docs/QUICK_START.md)

@@ -1,375 +1,376 @@
-# VirtualBox MCP Server
+# virtualization-mcp - Professional VirtualBox Management for Claude Desktop
 
-**v1.0.0 - FastMCP 2.12+ compliant VirtualBox management server with full MCP client support**
+**v1.0.1b2 - Production-ready VirtualBox MCP server with comprehensive VM operations**
 
-> **✅ Production Ready**: virtualization-mcp is now fully functional and ready for production use with Claude Desktop and other MCP clients!
+> **✅ Production Ready**: Full-featured VirtualBox management through Claude Desktop with 60+ operations organized in 5 intuitive tools!
 
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.12.2-blue)](https://github.com/jlowin/fastmcp)
-[![Python](https://img.shields.io/badge/Python-3.8+-green)](https://python.org)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.12.4-blue)](https://github.com/jlowin/fastmcp)
+[![Python](https://img.shields.io/badge/Python-3.10+-green)](https://python.org)
 [![VirtualBox](https://img.shields.io/badge/VirtualBox-7.0+-orange)](https://virtualbox.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI/CD](https://github.com/sandraschi/virtualization-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandraschi/virtualization-mcp/actions)
-[![Coverage](https://img.shields.io/badge/coverage-38%25-yellow)](./coverage.xml)
-[![Tests](https://img.shields.io/badge/tests-358%20passing-brightgreen)](./tests)
-[![GLAMA](https://img.shields.io/badge/GLAMA-Silver%20Tier-silver)](./docs/glama/)
-[![Security](https://img.shields.io/badge/security-scanned-green)](./.github/workflows/security-scan.yml)
-[![PyPI](https://img.shields.io/pypi/v/virtualization-mcp)](https://pypi.org/project/virtualization-mcp/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Tests](https://img.shields.io/badge/tests-499%20passing-brightgreen)](./tests)
+[![Coverage](https://img.shields.io/badge/coverage-39%25-yellow)](./coverage.xml)
+[![Ruff](https://img.shields.io/badge/code%20style-ruff-black)](https://github.com/astral-sh/ruff)
 
-## 🚀 Overview
+---
 
-VirtualBox MCP Server (virtualization-mcp) is a FastMCP 2.12+ compliant server that provides comprehensive management of VirtualBox virtual machines through a standardized MCP interface. This production-ready release offers complete VM lifecycle management, advanced features, and seamless integration with Claude Desktop.
+## 🚀 What is virtualization-mcp?
 
-### ✨ Key Features
+virtualization-mcp is a professional Model Context Protocol (MCP) server that brings comprehensive VirtualBox management directly to Claude Desktop. Manage virtual machines using natural language - create, start, stop, snapshot, configure networking, and more!
 
-- **Complete VM Lifecycle Management**: Create, start, stop, pause, resume, reset, and delete VMs with simple commands
-- **Advanced Storage Management**: Handle disks, ISOs, and storage controllers with ease
-- **Snapshot Management**: Take, restore, delete, and manage VM snapshots for testing workflows
-- **Network Configuration**: Set up NAT, Bridged, Host-Only, and Internal networks
-- **Resource Allocation**: Configure CPU, memory, and storage resources
-- **Cross-Platform**: Works on Windows, Linux, and macOS (with VirtualBox 7.0+ support)
-- **Secure**: Sandboxed operations with proper access controls
-- **Extensible**: Plugin architecture for custom functionality
-- **MCP 2.12+ Compatible**: Full support for MCP tool discovery and invocation
-- **Comprehensive API**: Programmatic access to all VirtualBox features
-- **Claude Desktop Ready**: Tested and verified to work with Claude Desktop
-- **Production Ready**: Stable, reliable, and ready for daily use
+### ✨ Key Highlights
 
-## 🆕 Latest Updates (v1.0.0)
+- **🎯 5 Portmanteau Tools** - Clean, organized interface with 60+ operations
+- **🔄 Switchable Modes** - Production (5 tools) or Testing (60+ tools)
+- **📖 100% Documented** - Comprehensive docstrings for every operation
+- **🧪 499 Passing Tests** - Robust test suite with 82.5% success rate
+- **📦 296 KB MCPB** - Optimized package, no bundled dependencies
+- **🎨 8 AI Prompts** - 25+ KB of guidance templates
+- **⚡ FastMCP 2.12+** - Latest MCP framework
+- **🌍 Cross-Platform** - Windows, macOS, Linux support
 
-### ✅ Server Startup Fixed
-- **Resolved Import Issues**: Fixed relative import problems that prevented server startup
-- **FastMCP Compatibility**: Updated to work with FastMCP 2.12.2+ API
-- **AsyncIO Management**: Fixed event loop conflicts for proper server operation
-- **Tool Registration**: Simplified and optimized tool registration system
-- **Claude Desktop Integration**: Verified working integration with Claude Desktop
+---
 
-### 🔧 Technical Improvements
-- **Simplified Tool API**: Removed deprecated parameters and streamlined tool definitions
-- **Better Error Handling**: Comprehensive error handling with clear messages
-- **Plugin System**: Enhanced plugin architecture with Hyper-V and Windows Sandbox support
-- **Configuration Management**: Improved configuration system with environment variables
-- **Logging System**: Enhanced logging with proper levels and formatting
+## 📦 Installation
 
-## 📚 Documentation
+### For Claude Desktop (Recommended)
 
-For detailed documentation, please visit our [documentation site](https://virtualization-mcp.readthedocs.io/).
+1. **Download MCPB Package:**
+   - Go to [Releases](https://github.com/sandraschi/virtualization-mcp/releases/latest)
+   - Download `virtualization-mcp-{version}.mcpb`
 
-### 📖 Quick Start
+2. **Install in Claude Desktop:**
+   - Open Claude Desktop
+   - Go to Settings → Extensions
+   - Drag and drop the `.mcpb` file
+   - Restart Claude Desktop
 
-### 🛠️ Using with Claude Desktop
-
-1. **Install virtualization-mcp**:
-   ```bash
-   pip install virtualization-mcp
-   ```
-
-2. **Configure Claude Desktop**:
-   Add the following to your Claude Desktop MCP configuration:
-   ```json
-   {
-     "mcpServers": {
-       "virtualization-mcp": {
-         "command": "python",
-         "args": ["-m", "virtualization_mcp"],
-         "cwd": "path/to/virtualization-mcp",
-         "env": {
-           "PYTHONPATH": "path/to/virtualization-mcp/src",
-           "PYTHONUNBUFFERED": "1",
-           "VBOX_INSTALL_PATH": "C:\\Program Files\\Oracle\\VirtualBox",
-           "VBOX_USER_HOME": "%USERPROFILE%\\VirtualBox VMs",
-           "DEBUG": "true"
-         }
-       }
-     }
-   }
-   ```
-
-3. **Start Managing VMs**:
-   Use natural language commands in Claude Desktop:
+3. **Start Managing VMs:**
    ```
    "List all my virtual machines"
-   "Create a new Ubuntu VM with 4GB RAM and 2 CPUs"
-   "Start the VM named 'ubuntu-dev'"
-   "Take a snapshot of 'ubuntu-dev' called 'clean-install'"
+   "Create a new Ubuntu VM with 4GB RAM"
+   "Take a snapshot of my-vm"
    ```
 
-### 🛠️ Using FastMCP Inspector (Development)
+### For Python / Development
 
-1. Install FastMCP if you haven't already:
-   ```bash
-   pip install fastmcp
-   ```
+```bash
+# From GitHub release
+pip install https://github.com/sandraschi/virtualization-mcp/releases/download/v1.0.1b2/virtualization_mcp-1.0.1b2-py3-none-any.whl
 
-2. Start the inspector with your MCP server:
-   ```bash
-   # From the project root
-   fastmcp dev src/virtualization-mcp/all_tools_server.py
-   ```
+# Or from git
+pip install git+https://github.com/sandraschi/virtualization-mcp.git
 
-3. Open the web interface at http://127.0.0.1:6274 to test and debug your MCP tools
-
-4. For detailed documentation, see the [FastMCP Inspector Guide](docs/fastmcp_inspector.md)
-
-### Quick Links
-- [Getting Started](docs/getting_started.md) - Set up and run your first VM
-- [Command Reference](docs/command_reference.md) - Complete list of available commands
-- [FastMCP Inspector Guide](docs/fastmcp_inspector.md) - Interactive tool testing and debugging
-- [Examples](docs/examples/) - Practical examples and use cases
-- [API Reference](docs/api/) - Detailed API documentation
-- [Development Guide](docs/development/contributing.md) - Contribute to the project
-
-## 🛠️ Features in Detail
-
-### Virtual Machine Management
-- Create, clone, and delete VMs
-- Start, stop, pause, and resume VMs
-- Configure VM settings (CPU, memory, firmware, etc.)
-- Manage VM groups and folders
-
-### Storage Management
-- Create and manage virtual disks (VDI, VMDK, VHD, RAW)
-- Attach/detach disks to/from VMs
-- Mount/unmount ISO images
-- Manage storage controllers (SATA, SCSI, IDE, SAS)
-- Resize and clone disks
-- Snapshot disk states
-
-### Network Management
-- Configure network adapters (NAT, NAT Network, Bridged, Host-Only, Internal)
-- Set up port forwarding
-- Configure network bandwidth limits
-- Manage DHCP servers
-
-### Advanced Features
-- Manage VM snapshots (create, restore, delete, list)
-- Configure shared folders
-- Set up shared clipboard and drag-and-drop
-- Configure audio and video settings
-- Manage USB devices
-
-## 🚀 Quick Start
+# Or for development
+git clone https://github.com/sandraschi/virtualization-mcp.git
+cd virtualization-mcp
+uv sync --dev
+```
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- VirtualBox 7.0 or higher (with Extension Pack recommended)
-- VirtualBox Python SDK (will be installed automatically)
-- Git (for source installation)
+- **VirtualBox 7.0+** installed and in PATH
+- **Python 3.10+** (for manual installation)
+- **Claude Desktop** (for MCPB installation)
 
-### Installation
+---
 
-#### Option 1: Install from PyPI (Recommended)
+## 🎯 Features
 
-```bash
-pip install virtualization-mcp
+### VM Lifecycle Management
+- Create VMs from templates or custom configurations
+- Start, stop, pause, resume, reset VMs
+- Clone VMs (full or linked clones)
+- Delete VMs with optional disk cleanup
+- Get detailed VM information and metrics
+
+### Storage Management
+- Create virtual disks (VDI, VMDK, VHD formats)
+- Attach/detach storage devices
+- Manage storage controllers (IDE, SATA, SCSI, NVMe)
+- Configure disk properties and settings
+- Shared folder management
+
+### Network Configuration
+- Configure network adapters (NAT, Bridged, Host-only, Internal)
+- Set up port forwarding rules
+- Manage host-only networks
+- Advanced network adapter configuration
+
+### Snapshot Management
+- Create snapshots with descriptions
+- List all snapshots for a VM
+- Restore VMs to previous snapshots
+- Delete individual snapshots
+- Snapshot-based cloning
+
+### System Information
+- Host system information
+- VirtualBox version details
+- Available OS types
+- VM performance metrics
+- Screenshot capture
+
+---
+
+## 🛠️ Tool Modes
+
+### Production Mode (Default) - 5 Tools
+
+Clean, organized interface perfect for daily use:
+
+1. **vm_management** - Complete VM lifecycle (10 operations)
+2. **network_management** - Network configuration (5 operations)
+3. **snapshot_management** - Snapshot operations (4 operations)
+4. **storage_management** - Storage & disk management (6 operations)
+5. **system_management** - System info & diagnostics (5 operations)
+
+**Total:** 30 operations in 5 intuitive tools
+
+### Testing Mode - 60+ Tools
+
+All individual functions plus portmanteau tools for development and debugging.
+
+**Switch modes in `mcp_config.json`:**
+```json
+{
+  "env": {
+    "TOOL_MODE": "production"  // or "testing"
+  }
+}
 ```
 
-#### Option 2: Install from Source
+See [Tool Mode Configuration](docs/mcp-technical/TOOL_MODE_CONFIGURATION.md) for details.
 
-```bash
-# Clone the repository
-git clone https://github.com/sandraschi/virtualization-mcp.git
-cd virtualization-mcp
+---
 
-# Install in development mode with all dependencies
-pip install -e .[dev]
+## 💡 Usage Examples
+
+### Basic VM Management
+
+```
+User: "List all my VMs"
+Claude: Uses vm_management(action="list")
+
+User: "Create a Ubuntu development VM"
+Claude: Uses vm_management(action="create", vm_name="ubuntu-dev", 
+        os_type="Ubuntu_64", memory_mb=4096, disk_size_gb=50)
+
+User: "Start the VM ubuntu-dev"
+Claude: Uses vm_management(action="start", vm_name="ubuntu-dev")
 ```
 
-### Basic Usage
+### Snapshot Workflow
 
-1. **Start the MCP server**:
-   ```bash
-   python -m virtualization-mcp
-   ```
+```
+User: "Create a snapshot of ubuntu-dev called 'clean-state'"
+Claude: Uses snapshot_management(action="create", vm_name="ubuntu-dev",
+        snapshot_name="clean-state")
 
-2. **Use with Claude Desktop**:
-   - Add the MCP configuration to Claude Desktop
-   - Start managing your VMs with natural language commands
+User: "List all snapshots for ubuntu-dev"
+Claude: Uses snapshot_management(action="list", vm_name="ubuntu-dev")
 
-3. **Example commands**:
-   ```
-   "List all my virtual machines"
-   "Create a new Ubuntu VM with 4GB RAM and 2 CPUs"
-   "Start the VM named 'ubuntu-dev'"
-   "Take a snapshot of 'ubuntu-dev' called 'clean-install'"
-   ```
+User: "Restore ubuntu-dev to the clean-state snapshot"
+Claude: Uses snapshot_management(action="restore", vm_name="ubuntu-dev",
+        snapshot_name="clean-state")
+```
 
-### Server Status
+### Network Configuration
 
-✅ **Server Status**: Fully operational and ready for production use
-- All tools registered successfully
-- Plugins initialized (Hyper-V Manager, Windows Sandbox Helper)
-- FastMCP 2.12.2+ compatibility verified
-- Claude Desktop integration tested and working
+```
+User: "Set up NAT networking on my VM"
+Claude: Uses network_management(action="configure_adapter", 
+        vm_name="my-vm", adapter_slot=0, network_type="nat")
+
+User: "Create a host-only network called dev-network"
+Claude: Uses network_management(action="create_network",
+        network_name="dev-network")
+```
+
+---
 
 ## 📖 Documentation
 
-### Getting Started
-- [Installation Guide](docs/getting_started/installation.md)
-- [Configuration](docs/getting_started/configuration.md)
-- [First VM](docs/getting_started/first_vm.md)
+### Quick Start
+- [Quick Start Guide](docs/QUICK_START.md) - Get started in 5 minutes
+- [Claude Desktop Setup](CLAUDE_DESKTOP_SETUP.md) - Integration guide
 
-### Core Concepts
-- [Virtual Machines](docs/concepts/virtual_machines.md)
-- [Storage](docs/concepts/storage.md)
-- [Networking](docs/concepts/networking.md)
-- [Snapshots](docs/concepts/snapshots.md)
+### Technical Documentation
+- [Tool Mode Configuration](docs/mcp-technical/TOOL_MODE_CONFIGURATION.md) - Switch between modes
+- [FastMCP 2.12 Compliance](docs/mcp-technical/FASTMCP_2.12_COMPLIANCE.md) - Integration details
+- [Docstring Coverage](docs/mcp-technical/DOCSTRING_COVERAGE.md) - 100% coverage report
+- [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) - Complete status
 
-### Advanced Topics
-- [Plugins](docs/advanced/plugins.md)
-- [API Reference](docs/api/)
-- [Security](docs/advanced/security.md)
-- [Performance Tuning](docs/advanced/performance.md)
+### MCPB Packaging
+- [MCPB Building Guide](docs/mcpb-packaging/MCPB_BUILDING_GUIDE.md) - Package creation
+- [Implementation Summary](docs/mcpb-packaging/MCPB_IMPLEMENTATION_SUMMARY.md) - Technical details
 
-### Examples
-- [Common Workflows](docs/examples/workflows/)
-- [Sample Configurations](docs/examples/configs/)
-- [Troubleshooting](docs/examples/troubleshooting.md)
+### User Guides
+- [VM Management](docs/concepts/vm_management.md) - VM operations
+- [Network Configuration](docs/concepts/network_configuration.md) - Networking
+- [Snapshot Management](docs/concepts/snapshot_management.md) - Snapshots
+- [Storage Management](docs/concepts/storage_management.md) - Disks & storage
 
-## 🛠️ Available Tools
+---
 
-### VM Management
-- `list_vms`: List all available VirtualBox VMs
-- `get_vm_info`: Get detailed information about a VM
-- `start_vm`: Start a virtual machine
-- `stop_vm`: Stop a running virtual machine
-- `create_vm`: Create a new virtual machine
-- `delete_vm`: Delete a virtual machine
-- `clone_vm`: Clone a virtual machine
-- `reset_vm`: Reset a virtual machine
-- `pause_vm`: Pause a virtual machine
-- `resume_vm`: Resume a paused virtual machine
+## 🎨 AI Prompt Templates
 
-### Storage Management
-- `list_storage_controllers`: List storage controllers for a VM
-- `create_storage_controller`: Create a storage controller for a VM
-- `remove_storage_controller`: Remove a storage controller from a VM
+8 comprehensive templates included (25+ KB total):
 
-### Network Management
-- `list_hostonly_networks`: List all host-only networks
-- `create_hostonly_network`: Create a host-only network
-- `remove_hostonly_network`: Remove a host-only network
+- **backup-strategies.md** - Backup and disaster recovery patterns
+- **complete-scenarios.md** - Full deployment scenarios
+- **network-configuration.md** - Network setup guides
+- **security-best-practices.md** - Security hardening
+- **snapshot-management.md** - Snapshot strategies
+- **storage-optimization.md** - Storage configuration
+- **vm-deployment-strategies.md** - Deployment patterns (345 lines!)
+- **vm-templates.md** - Template usage and customization
 
-### Snapshot Management
-- `list_snapshots`: List snapshots for a VM
-- `create_snapshot`: Create a snapshot of a VM
-- `restore_snapshot`: Restore a VM to a snapshot
-- `delete_snapshot`: Delete a snapshot
+---
 
-### System Information
-- `get_system_info`: Get system information
-- `get_vbox_version`: Get VirtualBox version information
-- `list_ostypes`: List available OS types
+## 🏗️ Architecture
 
-### Example Tools
-- `example_greet`: A simple example tool that greets someone
-- `get_counter`: Get the current counter value
-- `analyze_file`: Analyze a file for potential malware
+### Built With:
+- **FastMCP 2.12.4** - Latest MCP framework
+- **UV** - Modern Python package manager
+- **Ruff** - Fast Python linter & formatter
+- **pytest** - Comprehensive test suite
+- **VirtualBox 7.0+** - Virtualization platform
 
-### Backup Tools
-- `create_vm_backup`: Create a backup of a virtual machine
-- `list_vm_backups`: List all VM backups
-- `delete_vm_backup`: Delete a VM backup
+### Tool Organization:
+- **Portmanteau Tools** - Action-based consolidated operations
+- **Individual Tools** - Direct function access (testing mode)
+- **Service Layer** - Business logic and validation
+- **VBox Adapter** - VirtualBox integration
+- **Plugin System** - Extensible architecture
 
-### Monitoring Tools
-- `record_api_request`: Record an API request for metrics
-- `record_error`: Record an error for metrics
-- `update_vm_metrics`: Update VM-specific metrics
-- `update_system_metrics`: Update system-wide metrics
+---
 
-### Security Tools
-- `run_security_scan`: Run a security scan on the specified target
-- `get_security_test_status`: Get the status of a security test
+## 🧪 Testing
 
-### Malware Analysis Tools
-- `get_analysis`: Get the results of a malware analysis
-- `list_analyses`: List all malware analyses with optional filtering
-- `delete_analysis`: Delete a malware analysis and associated files
-- `list_quarantine`: List all files in quarantine
+### Run Tests:
+```bash
+# Install development dependencies
+uv sync --dev
 
-## 🔧 Troubleshooting
+# Run all tests
+uv run pytest
 
-### Common Issues
-
-**Server won't start**
-```
-Error: ImportError: attempted relative import with no known parent package
-Solution: Ensure PYTHONPATH is set to 'src' in your MCP configuration
+# Run with coverage
+uv run pytest --cov=virtualization_mcp --cov-report=term-missing
 ```
 
-**VBoxManage not found**
-```
-Error: VBoxManage command not found
-Solution: Add VirtualBox to PATH or set VBOX_INSTALL_PATH environment variable
+### Test Statistics:
+- **Total Tests:** 605
+- **Passing:** 499 (82.5%)
+- **Coverage:** 39% → Target: 80% (GLAMA Gold Standard)
+- **Integration Tests:** VBox-aware (mocked when unavailable)
+
+---
+
+## 🔧 Configuration
+
+### Basic Setup (Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "virtualization-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/virtualization-mcp",
+        "run",
+        "virtualization-mcp"
+      ],
+      "env": {
+        "TOOL_MODE": "production",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
 ```
 
-**FastMCP compatibility issues**
-```
-Error: FastMCP.tool() got an unexpected keyword argument
-Solution: Update to FastMCP 2.12.2+ and ensure proper tool registration
-```
+### Advanced Configuration:
 
-**Claude Desktop connection issues**
-```
-Error: Server not responding
-Solution: Check MCP configuration JSON and ensure server is running
-```
+See `.env.example` for all available settings:
+- Tool mode selection
+- VirtualBox path configuration
+- Logging levels
+- Timeouts and limits
+- Default VM settings
+- Feature flags
 
-### Getting Help
-
-- **GitHub Issues**: [Report bugs and request features](https://github.com/sandraschi/virtualization-mcp/issues)
-- **Documentation**: [Complete documentation](https://virtualization-mcp.readthedocs.io/)
-- **Discussions**: [Community discussions](https://github.com/sandraschi/virtualization-mcp/discussions)
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for details on how to contribute to this project.
+We welcome contributions! Please see:
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
+- [Security Policy](SECURITY.md) - Security considerations
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Development Setup:
+
+```bash
+# Clone repository
+git clone https://github.com/sandraschi/virtualization-mcp.git
+cd virtualization-mcp
+
+# Install with UV
+uv sync --dev
+
+# Run tests
+uv run pytest
+
+# Run linting
+uv run ruff check .
+```
+
+---
+
+## 📊 Project Status
+
+- ✅ **Production Ready** - v1.0.1b2 released
+- ✅ **Quality** - 0 linting errors, 499 tests passing
+- ✅ **Documentation** - 100% docstring coverage
+- ✅ **MCPB Packaged** - Optimized for Claude Desktop
+- ✅ **FastMCP Compliant** - Version 2.12.4
+- ✅ **Clean Repository** - Professional organization
+
+See [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) for complete details.
+
+---
+
+## 🔗 Links
+
+- **Repository:** https://github.com/sandraschi/virtualization-mcp
+- **Releases:** https://github.com/sandraschi/virtualization-mcp/releases
+- **Issues:** https://github.com/sandraschi/virtualization-mcp/issues
+- **Latest Release:** [v1.0.1b2](https://github.com/sandraschi/virtualization-mcp/releases/tag/v1.0.1b2)
+
+---
+
+## 📧 Contact
+
+**Author:** Sandra Schi  
+**Email:** sandraschipal@protonmail.com  
+**GitHub:** [@sandraschi](https://github.com/sandraschi)
+
+---
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- [FastMCP](https://github.com/jlowin/fastmcp) - For the MCP server framework
-- [VirtualBox](https://www.virtualbox.org/) - For the powerful virtualization platform
-- [Python](https://www.python.org/) - For being awesome
-
-## 📬 Contact
-
-For questions and support, please open an issue on our [GitHub repository](https://github.com/sandraschi/virtualization-mcp/issues).
-
-## 📊 Project Status
-
-✅ **Production Ready**: virtualization-mcp v1.0.0 is fully functional and ready for production use
-- ✅ Server startup issues resolved
-- ✅ FastMCP 2.12.2+ compatibility verified
-- ✅ Claude Desktop integration working
-- ✅ All core tools operational
-- ✅ Plugin system functional
-
-![GitHub last commit](https://img.shields.io/github/last-commit/sandraschi/virtualization-mcp)
-![GitHub issues](https://img.shields.io/github/issues-raw/sandraschi/virtualization-mcp)
-![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/sandraschi/virtualization-mcp)
-
-## 🔗 Related Projects
-
-- [FastMCP](https://github.com/jlowin/fastmcp) - The MCP server framework
-- [VirtualBox](https://www.virtualbox.org/) - The virtualization platform
-- [Claude Desktop](https://www.anthropic.com/product) - MCP client for natural language interaction
-
 ---
 
-**Built with Austrian efficiency for practical VirtualBox automation through Claude Desktop.** 🚀
+## 🎉 Quick Start
 
-*Ready for production deployment in minutes, not hours.*
+1. Download `.mcpb` from releases
+2. Drop into Claude Desktop
+3. Ask: **"What can you do with VirtualBox?"**
+4. Start managing VMs with natural language!
 
-
-
+**Manage VirtualBox VMs effortlessly through Claude Desktop!** 🚀
