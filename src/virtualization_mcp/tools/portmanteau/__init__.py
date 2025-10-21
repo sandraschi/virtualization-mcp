@@ -4,7 +4,7 @@ Portmanteau Tools Module
 Consolidates multiple related tools into single, action-based tools to reduce
 the tool explosion problem and improve MCP client usability.
 
-Production mode: 5-6 portmanteau tools (30+ operations)
+Production mode: 6-7 portmanteau tools (33+ operations)
 Testing mode: Individual tools also available
 """
 
@@ -12,6 +12,7 @@ import sys
 import logging
 from fastmcp import FastMCP
 
+from .discovery_management import register_discovery_management_tool
 from .network_management import register_network_management_tool
 from .snapshot_management import register_snapshot_management_tool
 from .storage_management import register_storage_management_tool
@@ -33,6 +34,9 @@ def register_all_portmanteau_tools(mcp: FastMCP) -> None:
     register_snapshot_management_tool(mcp)
     register_storage_management_tool(mcp)
     register_system_management_tool(mcp)
+    
+    # Help/Status/Discovery portmanteau (consolidates app-specific help tools)
+    register_discovery_management_tool(mcp)
     
     # Platform-specific portmanteau tools
     if sys.platform == "win32":
