@@ -1,0 +1,25 @@
+name: Node.js Development
+description: Node.js development environment
+version: 1.0.0
+targets:
+  - sandbox
+  - vm
+
+downloads:
+  - url: https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi
+    filename: nodejs.msi
+    destination: C:\Users\WDAGUtilityAccount\Desktop
+    vm_destination: C:\Temp
+
+setup_commands:
+  sandbox:
+    - msiexec /i C:\Users\WDAGUtilityAccount\Desktop\nodejs.msi /quiet /norestart
+  vm:
+    - msiexec /i C:\Temp\nodejs.msi /quiet /norestart
+
+startup_scripts:
+  sandbox:
+    - cmd /k node --version && npm --version
+  vm:
+    - cmd /k node --version && npm --version
+

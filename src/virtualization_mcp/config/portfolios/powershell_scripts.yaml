@@ -1,0 +1,19 @@
+name: PowerShell Scripts
+description: PowerShell development environment
+version: 1.0.0
+targets:
+  - sandbox
+  - vm
+
+downloads: []
+
+setup_commands:
+  sandbox: []
+  vm: []
+
+startup_scripts:
+  sandbox:
+    - powershell.exe
+  vm:
+    - powershell.exe
+

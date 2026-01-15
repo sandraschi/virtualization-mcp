@@ -1,0 +1,36 @@
+name: VS Code
+description: Visual Studio Code editor with full development environment
+version: 1.0.0
+targets:
+  - sandbox
+  - vm
+
+# Files to download
+downloads:
+  - url: https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-archive
+    filename: vscode.zip
+    destination: C:\Users\WDAGUtilityAccount\Desktop\VSCode
+    # For VMs, use different path
+    vm_destination: C:\VSCode
+
+# Commands to run during setup (extraction, installation, etc.)
+setup_commands:
+  sandbox:
+    - powershell -Command "Expand-Archive -Path 'C:\Users\WDAGUtilityAccount\Desktop\VSCode\vscode.zip' -DestinationPath 'C:\Users\WDAGUtilityAccount\Desktop\VSCode' -Force"
+    - powershell -Command "Remove-Item 'C:\Users\WDAGUtilityAccount\Desktop\VSCode\vscode.zip' -ErrorAction SilentlyContinue"
+  vm:
+    - powershell -Command "Expand-Archive -Path 'C:\VSCode\vscode.zip' -DestinationPath 'C:\VSCode' -Force"
+    - powershell -Command "Remove-Item 'C:\VSCode\vscode.zip' -ErrorAction SilentlyContinue"
+
+# Applications/scripts to start after setup
+startup_scripts:
+  sandbox:
+    - C:\Users\WDAGUtilityAccount\Desktop\VSCode\Code.exe
+  vm:
+    - C:\VSCode\Code.exe
+
+# Environment variables to set (optional)
+environment:
+  - name: VSCODE_PORTABLE
+    value: "1"
+

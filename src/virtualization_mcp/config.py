@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     # Server configuration
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+    WEB_PORT: int = 3080  # FastAPI web server port
     WORKERS: int = 1
     RELOAD: bool = False
 
@@ -92,7 +93,7 @@ class Settings(BaseSettings):
     # Feature flags
     ENABLE_EXPERIMENTAL_FEATURES: bool = False
     ENABLE_METRICS: bool = True
-    
+
     # Tool registration mode
     # - "production": Only portmanteau tools (5 tools, cleaner for users)
     # - "testing" or "all": All individual tools + portmanteau (60+ tools)

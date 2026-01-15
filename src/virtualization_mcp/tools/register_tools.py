@@ -79,7 +79,7 @@ def register_all_tools(mcp: FastMCP, tool_mode: str = "production") -> None:
 
 def _register_individual_tools(mcp: FastMCP) -> None:
     """Register individual tools for backward compatibility and testing.
-    
+
     Args:
         mcp: The FastMCP instance to register tools with
     """

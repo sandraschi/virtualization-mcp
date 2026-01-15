@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtualization MCP - VM Management Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            color: #60a5fa;
+            font-size: 24px;
+        }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #2563eb;
+        }
+        
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+        }
+        
+        .vm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .vm-card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #334155;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .vm-card:hover {
+            transform: translateY(-2px);
+            border-color: #3b82f6;
+        }
+        
+        .vm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .vm-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #60a5fa;
+        }
+        
+        .vm-state {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .state-running {
+            background: #10b981;
+            color: white;
+        }
+        
+        .state-stopped {
+            background: #64748b;
+            color: white;
+        }
+        
+        .state-paused {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .vm-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .vm-info-item {
+            color: #94a3b8;
+        }
+        
+        .vm-info-value {
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+        
+        .vm-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .vm-actions button {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-start {
+            background: #10b981;
+        }
+        
+        .btn-start:hover {
+            background: #059669;
+        }
+        
+        .btn-stop {
+            background: #ef4444;
+        }
+        
+        .btn-stop:hover {
+            background: #dc2626;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+        
+        .error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #60a5fa;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #94a3b8;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Virtualization MCP Dashboard</h1>
+            <div class="status">
+                <div class="status-indicator"></div>
+                <span>Connected</span>
+            </div>
+        </header>
+        
+        <div class="controls">
+            <button onclick="refreshVMs()">🔄 Refresh</button>
+            <button onclick="showCreateModal()">➕ Create VM</button>
+            <button onclick="getSystemInfo()">ℹ️ System Info</button>
+        </div>
+        
+        <div id="error-container"></div>
+        <div id="vm-container" class="loading">Loading VMs...</div>
+    </div>
+    
+    <!-- Create VM Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <h2>Create New VM</h2>
+            <form id="createVMForm" onsubmit="createVM(event)">
+                <div class="form-group">
+                    <label>VM Name</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>OS Type</label>
+                    <select name="os_type" required>
+                        <option value="Ubuntu_64">Ubuntu 64-bit</option>
+                        <option value="Windows10_64">Windows 10 64-bit</option>
+                        <option value="Windows11_64">Windows 11 64-bit</option>
+                        <option value="Debian_64">Debian 64-bit</option>
+                        <option value="Fedora_64">Fedora 64-bit</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Memory (MB)</label>
+                    <input type="number" name="memory_mb" value="4096" min="512" required>
+                </div>
+                <div class="form-group">
+                    <label>Disk Size (GB)</label>
+                    <input type="number" name="disk_size_gb" value="50" min="10" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="hideCreateModal()">Cancel</button>
+                    <button type="submit">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api';
+        
+        async function fetchVMs() {
+            try {
+                const response = await fetch(`${API_BASE}/vms`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Handle different response structures
+                    let vms = [];
+                    if (Array.isArray(data.data)) {
+                        vms = data.data;
+                    } else if (data.data && Array.isArray(data.data.vms)) {
+                        vms = data.data.vms;
+                    } else if (data.data && Array.isArray(data.data.data)) {
+                        vms = data.data.data;
+                    }
+                    renderVMs(vms);
+                } else {
+                    showError('Failed to load VMs: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error loading VMs: ' + error.message);
+            }
+        }
+        
+        function renderVMs(vms) {
+            const container = document.getElementById('vm-container');
+            
+            // Ensure vms is an array
+            if (!Array.isArray(vms)) {
+                console.error('VMs data is not an array:', vms);
+                container.innerHTML = '<div class="loading">Error: Invalid VM data format</div>';
+                return;
+            }
+            
+            if (vms.length === 0) {
+                container.innerHTML = '<div class="loading">No VMs found. Create one to get started!</div>';
+                return;
+            }
+            
+            container.className = 'vm-grid';
+            container.innerHTML = vms.map(vm => {
+                // Handle different VM data structures
+                const vmName = vm.Name || vm.name || vm['VM Name'] || 'Unknown';
+                const vmState = vm.State || vm.state || vm['VMState'] || 'poweroff';
+                const osType = vm['Guest OS'] || vm.os_type || vm['OS Type'] || 'N/A';
+                const memory = vm.Memory || vm.memory_mb || vm['Memory size'] || 0;
+                const cpu = vm.CPUs || vm.cpu_count || vm['Number of CPUs'] || 'N/A';
+                const disk = vm['Hard disk'] || vm.disk_size_gb || 'N/A';
+                
+                return `
+                <div class="vm-card">
+                    <div class="vm-header">
+                        <div class="vm-name">${escapeHtml(vmName)}</div>
+                        <div class="vm-state state-${vmState.toLowerCase()}">
+                            ${vmState.toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="vm-info">
+                        <div class="vm-info-item">OS Type:</div>
+                        <div class="vm-info-value">${escapeHtml(osType)}</div>
+                        <div class="vm-info-item">Memory:</div>
+                        <div class="vm-info-value">${formatMemory(memory)}</div>
+                        <div class="vm-info-item">CPU:</div>
+                        <div class="vm-info-value">${cpu}</div>
+                        <div class="vm-info-item">Disk:</div>
+                        <div class="vm-info-value">${formatDisk(disk)}</div>
+                    </div>
+                    <div class="vm-actions">
+                        ${vmState.toLowerCase() === 'running' 
+                            ? `<button class="btn-stop" onclick="stopVM('${escapeHtml(vmName)}')">Stop</button>`
+                            : `<button class="btn-start" onclick="startVM('${escapeHtml(vmName)}')">Start</button>`
+                        }
+                        <button onclick="getVMInfo('${escapeHtml(vmName)}')">Info</button>
+                        <button onclick="deleteVM('${escapeHtml(vmName)}')">Delete</button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+        
+        async function startVM(vmName) {
+            try {
+                const response = await fetch(`${API_BASE}/vms/${encodeURIComponent(vmName)}/start`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    await fetchVMs();
+                } else {
+                    showError('Failed to start VM: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error starting VM: ' + error.message);
+            }
+        }
+        
+        async function stopVM(vmName) {
+            if (!confirm(`Stop VM "${vmName}"?`)) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/vms/${encodeURIComponent(vmName)}/stop`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    await fetchVMs();
+                } else {
+                    showError('Failed to stop VM: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error stopping VM: ' + error.message);
+            }
+        }
+        
+        async function deleteVM(vmName) {
+            if (!confirm(`Delete VM "${vmName}"? This action cannot be undone!`)) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/vms/${encodeURIComponent(vmName)}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    await fetchVMs();
+                } else {
+                    showError('Failed to delete VM: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error deleting VM: ' + error.message);
+            }
+        }
+        
+        async function getVMInfo(vmName) {
+            try {
+                const response = await fetch(`${API_BASE}/vms/${encodeURIComponent(vmName)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(JSON.stringify(data.data, null, 2));
+                } else {
+                    showError('Failed to get VM info: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error getting VM info: ' + error.message);
+            }
+        }
+        
+        async function createVM(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {
+                name: formData.get('name'),
+                os_type: formData.get('os_type'),
+                memory_mb: parseInt(formData.get('memory_mb')),
+                disk_size_gb: parseInt(formData.get('disk_size_gb'))
+            };
+            
+            // Validate inputs
+            if (!data.name || !data.name.trim()) {
+                showError('VM name is required');
+                return;
+            }
+            
+            if (!data.os_type) {
+                showError('OS type is required');
+                return;
+            }
+            
+            if (isNaN(data.memory_mb) || data.memory_mb < 512) {
+                showError('Memory must be at least 512 MB');
+                return;
+            }
+            
+            if (isNaN(data.disk_size_gb) || data.disk_size_gb < 10) {
+                showError('Disk size must be at least 10 GB');
+                return;
+            }
+            
+            // Disable form during submission
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Creating...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/vms`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    hideCreateModal();
+                    form.reset();
+                    await fetchVMs();
+                    showError('VM created successfully!'); // Using showError but it's actually success
+                } else {
+                    showError('Failed to create VM: ' + (result.error || result.data?.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error creating VM:', error);
+                showError('Error creating VM: ' + error.message);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
+        }
+        
+        async function getSystemInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/system/info`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(JSON.stringify(data.data, null, 2));
+                } else {
+                    showError('Failed to get system info: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error getting system info: ' + error.message);
+            }
+        }
+        
+        function refreshVMs() {
+            document.getElementById('vm-container').className = 'loading';
+            document.getElementById('vm-container').innerHTML = 'Loading VMs...';
+            fetchVMs();
+        }
+        
+        function showCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+        
+        function hideCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('error-container');
+            container.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatMemory(mb) {
+            if (!mb) return 'N/A';
+            if (mb < 1024) return `${mb} MB`;
+            return `${(mb / 1024).toFixed(1)} GB`;
+        }
+        
+        function formatDisk(gb) {
+            if (!gb) return 'N/A';
+            return `${gb} GB`;
+        }
+        
+        // Load VMs on page load
+        fetchVMs();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(fetchVMs, 10000);
+    </script>
+</body>
+</html>
+

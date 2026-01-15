@@ -80,8 +80,9 @@ async def initialize_plugins(mcp: FastMCP) -> bool:
         # Initialize Hyper-V Manager
         _hyperv_manager = HyperVManagerPlugin()
         await _hyperv_manager.initialize(mcp)
-        _hyperv_manager.register_tools(mcp)
-        logger.info("Hyper-V Manager plugin initialized")
+        # Individual Hyper-V tools disabled - using portmanteau tool instead
+        # _hyperv_manager.register_tools(mcp)
+        logger.info("Hyper-V Manager plugin initialized (individual tools disabled)")
 
         # Initialize Windows Sandbox Helper
         _windows_sandbox = WindowsSandboxHelper()

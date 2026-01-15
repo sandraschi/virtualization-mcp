@@ -43,31 +43,40 @@ def register_network_management_tool(mcp: FastMCP) -> None:
         netmask: str | None = None,
     ) -> dict[str, Any]:
         """
-        Manage network configurations with various actions.
+        Comprehensive network management portmanteau tool.
+        
+        This tool consolidates all network operations into a single interface. Use the 'action' parameter
+        to specify which operation to perform. Different actions require different parameters.
 
         Args:
-            action: The operation to perform. Available actions:
-                - list_networks: List all host-only networks
-                - create_network: Create a host-only network (requires network_name)
-                - remove_network: Remove a host-only network (requires network_name)
-                - list_adapters: List network adapters for a VM (requires vm_name)
-                - configure_adapter: Configure network adapter (requires vm_name, adapter_slot, network_type)
+            action (required): The operation to perform. Must be one of:
+                - "list_networks": List all host-only networks (no other parameters required)
+                - "create_network": Create a host-only network (requires: network_name)
+                - "remove_network": Remove a host-only network (requires: network_name)
+                - "list_adapters": List network adapters for a VM (requires: vm_name)
+                - "configure_adapter": Configure network adapter for a VM (requires: vm_name, adapter_slot, network_type)
 
-            network_name: Name of the host-only network
-            vm_name: Name of the virtual machine
-            adapter_slot: Network adapter slot number (0-3)
-            network_type: Network type (nat, bridged, hostonly, internal)
-            ip_address: IP address for network configuration
-            netmask: Network mask for network configuration
+            network_name: Name of the host-only network (required for create_network, remove_network, configure_adapter)
+            vm_name: Name of the virtual machine (required for list_adapters, configure_adapter)
+            adapter_slot: Network adapter slot number 0-3 (required for configure_adapter)
+            network_type: Network type for adapter configuration (required for configure_adapter).
+                          Valid values: "nat", "bridged", "hostonly", "internal", "generic", "natnetwork"
+            ip_address: IP address for network configuration (optional for create_network)
+            netmask: Network mask for network configuration (optional for create_network)
 
         Returns:
-            Dict containing the result of the operation
+            Dict containing:
+                - success: Boolean indicating if operation succeeded
+                - action: The action that was performed
+                - data: Operation-specific result data
+                - error: Error message if success is False
+                - count: Number of networks/adapters (for list actions)
 
         Examples:
-            # List all networks
+            # List all host-only networks - simplest usage, no other parameters needed
             result = await network_management(action="list_networks")
 
-            # Create a host-only network
+            # Create a host-only network - requires network_name
             result = await network_management(
                 action="create_network",
                 network_name="MyNetwork",
@@ -75,18 +84,24 @@ def register_network_management_tool(mcp: FastMCP) -> None:
                 netmask="255.255.255.0"
             )
 
-            # List VM network adapters
+            # List VM network adapters - requires vm_name
             result = await network_management(
                 action="list_adapters",
                 vm_name="MyVM"
             )
 
-            # Configure network adapter
+            # Configure network adapter - requires vm_name, adapter_slot, network_type
             result = await network_management(
                 action="configure_adapter",
                 vm_name="MyVM",
                 adapter_slot=0,
                 network_type="hostonly",
+                network_name="MyNetwork"
+            )
+
+            # Remove a network - requires network_name
+            result = await network_management(
+                action="remove_network",
                 network_name="MyNetwork"
             )
         """

@@ -113,23 +113,23 @@ from virtualization_mcp.tools.vm import (
     VMNetworkAdapter,
     VMSize,
     VMSnapshot,
-    # Hyper-V tools
+    # Hyper-V tools (individual tools disabled - using portmanteau)
     VMState,
     clone_vm,
     create_vm,
     delete_vm,
-    get_hyperv_vm,
+    # get_hyperv_vm,  # Disabled - use hyperv_management portmanteau tool
     get_vm_info,
-    list_hyperv_vms,
+    # list_hyperv_vms,  # Disabled - use hyperv_management portmanteau tool
     # Base VM tools
     list_vms,
     modify_vm,
     pause_vm,
     reset_vm,
     resume_vm,
-    start_hyperv_vm,
+    # start_hyperv_vm,  # Disabled - use hyperv_management portmanteau tool
     start_vm,
-    stop_hyperv_vm,
+    # stop_hyperv_vm,  # Disabled - use hyperv_management portmanteau tool
     stop_vm,
 )
 
@@ -239,15 +239,15 @@ __all__ = [
     "reset_vm",
     "pause_vm",
     "resume_vm",
-    # Hyper-V Tools
+    # Hyper-V Tools (individual tools disabled - using portmanteau)
     "VMState",
     "VMSize",
     "VMDisk",
     "VMSnapshot",
     "VMNetworkAdapter",
     "VirtualMachine",
-    "list_hyperv_vms",
-    "get_hyperv_vm",
-    "start_hyperv_vm",
-    "stop_hyperv_vm",
+    # "list_hyperv_vms",  # Disabled - use hyperv_management portmanteau tool
+    # "get_hyperv_vm",  # Disabled - use hyperv_management portmanteau tool
+    # "start_hyperv_vm",  # Disabled - use hyperv_management portmanteau tool
+    # "stop_hyperv_vm",  # Disabled - use hyperv_management portmanteau tool
 ]

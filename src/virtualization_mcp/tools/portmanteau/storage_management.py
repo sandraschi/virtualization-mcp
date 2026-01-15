@@ -44,35 +44,44 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
         disk_path: str | None = None,
     ) -> dict[str, Any]:
         """
-        Manage storage configurations with various actions.
+        Comprehensive storage management portmanteau tool.
+        
+        This tool consolidates all storage operations into a single interface. Use the 'action' parameter
+        to specify which operation to perform. Different actions require different parameters.
 
         Args:
-            action: The operation to perform. Available actions:
-                - list_controllers: List storage controllers (requires vm_name)
-                - create_controller: Create storage controller (requires vm_name, controller_name, controller_type)
-                - remove_controller: Remove storage controller (requires vm_name, controller_name)
-                - list_disks: List virtual disks (requires vm_name)
-                - create_disk: Create virtual disk (requires disk_name, disk_size_gb)
-                - attach_disk: Attach disk to VM (requires vm_name, disk_path)
+            action (required): The operation to perform. Must be one of:
+                - "list_controllers": List storage controllers for a VM (requires: vm_name)
+                - "create_controller": Create a storage controller for a VM (requires: vm_name, controller_name, controller_type)
+                - "remove_controller": Remove a storage controller from a VM (requires: vm_name, controller_name)
+                - "list_disks": List virtual disks for a VM (requires: vm_name)
+                - "create_disk": Create a new virtual disk (requires: disk_name, disk_size_gb)
+                - "attach_disk": Attach a disk to a virtual machine (requires: vm_name, disk_path)
 
-            vm_name: Name of the virtual machine
-            controller_name: Name of the storage controller
-            controller_type: Type of storage controller (ide, sata, scsi, sas, usb, pcie)
-            disk_name: Name of the virtual disk
-            disk_size_gb: Size of the disk in GB
-            disk_path: Path to the disk file
+            vm_name: Name of the virtual machine (required for list_controllers, create_controller, remove_controller, list_disks, attach_disk)
+            controller_name: Name of the storage controller (required for create_controller, remove_controller)
+            controller_type: Type of storage controller (required for create_controller).
+                             Valid values: "ide", "sata", "scsi", "sas", "usb", "pcie"
+            disk_name: Name of the virtual disk file (required for create_disk)
+            disk_size_gb: Size of the disk in GB (required for create_disk)
+            disk_path: Path to the disk file (required for attach_disk)
 
         Returns:
-            Dict containing the result of the operation
+            Dict containing:
+                - success: Boolean indicating if operation succeeded
+                - action: The action that was performed
+                - data: Operation-specific result data
+                - error: Error message if success is False
+                - count: Number of controllers/disks (for list actions)
 
         Examples:
-            # List storage controllers
+            # List storage controllers for a VM - requires vm_name
             result = await storage_management(
                 action="list_controllers",
                 vm_name="MyVM"
             )
 
-            # Create storage controller
+            # Create storage controller - requires vm_name, controller_name, controller_type
             result = await storage_management(
                 action="create_controller",
                 vm_name="MyVM",
@@ -80,18 +89,25 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
                 controller_type="sata"
             )
 
-            # Create virtual disk
+            # Create virtual disk - requires disk_name and disk_size_gb
             result = await storage_management(
                 action="create_disk",
                 disk_name="MyDisk.vdi",
                 disk_size_gb=50
             )
 
-            # Attach disk to VM
+            # Attach disk to VM - requires vm_name and disk_path
             result = await storage_management(
                 action="attach_disk",
                 vm_name="MyVM",
                 disk_path="/path/to/MyDisk.vdi"
+            )
+
+            # Remove storage controller - requires vm_name and controller_name
+            result = await storage_management(
+                action="remove_controller",
+                vm_name="MyVM",
+                controller_name="SATA Controller"
             )
         """
         try:

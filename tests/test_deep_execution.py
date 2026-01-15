@@ -89,7 +89,7 @@ class TestPluginInitialization:
         from virtualization_mcp.plugins.sandbox.manager import SandboxConfig, WindowsSandboxHelper
 
         helper = WindowsSandboxHelper()
-        config = SandboxConfig(name="test")
+        config = SandboxConfig(name="test", memory_mb=4096, vgpu=True, networking=True)
 
         # Test config generation
         wsx_config = helper._generate_wsx_config(config)

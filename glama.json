@@ -1,0 +1,30 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["sandraschi"],
+  "name": "virtualization-mcp",
+  "description": "FastMCP 2.12.4 server for VirtualBox management. 5 portmanteau tools with 60+ operations for VM lifecycle, networking, storage, and snapshots. Beta status.",
+  "type": "mcp_server",
+  "status": "beta",
+  "framework": "FastMCP 2.12.4",
+  "tools": 5,
+  "transport": ["stdio"],
+  "keywords": [
+    "virtualbox",
+    "vm",
+    "virtualization",
+    "vm-management",
+    "mcp-server",
+    "fastmcp"
+  ],
+  "features": {
+    "vm_lifecycle": {
+      "enabled": true,
+      "operations": 60
+    },
+    "switchable_modes": {
+      "enabled": true,
+      "modes": ["production", "testing"]
+    }
+  }
+}
+

@@ -55,36 +55,45 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
         disk_size_gb: int | None = None,
     ) -> dict[str, Any]:
         """
-        Manage virtual machines with various actions.
+        Comprehensive virtual machine management portmanteau tool.
+        
+        This tool consolidates all VM operations into a single interface. Use the 'action' parameter
+        to specify which operation to perform. Different actions require different parameters.
 
         Args:
-            action: The operation to perform. Available actions:
-                - list: List all VMs (no vm_name required)
-                - create: Create a new VM (requires vm_name, os_type, memory_mb, disk_size_gb)
-                - start: Start a VM (requires vm_name)
-                - stop: Stop a VM (requires vm_name)
-                - delete: Delete a VM (requires vm_name)
-                - clone: Clone a VM (requires source_vm, new_vm_name)
-                - reset: Reset a VM (requires vm_name)
-                - pause: Pause a VM (requires vm_name)
-                - resume: Resume a VM (requires vm_name)
-                - info: Get VM information (requires vm_name)
+            action (required): The operation to perform. Must be one of:
+                - "list": List all virtual machines (no other parameters required)
+                - "create": Create a new virtual machine (requires: vm_name, os_type, memory_mb, disk_size_gb)
+                - "start": Start a virtual machine (requires: vm_name)
+                - "stop": Stop a running virtual machine (requires: vm_name)
+                - "delete": Delete a virtual machine (requires: vm_name)
+                - "clone": Clone an existing virtual machine (requires: source_vm, new_vm_name)
+                - "reset": Reset a virtual machine (requires: vm_name)
+                - "pause": Pause a running virtual machine (requires: vm_name)
+                - "resume": Resume a paused virtual machine (requires: vm_name)
+                - "info": Get detailed information about a virtual machine (requires: vm_name)
 
-            vm_name: Name of the virtual machine
-            source_vm: Source VM name for cloning
-            new_vm_name: New VM name for cloning
-            os_type: Operating system type (e.g., "Windows10_64", "Ubuntu_64")
-            memory_mb: Memory in MB for new VMs
-            disk_size_gb: Disk size in GB for new VMs
+            vm_name: Name of the virtual machine (required for most actions except "list")
+            source_vm: Source VM name for cloning (required for "clone" action)
+            new_vm_name: New VM name for cloning (required for "clone" action)
+            os_type: Operating system type for new VMs (required for "create" action).
+                     Examples: "Windows10_64", "Ubuntu_64", "Debian_64", "macOS_64"
+            memory_mb: Memory allocation in MB for new VMs (required for "create" action)
+            disk_size_gb: Disk size in GB for new VMs (required for "create" action)
 
         Returns:
-            Dict containing the result of the operation
+            Dict containing:
+                - success: Boolean indicating if operation succeeded
+                - action: The action that was performed
+                - data: Operation-specific result data
+                - error: Error message if success is False
+                - count: Number of VMs (for "list" action)
 
         Examples:
-            # List all VMs
+            # List all VMs - simplest usage, no other parameters needed
             result = await vm_management(action="list")
 
-            # Create a new VM
+            # Create a new VM - requires vm_name, os_type, memory_mb, disk_size_gb
             result = await vm_management(
                 action="create",
                 vm_name="MyVM",
@@ -93,11 +102,18 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
                 disk_size_gb=50
             )
 
-            # Start a VM
+            # Start a VM - requires vm_name
             result = await vm_management(action="start", vm_name="MyVM")
 
-            # Get VM info
+            # Get VM information - requires vm_name
             result = await vm_management(action="info", vm_name="MyVM")
+
+            # Clone a VM - requires source_vm and new_vm_name
+            result = await vm_management(
+                action="clone",
+                source_vm="MyVM",
+                new_vm_name="MyVM_Clone"
+            )
         """
         try:
             # Validate action

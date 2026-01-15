@@ -1,0 +1,29 @@
+name: Python Development
+description: Python development environment with Python installer
+version: 1.0.0
+targets:
+  - sandbox
+  - vm
+
+downloads:
+  - url: https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe
+    filename: python-installer.exe
+    destination: C:\Users\WDAGUtilityAccount\Desktop
+    vm_destination: C:\Temp
+
+setup_commands:
+  sandbox:
+    - C:\Users\WDAGUtilityAccount\Desktop\python-installer.exe /quiet InstallAllUsers=1 PrependPath=1
+  vm:
+    - C:\Temp\python-installer.exe /quiet InstallAllUsers=1 PrependPath=1
+
+startup_scripts:
+  sandbox:
+    - cmd /k python --version && pip --version
+  vm:
+    - cmd /k python --version && pip --version
+
+environment:
+  - name: PYTHONUNBUFFERED
+    value: "1"
+

@@ -216,7 +216,7 @@ async def register_all_tools(mcp: FastMCP) -> None:
         # Register virtualization-mcp tools based on TOOL_MODE setting
         tool_mode = getattr(settings, 'TOOL_MODE', 'production')
         register_vbox_tools(mcp, tool_mode=tool_mode)
-        
+
         if tool_mode.lower() in ["testing", "all"]:
             logger.info(f"Registered ALL tools (portmanteau + individual) - {tool_mode} mode")
         else:

@@ -38,38 +38,46 @@ def register_system_management_tool(mcp: FastMCP) -> None:
         vm_name: str | None = None
     ) -> dict[str, Any]:
         """
-        Get system information and diagnostics with various actions.
+        Comprehensive system management portmanteau tool.
+        
+        This tool consolidates system information and diagnostics operations into a single interface.
+        Use the 'action' parameter to specify which operation to perform. Most actions don't require vm_name.
 
         Args:
-            action: The operation to perform. Available actions:
-                - host_info: Get host system information (no vm_name required)
-                - vbox_version: Get VirtualBox version information (no vm_name required)
-                - ostypes: List available OS types (no vm_name required)
-                - metrics: Get VM performance metrics (requires vm_name)
-                - screenshot: Take a screenshot of a running VM (requires vm_name)
+            action (required): The operation to perform. Must be one of:
+                - "host_info": Get host system information (no vm_name required)
+                - "vbox_version": Get VirtualBox version information (no vm_name required)
+                - "ostypes": List available OS types for VM creation (no vm_name required)
+                - "metrics": Get VM performance metrics (requires: vm_name)
+                - "screenshot": Take a screenshot of a running VM (requires: vm_name)
 
-            vm_name: Name of the virtual machine (required for metrics and screenshot)
+            vm_name: Name of the virtual machine (required only for metrics and screenshot actions)
 
         Returns:
-            Dict containing the result of the operation
+            Dict containing:
+                - success: Boolean indicating if operation succeeded
+                - action: The action that was performed
+                - data: Operation-specific result data (system info, version, OS types, metrics, screenshot path)
+                - error: Error message if success is False
+                - count: Number of OS types (for ostypes action)
 
         Examples:
-            # Get host system information
+            # Get host system information - no parameters needed
             result = await system_management(action="host_info")
 
-            # Get VirtualBox version
+            # Get VirtualBox version - no parameters needed
             result = await system_management(action="vbox_version")
 
-            # List available OS types
+            # List available OS types - no parameters needed
             result = await system_management(action="ostypes")
 
-            # Get VM performance metrics
+            # Get VM performance metrics - requires vm_name
             result = await system_management(
                 action="metrics",
                 vm_name="MyVM"
             )
 
-            # Take VM screenshot
+            # Take VM screenshot - requires vm_name
             result = await system_management(
                 action="screenshot",
                 vm_name="MyVM"

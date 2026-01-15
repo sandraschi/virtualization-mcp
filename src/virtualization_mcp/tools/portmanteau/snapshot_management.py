@@ -40,30 +40,40 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
         description: str | None = None,
     ) -> dict[str, Any]:
         """
-        Manage VM snapshots with various actions.
+        Comprehensive snapshot management portmanteau tool.
+        
+        This tool consolidates all VM snapshot operations into a single interface. Use the 'action' parameter
+        to specify which operation to perform. All actions require vm_name, and most require snapshot_name.
 
         Args:
-            action: The operation to perform. Available actions:
-                - list: List all snapshots for a VM
-                - create: Create a snapshot (requires snapshot_name)
-                - restore: Restore to a snapshot (requires snapshot_name)
-                - delete: Delete a snapshot (requires snapshot_name)
+            action (required): The operation to perform. Must be one of:
+                - "list": List all snapshots for a VM (requires: vm_name)
+                - "create": Create a snapshot of a VM (requires: vm_name, snapshot_name)
+                - "restore": Restore a VM to a snapshot (requires: vm_name, snapshot_name)
+                - "delete": Delete a snapshot from a VM (requires: vm_name, snapshot_name)
 
-            vm_name: Name of the virtual machine (required for all actions)
-            snapshot_name: Name of the snapshot (required for create, restore, delete)
-            description: Description for the snapshot (optional for create)
+            vm_name (required): Name of the virtual machine (required for all actions)
+            snapshot_name: Name of the snapshot (required for create, restore, delete actions)
+            description: Optional description for the snapshot (only used for create action)
 
         Returns:
-            Dict containing the result of the operation
+            Dict containing:
+                - success: Boolean indicating if operation succeeded
+                - action: The action that was performed
+                - vm_name: The VM name
+                - snapshot_name: The snapshot name (for create/restore/delete)
+                - data: Operation-specific result data
+                - error: Error message if success is False
+                - count: Number of snapshots (for list action)
 
         Examples:
-            # List all snapshots
+            # List all snapshots for a VM - requires vm_name only
             result = await snapshot_management(
                 action="list",
                 vm_name="MyVM"
             )
 
-            # Create a snapshot
+            # Create a snapshot - requires vm_name and snapshot_name
             result = await snapshot_management(
                 action="create",
                 vm_name="MyVM",
@@ -71,14 +81,14 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
                 description="Snapshot before system update"
             )
 
-            # Restore to a snapshot
+            # Restore to a snapshot - requires vm_name and snapshot_name
             result = await snapshot_management(
                 action="restore",
                 vm_name="MyVM",
                 snapshot_name="BeforeUpdate"
             )
 
-            # Delete a snapshot
+            # Delete a snapshot - requires vm_name and snapshot_name
             result = await snapshot_management(
                 action="delete",
                 vm_name="MyVM",

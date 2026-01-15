@@ -32,47 +32,57 @@ def register_hyperv_management_tool(mcp: FastMCP) -> None:
         wait: bool = False,
     ) -> dict[str, Any]:
         """
-        Manage Hyper-V virtual machines with various actions (Windows only).
+        Comprehensive Hyper-V management portmanteau tool (Windows only).
+        
+        This tool consolidates all Hyper-V virtual machine operations into a single interface.
+        Use the 'action' parameter to specify which operation to perform. This tool only works
+        on Windows systems with Hyper-V enabled.
 
         Args:
-            action: The operation to perform. Available actions:
-                - list: List all Hyper-V VMs (no vm_name required)
-                - get: Get detailed info about a VM (requires vm_name)
-                - start: Start a VM (requires vm_name, optional: wait)
-                - stop: Stop a VM (requires vm_name, optional: force, wait)
+            action (required): The operation to perform. Must be one of:
+                - "list": List all Hyper-V virtual machines (no vm_name required)
+                - "get": Get detailed information about a Hyper-V VM (requires: vm_name)
+                - "start": Start a Hyper-V virtual machine (requires: vm_name)
+                - "stop": Stop a Hyper-V virtual machine (requires: vm_name)
 
-            vm_name: Name of the Hyper-V virtual machine (required for get, start, stop)
-            force: Force stop without graceful shutdown (for stop action)
-            wait: Wait for operation to complete before returning
+            vm_name: Name of the Hyper-V virtual machine (required for get, start, stop actions)
+            force: Force stop without graceful shutdown (optional, for stop action only, default: False)
+            wait: Wait for operation to complete before returning (optional, for start/stop actions, default: False)
 
         Returns:
-            Dict containing the result of the operation
+            Dict containing:
+                - success: Boolean indicating if operation succeeded
+                - action: The action that was performed
+                - vm_name: The VM name (for get/start/stop actions)
+                - vms/vm_info/result: Operation-specific result data
+                - count: Number of VMs (for list action)
+                - error: Error message if success is False
 
         Examples:
-            # List all Hyper-V VMs
+            # List all Hyper-V VMs - simplest usage, no other parameters needed
             result = await hyperv_management(action="list")
 
-            # Get VM information
+            # Get VM information - requires vm_name
             result = await hyperv_management(
                 action="get",
                 vm_name="MyHyperVVM"
             )
 
-            # Start a VM
+            # Start a VM - requires vm_name, optionally wait for completion
             result = await hyperv_management(
                 action="start",
                 vm_name="MyHyperVVM",
                 wait=True
             )
 
-            # Stop a VM gracefully
+            # Stop a VM gracefully - requires vm_name, optionally wait for completion
             result = await hyperv_management(
                 action="stop",
                 vm_name="MyHyperVVM",
                 wait=True
             )
 
-            # Force stop a VM
+            # Force stop a VM - requires vm_name, use force=True
             result = await hyperv_management(
                 action="stop",
                 vm_name="MyHyperVVM",
@@ -122,9 +132,9 @@ async def _handle_list_vms() -> dict[str, Any]:
     """Handle list VMs action."""
     try:
         from virtualization_mcp.tools.vm.hyperv_tools import list_hyperv_vms
-        
+
         vms = await list_hyperv_vms()
-        
+
         return {
             "success": True,
             "action": "list",
@@ -146,19 +156,19 @@ async def _handle_get_vm(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "error": "vm_name is required for 'get' action",
         }
-    
+
     try:
         from virtualization_mcp.tools.vm.hyperv_tools import get_hyperv_vm
-        
+
         vm_info = await get_hyperv_vm(vm_name)
-        
+
         if vm_info is None:
             return {
                 "success": False,
                 "error": f"Hyper-V VM '{vm_name}' not found",
                 "vm_name": vm_name,
             }
-        
+
         return {
             "success": True,
             "action": "get",
@@ -181,12 +191,12 @@ async def _handle_start_vm(vm_name: str | None = None, wait: bool = False) -> di
             "success": False,
             "error": "vm_name is required for 'start' action",
         }
-    
+
     try:
         from virtualization_mcp.tools.vm.hyperv_tools import start_hyperv_vm
-        
+
         result = await start_hyperv_vm(vm_name, wait=wait)
-        
+
         return {
             "success": True,
             "action": "start",
@@ -209,12 +219,12 @@ async def _handle_stop_vm(vm_name: str | None = None, force: bool = False, wait:
             "success": False,
             "error": "vm_name is required for 'stop' action",
         }
-    
+
     try:
         from virtualization_mcp.tools.vm.hyperv_tools import stop_hyperv_vm
-        
+
         result = await stop_hyperv_vm(vm_name, force=force, wait=wait)
-        
+
         return {
             "success": True,
             "action": "stop",

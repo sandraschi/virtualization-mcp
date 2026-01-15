@@ -347,6 +347,30 @@ See [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) for complete de
 
 ---
 
+## 🚀 Roadmap & Extensions
+
+### **Coming Soon**
+- **VM Templates**: Pre-built configurations for Ubuntu, Windows, macOS
+- **Advanced Monitoring**: Real-time performance metrics and health checks
+- **Security Features**: Vulnerability scanning and access control
+- **Enhanced Networking**: Visual topology mapping and advanced port management
+
+### **Planned Features**
+- **Plugin System**: Extensible architecture for custom functionality
+- **Cloud Integration**: AWS/Azure VM synchronization
+- **CI/CD Support**: Jenkins/GitHub Actions integration
+- **Interactive CLI**: Direct command-line interface
+
+### **Quick Wins**
+- ✅ Progress tracking for long operations
+- ✅ Health check endpoints
+- ✅ Configuration validation tools
+- ✅ Operation history and audit logging
+
+*See [Extensions & Improvements Guide](docs/planning/EXTENSIONS_AND_IMPROVEMENTS.md) for detailed roadmap.*
+
+---
+
 ## 🔗 Links
 
 - **Repository:** https://github.com/sandraschi/virtualization-mcp
