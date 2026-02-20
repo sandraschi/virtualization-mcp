@@ -1,0 +1,23 @@
+{
+  "mcp": {
+    "servers": {
+      "virtualization-mcp": {
+        "command": "uv",
+        "args": [
+          "--directory",
+          "d:\\Dev\\repos\\virtualization-mcp",
+          "run",
+          "python",
+          "-m",
+          "virtualization_mcp"
+        ],
+        "env": {
+          "VBOX_INSTALL_PATH": "C:\\Program Files\\Oracle\\VirtualBox",
+          "VBOX_USER_HOME": "%USERPROFILE%\\VirtualBox VMs",
+          "TOOL_MODE": "production",
+          "LOG_LEVEL": "INFO"
+        }
+      }
+    }
+  }
+}
