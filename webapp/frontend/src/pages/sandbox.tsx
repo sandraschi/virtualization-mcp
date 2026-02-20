@@ -43,6 +43,8 @@ export default function Sandbox() {
                             </div>
                             <input
                                 type="checkbox"
+                                title="vGPU Support"
+                                aria-label="vGPU Support"
                                 checked={config.vGPU}
                                 onChange={(e) => setConfig({ ...config, vGPU: e.target.checked })}
                                 className="w-5 h-5 rounded border-input bg-background/50 text-primary focus:ring-primary"
@@ -56,6 +58,8 @@ export default function Sandbox() {
                             </div>
                             <input
                                 type="number"
+                                title="Memory in MB"
+                                aria-label="Memory in MB"
                                 value={config.memoryInMB}
                                 onChange={(e) => setConfig({ ...config, memoryInMB: parseInt(e.target.value) })}
                                 className="bg-transparent border border-input rounded px-2 py-1 w-24 text-right"
@@ -91,7 +95,11 @@ export default function Sandbox() {
                             <Play className="w-5 h-5" />
                             Launch Sandbox
                         </button>
-                        <button className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground">
+                        <button
+                            title="Save Configuration"
+                            aria-label="Save Configuration"
+                            className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+                        >
                             <Save className="w-5 h-5" />
                         </button>
                     </div>
