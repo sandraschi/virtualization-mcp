@@ -1,8 +1,8 @@
 # VirtualBox MCP Server - Product Requirements Document (PRD)
 
-## Version: 1.0.0
-**Last Updated**: August 10, 2025  
-**Status**: Release Candidate  
+## Version: 1.3.0
+**Last Updated**: March 2026  
+**Status**: Active  
 **Author**: virtualization-mcp Team  
 **MCP Version**: 2.10+  
 **VirtualBox Version**: 7.0+
@@ -40,7 +40,13 @@ VirtualBox MCP Server (virtualization-mcp) is a FastMCP 2.10+ compliant server t
 - **VirtualBox**: Version 7.0 and above
 - **Python**: 3.8+
 
-### 2.2 Future Scope
+### 2.2 In Scope (v1.3 – Windows Sandbox & assets)
+
+- **Assets reuse**: Repo folders `assets/sandbox` (Sandbox installers) and `assets/vbox` (ISOs, OVA) for one-time download and reuse. Webapp and APIs use these paths.
+- **Windows Sandbox full dev setup**: Automated script (winget + deps, then optional Python/Node/uv/Git/Just/VS Code/Notepad++/Windsurf/Cursor/Antigravity/Claude Desktop/OpenClaw/OpenFang/RoboFang). AIRGAP mode (networking off). Optional host Ollama access from sandbox.
+- **Webapp VM from assets**: Create VM with optional ISO from `assets/vbox`; Attach ISO to existing VM from same folder. Win 11 Pro template for creating/importing a ready-to-use Windows 11 Pro VM asset (install once, export OVA, import for reuse).
+
+### 2.3 Future Scope
 
 #### Planned Features
 - **Advanced Storage Management**:
@@ -362,12 +368,17 @@ Follows Semantic Versioning (SemVer): MAJOR.MINOR.PATCH
 - Improved network topologies
 - Advanced monitoring
 
-### 12.2 v1.2.0 (Q1 2026)
-- Cloud integration
-- Backup and restore
-- Advanced security features
+### 12.2 v1.2.0 (Q1 2026) ✅
+- FastMCP 3.1 prompts and skills
+- Webapp Prompts & Skills page, health wait, status API
 
-### 12.3 v2.0.0 (Q3 2026)
+### 12.3 v1.3.0 (Q1 2026)
+- Windows Sandbox full dev setup (automated winget + optional tools)
+- Assets folders (sandbox, vbox) and webapp integration
+- AIRGAP and host Ollama options for Sandbox
+- Create VM / Attach ISO from assets/vbox; Win 11 Pro template and OVA asset workflow
+
+### 12.4 v2.0.0 (Q3 2026)
 - Multi-hypervisor support
 - Web-based management UI
 - Plugin system
@@ -481,10 +492,12 @@ Terminology and concepts
 
 | Milestone | Target Date | Status |
 |-----------|-------------|--------|
-| Alpha Release | 2025-07-15 | ✅ Complete |
-| Beta Release | 2025-07-30 | ✅ Complete |
-| RC1 | 2025-08-05 | ✅ Complete |
-| v1.0.0 Release | 2025-08-10 | 🚀 In Progress |
+| v1.0.0 Release | 2025-08-10 | ✅ Complete |
+| v1.0.1b2 Quality Pass | 2025-10-20 | ✅ Complete |
+| v1.1.0 Multi-Provider | 2026-03-03 | ✅ Complete |
+| v1.2.0 FastMCP 3.1 & webapp | 2026-03-05 | ✅ Complete |
+| v1.3.0 Sandbox full dev & assets | 2026-03 | 🚀 In progress |
+| v1.4.0 Cloud integration | 2026-Q3 | 📅 Planned |
 
 ## 12. Approval
 

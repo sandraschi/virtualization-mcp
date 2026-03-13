@@ -3,3 +3,5 @@ uvicorn
 python-multipart
 python-dotenv
 httpx
+google-generativeai
+pydantic

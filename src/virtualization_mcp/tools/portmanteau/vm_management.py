@@ -3,12 +3,13 @@ VM Management Portmanteau Tool
 
 Consolidates all VM-related operations into a single tool with action-based interface.
 Replaces 11 individual VM tools with one comprehensive tool.
+FastMCP 3.1: optional Context for progress reporting and agentic workflows.
 """
 
 import logging
 from typing import Any, Literal
 
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 
 # Import existing VM tools
 from virtualization_mcp.tools.vm.vm_tools import (
@@ -26,7 +27,7 @@ from virtualization_mcp.tools.vm.vm_tools import (
 
 logger = logging.getLogger(__name__)
 
-# Define available actions
+# Define available actions (suggest_config uses LLM sampling when ctx available)
 VM_ACTIONS = {
     "list": "List all virtual machines",
     "create": "Create a new virtual machine",
@@ -38,6 +39,7 @@ VM_ACTIONS = {
     "pause": "Pause a virtual machine",
     "resume": "Resume a paused virtual machine",
     "info": "Get detailed information about a virtual machine",
+    "suggest_config": "Suggest VM configuration using LLM (FastMCP 3.1 sampling)",
 }
 
 
@@ -46,17 +48,31 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def vm_management(
-        action: Literal["list", "create", "start", "stop", "delete", "clone", "reset", "pause", "resume", "info"],
+        action: Literal[
+            "list",
+            "create",
+            "start",
+            "stop",
+            "delete",
+            "clone",
+            "reset",
+            "pause",
+            "resume",
+            "info",
+            "suggest_config",
+        ],
         vm_name: str | None = None,
         source_vm: str | None = None,
         new_vm_name: str | None = None,
         os_type: str | None = None,
         memory_mb: int | None = None,
         disk_size_gb: int | None = None,
+        use_case: str | None = None,
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """
         Comprehensive virtual machine management portmanteau tool.
-        
+
         This tool consolidates all VM operations into a single interface. Use the 'action' parameter
         to specify which operation to perform. Different actions require different parameters.
 
@@ -72,8 +88,10 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
                 - "pause": Pause a running virtual machine (requires: vm_name)
                 - "resume": Resume a paused virtual machine (requires: vm_name)
                 - "info": Get detailed information about a virtual machine (requires: vm_name)
+            - "suggest_config": Suggest VM configuration for a use case (optional: use_case). Uses LLM when available (FastMCP 3.1).
 
             vm_name: Name of the virtual machine (required for most actions except "list")
+            use_case: Short description for suggest_config (e.g. "development", "gaming", "CI runner")
             source_vm: Source VM name for cloning (required for "clone" action)
             new_vm_name: New VM name for cloning (required for "clone" action)
             os_type: Operating system type for new VMs (required for "create" action).
@@ -124,11 +142,20 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
                     "available_actions": VM_ACTIONS,
                 }
 
-            logger.info(f"Executing VM management action: {action}")
+            logger.info("Executing VM management action: %s", action)
+
+            if action == "suggest_config":
+                return await _handle_suggest_config(use_case=use_case, ctx=ctx)
+
+            if ctx:
+                try:
+                    await ctx.report_progress(progress=0, total=100)
+                except Exception:
+                    pass
 
             # Route to appropriate function based on action
             if action == "list":
-                return await _handle_list_vms()
+                return await _handle_list_vms(ctx=ctx)
 
             elif action == "create":
                 return await _handle_create_vm(
@@ -136,6 +163,7 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
                     os_type=os_type,
                     memory_mb=memory_mb,
                     disk_size_gb=disk_size_gb,
+                    ctx=ctx,
                 )
 
             elif action == "start":
@@ -148,9 +176,7 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
                 return await _handle_delete_vm(vm_name=vm_name)
 
             elif action == "clone":
-                return await _handle_clone_vm(
-                    source_vm=source_vm, new_vm_name=new_vm_name
-                )
+                return await _handle_clone_vm(source_vm=source_vm, new_vm_name=new_vm_name, ctx=ctx)
 
             elif action == "reset":
                 return await _handle_reset_vm(vm_name=vm_name)
@@ -181,18 +207,81 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
             }
 
 
-async def _handle_list_vms() -> dict[str, Any]:
+async def _handle_list_vms(ctx: Context | None = None) -> dict[str, Any]:
     """Handle list VMs action."""
     try:
-        result = await list_vms()
+        if ctx:
+            try:
+                await ctx.report_progress(progress=10, total=100)
+            except Exception:
+                pass
+        result = await list_vms(details=True)
+        if ctx:
+            try:
+                await ctx.report_progress(progress=100, total=100)
+            except Exception:
+                pass
+        count = result.get("count", 0) if isinstance(result, dict) else 0
+        vms = result.get("vms", []) if isinstance(result, dict) else result
+        if isinstance(vms, list):
+            count = len(vms)
         return {
             "success": True,
             "action": "list",
             "data": result,
-            "count": len(result) if isinstance(result, list) else 0,
+            "count": count,
         }
     except Exception as e:
         return {"success": False, "action": "list", "error": f"Failed to list VMs: {str(e)}"}
+
+
+async def _handle_suggest_config(
+    use_case: str | None = None,
+    ctx: Context | None = None,
+) -> dict[str, Any]:
+    """Suggest VM configuration using LLM sampling (FastMCP 3.1). When ctx is available, uses ctx.sample()."""
+    if not ctx:
+        return {
+            "success": True,
+            "action": "suggest_config",
+            "data": {
+                "message": "LLM sampling not available in this context. Use MCP client with sampling support, or specify os_type, memory_mb, disk_size_gb manually.",
+                "example": {"os_type": "Ubuntu_64", "memory_mb": 2048, "disk_size_gb": 30},
+            },
+        }
+    try:
+        prompt = (
+            "Suggest a VirtualBox VM configuration (os_type, memory_mb, disk_size_gb) "
+            "for the following use case. Reply with a short JSON-like suggestion only, "
+            "e.g. os_type, memory_mb, disk_size_gb, and one line of reasoning."
+        )
+        if use_case:
+            prompt += f"\n\nUse case: {use_case}"
+        else:
+            prompt += "\n\nUse case: general development."
+        result = await ctx.sample(
+            messages=prompt,
+            system_prompt=(
+                "You are a virtualization expert. Suggest sensible VM settings. "
+                "Use common os_type values: Ubuntu_64, Windows10_64, Debian_64, etc. "
+                "Keep memory_mb between 1024 and 8192, disk_size_gb between 20 and 100."
+            ),
+            temperature=0.3,
+            max_tokens=400,
+        )
+        text = result.text or ""
+        return {
+            "success": True,
+            "action": "suggest_config",
+            "data": {"suggestion": text, "use_case": use_case or "general"},
+        }
+    except Exception as e:
+        logger.exception("suggest_config sampling failed")
+        return {
+            "success": False,
+            "action": "suggest_config",
+            "error": f"LLM suggestion failed: {e}",
+        }
 
 
 async def _handle_create_vm(
@@ -200,6 +289,7 @@ async def _handle_create_vm(
     os_type: str | None = None,
     memory_mb: int | None = None,
     disk_size_gb: int | None = None,
+    ctx: Context | None = None,
 ) -> dict[str, Any]:
     """Handle create VM action."""
     if not vm_name:
@@ -217,12 +307,22 @@ async def _handle_create_vm(
         }
 
     try:
+        if ctx:
+            try:
+                await ctx.report_progress(progress=20, total=100)
+            except Exception:
+                pass
         result = await create_vm(
             vm_name=vm_name,
             os_type=os_type,
             memory_mb=memory_mb or 1024,
             disk_size_gb=disk_size_gb or 20,
         )
+        if ctx:
+            try:
+                await ctx.report_progress(progress=100, total=100)
+            except Exception:
+                pass
         return {"success": True, "action": "create", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
@@ -293,7 +393,9 @@ async def _handle_delete_vm(vm_name: str | None = None) -> dict[str, Any]:
 
 
 async def _handle_clone_vm(
-    source_vm: str | None = None, new_vm_name: str | None = None
+    source_vm: str | None = None,
+    new_vm_name: str | None = None,
+    ctx: Context | None = None,
 ) -> dict[str, Any]:
     """Handle clone VM action."""
     if not source_vm:
@@ -311,7 +413,17 @@ async def _handle_clone_vm(
         }
 
     try:
+        if ctx:
+            try:
+                await ctx.report_progress(progress=25, total=100)
+            except Exception:
+                pass
         result = await clone_vm(source_vm=source_vm, new_vm_name=new_vm_name)
+        if ctx:
+            try:
+                await ctx.report_progress(progress=100, total=100)
+            except Exception:
+                pass
         return {
             "success": True,
             "action": "clone",

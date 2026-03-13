@@ -67,6 +67,28 @@ class VirtualizationMCPServer:
                 description="VirtualBox Management and Control Protocol Server",
             )
 
+            # Register prompts (FastMCP 3.1)
+            try:
+                from virtualization_mcp.prompts import register_prompts
+
+                register_prompts(self.mcp)
+                logger.info("Registered MCP prompts (virtualization_expert)")
+            except ImportError:
+                pass
+
+            # Expose bundled skills as MCP resources (FastMCP 3.1)
+            try:
+                from pathlib import Path
+
+                from fastmcp.server.providers.skills import SkillsDirectoryProvider
+
+                _skills_dir = Path(__file__).resolve().parent.parent / "skills"
+                if _skills_dir.is_dir():
+                    self.mcp.add_provider(SkillsDirectoryProvider(roots=[_skills_dir]))
+                    logger.info("Skills provider registered: bundled virtualization-expert skill")
+            except ImportError:
+                pass
+
             # Register tools from services and plugins
             await self._register_tools()
 

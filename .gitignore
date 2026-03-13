@@ -116,5 +116,18 @@ docs/_build/
 *.zip
 *.rar
 
+# Windows Sandbox full-dev assets (store here for reuse; do not commit)
+assets/sandbox/*.msixbundle
+assets/sandbox/*.msix
+assets/sandbox/DesktopAppInstaller_Dependencies.zip
+assets/sandbox/Setup-DevSandbox.ps1
+
+# VirtualBox VM media (ISOs, OVA/OVF – store here for reuse; do not commit)
+assets/vbox/*.iso
+assets/vbox/*.ova
+assets/vbox/*.ovf
+assets/vbox/*.vdi
+assets/vbox/*.vmdk
+
 
 

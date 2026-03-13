@@ -85,6 +85,13 @@ class VMOperations:
                 "network": "NAT",
                 "description": "Minimal Linux for quick tests",
             },
+            "win11-pro": {
+                "os_type": "Windows11_64",
+                "memory_mb": 8192,
+                "disk_gb": 80,
+                "network": "NAT",
+                "description": "Windows 11 Pro – attach ISO, install once, export to OVA in assets/vbox for reuse",
+            },
         }
 
     def create_vm(

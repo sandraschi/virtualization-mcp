@@ -1,5 +1,6 @@
+import { API_BASE } from "./config";
+
 // API utilities for calling MCP server tools
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:10761';
 
 export interface MCPToolCallRequest {
   tool: string;

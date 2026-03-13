@@ -9,7 +9,7 @@ import argparse
 import logging
 import sys
 
-from .config import DEBUG
+from .config import DEBUG, settings
 
 # Import local modules
 from .utils.logging_utils import setup_logging
@@ -24,7 +24,12 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="VirtualBox MCP Server")
     parser.add_argument("--debug", action="store_true", default=DEBUG, help="Enable debug logging")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server to")
-    parser.add_argument("--port", type=int, default=8000, help="Port to run the server on")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=settings.PORT,
+        help="Port for MCP HTTP/SSE (default from config, 10702)",
+    )
     return parser.parse_args()
 
 

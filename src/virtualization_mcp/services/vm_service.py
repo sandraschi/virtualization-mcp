@@ -8,30 +8,23 @@ from typing import Any
 
 from ..vbox.compat_adapter import VBoxManagerError, get_vbox_manager
 from ..vbox.vm_operations import VMOperations
+from .hyperv_manager import hyperv_manager
 
 logger = logging.getLogger(__name__)
 
 
 class VMService:
-    """Service for managing VirtualBox VMs with compatibility layer.
-
-    This service provides a high-level interface for managing VirtualBox VMs,
-    using a compatibility layer that works with both the VirtualBox Python API
-    and VBoxManage command-line tool for maximum compatibility.
-    """
+    """Service for managing VirtualBox and Hyper-V VMs."""
 
     def __init__(self):
-        """Initialize the VM service with a VBoxManager instance.
-
-        The VBoxManager instance is created using the compatibility adapter,
-        which automatically selects the best available backend (Python API or VBoxManage).
-        """
+        """Initialize the VM service with VBox and Hyper-V managers."""
         self.vbox_manager = get_vbox_manager()
         self.vm_operations = VMOperations(self.vbox_manager)
+        self.hyperv_manager = hyperv_manager
 
         # Log the backend being used
         backend = "Python API" if hasattr(self.vbox_manager, "api") else "VBoxManage CLI"
-        logger.info(f"Initialized VMService with {backend} backend")
+        logger.info(f"Initialized VMService with {backend} and Hyper-V support")
 
     def get_vm_state(self, vm_name: str) -> dict[str, Any]:
         """
@@ -1635,7 +1628,12 @@ class VMService:
             }
 
     def attach_disk(
-        self, vm_name: str, disk_path: str, port: int = 0, device: int = 0, type: str = "hdd"
+        self,
+        vm_name: str,
+        disk_path: str,
+        port: int = 0,
+        device: int = 0,
+        type: str = "hdd",
     ) -> dict[str, Any]:
         """
         Attach a virtual disk to a virtual machine.
@@ -1855,7 +1853,10 @@ class VMService:
 
             # Attach the ISO
             result = self.vm_operations.attach_iso(
-                vm_name=vm_name, iso_path=os.path.abspath(iso_path), port=port, device=device
+                vm_name=vm_name,
+                iso_path=os.path.abspath(iso_path),
+                port=port,
+                device=device,
             )
 
             if not result.get("success", False):
@@ -1979,7 +1980,10 @@ class VMService:
             # Implementation will be added
             pass
         except Exception as e:
-            logger.error(f"Failed to configure shared folder for VM {vm_name}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to configure shared folder for VM {vm_name}: {e}",
+                exc_info=True,
+            )
             return {"status": "error", "error": str(e)}
 
     def export_vm(self, vm_name: str, output_path: str, format: str = "ovf-1.0") -> dict[str, Any]:
@@ -2097,7 +2101,11 @@ class VMService:
             return {"status": "error", "error": str(e)}
 
     def unmount_iso(
-        self, vm_name: str, controller_name: str = "IDE Controller", port: int = 1, device: int = 0
+        self,
+        vm_name: str,
+        controller_name: str = "IDE Controller",
+        port: int = 1,
+        device: int = 0,
     ) -> dict[str, Any]:
         """
         Unmount an ISO from a VM's optical drive.
@@ -2265,7 +2273,11 @@ class VMService:
             return {"status": "error", "error": str(e)}
 
     def take_screenshot(
-        self, vm_name: str, output_file: str = None, width: int = None, height: int = None
+        self,
+        vm_name: str,
+        output_file: str = None,
+        width: int = None,
+        height: int = None,
     ) -> dict[str, Any]:
         """
         Take a screenshot of a running VM.
