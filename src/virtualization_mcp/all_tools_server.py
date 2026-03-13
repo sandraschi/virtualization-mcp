@@ -214,7 +214,7 @@ async def register_all_tools(mcp: FastMCP) -> None:
 
     try:
         # Register virtualization-mcp tools based on TOOL_MODE setting
-        tool_mode = getattr(settings, 'TOOL_MODE', 'production')
+        tool_mode = getattr(settings, "TOOL_MODE", "production")
         register_vbox_tools(mcp, tool_mode=tool_mode)
 
         if tool_mode.lower() in ["testing", "all"]:
@@ -277,6 +277,26 @@ async def start_mcp_server(host: str = None, port: int = None) -> FastMCP:
             version=settings.APP_VERSION,
             instructions="MCP server for VirtualBox management",
         )
+
+        # FastMCP 3.1: Register prompts and skills (virtualization_expert prompt + bundled skill)
+        try:
+            from virtualization_mcp.prompts import register_prompts
+
+            register_prompts(mcp)
+            logger.info("Registered MCP prompts (virtualization_expert)")
+        except ImportError:
+            pass
+        try:
+            from pathlib import Path
+
+            from fastmcp.server.providers.skills import SkillsDirectoryProvider
+
+            _skills_dir = Path(__file__).resolve().parent / "skills"
+            if _skills_dir.is_dir():
+                mcp.add_provider(SkillsDirectoryProvider(roots=[_skills_dir]))
+                logger.info("Skills provider registered: virtualization-expert skill")
+        except ImportError:
+            pass
 
         # Register all tools with timeout
         logger.info("Registering tools...")

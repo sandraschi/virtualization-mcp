@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Import settings with fallback
 try:
@@ -23,7 +23,7 @@ except ImportError:
         debug: bool = False
         log_level: str = "INFO"
         host: str = "0.0.0.0"
-        port: int = 8000
+        port: int = 10702
 
 
 # Set up logging
@@ -53,9 +53,11 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 
-    # Server configuration
+    # Server configuration (MCP HTTP/SSE: use 10700-10800 per SOTA; 10702 avoids webapp 10700/10701)
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = Field(
+        default=10702, validation_alias="VIRTUALIZATION_MCP_PORT", description="MCP HTTP/SSE port"
+    )
     WEB_PORT: int = 3080  # FastAPI web server port
     WORKERS: int = 1
     RELOAD: bool = False

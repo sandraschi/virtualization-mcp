@@ -8,6 +8,11 @@ This directory contains polished, user-facing documentation that is published on
 
 ## 📚 Documentation Structure
 
+### [`planning/`](planning/)
+**Product and release planning**
+- PRD (Product Requirements Document)
+- Roadmap and timeline
+
 ### [`mcpb-packaging/`](mcpb-packaging/)
 **MCPB package creation and distribution**
 - Complete packaging guide
@@ -36,6 +41,11 @@ This directory contains polished, user-facing documentation that is published on
 - Workflow configuration
 - Automated testing
 - Release automation
+
+### Repo assets (not under `docs/`)
+- **[assets/README.md](../assets/README.md)** – Reuse folders for Sandbox installers and VBox ISOs/OVA.
+- **[assets/sandbox/README.md](../assets/sandbox/README.md)** – Sandbox full-dev assets.
+- **[assets/vbox/README.md](../assets/vbox/README.md)** – VBox media and Win 11 Pro VM asset workflow.
 
 ---
 

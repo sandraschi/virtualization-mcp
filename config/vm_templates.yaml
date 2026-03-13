@@ -27,6 +27,17 @@ templates:
       - testing
       - containerization
 
+  win11-pro:
+    os_type: "Windows11_64"
+    memory_mb: 8192
+    disk_gb: 80
+    network: "NAT"
+    description: "Windows 11 Pro – create once from ISO, export to OVA, then import for ready-to-use VM (see assets/vbox/README)"
+    use_cases:
+      - windows-dev
+      - gui-testing
+      - ready-to-use asset
+
   windows-test:
     os_type: "Windows11_64"
     memory_mb: 8192

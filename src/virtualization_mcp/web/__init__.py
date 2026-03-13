@@ -1,10 +1,1 @@
-"""
-Web application module for virtualization-mcp.
-
-Provides FastAPI web server with REST API and WebSocket support for real-time VM management.
-"""
-
-__version__ = "1.0.0"
-
-
-
+"""Web app entry for virtualization-mcp (used by webapp/start.ps1)."""

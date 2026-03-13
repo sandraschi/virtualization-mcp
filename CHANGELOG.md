@@ -7,6 +7,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Windows Sandbox full dev setup & assets reuse
+
+#### Assets (reuse folders)
+- **`assets/sandbox/`** – Windows Sandbox full-dev installer files (`DesktopAppInstaller_Dependencies.zip`, `*.msixbundle`). Webapp **Full dev setup** uses this folder; script written here on launch. Gitignored.
+- **`assets/vbox/`** – VirtualBox VM media (ISOs, OVA/OVF). Create VM and Attach ISO in the webapp use this folder. Gitignored.
+- **`assets/README.md`** – Overview of both asset folders and how the webapp ties to them.
+
+#### Windows Sandbox (webapp)
+- **Full dev setup** – One-click automated dev stack in Sandbox: winget (deps + App Installer) then optional Python, Node, uv/uvx, pip, Git, Just, VS Code, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenFang, RoboFang. Tools selectable via checkboxes; script generated and written to assets folder.
+- **AIRGAP** – Big red toggle: disables networking for the sandbox (100% air-gapped; e.g. OpenClaw safe). Use after initial install or with pre-installed assets.
+- **Use host Ollama** – Optional checkbox: sets `OLLAMA_HOST` in sandbox to host gateway so apps in sandbox can use Ollama on host.
+- **Backend**: `GET /api/v1/sandbox/dev-setup-script`, `POST /api/v1/sandbox/launch` with `full_dev_setup`, `assets_folder`, `dev_tools`, `airgap`, `use_host_ollama`. Script generator parameterised by tools and options.
+
+#### VirtualBox (webapp)
+- **Assets API** – `GET /api/v1/assets/paths` (repo_root, assets_sandbox, assets_vbox), `GET /api/v1/assets/vbox` (list ISO/OVA/OVF in assets/vbox).
+- **Create New VM** – Modal: name, template (Ubuntu dev, Win 11 Pro, Windows test, etc.), optional ISO from assets/vbox. `POST /api/v1/vms` accepts optional `iso_path`; attaches ISO after create.
+- **Attach ISO** – Per-VM “Attach ISO” button; modal lists files from assets/vbox. `POST /api/v1/vms/{name}/attach-iso`.
+- **Win 11 Pro template** – New template `win11-pro` (Windows11_64, 8GB RAM, 80GB disk). Default templates in code include it. `config/vm_templates.yaml` and assets/vbox README document creating a ready-to-use Win 11 Pro OVA asset (install once, export to assets/vbox, import for reuse).
+
+#### Sandbox page UX
+- Assets folder input pre-filled from `GET /api/v1/assets/paths` (repo assets_sandbox). “Use repo assets” button to reset to that path.
+- Placeholder and copy updated to point at repo assets path.
+
+#### Documentation
+- **assets/sandbox/README.md** – What to place (deps zip, msixbundle), how to use with webapp.
+- **assets/vbox/README.md** – ISOs/OVA reuse; **Win 11 Pro VM asset** section: one-time setup (ISO → create VM → install → export OVA) and reuse (import OVA).
+
+---
+
+## [1.2.0] - 2026-03-05
+
+### FastMCP 3.1 and webapp upgrades
+
+#### FastMCP 3.1
+- **Bump**: `fastmcp>=3.1.0`.
+- **Prompts**: Added `virtualization_expert` MCP prompt (optional `focus`: general, lifecycle, storage, network). Registered in main server (all_tools_server) and server_v2.
+- **Skills**: Bundled `virtualization-expert` skill (`src/virtualization_mcp/skills/virtualization-expert/SKILL.md`) exposed via `SkillsDirectoryProvider` as `skill://virtualization-expert/SKILL.md`.
+- **Context in tools**: `vm_management` portmanteau accepts optional `ctx: Context`; uses `ctx.report_progress()` for list, create, clone.
+- **Sampling/agentic**: New action `suggest_config` on `vm_management` uses `ctx.sample()` when context is available to suggest VM configuration (use_case parameter). Fallback when no sampling.
+- **Prompts/skills in main server**: `all_tools_server.start_mcp_server()` now registers prompts and skills so CLI/stdio users get full 3.1 features.
+
+#### Webapp
+- **Health wait**: `webapp/start.ps1` waits for backend `GET /api/v1/health` (up to 15 attempts) before starting Vite.
+- **Backend**: Added `GET /health`; service_manager initialized first so VMs/host info work even if MCP init fails.
+- **API base**: Frontend uses `API_BASE` from `api/config.ts` (default `http://localhost:10701`). CORS allows `http://localhost:10700` and `http://127.0.0.1:10700`.
+- **Prompts & Skills page**: New route `/prompts-skills` and sidebar item "Prompts & Skills". Lists prompts metadata and bundled skills; expandable skill markdown from backend.
+- **Backend APIs**: `GET /api/v1/prompts`, `GET /api/v1/skills`, `GET /api/v1/skills/{skill_id}` for webapp Prompts & Skills page.
+- **Status**: `GET /api/v1/status` returns mcp, service_manager, registry state for debugging.
+
+#### Configuration
+- **MCP HTTP port**: Default port for MCP HTTP/SSE changed from 8000 to **10702** (SOTA range 10700–10800). Override with `VIRTUALIZATION_MCP_PORT`.
+
+#### Scripts
+- **Backup**: Repo uses canonical SOTA backup script; run `.\scripts\backup-repo.ps1` from repo root.
+
+---
+
+## [1.1.0] - 2026-03-03
+
+### 🎉 Multi-Provider Advanced Management Release
+
+Major upgrade transitioning from VirtualBox-only to a scalable multi-provider virtualization platform.
+
+### ✨ New Features
+
+#### Native Hyper-V Provider Support
+- **Hyper-V Integration**: Native Windows Hyper-V management via PowerShell automation.
+- **Provider-Agnostic Architecture**: Refactored `VMService` to route operations between VirtualBox and Hyper-V.
+- **Auto-Discovery**: Automatic detection and registration of active providers.
+
+#### Advanced VM Controls
+- **Lifecycle Operations**: Added support for **Pause**, **Resume**, and **Snapshot** through dedicated API endpoints.
+- **Live Console View**: Real-time screenshot service allowing for console monitoring of running VMs directly in the webapp.
+- **Refined Polling**: Optimized state tracking and live view refresh rates.
+
+#### SOTA Webapp Enhancements
+- **Multi-Provider Dashboard**: Unified interface for managing VBox and Hyper-V instances side-by-side.
+- **Provider Branding**: Dedicated badges and color coding for different hypervisors.
+- **Live Snapshots**: Visual console previews in VM cards for immediate status verification.
+
+### 🔧 Technical Improvements
+- **Service Refactor**: Unified `VMService` for cleaner provider integration.
+- **Screenshot Service**: Robust screenshot handling for live monitoring.
+- **API Expansion**: Extended REST API with advanced control capabilities.
+
+---
+
 ## [1.0.1b2] - 2025-10-20
 
 ### 🎉 Production-Ready Beta Release

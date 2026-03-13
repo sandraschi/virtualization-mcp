@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "virtualization-mcp"
-version = "1.0.1b2"
-description = "Professional VirtualBox management server with comprehensive VM operations, networking, storage, and security features"
+version = "1.1.0"
+description = "Professional multi-provider VM management server (VirtualBox & Hyper-V) with comprehensive operations, networking, storage, and security features"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
     { name = "Sandra Schi", email = "sandraschipal@protonmail.com" }
@@ -35,23 +35,33 @@ classifiers = [
 ]
 keywords = ["mcp", "virtualbox", "vm", "virtualization", "automation", "fastmcp", "hypervisor"]
 dependencies = [
-    "fastmcp>=2.12.2,<3.0.0",
-    "python-dotenv>=0.19.0",
+    "fastmcp>=3.1.0",
+    "python-dotenv>=1.0.0",
     "pywin32>=300; sys_platform == 'win32'",
-    "pyvbox>=1.0.0",
+    "pyvbox>=2.1.1",
     "psutil>=5.9.0",
-    "pyyaml>=6.0",
+    "pyyaml>=6.0.1",
     "aiohttp>=3.8.0",
     "aiofiles>=23.0.0",
-    "pydantic>=2.0.0,<3.0.0",
+    "pydantic>=1.10.5",
     "pydantic-settings>=2.0.0",
-    "fastapi>=0.68.0",
-    "uvicorn>=0.15.0",
+    "fastapi>=0.95.0",
+    "uvicorn>=0.21.0",
     "python-multipart>=0.0.5",
     "python-socketio>=5.10.0",
     "jinja2>=3.1.0",
     "typing-extensions>=4.0.0; python_version < '3.10'",
-    "prometheus_client>=0.19.0"
+    "prometheus-client>=0.19.0",
+    "pathlib2>=2.3.7",
+    "pywin32>=306",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "pre-commit>=3.5.0",
+    "rich>=13.0.0",
+    "loguru>=0.7.0",
+    "ruff>=0.14.0",
+    "google-generativeai>=0.8.0",
 ]
 
 # Project URLs for PyPI

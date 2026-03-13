@@ -1,7 +1,6 @@
 // API utilities for LLM provider interactions
 import type { LLMProviderConfig, LLMModel } from '../types/llm';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:10761';
+import { API_BASE } from './config';
 
 export async function fetchProviders(): Promise<LLMProviderConfig[]> {
   const response = await fetch(`${API_BASE}/api/llm/providers`);

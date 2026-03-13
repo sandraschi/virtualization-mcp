@@ -11,6 +11,8 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from .tools.agentic_tools import register_agentic_tools
+
 
 class MCPToolDiscovery:
     """Handles discovery and documentation of MCP tools."""
@@ -345,7 +347,11 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         disk_gb: int | None = None,
     ) -> dict[str, Any]:
         return await asyncio.to_thread(
-            vm_service.create_vm, name=name, template=template, memory_mb=memory_mb, disk_gb=disk_gb
+            vm_service.create_vm,
+            name=name,
+            template=template,
+            memory_mb=memory_mb,
+            disk_gb=disk_gb,
         )
 
     @mcp.tool()
@@ -376,7 +382,8 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         return await asyncio.to_thread(vm_service.list_snapshots, vm_name=vm_name)
 
     @mcp.tool(
-        name="RestoreSnapshot", description="Restore a virtual machine to a previous snapshot."
+        name="RestoreSnapshot",
+        description="Restore a virtual machine to a previous snapshot.",
     )
     async def restore_snapshot(
         vm_name: str, snapshot_name: str, start_vm: bool = False
@@ -396,14 +403,16 @@ def register_mcp_tools(mcp: FastMCP) -> None:
 
     # --- ISO and Media Management ---
     @mcp.tool(
-        name="ListIsos", description="List all available ISO files in the VirtualBox media library."
+        name="ListIsos",
+        description="List all available ISO files in the VirtualBox media library.",
     )
     async def list_isos() -> dict[str, Any]:
         """List all available ISO files that can be mounted on VMs."""
         return await asyncio.to_thread(vm_service.list_media, media_type="iso")
 
     @mcp.tool(
-        name="MountIso", description="Mount an ISO file to a virtual machine's optical drive."
+        name="MountIso",
+        description="Mount an ISO file to a virtual machine's optical drive.",
     )
     async def mount_iso(
         vm_name: str,
@@ -431,10 +440,14 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         )
 
     @mcp.tool(
-        name="UnmountIso", description="Unmount an ISO from a virtual machine's optical drive."
+        name="UnmountIso",
+        description="Unmount an ISO from a virtual machine's optical drive.",
     )
     async def unmount_iso(
-        vm_name: str, controller_name: str = "IDE Controller", port: int = 1, device: int = 0
+        vm_name: str,
+        controller_name: str = "IDE Controller",
+        port: int = 1,
+        device: int = 0,
     ) -> dict[str, Any]:
         """Unmount an ISO from a VM's optical drive."""
         return await asyncio.to_thread(
@@ -447,7 +460,8 @@ def register_mcp_tools(mcp: FastMCP) -> None:
 
     # --- Network Configuration ---
     @mcp.tool(
-        name="ListNetworkAdapters", description="List network adapters for a virtual machine."
+        name="ListNetworkAdapters",
+        description="List network adapters for a virtual machine.",
     )
     async def list_network_adapters(vm_name: str) -> dict[str, Any]:
         """List all network adapters for a VM."""
@@ -478,7 +492,8 @@ def register_mcp_tools(mcp: FastMCP) -> None:
 
     # --- Storage Management ---
     @mcp.tool(
-        name="ListStorageControllers", description="List storage controllers for a virtual machine."
+        name="ListStorageControllers",
+        description="List storage controllers for a virtual machine.",
     )
     async def list_storage_controllers(vm_name: str) -> dict[str, Any]:
         """List all storage controllers for a VM."""
@@ -553,7 +568,8 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         return await asyncio.to_thread(vm_service.get_system_info)
 
     @mcp.tool(
-        name="GetVmMetrics", description="Get performance metrics for a running virtual machine."
+        name="GetVmMetrics",
+        description="Get performance metrics for a running virtual machine.",
     )
     async def get_vm_metrics(vm_name: str) -> dict[str, Any]:
         """Get VM performance metrics."""
@@ -574,3 +590,6 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             width=width,
             height=height,
         )
+
+    # --- Agentic Operations ---
+    register_agentic_tools(mcp)

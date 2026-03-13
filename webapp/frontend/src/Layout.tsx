@@ -1,5 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Server, Box, Terminal, MessageSquare, Settings } from 'lucide-react';
+import {
+    LayoutDashboard, Server, Box, Terminal,
+    Share2, MessageSquare, HelpCircle, Settings, BookOpen
+} from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function Layout() {
@@ -7,7 +10,11 @@ export default function Layout() {
         { to: "/", icon: LayoutDashboard, label: "Dashboard" },
         { to: "/virtualbox", icon: Server, label: "VirtualBox" },
         { to: "/sandbox", icon: Box, label: "Windows Sandbox" },
+        { to: "/tools", icon: Terminal, label: "Tools Console" },
+        { to: "/apps", icon: Share2, label: "Apps Hub" },
+        { to: "/prompts-skills", icon: BookOpen, label: "Prompts & Skills" },
         { to: "/chat", icon: MessageSquare, label: "AI Chat" },
+        { to: "/help", icon: HelpCircle, label: "Help & Docs" },
         { to: "/settings", icon: Settings, label: "Settings" },
     ];
 

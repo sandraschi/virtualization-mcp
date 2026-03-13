@@ -1,39 +1,51 @@
-$ErrorActionPreference = "Stop"
+# Webapp Start - Standardized SOTA (Auto-Repaired V2.5)
+$WebPort = 10700
+$BackendPort = 10701
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
 
-# Configuration
-$FRONTEND_PORT = 10760
-$BACKEND_PORT = 10761
-$ProjectRoot = Split-Path $PSScriptRoot -Parent
-$SrcPath = Join-Path $ProjectRoot "src"
-
-Write-Host "Starting Virtualization MCP Webapp (Dual Interface)..." -ForegroundColor Cyan
-
-# 1. Start Backend (FastAPI Proxy)
-Write-Host "Starting Backend on port $BACKEND_PORT..." -ForegroundColor Yellow
-$backendDir = Join-Path $PSScriptRoot "backend"
-if (-not (Test-Path $backendDir)) {
-    Write-Error "Backend directory not found: $backendDir"
+# 1. Kill any process squatting on the ports
+Write-Host "Checking for port squatters on $WebPort and $BackendPort..." -ForegroundColor Yellow
+$pids = Get-NetTCPConnection -LocalPort $WebPort, $BackendPort -ErrorAction SilentlyContinue | Where-Object { $_.OwningProcess -gt 4 } | Select-Object -ExpandProperty OwningProcess -Unique
+foreach ($p in $pids) {
+    Write-Host "Found squatter (PID: $p). Terminating..." -ForegroundColor Red
+    try { Stop-Process -Id $p -Force -ErrorAction Stop } catch { Write-Host "Warning: Could not terminate PID $p." -ForegroundColor Gray }
 }
 
-$env:PYTHONPATH = "$SrcPath"
-$backendCmd = "Set-Location '$backendDir'; `$env:PYTHONPATH='$SrcPath'; python -m uvicorn app.main:app --reload --host 0.0.0.0 --port $BACKEND_PORT"
-$backendProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -PassThru
-Write-Host "Backend started (PID: $($backendProcess.Id))" -ForegroundColor Green
+# 2. Setup
+Set-Location $PSScriptRoot
+if (Test-Path "frontend") { Set-Location "frontend" }
+if (-not (Test-Path "node_modules")) { npm install }
 
-# 2. Wait for Backend to initialize
-Start-Sleep -Seconds 3
+# 3. Start the Python backend (Background)
+Write-Host "Starting Python backend on port $BackendPort ..." -ForegroundColor Cyan
 
-# 3. Start Frontend (Vite)
-Write-Host "Starting Frontend on port $FRONTEND_PORT..." -ForegroundColor Yellow
-$frontendDir = Join-Path $PSScriptRoot "frontend"
-if (Test-Path "$frontendDir\package.json") {
-    $frontendCmd = "Set-Location '$frontendDir'; `$env:VITE_API_URL='http://localhost:$BACKEND_PORT'; npm run dev -- --port $FRONTEND_PORT"
-    $frontendProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCmd -PassThru
-    Write-Host "Frontend started (PID: $($frontendProcess.Id))" -ForegroundColor Green
+# uv --project finds package; CWD stays webapp (no repo-root run).
+$backendCmd = "Set-Location '$PSScriptRoot'; uv run --project '$ProjectRoot' uvicorn virtualization_mcp.web.app:app --host 127.0.0.1 --port $BackendPort --log-level info"
+
+Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -WindowStyle Normal
+
+# 4. Wait for backend to be listening (avoid ECONNREFUSED when frontend loads)
+$healthUrl = "http://127.0.0.1:$BackendPort/api/v1/health"
+$maxAttempts = 15
+$attempt = 0
+Write-Host "Waiting for backend at $healthUrl ..." -ForegroundColor Cyan
+while ($attempt -lt $maxAttempts) {
+    try {
+        $null = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+        Write-Host "Backend is up." -ForegroundColor Green
+        break
+    } catch {
+        $attempt++
+        if ($attempt -ge $maxAttempts) {
+            Write-Host "Backend did not respond after ${maxAttempts} attempts. Starting frontend anyway." -ForegroundColor Yellow
+            break
+        }
+        Start-Sleep -Seconds 2
+    }
 }
-else {
-    Write-Error "package.json not found in $frontendDir - Did you scaffold the frontend?"
-}
 
-# 4. Cleanup Instructions
-Write-Host "Close the opened PowerShell windows to stop the servers." -ForegroundColor Red
+# 5. Run server (Vite dev)
+Write-Host "Starting Vite frontend on port $WebPort ..." -ForegroundColor Green
+if (Test-Path "frontend") { Set-Location "frontend" }
+npm run dev -- --port $WebPort --host
+
