@@ -18,6 +18,10 @@
 
 virtualization-mcp is a professional Model Context Protocol (MCP) server that brings comprehensive VirtualBox management directly to Claude Desktop. Manage virtual machines using natural language - create, start, stop, snapshot, configure networking, and more!
 
+### Pair with pywinauto-mcp (desktop automation)
+
+**Windows Sandbox** in this server **provisions** a disposable desktop; it does **not** replace **UI automation**. For fleet **safety**, new users who run **pywinauto-mcp** should **also** enable **virtualization-mcp** when they need Sandbox/VM workflows, and run **automation inside the guest** — see **pywinauto-mcp** `docs/SAFETY.md` and **mcp-central-docs** `patterns/PYWINAUTO_MCP_SAFETY.md`.
+
 ### ✨ Key Highlights
 
 - **🎯 5 Portmanteau Tools** - Clean, organized interface with 60+ operations
@@ -297,6 +301,8 @@ Claude: Uses network_management(action="create_network",
 ## 🧪 Testing
 
 ### Run Tests:
+From a **clone** of this repo at the **repository root** (see [Development Setup](#development-setup) below if you have not cloned yet):
+
 ```bash
 # Install development dependencies
 uv sync --dev
