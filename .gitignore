@@ -128,6 +128,5 @@ assets/vbox/*.ova
 assets/vbox/*.ovf
 assets/vbox/*.vdi
 assets/vbox/*.vmdk
-
-
-
+# Rust / Zed IDE — rust-analyzer may create target/ at repo root
+target/
