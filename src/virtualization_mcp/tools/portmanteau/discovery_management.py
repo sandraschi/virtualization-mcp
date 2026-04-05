@@ -10,6 +10,12 @@ import logging
 from typing import Any, Literal
 
 from fastmcp import FastMCP
+from virtualization_mcp.config import settings
+from virtualization_mcp.tools.portmanteau.network_management import NETWORK_ACTIONS
+from virtualization_mcp.tools.portmanteau.snapshot_management import SNAPSHOT_ACTIONS
+from virtualization_mcp.tools.portmanteau.storage_management import STORAGE_ACTIONS
+from virtualization_mcp.tools.portmanteau.system_management import SYSTEM_ACTIONS
+from virtualization_mcp.tools.portmanteau.vm_management import VM_ACTIONS
 
 logger = logging.getLogger(__name__)
 
@@ -149,33 +155,40 @@ def register_info_tools_tool(mcp: FastMCP) -> None:
 
 
 async def _handle_list_tools(category: str | None = None, search: str | None = None) -> dict[str, Any]:
-    """Handle list_tools action - delegates to existing list_tools function."""
+    """Handle list_tools action with runtime-derived operation lists."""
     try:
-        # Import the actual list_tools implementation
-        # Note: We can't directly call it due to service_manager dependency
-        # So provide static comprehensive tool information
+        portmanteau = [
+            {"name": "vm_management", "operations": sorted(list(VM_ACTIONS.keys())), "category": "vm"},
+            {"name": "network_management", "operations": sorted(list(NETWORK_ACTIONS.keys())), "category": "network"},
+            {"name": "snapshot_management", "operations": sorted(list(SNAPSHOT_ACTIONS.keys())), "category": "snapshot"},
+            {"name": "storage_management", "operations": sorted(list(STORAGE_ACTIONS.keys())), "category": "storage"},
+            {"name": "system_management", "operations": sorted(list(SYSTEM_ACTIONS.keys())), "category": "system"},
+            {"name": "info_tools", "operations": sorted(list(INFO_ACTIONS.keys())), "category": "discovery"},
+            {"name": "hyperv_management", "operations": ["list", "get", "start", "stop"], "category": "hyperv"},
+        ]
+        items = portmanteau
+        if category:
+            items = [item for item in items if item["category"] == category.lower()]
+        if search:
+            needle = search.lower().strip()
+            items = [
+                item
+                for item in items
+                if needle in item["name"].lower()
+                or any(needle in op.lower() for op in item["operations"])
+            ]
 
         tools = {
-            "portmanteau": [
-                {"name": "vm_management", "operations": 10, "category": "vm"},
-                {"name": "network_management", "operations": 5, "category": "network"},
-                {"name": "snapshot_management", "operations": 4, "category": "snapshot"},
-                {"name": "storage_management", "operations": 6, "category": "storage"},
-                {"name": "system_management", "operations": 5, "category": "system"},
-            ],
-            "individual": {
-                "vm": ["list_vms", "get_vm_info", "create_vm", "start_vm", "stop_vm", "delete_vm", "clone_vm", "reset_vm", "pause_vm", "resume_vm"],
-                "network": ["list_hostonly_networks", "create_hostonly_network", "remove_hostonly_network"],
-                "snapshot": ["list_snapshots", "create_snapshot", "restore_snapshot", "delete_snapshot"],
-                "storage": ["list_storage_controllers", "create_storage_controller", "remove_storage_controller"],
-                "system": ["get_system_info", "get_vbox_version", "list_ostypes"],
-            }
+            "portmanteau": items,
+            "individual_tools_enabled": bool(settings.TOOL_MODE.lower() in ["testing", "all"]),
         }
 
         return {
             "success": True,
             "tools": tools,
-            "note": "Use TOOL_MODE=testing to enable individual tools"
+            "count": len(items),
+            "tool_mode": settings.TOOL_MODE,
+            "note": "Set TOOL_MODE=testing or TOOL_MODE=all to expose individual legacy tools.",
         }
 
     except Exception as e:
@@ -188,32 +201,36 @@ async def _handle_tool_info(tool_name: str | None = None) -> dict[str, Any]:
     if not tool_name:
         return {"success": False, "error": "tool_name required for tool_info"}
 
-    # Provide information about portmanteau tools and their operations
-    tool_info_map = {
+    tool_info_map: dict[str, dict[str, Any]] = {
         "vm_management": {
             "type": "portmanteau",
-            "operations": ["list", "create", "start", "stop", "delete", "clone", "reset", "pause", "resume", "info"],
+            "operations": sorted(list(VM_ACTIONS.keys())),
             "description": "Complete VM lifecycle management",
         },
         "network_management": {
             "type": "portmanteau",
-            "operations": ["list_networks", "create_network", "remove_network", "list_adapters", "configure_adapter"],
+            "operations": sorted(list(NETWORK_ACTIONS.keys())),
             "description": "Network configuration",
         },
         "snapshot_management": {
             "type": "portmanteau",
-            "operations": ["list", "create", "restore", "delete"],
+            "operations": sorted(list(SNAPSHOT_ACTIONS.keys())),
             "description": "Snapshot management",
         },
         "storage_management": {
             "type": "portmanteau",
-            "operations": ["list_controllers", "create_controller", "remove_controller", "list_disks", "create_disk", "attach_disk"],
+            "operations": sorted(list(STORAGE_ACTIONS.keys())),
             "description": "Storage management",
         },
         "system_management": {
             "type": "portmanteau",
-            "operations": ["host_info", "vbox_version", "ostypes", "metrics", "screenshot"],
+            "operations": sorted(list(SYSTEM_ACTIONS.keys())),
             "description": "System information",
+        },
+        "info_tools": {
+            "type": "portmanteau",
+            "operations": sorted(list(INFO_ACTIONS.keys())),
+            "description": "Runtime tool discovery and help surface",
         },
         "hyperv_management": {
             "type": "portmanteau",
@@ -258,7 +275,7 @@ async def _handle_help() -> dict[str, Any]:
                 "storage_management", "system_management", "hyperv_management (Windows)"
             ],
             "documentation": "See docs/ directory for comprehensive guides",
-            "quick_start": "Set TOOL_MODE=production (default) or TOOL_MODE=testing",
+            "quick_start": f"Current TOOL_MODE={settings.TOOL_MODE}. Use production for clean UI or testing/all for legacy individual tools.",
         }
     }
 

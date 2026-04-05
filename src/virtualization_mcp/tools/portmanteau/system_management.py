@@ -13,6 +13,8 @@ from fastmcp import FastMCP
 # Import existing system tools
 from virtualization_mcp.tools.system.system_tools import (
     get_system_info,
+    get_vm_metrics,
+    take_vm_screenshot,
     get_vbox_version,
     list_ostypes,
 )
@@ -35,7 +37,10 @@ def register_system_management_tool(mcp: FastMCP) -> None:
     @mcp.tool()
     async def system_management(
         action: Literal["host_info", "vbox_version", "ostypes", "metrics", "screenshot"],
-        vm_name: str | None = None
+        vm_name: str | None = None,
+        output_file: str | None = None,
+        width: int | None = None,
+        height: int | None = None,
     ) -> dict[str, Any]:
         """
         Comprehensive system management portmanteau tool.
@@ -52,6 +57,9 @@ def register_system_management_tool(mcp: FastMCP) -> None:
                 - "screenshot": Take a screenshot of a running VM (requires: vm_name)
 
             vm_name: Name of the virtual machine (required only for metrics and screenshot actions)
+            output_file: Optional screenshot output path for action="screenshot"
+            width: Optional screenshot width for action="screenshot"
+            height: Optional screenshot height for action="screenshot"
 
         Returns:
             Dict containing:
@@ -108,7 +116,9 @@ def register_system_management_tool(mcp: FastMCP) -> None:
                 return await _handle_metrics(vm_name=vm_name)
 
             elif action == "screenshot":
-                return await _handle_screenshot(vm_name=vm_name)
+                return await _handle_screenshot(
+                    vm_name=vm_name, output_file=output_file, width=width, height=height
+                )
 
             else:
                 return {
@@ -181,19 +191,13 @@ async def _handle_metrics(vm_name: str | None = None) -> dict[str, Any]:
         }
 
     try:
-        # This would need to be implemented in the system tools
-        # For now, return a placeholder
-        result = {
+        result = await get_vm_metrics(vm_name=vm_name)
+        return {
+            "success": isinstance(result, dict) and result.get("status") == "success",
+            "action": "metrics",
             "vm_name": vm_name,
-            "cpu_usage_percent": 25.5,
-            "memory_usage_mb": 2048,
-            "disk_io_read_mb": 1024,
-            "disk_io_write_mb": 512,
-            "network_rx_mb": 256,
-            "network_tx_mb": 128,
-            "uptime_seconds": 3600,
+            "data": result,
         }
-        return {"success": True, "action": "metrics", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
             "success": False,
@@ -203,7 +207,12 @@ async def _handle_metrics(vm_name: str | None = None) -> dict[str, Any]:
         }
 
 
-async def _handle_screenshot(vm_name: str | None = None) -> dict[str, Any]:
+async def _handle_screenshot(
+    vm_name: str | None = None,
+    output_file: str | None = None,
+    width: int | None = None,
+    height: int | None = None,
+) -> dict[str, Any]:
     """Handle screenshot action."""
     if not vm_name:
         return {
@@ -213,15 +222,15 @@ async def _handle_screenshot(vm_name: str | None = None) -> dict[str, Any]:
         }
 
     try:
-        # This would need to be implemented in the system tools
-        # For now, return a placeholder
-        result = {
+        result = await take_vm_screenshot(
+            vm_name=vm_name, output_file=output_file, width=width, height=height
+        )
+        return {
+            "success": isinstance(result, dict) and result.get("status") == "success",
+            "action": "screenshot",
             "vm_name": vm_name,
-            "screenshot_taken": True,
-            "screenshot_path": f"/tmp/{vm_name}_screenshot.png",
-            "timestamp": "2024-01-01T12:00:00Z",
+            "data": result,
         }
-        return {"success": True, "action": "screenshot", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
             "success": False,

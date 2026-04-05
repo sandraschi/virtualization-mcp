@@ -2,7 +2,7 @@
 
 **v1.1.0 - Multi-provider virtualization management (VirtualBox & Hyper-V) with advanced lifecycle controls**
 
-> **✅ Production Ready**: Full-featured VirtualBox management through Claude Desktop with 60+ operations organized in 5 intuitive tools!
+> ** Production Ready**: Full-featured VirtualBox management through Claude Desktop with 60+ operations organized in 5 intuitive tools!
 
 [![FastMCP](https://img.shields.io/badge/FastMCP-3.1+-blue)](https://github.com/PrefectHQ/fastmcp)
 [![Python](https://img.shields.io/badge/Python-3.10+-green)](https://python.org)
@@ -14,28 +14,28 @@
 
 ---
 
-## 🚀 What is virtualization-mcp?
+##  What is virtualization-mcp?
 
 virtualization-mcp is a professional Model Context Protocol (MCP) server that brings comprehensive VirtualBox management directly to Claude Desktop. Manage virtual machines using natural language - create, start, stop, snapshot, configure networking, and more!
 
 ### Pair with pywinauto-mcp (desktop automation)
 
-**Windows Sandbox** in this server **provisions** a disposable desktop; it does **not** replace **UI automation**. For fleet **safety**, new users who run **pywinauto-mcp** should **also** enable **virtualization-mcp** when they need Sandbox/VM workflows, and run **automation inside the guest** — see **pywinauto-mcp** `docs/SAFETY.md` and **mcp-central-docs** `patterns/PYWINAUTO_MCP_SAFETY.md`.
+**Windows Sandbox** in this server **provisions** a disposable desktop; it does **not** replace **UI automation**. For fleet **safety**, new users who run **pywinauto-mcp** should **also** enable **virtualization-mcp** when they need Sandbox/VM workflows, and run **automation inside the guest**  see **pywinauto-mcp** `docs/SAFETY.md` and **mcp-central-docs** `patterns/PYWINAUTO_MCP_SAFETY.md`.
 
-### ✨ Key Highlights
+###  Key Highlights
 
-- **🎯 5 Portmanteau Tools** - Clean, organized interface with 60+ operations
-- **🔄 Switchable Modes** - Production (5 tools) or Testing (60+ tools)
-- **📖 100% Documented** - Comprehensive docstrings for every operation
-- **🧪 499 Passing Tests** - Robust test suite with 82.5% success rate
-- **📦 296 KB MCPB** - Optimized package, no bundled dependencies
-- **🎨 8 AI Prompts** - 25+ KB of guidance templates
-- **⚡ FastMCP 3.1+** - Prompts and skills (virtualization_expert)
-- **🌍 Cross-Platform** - Windows, macOS, Linux support
+- ** 5 Portmanteau Tools** - Clean, organized interface with 60+ operations
+- ** Switchable Modes** - Production (5 tools) or Testing (60+ tools)
+- ** 100% Documented** - Comprehensive docstrings for every operation
+- ** 499 Passing Tests** - Robust test suite with 82.5% success rate
+- ** 296 KB MCPB** - Optimized package, no bundled dependencies
+- ** 8 AI Prompts** - 25+ KB of guidance templates
+- ** FastMCP 3.1+** - Prompts and skills (virtualization_expert)
+- ** Cross-Platform** - Windows, macOS, Linux support
 
 ### Prompts and skills (FastMCP 3.1)
 
-- **Prompt**: `virtualization_expert` — optional `focus` (general, lifecycle, storage, network). Clients can request this prompt to load instructions so the LLM acts as a virtualization expert using this server's tools.
+- **Prompt**: `virtualization_expert`  optional `focus` (general, lifecycle, storage, network). Clients can request this prompt to load instructions so the LLM acts as a virtualization expert using this server's tools.
 - **Skill**: Bundled `virtualization-expert` skill in `src/virtualization_mcp/skills/virtualization-expert/SKILL.md`, exposed via `skill://virtualization-expert/SKILL.md` for clients that support MCP resources.
 - **Webapp**: The dashboard includes a **Prompts & Skills** page (sidebar) that lists prompts and skills and displays skill markdown; backend serves `GET /api/v1/prompts`, `GET /api/v1/skills`, `GET /api/v1/skills/{id}`.
 
@@ -43,35 +43,35 @@ virtualization-mcp is a professional Model Context Protocol (MCP) server that br
 
 - **Frontend**: Port **10700** (Vite). **Backend**: Port **10701** (FastAPI). Run `.\webapp\start.ps1` from repo root.
 - **Pages**: Dashboard, VirtualBox, Windows Sandbox, Tools Console, Apps Hub, **Prompts & Skills**, AI Chat, Help, Settings.
-- **Windows Sandbox – Full dev setup**: Automated dev stack in Sandbox (winget → Python, Node, uv, Git, Just, VS Code, Notepad++, optional Windsurf/Cursor/Antigravity/Claude Desktop/OpenClaw/OpenFang/RoboFang). **AIRGAP** (no network), optional **host Ollama**. Uses repo **assets/sandbox** for installers; “Use repo assets” pre-fills the path.
-- **VirtualBox – Assets reuse**: Create New VM and Attach ISO use repo **assets/vbox** (ISOs, OVA). Win 11 Pro template; create once from ISO, export to OVA, then import for ready-to-use VM. See [assets/README.md](assets/README.md).
+- **Windows Sandbox  Full dev setup**: Automated dev stack in Sandbox (winget  Python, Node, uv, Git, Just, VS Code, Notepad++, optional Windsurf/Cursor/Antigravity/Claude Desktop/OpenClaw/OpenFang/RoboFang). **AIRGAP** (no network), optional **host Ollama**. Uses repo **assets/sandbox** for installers; Use repo assets pre-fills the path.
+- **VirtualBox  Assets reuse**: Create New VM and Attach ISO use repo **assets/vbox** (ISOs, OVA). Win 11 Pro template; create once from ISO, export to OVA, then import for ready-to-use VM. See [assets/README.md](assets/README.md).
 - **API base**: Configured in `webapp/frontend/src/api/config.ts`; override with `VITE_API_URL` if needed.
 
 ### Assets (reuse folders)
 
-- **`assets/sandbox/`** – Windows Sandbox full-dev: place `DesktopAppInstaller_Dependencies.zip` and `Microsoft.DesktopAppInstaller_*.msixbundle` (from [winget-cli Releases](https://github.com/microsoft/winget-cli/releases)); webapp uses this path for Full dev setup.
-- **`assets/vbox/`** – VirtualBox: place ISOs and OVA/OVF here; webapp Create VM and Attach ISO list and use these files. See [assets/README.md](assets/README.md) and [assets/vbox/README.md](assets/vbox/README.md) (incl. Win 11 Pro VM asset).
+- **`assets/sandbox/`**  Windows Sandbox full-dev: place `DesktopAppInstaller_Dependencies.zip` and `Microsoft.DesktopAppInstaller_*.msixbundle` (from [winget-cli Releases](https://github.com/microsoft/winget-cli/releases)); webapp uses this path for Full dev setup.
+- **`assets/vbox/`**  VirtualBox: place ISOs and OVA/OVF here; webapp Create VM and Attach ISO list and use these files. See [assets/README.md](assets/README.md) and [assets/vbox/README.md](assets/vbox/README.md) (incl. Win 11 Pro VM asset).
 
 ### Configuration (environment)
 
-- **`VIRTUALIZATION_MCP_PORT`** — Port for MCP HTTP/SSE transport when the server is run with HTTP (default: **10702**, in SOTA range 10700–10800). Stdio (Claude Desktop) does not use this.
-- **`TOOL_MODE`** — `production` (default) or `testing`; see [Tool Mode Configuration](docs/mcp-technical/TOOL_MODE_CONFIGURATION.md).
+- **`VIRTUALIZATION_MCP_PORT`**  Port for MCP HTTP/SSE transport when the server is run with HTTP (default: **10702**, in SOTA range 1070010800). Stdio (Claude Desktop) does not use this.
+- **`TOOL_MODE`**  `production` (default) or `testing`; see [Tool Mode Configuration](docs/mcp-technical/TOOL_MODE_CONFIGURATION.md).
 
 ---
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx virtualization-mcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -89,7 +89,7 @@ Add to your `claude_desktop_config.json`:
 
 2. **Install in Claude Desktop:**
    - Open Claude Desktop
-   - Go to Settings → Extensions
+   - Go to Settings  Extensions
    - Drag and drop the `.mcpb` file
    - Restart Claude Desktop
 
@@ -123,7 +123,7 @@ uv sync --dev
 
 ---
 
-## 🎯 Features
+##  Features
 
 ### VM Lifecycle Management
 - Create VMs from templates or custom configurations
@@ -161,11 +161,11 @@ uv sync --dev
 
 ---
 
-## 🛠️ Tool Modes
+##  Tool Modes
 
 ### Production Mode (Default) - 6-7 Tools
 
-Clean, organized interface perfect for daily use:
+Clean, organized interface  for daily use:
 
 1. **vm_management** - Complete VM lifecycle (10 operations)
 2. **network_management** - Network configuration (5 operations)
@@ -196,7 +196,7 @@ See [Tool Mode Configuration](docs/mcp-technical/TOOL_MODE_CONFIGURATION.md) for
 
 ---
 
-## 💡 Usage Examples
+##  Usage Examples
 
 ### Basic VM Management
 
@@ -241,7 +241,7 @@ Claude: Uses network_management(action="create_network",
 
 ---
 
-## 📖 Documentation
+##  Documentation
 
 ### Quick Start
 - [Quick Start Guide](docs/QUICK_START.md) - Get started in 5 minutes
@@ -265,14 +265,14 @@ Claude: Uses network_management(action="create_network",
 
 ---
 
-## 🎨 AI Prompt Templates
+##  AI Prompt Templates
 
 8 comprehensive templates included (25+ KB total):
 
 - **backup-strategies.md** - Backup and disaster recovery patterns
 - **complete-scenarios.md** - Full deployment scenarios
 - **network-configuration.md** - Network setup guides
-- **security-best-practices.md** - Security hardening
+- **security--practices.md** - Security hardening
 - **snapshot-management.md** - Snapshot strategies
 - **storage-optimization.md** - Storage configuration
 - **vm-deployment-strategies.md** - Deployment patterns (345 lines!)
@@ -280,7 +280,7 @@ Claude: Uses network_management(action="create_network",
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ### Built With:
 - **FastMCP 3.1+** - Prompts, skills, Context, progress reporting, optional LLM sampling in tools
@@ -298,7 +298,7 @@ Claude: Uses network_management(action="create_network",
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Run Tests:
 From a **clone** of this repo at the **repository root** (see [Development Setup](#development-setup) below if you have not cloned yet):
@@ -317,12 +317,12 @@ uv run pytest --cov=virtualization_mcp --cov-report=term-missing
 ### Test Statistics:
 - **Total Tests:** 605
 - **Passing:** 499 (82.5%)
-- **Coverage:** 39% → Target: 80% (GLAMA Gold Standard)
+- **Coverage:** 39%  Target: 80% (GLAMA Gold Standard)
 - **Integration Tests:** VBox-aware (mocked when unavailable)
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 ### Basic Setup (Claude Desktop):
 
@@ -358,7 +358,7 @@ See `.env.example` for all available settings:
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! Please see:
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
@@ -384,20 +384,20 @@ uv run ruff check .
 
 ---
 
-## 📊 Project Status
+##  Project Status
 
-- ✅ **Production Ready** - v1.0.1b2 released
-- ✅ **Quality** - 0 linting errors, 499 tests passing
-- ✅ **Documentation** - 100% docstring coverage
-- ✅ **MCPB Packaged** - Optimized for Claude Desktop
-- ✅ **FastMCP Compliant** - Version 2.12.4
-- ✅ **Clean Repository** - Professional organization
+-  **Production Ready** - v1.0.1b2 released
+-  **Quality** - 0 linting errors, 499 tests passing
+-  **Documentation** - 100% docstring coverage
+-  **MCPB Packaged** - Optimized for Claude Desktop
+-  **FastMCP Compliant** - Version 2.12.4
+-  **Clean Repository** - Professional organization
 
 See [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) for complete details.
 
 ---
 
-## 🚀 Roadmap & Extensions
+##  Roadmap & Extensions
 
 ### **Coming Soon**
 - **VM Templates**: Pre-built configurations for Ubuntu, Windows, macOS
@@ -412,16 +412,16 @@ See [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) for complete de
 - **Interactive CLI**: Direct command-line interface
 
 ### **Quick Wins**
-- ✅ Progress tracking for long operations
-- ✅ Health check endpoints
-- ✅ Configuration validation tools
-- ✅ Operation history and audit logging
+-  Progress tracking for long operations
+-  Health check endpoints
+-  Configuration validation tools
+-  Operation history and audit logging
 
 *See [Extensions & Improvements Guide](docs/planning/EXTENSIONS_AND_IMPROVEMENTS.md) for detailed roadmap.*
 
 ---
 
-## 🔗 Links
+##  Links
 
 - **Repository:** https://github.com/sandraschi/virtualization-mcp
 - **Releases:** https://github.com/sandraschi/virtualization-mcp/releases
@@ -430,7 +430,7 @@ See [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) for complete de
 
 ---
 
-## 📧 Contact
+##  Contact
 
 **Author:** Sandra Schi  
 **Email:** sandraschipal@protonmail.com  
@@ -438,23 +438,23 @@ See [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) for complete de
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🎉 Quick Start
+##  Quick Start
 
 1. Download `.mcpb` from releases
 2. Drop into Claude Desktop
 3. Ask: **"What can you do with VirtualBox?"**
 4. Start managing VMs with natural language!
 
-**Manage VirtualBox VMs effortlessly through Claude Desktop!** 🚀
+**Manage VirtualBox VMs effortlessly through Claude Desktop!** 
 
 
-## 🌐 Webapp Dashboard
+##  Webapp Dashboard
 
 This MCP server includes a free, premium web interface for monitoring and control.
 By default, the web dashboard runs on port **10700**.

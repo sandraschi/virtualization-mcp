@@ -9,6 +9,8 @@ import asyncio
 import logging
 import platform
 import subprocess
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -261,6 +263,75 @@ async def get_vbox_version() -> dict[str, Any]:
         Dictionary containing VirtualBox version information
     """
     return await _get_vbox_version()
+
+
+async def get_vm_metrics(vm_name: str) -> dict[str, Any]:
+    """
+    Read live VM metrics using VBoxManage metrics query.
+
+    Args:
+        vm_name: Name or UUID of a running VM
+
+    Returns:
+        Dictionary with parsed metric samples where available.
+    """
+    try:
+        setup_cmd = ["VBoxManage", "metrics", "setup", vm_name, "CPU/Load,*,RAM/Usage,Net/*", "--period", "1", "--samples", "1"]
+        await asyncio.to_thread(subprocess.run, setup_cmd, capture_output=True, text=True, check=True)
+
+        query_cmd = ["VBoxManage", "metrics", "query", vm_name]
+        result = await asyncio.to_thread(
+            subprocess.run, query_cmd, capture_output=True, text=True, check=True
+        )
+
+        metrics: list[dict[str, Any]] = []
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line or line.startswith("Object"):
+                continue
+            # Typical format: "<vm>: CPU/Load/User: 2.00%"
+            if ":" not in line:
+                continue
+            left, value = line.rsplit(":", 1)
+            metric_name = left.split(":", 1)[1].strip() if ":" in left else left.strip()
+            metrics.append({"name": metric_name, "value": value.strip()})
+
+        return {"status": "success", "vm_name": vm_name, "metrics": metrics}
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error getting VM metrics for {vm_name}: {e}")
+        return {"status": "error", "message": f"Failed to get VM metrics: {e.stderr}"}
+
+
+async def take_vm_screenshot(
+    vm_name: str, output_file: str | None = None, width: int | None = None, height: int | None = None
+) -> dict[str, Any]:
+    """
+    Capture a PNG screenshot from a running VM.
+
+    Args:
+        vm_name: Name or UUID of the VM
+        output_file: Optional target path (.png). If omitted, a timestamped file is created.
+        width: Optional width
+        height: Optional height
+
+    Returns:
+        Dictionary with screenshot file path.
+    """
+    try:
+        target = Path(output_file) if output_file else Path.cwd() / f"{vm_name}_screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        cmd = ["VBoxManage", "controlvm", vm_name, "screenshotpng", str(target)]
+        if width is not None and height is not None:
+            cmd.extend(["--width", str(width), "--height", str(height)])
+
+        await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
+        return {"status": "success", "vm_name": vm_name, "screenshot_path": str(target)}
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error taking screenshot for {vm_name}: {e}")
+        return {"status": "error", "message": f"Failed to capture VM screenshot: {e.stderr}"}
 
 
 # Helper functions

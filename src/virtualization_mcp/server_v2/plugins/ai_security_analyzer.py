@@ -168,9 +168,6 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                 )
 
             try:
-                # In a real implementation, we would analyze the PCAP data
-                # For now, we'll simulate analysis with AI
-
                 # Prepare the prompt for the AI
                 prompt = (
                     "Analyze this network behavior and identify any security concerns. "
@@ -184,10 +181,13 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                     '{\n                      "analysis": "Overall analysis summary",\n                      "findings": [\n                        {\n                          "title": "Finding title",\n                          "description": "Detailed description",\n                          "threat_level": "low/medium/high/critical",\n                          "recommendations": ["Recommendation 1", "Recommendation 2"]\n                        }\n                      ],\n                      "summary": {\n                        "total_findings": 0,\n                        "critical": 0,\n                        "high": 0,\n                        "medium": 0,\n                        "low": 0\n                      }\n                    }'
                 )
 
-                # Call the AI (in a real implementation, this would use the actual PCAP data)
-                analysis = await self._call_ai(prompt)
-
-                return {"status": "completed", "vm_name": vm_name, "analysis": analysis}
+                raise HTTPException(
+                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                    detail=(
+                        "AI network behavior analysis is under construction. "
+                        "No findings are returned from this endpoint yet."
+                    ),
+                )
 
             except Exception as e:
                 logger.error(f"Error analyzing network behavior: {str(e)}", exc_info=True)
@@ -237,39 +237,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
         # 5. Analyze network traffic
         # 6. Check for suspicious files
 
-        # Simulate scanning
-        for vm_name in vm_names:
-            # Simulate some findings
-            findings = [
-                {
-                    "id": "outdated_software_123",
-                    "title": "Outdated Software Detected",
-                    "description": f"VM '{vm_name}' is running outdated software with known vulnerabilities.",
-                    "threat_level": "high",
-                    "category": "software",
-                    "remediation": "Update all software to the latest versions.",
-                    "references": ["https://example.com/cve-2023-1234"],
-                    "affected_resources": [f"vm:{vm_name}"],
-                },
-                {
-                    "id": "weak_password_policy",
-                    "title": "Weak Password Policy",
-                    "description": f"VM '{vm_name}' has a weak password policy.",
-                    "threat_level": "medium",
-                    "category": "authentication",
-                    "remediation": "Enforce a strong password policy.",
-                    "references": ["https://example.com/password-best-practices"],
-                    "affected_resources": [f"vm:{vm_name}"],
-                },
-            ]
-
-            # Add findings to the report
-            for finding_data in findings:
-                finding = SecurityFinding(**finding_data)
-                report.add_finding(finding)
-
-            # Save progress
-            self._save_report(report)
+        raise RuntimeError("full security scan is under construction")
 
     async def _run_network_scan(self, report: SecurityReport, vm_names: list[str]) -> None:
         """Run a network security scan on the specified VMs."""
@@ -279,39 +247,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
         # 3. Check for open ports and services
         # 4. Look for data exfiltration attempts
 
-        # Simulate network scanning
-        for vm_name in vm_names:
-            # Simulate some findings
-            findings = [
-                {
-                    "id": "open_port_22",
-                    "title": "SSH Port Open to Internet",
-                    "description": f"VM '{vm_name}' has port 22 (SSH) open to the internet.",
-                    "threat_level": "high",
-                    "category": "network",
-                    "remediation": "Restrict SSH access to trusted IP addresses only.",
-                    "references": ["https://example.com/ssh-security"],
-                    "affected_resources": [f"vm:{vm_name}"],
-                },
-                {
-                    "id": "suspicious_dns_queries",
-                    "title": "Suspicious DNS Queries",
-                    "description": f"VM '{vm_name}' is making DNS queries to known malicious domains.",
-                    "threat_level": "critical",
-                    "category": "network",
-                    "remediation": "Investigate the source of these DNS queries and block the malicious domains.",
-                    "references": ["https://example.com/malicious-domains"],
-                    "affected_resources": [f"vm:{vm_name}"],
-                },
-            ]
-
-            # Add findings to the report
-            for finding_data in findings:
-                finding = SecurityFinding(**finding_data)
-                report.add_finding(finding)
-
-            # Save progress
-            self._save_report(report)
+        raise RuntimeError("network security scan is under construction")
 
     async def _run_malware_scan(self, report: SecurityReport, vm_names: list[str]) -> None:
         """Run a malware scan on the specified VMs."""
@@ -321,29 +257,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
         # 3. Check for persistence mechanisms
         # 4. Look for signs of compromise
 
-        # Simulate malware scanning
-        for vm_name in vm_names:
-            # Simulate some findings
-            findings = [
-                {
-                    "id": "suspicious_file_123",
-                    "title": "Suspicious File Detected",
-                    "description": f"A suspicious file was found on VM '{vm_name}'.",
-                    "threat_level": "high",
-                    "category": "malware",
-                    "remediation": "Quarantine and analyze the suspicious file.",
-                    "references": ["https://example.com/malware-analysis"],
-                    "affected_resources": [f"vm:{vm_name}:/path/to/suspicious/file"],
-                }
-            ]
-
-            # Add findings to the report
-            for finding_data in findings:
-                finding = SecurityFinding(**finding_data)
-                report.add_finding(finding)
-
-            # Save progress
-            self._save_report(report)
+        raise RuntimeError("malware scan is under construction")
 
     async def _run_config_scan(self, report: SecurityReport, vm_names: list[str]) -> None:
         """Run a configuration scan on the specified VMs."""
@@ -353,70 +267,11 @@ class AISecurityAnalyzerPlugin(BasePlugin):
         # 3. Check for unnecessary services
         # 4. Verify security settings
 
-        # Simulate configuration scanning
-        for vm_name in vm_names:
-            # Simulate some findings
-            findings = [
-                {
-                    "id": "default_credentials",
-                    "title": "Default Credentials in Use",
-                    "description": f"VM '{vm_name}' is using default credentials.",
-                    "threat_level": "critical",
-                    "category": "authentication",
-                    "remediation": "Change all default credentials immediately.",
-                    "references": ["https://example.com/change-default-passwords"],
-                    "affected_resources": [f"vm:{vm_name}"],
-                },
-                {
-                    "id": "unnecessary_services",
-                    "title": "Unnecessary Services Running",
-                    "description": f"VM '{vm_name}' has unnecessary services running.",
-                    "threat_level": "medium",
-                    "category": "configuration",
-                    "remediation": "Disable or remove unnecessary services.",
-                    "references": ["https://example.com/hardening-guide"],
-                    "affected_resources": [f"vm:{vm_name}"],
-                },
-            ]
-
-            # Add findings to the report
-            for finding_data in findings:
-                finding = SecurityFinding(**finding_data)
-                report.add_finding(finding)
-
-            # Save progress
-            self._save_report(report)
+        raise RuntimeError("configuration scan is under construction")
 
     async def _call_ai(self, prompt: str) -> dict[str, Any]:
         """Call the AI to analyze data."""
-        # In a real implementation, this would call an AI API like OpenAI
-        # For now, we'll return a mock response
-        return {
-            "analysis": "The network behavior shows several suspicious patterns that may indicate a security issue.",
-            "findings": [
-                {
-                    "title": "Suspicious Outbound Connection",
-                    "description": "The VM is making outbound connections to a known malicious IP address.",
-                    "threat_level": "high",
-                    "recommendations": [
-                        "Block the malicious IP address at the firewall.",
-                        "Investigate the source of the connection.",
-                        "Scan the VM for malware.",
-                    ],
-                },
-                {
-                    "title": "Unusual DNS Queries",
-                    "description": "The VM is making DNS queries to domains associated with command and control servers.",
-                    "threat_level": "critical",
-                    "recommendations": [
-                        "Block the malicious domains at the DNS level.",
-                        "Investigate the source of the DNS queries.",
-                        "Consider isolating the VM from the network.",
-                    ],
-                },
-            ],
-            "summary": {"total_findings": 2, "critical": 1, "high": 1, "medium": 0, "low": 0},
-        }
+        raise RuntimeError("AI model integration is under construction")
 
     def _save_report(self, report: SecurityReport) -> None:
         """Save a report to disk."""

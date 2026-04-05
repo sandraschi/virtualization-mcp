@@ -97,9 +97,17 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-8 pb-8">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-                <p className="text-muted-foreground mt-1">Real-time overview of your virtualization environment</p>
+            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/15 via-card/60 to-card/20 p-6 md:p-8">
+                <p className="text-xs uppercase tracking-widest text-primary font-semibold">Virtualization Control Center</p>
+                <h2 className="text-3xl md:text-4xl font-black tracking-tight mt-2">Run VMs with confidence.</h2>
+                <p className="text-muted-foreground mt-3 max-w-3xl">
+                    Quick, plain-language status for your host and virtual machines. If anything looks off, open Help for step-by-step troubleshooting.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span className="rounded-full border border-border px-3 py-1">Live refresh every 5s</span>
+                    <span className="rounded-full border border-border px-3 py-1">CPU + memory trend</span>
+                    <span className="rounded-full border border-border px-3 py-1">Disk usage snapshot</span>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -122,7 +130,7 @@ export default function Dashboard() {
                 <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm">
                     <h3 className="font-semibold mb-6 flex items-center gap-2">
                         <Activity className="w-4 h-4 text-primary" />
-                        System Resources (Last 2 Minutes)
+                        System Resources (Last ~2 Minutes)
                     </h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -154,7 +162,7 @@ export default function Dashboard() {
                 <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm">
                     <h3 className="font-semibold mb-6 flex items-center gap-2">
                         <HardDrive className="w-4 h-4 text-primary" />
-                        Storage Distribution
+                        Disk Usage (Current)
                     </h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">

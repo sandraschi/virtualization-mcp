@@ -245,18 +245,12 @@ class HyperVManagerPlugin(BasePlugin):
 
             async def _import_task() -> dict[str, Any]:
                 try:
-                    # In a real implementation, this would use Hyper-V's import functionality
-                    # For now, we'll simulate the import
-                    await asyncio.sleep(5)  # Simulate import time
-
-                    # Add the new VM to our list
-                    await self._refresh_vm_list()
-
                     return {
-                        "status": "completed",
+                        "status": "error",
+                        "error_type": "not_implemented",
                         "vm_name": name,
                         "import_path": import_path,
-                        "message": f"Successfully imported VM '{name}'",
+                        "message": "Hyper-V import workflow is under construction.",
                     }
                 except Exception as e:
                     logger.error(f"Error importing VM: {str(e)}", exc_info=True)
@@ -351,21 +345,12 @@ class HyperVManagerPlugin(BasePlugin):
 
         async def _action_task() -> dict[str, Any]:
             try:
-                # In a real implementation, this would use Hyper-V's API
-                # For now, we'll simulate the action
-                logger.info(f"Executing action '{action}' on VM '{vm_name}' with args: {kwargs}")
-
-                # Simulate action taking some time
-                await asyncio.sleep(2)
-
-                # Update VM state
-                await self._refresh_vm_list()
-
                 return {
-                    "status": "completed",
+                    "status": "error",
+                    "error_type": "not_implemented",
                     "action": action,
                     "vm_name": vm_name,
-                    "message": f"Successfully executed '{action}' on VM '{vm_name}'",
+                    "message": "Hyper-V action execution is under construction.",
                     "timestamp": datetime.utcnow().isoformat(),
                 }
             except Exception as e:
@@ -395,53 +380,11 @@ class HyperVManagerPlugin(BasePlugin):
 
     async def _refresh_vm_list(self) -> None:
         """Refresh the list of virtual machines from Hyper-V."""
-        # In a real implementation, this would query Hyper-V for the list of VMs
-        # For now, we'll return a static list for demonstration
-
-        # This is a placeholder - in a real implementation, you would:
-        # 1. Query Hyper-V for the list of VMs
-        # 2. For each VM, get its details (state, configuration, etc.)
-        # 3. Update self.virtual_machines with the current state
-
-        # Example VM (simulated)
-        if not self.virtual_machines:
-            self.virtual_machines["TestVM"] = VirtualMachine(
-                name="TestVM",
-                id="00000000-0000-0000-0000-000000000000",
-                state=VMState.OFF,
-                status="Operating normally",
-                path="C:\\VMs\\TestVM",
-                creation_time=datetime.utcnow(),
-                size=VMSize(),
-            )
+        self.virtual_machines = {}
 
     async def _refresh_switches(self) -> None:
         """Refresh the list of virtual switches from Hyper-V."""
-        # In a real implementation, this would query Hyper-V for the list of switches
-        # For now, we'll return a static list for demonstration
-        if not self.virtual_switches:
-            self.virtual_switches = [
-                {
-                    "name": "Default Switch",
-                    "id": "00000000-0000-0000-0000-000000000001",
-                    "type": "Internal",
-                    "net_adapter_interface_description": "Hyper-V Virtual Ethernet Adapter",
-                    "iov_enabled": True,
-                    "iov_queue_pairs_requested": 16,
-                    "iov_interrupt_moderation": "Off",
-                    "iov_weight": 100,
-                    "bandwidth_reservation_mode": "Default",
-                    "default_flow_minimum_bandwidth_absolute": 0,
-                    "default_flow_minimum_bandwidth_weight": 0,
-                    "default_queue_vmmq_enabled": False,
-                    "default_queue_vmmq_queue_pairs": 16,
-                    "default_queue_vrss_enabled": True,
-                    "default_queue_vrss_min_queue_pairs": 1,
-                    "default_queue_vrss_max_queue_pairs": 16,
-                    "default_queue_vrss_queue_scheduling_interval": 100,
-                    "default_queue_vrss_independent_host_spreading": False,
-                }
-            ]
+        self.virtual_switches = []
 
     async def _broadcast_event(self, event_type: str, data: dict[str, Any]) -> None:
         """Broadcast an event to all connected WebSocket clients."""
@@ -462,34 +405,7 @@ class HyperVManagerPlugin(BasePlugin):
         """Monitor Hyper-V host and VM performance."""
         while True:
             try:
-                # In a real implementation, this would collect performance counters
-                # For now, we'll simulate some metrics
-                metrics = {
-                    "cpu_usage": 25.5,  # %
-                    "memory_usage": 60.2,  # %
-                    "network_in": 1024 * 1024,  # bytes/s
-                    "network_out": 512 * 1024,  # bytes/s
-                    "disk_read": 5 * 1024 * 1024,  # bytes/s
-                    "disk_write": 2 * 1024 * 1024,  # bytes/s
-                }
-
-                # Update metrics history
-                timestamp = datetime.utcnow().isoformat()
-                for key, value in metrics.items():
-                    if key not in self.performance_metrics:
-                        self.performance_metrics[key] = []
-
-                    self.performance_metrics[key].append({"timestamp": timestamp, "value": value})
-
-                    # Keep only the last 1000 data points
-                    if len(self.performance_metrics[key]) > 1000:
-                        self.performance_metrics[key].pop(0)
-
-                # Broadcast performance update
-                await self._broadcast_event("performance_update", metrics)
-
-                # Wait for the next update
-                await asyncio.sleep(5)
+                await asyncio.sleep(30)
 
             except asyncio.CancelledError:
                 break

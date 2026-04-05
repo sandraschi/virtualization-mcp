@@ -100,6 +100,8 @@ class Settings(BaseSettings):
     # - "production": Only portmanteau tools (5 tools, cleaner for users)
     # - "testing" or "all": All individual tools + portmanteau (60+ tools)
     TOOL_MODE: str = "production"
+    # When TOOL_MODE is testing/all, set True to register non-domain demo tools (greet, get_counter, analyze_file)
+    INCLUDE_EXAMPLE_TOOLS: bool = False
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod

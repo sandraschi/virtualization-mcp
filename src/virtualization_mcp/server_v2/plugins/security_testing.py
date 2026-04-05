@@ -278,16 +278,12 @@ class SecurityTestingPlugin(BasePlugin):
     async def _get_vm_info(self, vm_name: str) -> dict[str, Any]:
         """Get information about a VM.
 
-        This is a placeholder method that should be implemented to get VM information
-        from the virtualization platform.
+        VM info retrieval from server_v2 plugin is under construction.
         """
-        # TODO: Implement actual VM info retrieval
-        return {
-            "id": "vm-123",
-            "name": vm_name,
-            "status": "running",
-            "ip_addresses": ["192.168.1.100"],
-            "os": "Linux",
-            "memory_mb": 4096,
-            "cpu_count": 2,
-        }
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=(
+                "security_testing plugin VM introspection is under construction. "
+                "Use core VM APIs for authoritative VM details."
+            ),
+        )

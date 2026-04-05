@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Share2, ExternalLink, ShieldCheck, Zap, Activity, Book, Cpu, Home, Globe, MessageSquare, Terminal } from 'lucide-react';
+import { Share2, ExternalLink, Zap, Activity, Book, Cpu, Home, Globe, MessageSquare, Terminal } from 'lucide-react';
 import { API_BASE } from '../api/config';
 
 interface FleetApp {
@@ -21,15 +21,6 @@ const getIconForApp = (app: FleetApp) => {
     if (tags.includes('transit')) return Globe;
     if (tags.includes('terminal')) return Terminal;
     return Zap;
-};
-
-const getColorForApp = (app: FleetApp) => {
-    const tags = app.tags || [];
-    if (tags.includes('infra')) return "blue";
-    if (tags.includes('media')) return "orange";
-    if (tags.includes('ai')) return "blue";
-    if (tags.includes('books')) return "purple";
-    return "blue";
 };
 
 export default function Apps() {
@@ -89,7 +80,6 @@ export default function Apps() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {apps.map((app) => {
                         const Icon = getIconForApp(app);
-                        const color = getColorForApp(app);
                         return (
                             <a
                                 key={app.id || app.label}

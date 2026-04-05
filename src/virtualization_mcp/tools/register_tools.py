@@ -8,6 +8,8 @@ import logging
 
 from fastmcp import FastMCP
 
+from virtualization_mcp.config import settings
+
 # Import backup tools
 from virtualization_mcp.tools.backup.backup_tools import (
     create_backup_legacy,
@@ -116,10 +118,12 @@ def _register_individual_tools(mcp: FastMCP) -> None:
     mcp.tool(get_vbox_version)
     mcp.tool(list_ostypes)
 
-    # Example Tools
-    mcp.tool(greet)
-    mcp.tool(get_counter)
-    mcp.tool(analyze_file)
+    # Optional demo tools (off by default; enable INCLUDE_EXAMPLE_TOOLS=1 in .env)
+    if settings.INCLUDE_EXAMPLE_TOOLS:
+        mcp.tool(greet)
+        mcp.tool(get_counter)
+        mcp.tool(analyze_file)
+        logger.info("Example tools (greet, get_counter, analyze_file) registered")
 
     # Backup Tools - using function docstrings automatically
     mcp.tool(create_backup_legacy)

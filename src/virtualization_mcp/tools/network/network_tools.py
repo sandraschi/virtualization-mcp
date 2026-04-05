@@ -12,6 +12,52 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+async def list_network_adapters(vm_name: str) -> dict[str, Any]:
+    """
+    List adapter configuration for a VM from machine-readable metadata.
+
+    Args:
+        vm_name: Name or UUID of the VM
+
+    Returns:
+        Dictionary containing adapter entries for slots 1..4.
+    """
+    try:
+        cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
+        result = await asyncio.to_thread(
+            subprocess.run, cmd, capture_output=True, text=True, check=True
+        )
+
+        parsed: dict[str, str] = {}
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            parsed[key.strip()] = value.strip().strip('"')
+
+        adapters: list[dict[str, Any]] = []
+        for slot in range(1, 5):
+            nic_mode = parsed.get(f"nic{slot}", "none")
+            adapters.append(
+                {
+                    "slot": slot - 1,
+                    "adapter_id": slot,
+                    "enabled": nic_mode.lower() != "none",
+                    "type": nic_mode.lower(),
+                    "mac_address": parsed.get(f"macaddress{slot}"),
+                    "attachment_type": parsed.get(f"nictype{slot}"),
+                    "cable_connected": (parsed.get(f"cableconnected{slot}", "on").lower() == "on"),
+                }
+            )
+
+        return {"status": "success", "vm_name": vm_name, "adapters": adapters}
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error listing network adapters for VM {vm_name}: {e}")
+        return {"status": "error", "message": f"Failed to list network adapters: {e.stderr}"}
+
+
 async def configure_network_adapter(
     vm_name: str,
     adapter_id: int,

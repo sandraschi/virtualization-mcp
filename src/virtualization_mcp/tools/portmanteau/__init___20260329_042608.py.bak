@@ -15,7 +15,6 @@ from fastmcp import FastMCP
 
 from .discovery_management import register_info_tools_tool
 from .network_management import register_network_management_tool
-from .sandbox_management import register_sandbox_management_tool
 from .snapshot_management import register_snapshot_management_tool
 from .storage_management import register_storage_management_tool
 from .system_management import register_system_management_tool
@@ -36,10 +35,6 @@ def register_all_portmanteau_tools(mcp: FastMCP) -> None:
     register_snapshot_management_tool(mcp)
     register_storage_management_tool(mcp)
     register_system_management_tool(mcp)
-
-    # Docker sandbox tool
-    register_sandbox_management_tool(mcp)
-    logger.info("Sandbox management tool registered")
 
     # Help/Status/Discovery portmanteau (consolidates app-specific help tools)
     register_info_tools_tool(mcp)

@@ -91,20 +91,11 @@ class NetworkAnalyzer:
 
     async def _analysis_loop(self) -> None:
         """Background task that performs periodic network analysis."""
-        while self.is_analyzing:
-            try:
-                # Simulate network traffic analysis
-                # In a real implementation, this would analyze actual network traffic
-                await asyncio.sleep(self.update_interval)
-
-                # Check for unusual traffic patterns
-                self._check_traffic_patterns()
-
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logger.error(f"Error in network analysis loop: {e}")
-                await asyncio.sleep(5)  # Prevent tight loop on errors
+        self.is_analyzing = False
+        logger.warning(
+            "Network analyzer passive capture loop is under construction; "
+            "analysis loop will not run until implemented."
+        )
 
     def _check_traffic_patterns(self) -> None:
         """Check for unusual traffic patterns and generate alerts if needed."""

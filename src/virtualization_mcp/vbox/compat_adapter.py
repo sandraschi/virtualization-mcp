@@ -42,7 +42,7 @@ class VBoxManager:
         self._validate_vboxmanage()
 
     def _find_vboxmanage(self) -> str:
-        """Find VBoxManage executable (stub for compatibility)."""
+        """Find VBoxManage executable for compatibility layer."""
         return "VBoxManage"
 
     def _validate_vboxmanage(self) -> None:
@@ -122,11 +122,11 @@ class VBoxManager:
         return state_map.get(state, "unknown")
 
     def _find_vboxmanage(self) -> str:
-        """Find VBoxManage executable (stub for compatibility)."""
+        """Find VBoxManage executable for compatibility layer."""
         return "VBoxManage"
 
     def _validate_vboxmanage(self) -> None:
-        """Validate that VBoxManage is accessible (stub for compatibility)."""
+        """Validate that VBoxManage is accessible."""
         try:
             _ = self.vbox.version
         except VirtualBoxError as e:

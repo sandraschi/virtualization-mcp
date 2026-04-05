@@ -378,7 +378,7 @@ class WindowsSandboxPlugin(BasePlugin):
             template: Template name (not currently used)
 
         Returns:
-            A placeholder string (actual WSB configuration is handled by the helper)
+            Informational string; actual WSB configuration is handled by the helper.
         """
         # This method is now a compatibility wrapper around the helper
         # The actual WSB configuration is handled by WindowsSandboxHelper._create_wsb_config

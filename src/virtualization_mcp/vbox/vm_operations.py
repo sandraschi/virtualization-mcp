@@ -379,6 +379,23 @@ class VMOperations:
         except Exception as e:
             logger.warning(f"Failed to cleanup VM '{name}': {e}")
 
+    def list_vms(self, details: bool = False) -> dict[str, Any]:
+        """
+        List all registered VMs.
+
+        Args:
+            details: If True, include more detail per VM (uses manager's verbose listing).
+
+        Returns:
+            Dict with "success", "vms" (list), and on error "error".
+        """
+        try:
+            vms = self.manager.list_vms(verbose=details)
+            return {"success": True, "vms": vms}
+        except VBoxManagerError as e:
+            logger.debug(f"list_vms failed: {e}")
+            return {"success": False, "error": str(e), "vms": []}
+
     def list_templates(self) -> list[dict[str, Any]]:
         """Get list of available VM templates"""
         return [

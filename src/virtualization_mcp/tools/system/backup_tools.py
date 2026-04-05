@@ -135,15 +135,20 @@ class BackupManager:
             # Save metadata
             self._write_metadata(backup_path, metadata)
 
-            # TODO: Implement actual backup logic
-            # This is a placeholder implementation
-            await asyncio.sleep(5)  # Simulate backup time
-
-            # Update metadata
-            metadata.update({"status": "completed", "completed_at": datetime.utcnow().isoformat()})
+            metadata.update(
+                {
+                    "status": "not_implemented",
+                    "completed_at": datetime.utcnow().isoformat(),
+                    "error": "Backup implementation is under construction.",
+                }
+            )
             self._write_metadata(backup_path, metadata)
-
-            return {"status": "completed", "backup_name": backup_name}
+            return {
+                "status": "error",
+                "error_type": "not_implemented",
+                "message": "Backup implementation is under construction.",
+                "backup_name": backup_name,
+            }
 
         except Exception as e:
             metadata["status"] = "failed"

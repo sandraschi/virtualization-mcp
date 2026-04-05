@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from fastmcp import Context, FastMCP
 
-# Import existing VM tools
+from virtualization_mcp.schemas.vbox_types import VBoxGuestOSType
 from virtualization_mcp.tools.vm.vm_tools import (
     clone_vm,
     create_vm,
@@ -64,10 +64,12 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
         vm_name: str | None = None,
         source_vm: str | None = None,
         new_vm_name: str | None = None,
-        os_type: str | None = None,
+        os_type: VBoxGuestOSType | None = None,
         memory_mb: int | None = None,
         disk_size_gb: int | None = None,
         use_case: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
         ctx: Context | None = None,
     ) -> dict[str, Any]:
         """
@@ -90,22 +92,21 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
                 - "info": Get detailed information about a virtual machine (requires: vm_name)
             - "suggest_config": Suggest VM configuration for a use case (optional: use_case). Uses LLM when available (FastMCP 3.1).
 
-            vm_name: Name of the virtual machine (required for most actions except "list")
+            vm_name: Registered VM name or UUID (VBoxManage name). Required for most actions except list/suggest_config.
             use_case: Short description for suggest_config (e.g. "development", "gaming", "CI runner")
-            source_vm: Source VM name for cloning (required for "clone" action)
-            new_vm_name: New VM name for cloning (required for "clone" action)
-            os_type: Operating system type for new VMs (required for "create" action).
-                     Examples: "Windows10_64", "Ubuntu_64", "Debian_64", "macOS_64"
-            memory_mb: Memory allocation in MB for new VMs (required for "create" action)
-            disk_size_gb: Disk size in GB for new VMs (required for "create" action)
+            source_vm: Source VM name or UUID for clone (required for "clone"); must exist on host.
+            new_vm_name: New unique VM name for clone (required for "clone").
+            os_type: VirtualBox guest OS id for create (VBoxManage --ostype). Use system_management(action="ostypes") for the full list.
+            memory_mb: RAM for create (128–host max MB; typical 1024–65536)
+            disk_size_gb: Primary disk size for create (>=1 GB)
+            limit: For action=list only: max VMs per page (1–500, default 100)
+            offset: For action=list only: skip N VMs before returning a page
 
         Returns:
-            Dict containing:
-                - success: Boolean indicating if operation succeeded
-                - action: The action that was performed
-                - data: Operation-specific result data
-                - error: Error message if success is False
-                - count: Number of VMs (for "list" action)
+            success (bool), action (str), and one of:
+            - list: data (dict from list_vms: total, count, vms[], has_more, limit, offset), count (page size)
+            - create/start/stop/...: data (underlying tool dict with status/message/vm_info/…)
+            - On failure: error (str), recovery_options (list[str]) when applicable
 
         Examples:
             # List all VMs - simplest usage, no other parameters needed
@@ -155,7 +156,7 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
 
             # Route to appropriate function based on action
             if action == "list":
-                return await _handle_list_vms(ctx=ctx)
+                return await _handle_list_vms(ctx=ctx, limit=limit, offset=offset)
 
             elif action == "create":
                 return await _handle_create_vm(
@@ -207,7 +208,9 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
             }
 
 
-async def _handle_list_vms(ctx: Context | None = None) -> dict[str, Any]:
+async def _handle_list_vms(
+    ctx: Context | None = None, limit: int = 100, offset: int = 0
+) -> dict[str, Any]:
     """Handle list VMs action."""
     try:
         if ctx:
@@ -215,24 +218,29 @@ async def _handle_list_vms(ctx: Context | None = None) -> dict[str, Any]:
                 await ctx.report_progress(progress=10, total=100)
             except Exception:
                 pass
-        result = await list_vms(details=True)
+        result = await list_vms(details=True, limit=limit, offset=offset)
         if ctx:
             try:
                 await ctx.report_progress(progress=100, total=100)
             except Exception:
                 pass
         count = result.get("count", 0) if isinstance(result, dict) else 0
-        vms = result.get("vms", []) if isinstance(result, dict) else result
-        if isinstance(vms, list):
-            count = len(vms)
         return {
-            "success": True,
+            "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "list",
             "data": result,
             "count": count,
+            "total": result.get("total") if isinstance(result, dict) else None,
+            "has_more": result.get("has_more") if isinstance(result, dict) else None,
+            "recovery_options": result.get("recovery_options") if isinstance(result, dict) else None,
         }
     except Exception as e:
-        return {"success": False, "action": "list", "error": f"Failed to list VMs: {str(e)}"}
+        return {
+            "success": False,
+            "action": "list",
+            "error": f"Failed to list VMs: {str(e)}",
+            "recovery_options": ["Verify VBoxManage works on the host", "Retry with a smaller limit"],
+        }
 
 
 async def _handle_suggest_config(
@@ -313,8 +321,8 @@ async def _handle_create_vm(
             except Exception:
                 pass
         result = await create_vm(
-            vm_name=vm_name,
-            os_type=os_type,
+            name=vm_name,
+            ostype=os_type,
             memory_mb=memory_mb or 1024,
             disk_size_gb=disk_size_gb or 20,
         )
@@ -323,13 +331,26 @@ async def _handle_create_vm(
                 await ctx.report_progress(progress=100, total=100)
             except Exception:
                 pass
-        return {"success": True, "action": "create", "vm_name": vm_name, "data": result}
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        out: dict[str, Any] = {
+            "success": ok,
+            "action": "create",
+            "vm_name": vm_name,
+            "data": result,
+        }
+        if not ok and isinstance(result, dict):
+            out["recovery_options"] = [
+                "Run system_management(action=\"ostypes\") and pick a valid os_type",
+                "Ensure vm_name is unique (list_vms)",
+            ]
+        return out
     except Exception as e:
         return {
             "success": False,
             "action": "create",
             "vm_name": vm_name,
             "error": f"Failed to create VM: {str(e)}",
+            "recovery_options": ["Check VBoxManage stderr in logs", "Validate disk path and free space"],
         }
 
 
@@ -344,13 +365,23 @@ async def _handle_start_vm(vm_name: str | None = None) -> dict[str, Any]:
 
     try:
         result = await start_vm(vm_name=vm_name)
-        return {"success": True, "action": "start", "vm_name": vm_name, "data": result}
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        return {
+            "success": ok,
+            "action": "start",
+            "vm_name": vm_name,
+            "data": result,
+            "recovery_options": None
+            if ok
+            else (result.get("recovery_options") if isinstance(result, dict) else None),
+        }
     except Exception as e:
         return {
             "success": False,
             "action": "start",
             "vm_name": vm_name,
             "error": f"Failed to start VM: {str(e)}",
+            "recovery_options": ["Verify the VM exists (list_vms)", "Check that another VM does not hold locks"],
         }
 
 
@@ -382,13 +413,23 @@ async def _handle_delete_vm(vm_name: str | None = None) -> dict[str, Any]:
 
     try:
         result = await delete_vm(vm_name=vm_name)
-        return {"success": True, "action": "delete", "vm_name": vm_name, "data": result}
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        out: dict[str, Any] = {
+            "success": ok,
+            "action": "delete",
+            "vm_name": vm_name,
+            "data": result,
+        }
+        if not ok and isinstance(result, dict) and result.get("recovery_options"):
+            out["recovery_options"] = result["recovery_options"]
+        return out
     except Exception as e:
         return {
             "success": False,
             "action": "delete",
             "vm_name": vm_name,
             "error": f"Failed to delete VM: {str(e)}",
+            "recovery_options": ["Power off the VM and retry", "Verify name/UUID with list_vms"],
         }
 
 
@@ -418,19 +459,23 @@ async def _handle_clone_vm(
                 await ctx.report_progress(progress=25, total=100)
             except Exception:
                 pass
-        result = await clone_vm(source_vm=source_vm, new_vm_name=new_vm_name)
+        result = await clone_vm(source_vm=source_vm, new_name=new_vm_name)
         if ctx:
             try:
                 await ctx.report_progress(progress=100, total=100)
             except Exception:
                 pass
-        return {
-            "success": True,
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        out: dict[str, Any] = {
+            "success": ok,
             "action": "clone",
             "source_vm": source_vm,
             "new_vm_name": new_vm_name,
             "data": result,
         }
+        if not ok and isinstance(result, dict) and result.get("recovery_options"):
+            out["recovery_options"] = result["recovery_options"]
+        return out
     except Exception as e:
         return {
             "success": False,
@@ -438,6 +483,7 @@ async def _handle_clone_vm(
             "source_vm": source_vm,
             "new_vm_name": new_vm_name,
             "error": f"Failed to clone VM: {str(e)}",
+            "recovery_options": ["Confirm source_vm exists", "Use a unique new_vm_name"],
         }
 
 
@@ -452,7 +498,13 @@ async def _handle_reset_vm(vm_name: str | None = None) -> dict[str, Any]:
 
     try:
         result = await reset_vm(vm_name=vm_name)
-        return {"success": True, "action": "reset", "vm_name": vm_name, "data": result}
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        return {
+            "success": ok,
+            "action": "reset",
+            "vm_name": vm_name,
+            "data": result,
+        }
     except Exception as e:
         return {
             "success": False,
@@ -473,7 +525,8 @@ async def _handle_pause_vm(vm_name: str | None = None) -> dict[str, Any]:
 
     try:
         result = await pause_vm(vm_name=vm_name)
-        return {"success": True, "action": "pause", "vm_name": vm_name, "data": result}
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        return {"success": ok, "action": "pause", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
             "success": False,
@@ -494,7 +547,8 @@ async def _handle_resume_vm(vm_name: str | None = None) -> dict[str, Any]:
 
     try:
         result = await resume_vm(vm_name=vm_name)
-        return {"success": True, "action": "resume", "vm_name": vm_name, "data": result}
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        return {"success": ok, "action": "resume", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
             "success": False,
@@ -511,7 +565,16 @@ async def _handle_get_vm_info(vm_name: str | None = None) -> dict[str, Any]:
 
     try:
         result = await get_vm_info(vm_name=vm_name)
-        return {"success": True, "action": "info", "vm_name": vm_name, "data": result}
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        out: dict[str, Any] = {
+            "success": ok,
+            "action": "info",
+            "vm_name": vm_name,
+            "data": result,
+        }
+        if not ok and isinstance(result, dict) and result.get("recovery_options"):
+            out["recovery_options"] = result["recovery_options"]
+        return out
     except Exception as e:
         return {
             "success": False,

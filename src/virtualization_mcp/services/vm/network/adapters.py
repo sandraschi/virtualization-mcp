@@ -38,14 +38,15 @@ class NetworkAdapterService:
             if not self.vbox_manager.vm_exists(vm_name):
                 raise VBoxManagerError(f"VM '{vm_name}' not found")
 
-            # This would be implemented using VBoxManage commands
-            # For now, returning a placeholder
             return {
-                "status": "success",
+                "status": "error",
                 "vm_name": vm_name,
-                "adapters": [],
-                "message": "Network adapters retrieved successfully",
-                "troubleshooting": [],
+                "adapters": None,
+                "message": "Network adapter retrieval in this service is under construction.",
+                "error": "not_implemented",
+                "troubleshooting": [
+                    "Use the MCP tool 'network_management' action='list_adapters' for real adapter data.",
+                ],
             }
 
         except VBoxManagerError as e:

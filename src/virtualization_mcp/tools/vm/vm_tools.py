@@ -17,20 +17,32 @@ VMState = Literal["poweroff", "running", "saved", "paused", "aborted"]
 CloneMode = Literal["full", "linked", "all"]
 VMStartType = Literal["gui", "sdl", "headless", "separate"]
 
+LIST_VMS_MAX_LIMIT = 500
 
-async def list_vms(details: bool = False, state_filter: VMState | None = None) -> dict[str, Any]:
+
+async def list_vms(
+    details: bool = False,
+    state_filter: VMState | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> dict[str, Any]:
     """
     List all VirtualBox VMs with their current state.
 
     Args:
         details: If True, include detailed information about each VM
         state_filter: Optional filter to show only VMs in specific state
+        limit: Max VMs to return after offset (1–500, default 100). Prevents huge tool outputs.
+        offset: Skip this many VMs from the start of the parsed list (default 0)
 
     Returns:
         Dictionary containing:
         - status: "success" or "error"
-        - count: Number of VMs found
-        - vms: List of VM information dictionaries
+        - total: Total VMs matching the query before pagination
+        - count: Number of VMs in this page (len of vms)
+        - limit, offset: Pagination parameters applied
+        - has_more: True if more VMs exist after this page
+        - vms: List of VM information dictionaries (keys vary; often includes Name, UUID, State when using --long)
         - message: Error message if status is "error"
     """
     try:
@@ -63,16 +75,51 @@ async def list_vms(details: bool = False, state_filter: VMState | None = None) -
         if current_vm:
             vms.append(current_vm)
 
-        return {"status": "success", "count": len(vms), "vms": vms}
+        total = len(vms)
+        lim = max(1, min(int(limit), LIST_VMS_MAX_LIMIT))
+        off = max(0, int(offset))
+        page = vms[off : off + lim]
+        return {
+            "status": "success",
+            "total": total,
+            "count": len(page),
+            "limit": lim,
+            "offset": off,
+            "has_more": off + len(page) < total,
+            "vms": page,
+        }
 
     except subprocess.CalledProcessError as e:
         error_msg = f"Failed to list VMs: {e.stderr.strip()}"
         logger.error(error_msg)
-        return {"status": "error", "message": error_msg, "count": 0, "vms": []}
+        return {
+            "status": "error",
+            "message": error_msg,
+            "total": 0,
+            "count": 0,
+            "limit": limit,
+            "offset": offset,
+            "has_more": False,
+            "vms": [],
+            "recovery_options": [
+                "Verify VBoxManage is on PATH and VirtualBox is installed",
+                "Run `VBoxManage list vms` in a shell to confirm CLI access",
+            ],
+        }
     except Exception as e:
         error_msg = f"Unexpected error listing VMs: {str(e)}"
         logger.exception(error_msg)
-        return {"status": "error", "message": error_msg, "count": 0, "vms": []}
+        return {
+            "status": "error",
+            "message": error_msg,
+            "total": 0,
+            "count": 0,
+            "limit": limit,
+            "offset": offset,
+            "has_more": False,
+            "vms": [],
+            "recovery_options": ["Check host logs and retry with a smaller limit"],
+        }
 
 
 async def get_vm_info(vm_name: str) -> dict[str, Any]:
@@ -80,13 +127,14 @@ async def get_vm_info(vm_name: str) -> dict[str, Any]:
     Get detailed information about a specific VM.
 
     Args:
-        vm_name: Name or UUID of the VM
+        vm_name: Exact registered VM name or UUID (from list_vms / VBoxManage list vms)
 
     Returns:
         Dictionary containing:
         - status: "success" or "error"
-        - vm_info: Dictionary of VM properties if successful
+        - vm_info: On success, dict of machine-readable keys (e.g. name, memory, cpus, nic1, …) from showvminfo --machinereadable
         - message: Error message if status is "error"
+        - recovery_options: On error, suggested next steps
     """
     if not vm_name or not isinstance(vm_name, str):
         return {"status": "error", "message": "VM name must be a non-empty string", "vm_info": None}
@@ -108,11 +156,24 @@ async def get_vm_info(vm_name: str) -> dict[str, Any]:
     except subprocess.CalledProcessError as e:
         error_msg = f"Failed to get VM info for {vm_name}: {e.stderr.strip()}"
         logger.error(error_msg)
-        return {"status": "error", "message": error_msg, "vm_info": None}
+        return {
+            "status": "error",
+            "message": error_msg,
+            "vm_info": None,
+            "recovery_options": [
+                "Confirm vm_name with list_vms or `VBoxManage list vms`",
+                "Use the VM UUID if the name has special characters",
+            ],
+        }
     except Exception as e:
         error_msg = f"Unexpected error getting VM info: {str(e)}"
         logger.exception(error_msg)
-        return {"status": "error", "message": error_msg, "vm_info": None}
+        return {
+            "status": "error",
+            "message": error_msg,
+            "vm_info": None,
+            "recovery_options": ["Retry after verifying VirtualBox is responsive"],
+        }
 
 
 async def create_vm(
@@ -358,7 +419,10 @@ async def delete_vm(vm_name: str, delete_files: bool = True) -> dict[str, Any]:
         delete_files: If True, also delete all associated files (disks, logs, etc.)
 
     Returns:
-        Dictionary with delete operation status
+        status, message; on failure includes recovery_options for destructive failures
+
+    Dependencies:
+        VM should exist; running VMs are force-stopped before unregister.
     """
     if not vm_name or not isinstance(vm_name, str):
         return {"status": "error", "message": "VM name must be a non-empty string"}
@@ -423,7 +487,10 @@ async def clone_vm(
             - keepallmacs: bool - Keep all MAC addresses (default: False)
 
     Returns:
-        Dictionary with clone operation status
+        status, message, output on success
+
+    Dependencies:
+        source_vm must exist (list_vms / get_vm_info). new_name must not already be registered.
     """
     if not source_vm or not isinstance(source_vm, str):
         return {"status": "error", "message": "Source VM name must be a non-empty string"}
@@ -504,7 +571,7 @@ async def modify_vm(
     **extra_params,
 ) -> dict[str, Any]:
     """
-    Modify VM settings.
+    Modify VirtualBox VM settings via VBoxManage modifyvm (only passed parameters are applied).
 
     Args:
         vm_name: Name or UUID of the VM to modify
