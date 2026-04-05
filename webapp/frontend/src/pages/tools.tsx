@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Terminal, Search, Play, ChevronRight, Info, AlertCircle, Loader2 } from 'lucide-react';
+import { Terminal, Search, Play, ChevronRight, Info, Loader2 } from 'lucide-react';
 import { API_BASE } from '../api/config';
 
 interface Tool {

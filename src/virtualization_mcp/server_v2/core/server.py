@@ -67,8 +67,7 @@ class VirtualizationMCPServer:
 
             logger.info("virtualization-mcp server started successfully")
 
-            # Run the MCP server
-            await self.mcp.run(transport="stdio")
+            await asyncio.to_thread(self.mcp.run, transport="stdio", show_banner=False)
 
         except Exception as e:
             logger.critical("Failed to start virtualization-mcp server: %s", str(e), exc_info=True)

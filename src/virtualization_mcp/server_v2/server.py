@@ -98,8 +98,8 @@ class VirtualizationMCPServer:
             logger.info("virtualization-mcp server started successfully")
             logger.info("Press Ctrl+C to stop the server")
 
-            # Run the MCP server
-            await self.mcp.run(transport="stdio")
+            # FastMCP.run() is synchronous and blocks until the server stops.
+            await asyncio.to_thread(self.mcp.run, transport="stdio", show_banner=False)
 
             # Wait for shutdown signal
             await self._shutdown_event.wait()

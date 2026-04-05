@@ -122,43 +122,20 @@ class SecurityTester:
         test = self.tests[test_id]
 
         try:
-            # Simulate test execution
-            if test_type == "port_scan":
-                self._run_port_scan(test, target, **kwargs)
-            elif test_type == "vulnerability_scan":
-                self._run_vulnerability_scan(test, target, **kwargs)
-            # Add other test types as needed
-
-            test.complete()
+            test.fail(
+                "Security testing engine is under construction. "
+                "No findings are produced by this engine yet."
+            )
         except Exception as e:
             test.fail(str(e))
 
     def _run_port_scan(self, test: SecurityTestResult, target: str, **kwargs) -> None:
-        """Simulate a port scan."""
-        # Simulate finding some open ports
-        test.add_finding(
-            title="Open RDP Port",
-            description="Port 3389 (RDP) is open",
-            severity=TestSeverity.HIGH,
-            details={"port": 3389, "service": "rdp"},
-        )
-
-        test.add_finding(
-            title="Open HTTP Port",
-            description="Port 80 (HTTP) is open",
-            severity=TestSeverity.MEDIUM,
-            details={"port": 80, "service": "http"},
-        )
+        """Port scan execution is not implemented."""
+        test.fail("port_scan is under construction.")
 
     def _run_vulnerability_scan(self, test: SecurityTestResult, target: str, **kwargs) -> None:
-        """Simulate a vulnerability scan."""
-        # Simulate finding some vulnerabilities
-        test.add_finding(
-            title="Outdated Software",
-            description="VM has outdated software with known vulnerabilities",
-            severity=TestSeverity.HIGH,
-            details={"component": "OpenSSL", "version": "1.1.1"},
-        )
+        """Vulnerability scan execution is not implemented."""
+        test.fail("vulnerability_scan is under construction.")
 
     def get_test_status(self, test_id: str) -> SecurityTestResult | None:
         """Get the status of a test by ID."""

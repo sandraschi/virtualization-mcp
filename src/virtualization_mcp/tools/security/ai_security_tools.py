@@ -137,23 +137,9 @@ class AISecurityAnalyzer:
         try:
             report.status = "running"
 
-            # TODO: Implement actual security scanning logic
-            # This is a placeholder implementation
-            await asyncio.sleep(2)  # Simulate scan time
-
-            # Add a sample finding
-            finding = SecurityFinding(
-                id="sample_finding_001",
-                title="Sample Security Finding",
-                description="This is a sample security finding.",
-                severity=TestSeverity.MEDIUM,
-                category="example",
-                remediation="No action required - this is just a sample.",
-                affected_resources=vm_names[:1],  # Just the first VM for the sample
-            )
-            report.add_finding(finding)
-
-            report.status = "completed"
+            report.status = "failed"
+            report.metadata["error_type"] = "not_implemented"
+            report.metadata["error"] = "AI security scan is under construction."
 
             # Save the report
             await self._save_report(report)

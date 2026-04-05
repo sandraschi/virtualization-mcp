@@ -12,7 +12,9 @@ from fastmcp import FastMCP
 
 # Import existing network tools
 from virtualization_mcp.tools.network.network_tools import (
+    configure_network_adapter,
     create_hostonly_network,
+    list_network_adapters,
     list_hostonly_networks,
     remove_hostonly_network,
 )
@@ -41,6 +43,8 @@ def register_network_management_tool(mcp: FastMCP) -> None:
         network_type: str | None = None,
         ip_address: str | None = None,
         netmask: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
     ) -> dict[str, Any]:
         """
         Comprehensive network management portmanteau tool.
@@ -118,7 +122,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
 
             # Route to appropriate function based on action
             if action == "list_networks":
-                return await _handle_list_networks()
+                return await _handle_list_networks(limit=limit, offset=offset)
 
             elif action == "create_network":
                 return await _handle_create_network(
@@ -129,7 +133,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
                 return await _handle_remove_network(network_name=network_name)
 
             elif action == "list_adapters":
-                return await _handle_list_adapters(vm_name=vm_name)
+                return await _handle_list_adapters(vm_name=vm_name, limit=limit, offset=offset)
 
             elif action == "configure_adapter":
                 return await _handle_configure_adapter(
@@ -156,15 +160,37 @@ def register_network_management_tool(mcp: FastMCP) -> None:
             }
 
 
-async def _handle_list_networks() -> dict[str, Any]:
+def _paginate(items: list[dict[str, Any]], limit: int, offset: int) -> dict[str, Any]:
+    lim = max(1, min(int(limit), 500))
+    off = max(0, int(offset))
+    page = items[off : off + lim]
+    return {
+        "items": page,
+        "count": len(page),
+        "total": len(items),
+        "limit": lim,
+        "offset": off,
+        "has_more": off + len(page) < len(items),
+    }
+
+
+async def _handle_list_networks(limit: int = 100, offset: int = 0) -> dict[str, Any]:
     """Handle list networks action."""
     try:
         result = await list_hostonly_networks()
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        all_networks = result.get("networks", []) if isinstance(result, dict) else []
+        page = _paginate(all_networks if isinstance(all_networks, list) else [], limit, offset)
         return {
-            "success": True,
+            "success": ok,
             "action": "list_networks",
             "data": result,
-            "count": len(result) if isinstance(result, list) else 0,
+            "count": page["count"],
+            "total": page["total"],
+            "limit": page["limit"],
+            "offset": page["offset"],
+            "has_more": page["has_more"],
+            "items": page["items"],
         }
     except Exception as e:
         return {
@@ -189,13 +215,19 @@ async def _handle_create_network(
 
     try:
         result = await create_hostonly_network(
-            network_name=network_name, ip_address=ip_address, netmask=netmask
+            network_name=network_name, ip=ip_address or "", netmask=netmask or "255.255.255.0"
         )
         return {
-            "success": True,
+            "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "create_network",
             "network_name": network_name,
             "data": result,
+            "recovery_options": None
+            if isinstance(result, dict) and result.get("status") == "success"
+            else [
+                "Provide ip_address (e.g. 192.168.56.1) and valid netmask",
+                "Ensure VBoxManage can create host-only adapters on this host",
+            ],
         }
     except Exception as e:
         return {
@@ -216,9 +248,9 @@ async def _handle_remove_network(network_name: str | None = None) -> dict[str, A
         }
 
     try:
-        result = await remove_hostonly_network(network_name=network_name)
+        result = await remove_hostonly_network(interface=network_name)
         return {
-            "success": True,
+            "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "remove_network",
             "network_name": network_name,
             "data": result,
@@ -232,7 +264,9 @@ async def _handle_remove_network(network_name: str | None = None) -> dict[str, A
         }
 
 
-async def _handle_list_adapters(vm_name: str | None = None) -> dict[str, Any]:
+async def _handle_list_adapters(
+    vm_name: str | None = None, limit: int = 100, offset: int = 0
+) -> dict[str, Any]:
     """Handle list adapters action."""
     if not vm_name:
         return {
@@ -242,18 +276,22 @@ async def _handle_list_adapters(vm_name: str | None = None) -> dict[str, Any]:
         }
 
     try:
-        # This would need to be implemented in the network tools
-        # For now, return a placeholder
-        result = {
+        result = await list_network_adapters(vm_name=vm_name)
+        ok = isinstance(result, dict) and result.get("status") == "success"
+        adapters = result.get("adapters", [])
+        page = _paginate(adapters if isinstance(adapters, list) else [], limit, offset)
+        return {
+            "success": ok,
+            "action": "list_adapters",
             "vm_name": vm_name,
-            "adapters": [
-                {"slot": 0, "type": "nat", "enabled": True},
-                {"slot": 1, "type": "none", "enabled": False},
-                {"slot": 2, "type": "none", "enabled": False},
-                {"slot": 3, "type": "none", "enabled": False},
-            ],
+            "data": result,
+            "count": page["count"],
+            "total": page["total"],
+            "limit": page["limit"],
+            "offset": page["offset"],
+            "has_more": page["has_more"],
+            "items": page["items"],
         }
-        return {"success": True, "action": "list_adapters", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
             "success": False,
@@ -283,6 +321,12 @@ async def _handle_configure_adapter(
             "action": "configure_adapter",
             "error": "adapter_slot is required for configure_adapter action",
         }
+    if adapter_slot < 0 or adapter_slot > 3:
+        return {
+            "success": False,
+            "action": "configure_adapter",
+            "error": "adapter_slot must be in range 0..3",
+        }
 
     if not network_type:
         return {
@@ -292,16 +336,17 @@ async def _handle_configure_adapter(
         }
 
     try:
-        # This would need to be implemented in the network tools
-        # For now, return a placeholder
-        result = {
+        # network_tools uses adapter_id in range 1..4, while this tool accepts slot 0..3.
+        adapter_id = adapter_slot + 1
+        result = await configure_network_adapter(
+            vm_name=vm_name, adapter_id=adapter_id, network_type=network_type
+        )
+        return {
+            "success": isinstance(result, dict) and result.get("status") == "success",
+            "action": "configure_adapter",
             "vm_name": vm_name,
-            "adapter_slot": adapter_slot,
-            "network_type": network_type,
-            "network_name": network_name,
-            "configured": True,
+            "data": result,
         }
-        return {"success": True, "action": "configure_adapter", "vm_name": vm_name, "data": result}
     except Exception as e:
         return {
             "success": False,

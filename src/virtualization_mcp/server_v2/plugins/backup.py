@@ -132,14 +132,13 @@ class BackupPlugin(BasePlugin):
             }
             self._write_metadata(backup_path, metadata)
 
-            # In a real implementation, we would:
-            # 1. Create a snapshot of the VM
-            # 2. Export the VM to the backup directory
-            # 3. Clean up the snapshot
-
-            # Simulate backup process
-            logger.info(f"Starting backup of VM '{vm_name}' to '{backup_name}'")
-            await asyncio.sleep(5)  # Simulate backup time
+            raise HTTPException(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                detail=(
+                    "server_v2 backup plugin is under construction. "
+                    "No backup is performed yet."
+                ),
+            )
 
             # Update metadata
             metadata.update(

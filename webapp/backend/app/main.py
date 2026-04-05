@@ -1,21 +1,24 @@
-import asyncio
-import json
-import logging
-import os
-import sys
-import tempfile
-from contextlib import asynccontextmanager
-from typing import Any
-
-import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import uvicorn
+import os
+import sys
+import subprocess
+import tempfile
+import asyncio
+from contextlib import asynccontextmanager
+import logging
+import json
+from typing import List, Optional, Any, Dict
 
-try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None  # type: ignore[assignment]
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", FutureWarning)
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        genai = None  # type: ignore[assignment]
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -88,9 +91,7 @@ elif not GOOGLE_API_KEY:
 app = FastAPI(title="Virtualization MCP Backend", lifespan=lifespan)
 
 # CORS Configuration (frontend dev: 10700; backend: 10701)
-origins = os.getenv(
-    "CORS_ORIGINS", "http://localhost:10700,http://127.0.0.1:10700,http://localhost:10760"
-).split(",")
+origins = os.getenv("CORS_ORIGINS", "http://localhost:10700,http://127.0.0.1:10700,http://localhost:10760").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -115,10 +116,7 @@ SANDBOX_DEV_SETUP_TOOLS = {
 }
 # Claude Desktop: no winget; download and run installer
 SANDBOX_DEV_SETUP_DOWNLOAD = {
-    "claude_desktop": (
-        "https://downloads.claude.ai/releases/win32/ClaudeSetup.exe",
-        "ClaudeSetup.exe",
-    ),
+    "claude_desktop": ("https://downloads.claude.ai/releases/win32/ClaudeSetup.exe", "ClaudeSetup.exe"),
 }
 # OpenClaw (npm), OpenFang (install.ps1), RoboFang (git + pip -e) - optional post-steps
 ROBOFANG_REPO = "https://github.com/sandraschi/robofang"
@@ -148,16 +146,9 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
             do_robofang = True
     if not winget_ids and not any((do_claude_desktop, do_openclaw, do_openfang, do_robofang)):
         winget_ids = [
-            "Python.Python.3.12",
-            "Git.Git",
-            "OpenJS.NodeJS.LTS",
-            "Casey.Just",
-            "Microsoft.VisualStudioCode",
-            "Notepad++.Notepad++",
-            "astral-sh.uv",
-            "Codeium.Windsurf",
-            "Anysphere.Cursor",
-            "Google.Antigravity",
+            "Python.Python.3.12", "Git.Git", "OpenJS.NodeJS.LTS", "Casey.Just",
+            "Microsoft.VisualStudioCode", "Notepad++.Notepad++", "astral-sh.uv",
+            "Codeium.Windsurf", "Anysphere.Cursor", "Google.Antigravity",
         ]
         has_python = True
 
@@ -236,7 +227,7 @@ if ($gw) {
     Write-Host "OLLAMA_HOST set to $env:OLLAMA_HOST (host Ollama)" -ForegroundColor Cyan
 }
 """
-    return f"""# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
+    return f'''# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
 # Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenFang, RoboFang. Optional: host Ollama.
 # Requires in C:\\Assets: DesktopAppInstaller_Dependencies.zip, Microsoft.DesktopAppInstaller_*.msixbundle
 
@@ -282,18 +273,13 @@ Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
 {ollama_block}
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 Write-Host "Full dev setup complete." -ForegroundColor Green
-"""
+'''
 
 
-def _build_sandbox_xml_dev_setup(
-    host_folder: str, memory_mb: int = 4096, vgpu: bool = True, networking: bool = True
-) -> str:
+def _build_sandbox_xml_dev_setup(host_folder: str, memory_mb: int = 4096, vgpu: bool = True, networking: bool = True) -> str:
     import xml.sax.saxutils as sax
-
     host_escaped = sax.escape(host_folder)
-    cmd_escaped = sax.escape(
-        "powershell -ExecutionPolicy Bypass -File C:\\Assets\\Setup-DevSandbox.ps1"
-    )
+    cmd_escaped = sax.escape(f'powershell -ExecutionPolicy Bypass -File C:\\Assets\\Setup-DevSandbox.ps1')
     return f"""<Configuration>
 <VGpu>{"Enable" if vgpu else "Disable"}</VGpu>
 <Networking>{"Enable" if networking else "Disable"}</Networking>
@@ -315,24 +301,22 @@ def _build_sandbox_xml_dev_setup(
 class SandboxLaunchRequest(BaseModel):
     name: str
     config_xml: str
-    full_dev_setup: bool | None = None
-    assets_folder: str | None = None
-    dev_tools: list[str] | None = None
-    memory_in_mb: int | None = 4096
-    vgpu: bool | None = True
-    networking: bool | None = True
-    airgap: bool | None = None  # if True: networking disabled (OpenClaw 100% safe, no egress)
-    use_host_ollama: bool | None = (
-        None  # if True: set OLLAMA_HOST to host gateway so sandbox can use host Ollama
-    )
+    full_dev_setup: Optional[bool] = None
+    assets_folder: Optional[str] = None
+    dev_tools: Optional[List[str]] = None
+    memory_in_mb: Optional[int] = 4096
+    vgpu: Optional[bool] = True
+    networking: Optional[bool] = True
+    airgap: Optional[bool] = None  # if True: networking disabled (OpenClaw 100% safe, no egress)
+    use_host_ollama: Optional[bool] = None  # if True: set OLLAMA_HOST to host gateway so sandbox can use host Ollama
 
 
 class VMCreateRequest(BaseModel):
     name: str
     template: str = "ubuntu-dev"
-    memory_mb: int | None = None
-    disk_gb: int | None = None
-    iso_path: str | None = None  # optional ISO from assets/vbox for first-boot install
+    memory_mb: Optional[int] = None
+    disk_gb: Optional[int] = None
+    iso_path: Optional[str] = None  # optional ISO from assets/vbox for first-boot install
 
 
 class AttachIsoRequest(BaseModel):
@@ -346,12 +330,12 @@ class VMSnapshotRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    history: list[dict[str, str]] = []
+    history: List[Dict[str, str]] = []
 
 
 class ToolCallRequest(BaseModel):
     name: str
-    arguments: dict[str, Any] = {}
+    arguments: Dict[str, Any] = {}
 
 
 # API Endpoints
@@ -413,23 +397,15 @@ PROMPTS_META = [
     {
         "name": "virtualization_expert",
         "description": "Load instructions for acting as a virtualization expert using this MCP server's tools (VMs, snapshots, storage, networking).",
-        "arguments": [
-            {
-                "name": "focus",
-                "default": "general",
-                "description": "Focus area: general, lifecycle, storage, or network",
-            }
-        ],
+        "arguments": [{"name": "focus", "default": "general", "description": "Focus area: general, lifecycle, storage, or network"}],
     },
 ]
 
 
 def _get_skills_dir():
     try:
-        from pathlib import Path
-
         import virtualization_mcp
-
+        from pathlib import Path
         return Path(virtualization_mcp.__file__).resolve().parent / "skills"
     except Exception:
         return None
@@ -493,7 +469,9 @@ async def get_vms():
 
     try:
         # Get VirtualBox VMs
-        vbox_vms = await asyncio.to_thread(service_manager.vm_service.list_vms, details=True)
+        vbox_vms = await asyncio.to_thread(
+            service_manager.vm_service.list_vms, details=True
+        )
         vbox_list = vbox_vms.get("vms", [])
         for vm in vbox_list:
             vm["provider"] = "virtualbox"
@@ -515,33 +493,20 @@ async def vbox_status():
     available = service_manager is not None
     return {
         "available": available,
-        "message": None
-        if available
-        else "VirtualBox not detected. Install VirtualBox and ensure VBoxManage is in PATH, or open VirtualBox once.",
+        "message": None if available else "VirtualBox not detected. Install VirtualBox and ensure VBoxManage is in PATH, or open VirtualBox once.",
     }
 
 
 @app.post("/api/v1/vbox/launch")
 async def vbox_launch():
     """Try to launch the VirtualBox GUI. Helps ensure the VirtualBox service is running."""
-    import platform
     import shutil
-
+    import platform
     vbox_exe = None
     if platform.system() == "Windows":
         for path in [
-            os.path.join(
-                os.environ.get("ProgramFiles", "C:\\Program Files"),
-                "Oracle",
-                "VirtualBox",
-                "VirtualBox.exe",
-            ),
-            os.path.join(
-                os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"),
-                "Oracle",
-                "VirtualBox",
-                "VirtualBox.exe",
-            ),
+            os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"), "Oracle", "VirtualBox", "VirtualBox.exe"),
+            os.path.join(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"), "Oracle", "VirtualBox", "VirtualBox.exe"),
         ]:
             if os.path.isfile(path):
                 vbox_exe = path
@@ -554,15 +519,10 @@ async def vbox_launch():
         vbox_exe = "open"
         args = ["/Applications/VirtualBox.app"]
     if not vbox_exe:
-        return {
-            "success": False,
-            "message": "VirtualBox executable not found in standard locations.",
-        }
+        return {"success": False, "message": "VirtualBox executable not found in standard locations."}
     try:
         if vbox_exe == "open":
-            await asyncio.create_subprocess_exec(
-                "open", *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
-            )
+            await asyncio.create_subprocess_exec("open", *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
         else:
             kwargs = {"stdout": asyncio.subprocess.DEVNULL, "stderr": asyncio.subprocess.DEVNULL}
             if sys.platform == "win32":
@@ -581,7 +541,7 @@ async def get_host_info():
 
     try:
         info_result = await asyncio.to_thread(
-            service_manager.vm_service.vbox_manager.get_system_info
+            service_manager.vm_service.get_system_info
         )
         return info_result
     except Exception as e:
@@ -590,13 +550,9 @@ async def get_host_info():
 
 
 @app.get("/api/v1/sandbox/dev-setup-script")
-async def get_dev_setup_script(tools: str | None = None, use_host_ollama: bool | None = None):
+async def get_dev_setup_script(tools: Optional[str] = None, use_host_ollama: Optional[bool] = None):
     """Return PowerShell script for full dev setup in Sandbox. Query: tools (comma-separated), use_host_ollama (true/false)."""
-    tool_list = (
-        [t.strip() for t in (tools or "").split(",") if t.strip()]
-        if tools
-        else list(SANDBOX_DEV_SETUP_TOOLS.keys())
-    )
+    tool_list = [t.strip() for t in (tools or "").split(",") if t.strip()] if tools else list(SANDBOX_DEV_SETUP_TOOLS.keys())
     script = _get_dev_setup_script(tool_list, use_host_ollama=bool(use_host_ollama))
     return {"script": script, "tools": tool_list}
 
@@ -608,9 +564,7 @@ async def launch_sandbox(request: SandboxLaunchRequest):
         if getattr(request, "full_dev_setup", None) and getattr(request, "assets_folder", None):
             assets_folder = request.assets_folder.strip()
             if not os.path.isdir(assets_folder):
-                raise HTTPException(
-                    status_code=400, detail=f"Assets folder does not exist: {assets_folder}"
-                )
+                raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {assets_folder}")
             airgap = getattr(request, "airgap", None) or False
             use_host_ollama = getattr(request, "use_host_ollama", None) or False
             if airgap:
@@ -621,12 +575,10 @@ async def launch_sandbox(request: SandboxLaunchRequest):
                 networking = request.networking if request.networking is not None else True
             script_path = os.path.join(assets_folder, "Setup-DevSandbox.ps1")
             with open(script_path, "w", encoding="utf-8") as f:
-                f.write(
-                    _get_dev_setup_script(
-                        request.dev_tools or list(SANDBOX_DEV_SETUP_TOOLS.keys()),
-                        use_host_ollama=use_host_ollama,
-                    )
-                )
+                f.write(_get_dev_setup_script(
+                    request.dev_tools or list(SANDBOX_DEV_SETUP_TOOLS.keys()),
+                    use_host_ollama=use_host_ollama,
+                ))
             config_xml = _build_sandbox_xml_dev_setup(
                 assets_folder,
                 memory_mb=request.memory_in_mb or 4096,
@@ -636,9 +588,7 @@ async def launch_sandbox(request: SandboxLaunchRequest):
         else:
             config_xml = request.config_xml
 
-        with tempfile.NamedTemporaryFile(
-            suffix=".wsb", delete=False, mode="w", encoding="utf-8"
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(suffix=".wsb", delete=False, mode="w", encoding="utf-8") as tmp:
             tmp.write(config_xml)
             tmp_path = tmp.name
 
@@ -668,7 +618,7 @@ async def get_apps():
         return {"webapps": []}
 
     try:
-        with open(REGISTRY_PATH, encoding="utf-8") as f:
+        with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
             return data
     except Exception as e:
@@ -874,8 +824,7 @@ async def call_tool(request: ToolCallRequest):
 
 
 # Mount MCP Server over HTTP (FastMCP feature)
-@app.get("/mcp/tools")
-async def list_tools():
+async def _list_tools_impl():
     if not mcp:
         raise HTTPException(status_code=503, detail="MCP Server not available")
     try:
@@ -888,6 +837,16 @@ async def list_tools():
     except Exception as e:
         logger.error("list_tools error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/tools")
+async def list_tools_alias():
+    return await _list_tools_impl()
+
+
+@app.get("/mcp/tools")
+async def list_tools():
+    return await _list_tools_impl()
 
 
 @app.get("/api/v1/vms/{name}/screenshot")
@@ -925,9 +884,11 @@ async def get_vm_screenshot(name: str):
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
             logger.error(f"Error taking snapshot for VM {name}: {e}")
-            # Return a placeholder or 404
             raise HTTPException(
-                status_code=404, detail=f"Could not take screenshot: {str(e)}"
+                status_code=501,
+                detail=(
+                    f"Screenshot capture is under construction for this VM/provider: {str(e)}"
+                ),
             ) from e
 
     except Exception as e:

@@ -155,6 +155,9 @@ export default function Sandbox() {
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Windows Sandbox</h2>
                     <p className="text-muted-foreground mt-1">Configure and launch ephemeral Windows instances</p>
+                    <p className="text-amber-400 mt-2 text-sm">
+                        Under construction: some Sandbox automation paths are not implemented yet and will return explicit errors.
+                    </p>
                 </div>
 
                 <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-6">

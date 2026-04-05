@@ -720,8 +720,7 @@ class SandboxTester:
         if self.platform != "windows":
             raise RuntimeError("Windows Sandbox is only available on Windows")
 
-        # This would set up a Windows Sandbox configuration
-        # For now, we'll just create a basic setup script
+        # Minimal bootstrap script until full Sandbox automation is implemented.
         setup_script = sandbox_dir / "setup.ps1"
         setup_content = [
             "# Windows Sandbox setup script",
@@ -742,9 +741,9 @@ class SandboxTester:
         if self.platform != "windows":
             raise RuntimeError("Windows Sandbox is only available on Windows")
 
-        # This would run a command in Windows Sandbox
-        # For now, we'll just run it locally as a fallback
-        return await self._run_command(["powershell", "-Command", command], capture_output, timeout)
+        raise RuntimeError(
+            "Windows Sandbox command execution is under construction; local fallback is disabled."
+        )
 
     async def _run_command(
         self, command: list[str], capture_output: bool = True, timeout: int = 300

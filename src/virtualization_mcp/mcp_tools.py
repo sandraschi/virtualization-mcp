@@ -237,6 +237,14 @@ def register_mcp_tools(mcp: FastMCP) -> None:
     Args:
         mcp: The FastMCP instance to register tools with
     """
+    # Delegate to the hardened registration path so all entrypoints expose
+    # the same contract-quality tools (portmanteau in production mode).
+    from virtualization_mcp.config import settings
+    from virtualization_mcp.tools.register_tools import register_all_tools as register_vbox_tools
+
+    register_vbox_tools(mcp, tool_mode=getattr(settings, "TOOL_MODE", "production"))
+    return
+
     discovery = MCPToolDiscovery(mcp)
     # Get VM service using get_service() method
     vm_service = service_manager.get_service("vm_service")

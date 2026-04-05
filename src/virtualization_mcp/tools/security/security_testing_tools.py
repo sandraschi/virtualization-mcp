@@ -108,8 +108,7 @@ class SecurityTester:
 
     def _discover_tools(self) -> dict[str, dict[str, Any]]:
         """Discover available security testing tools."""
-        # This is a placeholder - in a real implementation, this would scan the tools directory
-        # and detect available tools and their capabilities
+        # Detect tool presence on PATH and report capabilities.
         return {
             "nmap": {
                 "name": "Nmap",
@@ -178,22 +177,12 @@ class SecurityTester:
         result = self.test_results[test_id]
 
         try:
-            # Simulate a scan (replace with actual scan implementation)
-            if scan_type == "basic":
-                await asyncio.sleep(5)  # Simulate scan time
-                result.findings.append(
-                    SecurityFinding(
-                        title="Sample Security Finding",
-                        description="This is a sample security finding for demonstration purposes.",
-                        severity=TestSeverity.MEDIUM,
-                        category="example",
-                        details={"key": "value"},
-                    )
-                )
-                result.metrics["scanned_ports"] = 1000
-                result.metrics["vulnerabilities_found"] = 1
-
-            result.status = TestStatus.COMPLETED
+            result.status = TestStatus.FAILED
+            result.metrics["error_type"] = "not_implemented"
+            result.metrics["error"] = (
+                "Security scan execution is under construction. "
+                "Tool detection is available, but scan engine is not implemented."
+            )
 
         except Exception as e:
             logger.error(f"Security scan failed: {e}", exc_info=True)

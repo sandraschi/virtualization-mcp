@@ -37,10 +37,6 @@ def register_all_portmanteau_tools(mcp: FastMCP) -> None:
     register_storage_management_tool(mcp)
     register_system_management_tool(mcp)
 
-    # Docker sandbox tool
-    register_sandbox_management_tool(mcp)
-    logger.info("Sandbox management tool registered")
-
     # Help/Status/Discovery portmanteau (consolidates app-specific help tools)
     register_info_tools_tool(mcp)
 

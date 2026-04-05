@@ -161,14 +161,8 @@ class HyperVManager:
 
     def _check_hyperv_module(self):
         """Check if Hyper-V module is available and import it."""
-        try:
-            # This is a placeholder for the actual Hyper-V module check
-            # In a real implementation, you would import the required Hyper-V modules here
-            pass
-        except ImportError as e:
-            logger.warning(f"Hyper-V module not available: {e}")
-            return False
-        return True
+        logger.warning("Hyper-V backend integration is under construction in this module.")
+        return False
 
     async def list_vms(self) -> list[VirtualMachine]:
         """List all virtual machines.
@@ -233,42 +227,21 @@ class HyperVManager:
         Returns:
             Dict[str, Any]: Operation result
         """
-        # This is a placeholder for the actual implementation
-        # In a real implementation, you would use the Hyper-V API to perform the action
-        logger.info(f"Executing {action} on VM {vm_name}")
-
-        if wait:
-            # Simulate operation taking some time
-            await asyncio.sleep(2)
-
-            # Update VM state
-            vm = await self.get_vm(vm_name)
-            if vm:
-                if action == "start":
-                    vm.state = VMState.RUNNING
-                elif action in ["stop", "force_stop"]:
-                    vm.state = VMState.OFF
-
-                self.virtual_machines[vm_name] = vm
-
         return {
-            "status": "success",
-            "message": f"VM {vm_name} {action} operation completed",
+            "status": "error",
+            "error_type": "not_implemented",
+            "message": "Hyper-V VM actions are under construction in this tool module.",
             "vm_name": vm_name,
             "action": action,
         }
 
     async def _refresh_vm_list(self):
         """Refresh the list of virtual machines from Hyper-V."""
-        # This is a placeholder for the actual implementation
-        # In a real implementation, you would query the Hyper-V host for the list of VMs
-        pass
+        self.virtual_machines = {}
 
     async def _refresh_switches(self):
         """Refresh the list of virtual switches from Hyper-V."""
-        # This is a placeholder for the actual implementation
-        # In a real implementation, you would query the Hyper-V host for the list of switches
-        pass
+        self.virtual_switches = []
 
 
 # Create a singleton instance

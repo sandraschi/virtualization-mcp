@@ -82,7 +82,7 @@ try:
         create_sandbox = vm_service.create_sandbox
         reset_sandbox = vm_service.reset_sandbox
     else:
-        # Provide stubs if sandbox functionality isn't available
+        # Provide explicit not-available handlers if sandbox functionality isn't available.
         def sandbox_not_available(*args, **kwargs):
             raise NotImplementedError("Sandbox functionality is not available in this version")
 
@@ -94,7 +94,7 @@ try:
         enable_hyperv_integration = vm_service.enable_hyperv_integration
         create_hyperv_export = vm_service.create_hyperv_export
     else:
-        # Provide stubs if Hyper-V functionality isn't available
+        # Provide explicit not-available handlers if Hyper-V functionality isn't available.
         def hyperv_not_available(*args, **kwargs):
             raise NotImplementedError("Hyper-V functionality is not available in this version")
 

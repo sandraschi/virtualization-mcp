@@ -53,7 +53,7 @@ class TestVMManagementPortmanteau:
         # Verify tool registration - the function should be captured
         assert self._tool_func is not None
         assert self._tool_func.__name__ == "vm_management"
-        assert "Manage virtual machines" in self._tool_func.__doc__
+        assert "Comprehensive virtual machine management" in self._tool_func.__doc__
 
     @pytest.mark.asyncio
     async def test_invalid_action(self, vm_management_tool):
@@ -69,19 +69,28 @@ class TestVMManagementPortmanteau:
     async def test_list_vms_action(self, vm_management_tool):
         """Test list VMs action."""
         mock_vms = [{"name": "VM1", "state": "running"}, {"name": "VM2", "state": "stopped"}]
+        mock_payload = {
+            "status": "success",
+            "total": 2,
+            "count": 2,
+            "limit": 100,
+            "offset": 0,
+            "has_more": False,
+            "vms": mock_vms,
+        }
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.list_vms", new_callable=AsyncMock
         ) as mock_list_vms:
-            mock_list_vms.return_value = mock_vms
+            mock_list_vms.return_value = mock_payload
 
             result = await vm_management_tool(action="list")
 
             assert result["success"] is True
             assert result["action"] == "list"
-            assert result["data"] == mock_vms
+            assert result["data"] == mock_payload
             assert result["count"] == 2
-            mock_list_vms.assert_called_once()
+            mock_list_vms.assert_called_once_with(details=True, limit=100, offset=0)
 
     @pytest.mark.asyncio
     async def test_list_vms_action_error(self, vm_management_tool):
@@ -100,7 +109,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_create_vm_action_success(self, vm_management_tool):
         """Test create VM action with valid parameters."""
-        mock_result = {"vm_name": "TestVM", "created": True}
+        mock_result = {"status": "success", "vm_name": "TestVM", "message": "ok"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.create_vm", new_callable=AsyncMock
@@ -120,7 +129,10 @@ class TestVMManagementPortmanteau:
             assert result["vm_name"] == "TestVM"
             assert result["data"] == mock_result
             mock_create_vm.assert_called_once_with(
-                vm_name="TestVM", os_type="Windows10_64", memory_mb=4096, disk_size_gb=50
+                name="TestVM",
+                ostype="Windows10_64",
+                memory_mb=4096,
+                disk_size_gb=50,
             )
 
     @pytest.mark.asyncio
@@ -160,7 +172,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_start_vm_action_success(self, vm_management_tool):
         """Test start VM action."""
-        mock_result = {"vm_name": "TestVM", "started": True}
+        mock_result = {"status": "success", "message": "started"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.start_vm", new_callable=AsyncMock
@@ -187,7 +199,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_stop_vm_action_success(self, vm_management_tool):
         """Test stop VM action."""
-        mock_result = {"vm_name": "TestVM", "stopped": True}
+        mock_result = {"status": "success", "message": "stopped"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.stop_vm", new_callable=AsyncMock
@@ -205,7 +217,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_delete_vm_action_success(self, vm_management_tool):
         """Test delete VM action."""
-        mock_result = {"vm_name": "TestVM", "deleted": True}
+        mock_result = {"status": "success", "message": "deleted"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.delete_vm", new_callable=AsyncMock
@@ -223,7 +235,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_clone_vm_action_success(self, vm_management_tool):
         """Test clone VM action."""
-        mock_result = {"source_vm": "SourceVM", "new_vm": "ClonedVM", "cloned": True}
+        mock_result = {"status": "success", "message": "cloned"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.clone_vm", new_callable=AsyncMock
@@ -239,7 +251,7 @@ class TestVMManagementPortmanteau:
             assert result["source_vm"] == "SourceVM"
             assert result["new_vm_name"] == "ClonedVM"
             assert result["data"] == mock_result
-            mock_clone_vm.assert_called_once_with(source_vm="SourceVM", new_vm_name="ClonedVM")
+            mock_clone_vm.assert_called_once_with(source_vm="SourceVM", new_name="ClonedVM")
 
     @pytest.mark.asyncio
     async def test_clone_vm_action_missing_source_vm(self, vm_management_tool):
@@ -262,7 +274,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_reset_vm_action_success(self, vm_management_tool):
         """Test reset VM action."""
-        mock_result = {"vm_name": "TestVM", "reset": True}
+        mock_result = {"status": "success", "message": "reset"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.reset_vm", new_callable=AsyncMock
@@ -280,7 +292,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_pause_vm_action_success(self, vm_management_tool):
         """Test pause VM action."""
-        mock_result = {"vm_name": "TestVM", "paused": True}
+        mock_result = {"status": "success", "message": "paused"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.pause_vm", new_callable=AsyncMock
@@ -298,7 +310,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_resume_vm_action_success(self, vm_management_tool):
         """Test resume VM action."""
-        mock_result = {"vm_name": "TestVM", "resumed": True}
+        mock_result = {"status": "success", "message": "resumed"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.resume_vm", new_callable=AsyncMock
@@ -316,7 +328,7 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_get_vm_info_action_success(self, vm_management_tool):
         """Test get VM info action."""
-        mock_result = {"vm_name": "TestVM", "state": "running", "memory": 4096, "cpus": 2}
+        mock_result = {"status": "success", "vm_info": {"memory": "4096"}}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.get_vm_info", new_callable=AsyncMock
@@ -387,6 +399,7 @@ class TestVMManagementPortmanteau:
             "pause",
             "resume",
             "info",
+            "suggest_config",
         }
 
         assert set(VM_ACTIONS.keys()) == expected_actions

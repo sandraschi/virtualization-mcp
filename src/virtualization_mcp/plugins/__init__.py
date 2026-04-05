@@ -22,8 +22,8 @@ except ImportError as e:
     logger.warning(f"Failed to import plugins: {e}")
     PLUGINS_AVAILABLE = False
 
-    # Create dummy classes for type checking
-    class DummyPlugin:
+    # Fallback classes when plugin modules are unavailable.
+    class FallbackPlugin:
         def __init__(self, *args, **kwargs):
             pass
 
@@ -33,10 +33,10 @@ except ImportError as e:
         def register_tools(self, *args, **kwargs):
             pass
 
-    class HyperVManagerPlugin(DummyPlugin):
+    class HyperVManagerPlugin(FallbackPlugin):
         pass
 
-    class WindowsSandboxHelper(DummyPlugin):
+    class WindowsSandboxHelper(FallbackPlugin):
         pass
 
 
@@ -119,11 +119,7 @@ def get_windows_sandbox() -> WindowsSandboxHelper | None:
 
 
 def register_plugin(name: str, description: str = "", category: str = "general"):
-    """Decorator for registering plugins (stub for compatibility).
-
-    This is a stub decorator for compatibility with code that expects the
-    register_plugin decorator. In the current architecture, plugins are
-    registered through the PluginManager instead.
+    """Compatibility decorator for legacy plugin registration paths.
 
     Args:
         name: Plugin name
@@ -133,7 +129,9 @@ def register_plugin(name: str, description: str = "", category: str = "general")
     Returns:
         Decorator function that returns the class unchanged
     """
+
     def decorator(cls):
-        logger.debug(f"Plugin registration stub called for {name}")
+        logger.debug(f"Compatibility plugin registration called for {name}")
         return cls
+
     return decorator

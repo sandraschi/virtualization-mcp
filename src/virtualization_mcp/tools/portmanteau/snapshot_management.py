@@ -38,6 +38,8 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
         vm_name: str,
         snapshot_name: str | None = None,
         description: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
     ) -> dict[str, Any]:
         """
         Comprehensive snapshot management portmanteau tool.
@@ -116,7 +118,7 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
 
             # Route to appropriate function based on action
             if action == "list":
-                return await _handle_list_snapshots(vm_name=vm_name)
+                return await _handle_list_snapshots(vm_name=vm_name, limit=limit, offset=offset)
 
             elif action == "create":
                 return await _handle_create_snapshot(
@@ -154,16 +156,39 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
             }
 
 
-async def _handle_list_snapshots(vm_name: str) -> dict[str, Any]:
+def _paginate(items: list[dict[str, Any]], limit: int, offset: int) -> dict[str, Any]:
+    lim = max(1, min(int(limit), 500))
+    off = max(0, int(offset))
+    page = items[off : off + lim]
+    return {
+        "items": page,
+        "count": len(page),
+        "total": len(items),
+        "limit": lim,
+        "offset": off,
+        "has_more": off + len(page) < len(items),
+    }
+
+
+async def _handle_list_snapshots(
+    vm_name: str, limit: int = 100, offset: int = 0
+) -> dict[str, Any]:
     """Handle list snapshots action."""
     try:
         result = await list_snapshots(vm_name=vm_name)
+        snapshots = result.get("snapshots", []) if isinstance(result, dict) else []
+        page = _paginate(snapshots if isinstance(snapshots, list) else [], limit, offset)
         return {
-            "success": True,
+            "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "list",
             "vm_name": vm_name,
             "data": result,
-            "count": len(result) if isinstance(result, list) else 0,
+            "count": page["count"],
+            "total": page["total"],
+            "limit": page["limit"],
+            "offset": page["offset"],
+            "has_more": page["has_more"],
+            "items": page["items"],
         }
     except Exception as e:
         return {
@@ -191,7 +216,7 @@ async def _handle_create_snapshot(
             vm_name=vm_name, snapshot_name=snapshot_name, description=description
         )
         return {
-            "success": True,
+            "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "create",
             "vm_name": vm_name,
             "snapshot_name": snapshot_name,
@@ -222,7 +247,7 @@ async def _handle_restore_snapshot(
     try:
         result = await restore_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
         return {
-            "success": True,
+            "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "restore",
             "vm_name": vm_name,
             "snapshot_name": snapshot_name,
@@ -253,7 +278,7 @@ async def _handle_delete_snapshot(
     try:
         result = await delete_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
         return {
-            "success": True,
+            "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "delete",
             "vm_name": vm_name,
             "snapshot_name": snapshot_name,

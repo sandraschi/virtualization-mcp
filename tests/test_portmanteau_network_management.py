@@ -53,7 +53,7 @@ class TestNetworkManagementPortmanteau:
         # Verify tool registration - the function should be captured
         assert self._tool_func is not None
         assert self._tool_func.__name__ == "network_management"
-        assert "Manage network" in self._tool_func.__doc__
+        assert "Comprehensive network management" in self._tool_func.__doc__
 
     @pytest.mark.asyncio
     async def test_invalid_action(self, network_management_tool):
@@ -72,18 +72,19 @@ class TestNetworkManagementPortmanteau:
             {"name": "vboxnet0", "ip": "192.168.56.1"},
             {"name": "vboxnet1", "ip": "192.168.57.1"},
         ]
+        mock_payload = {"status": "success", "networks": mock_networks}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.network_management.list_hostonly_networks",
             new_callable=AsyncMock,
         ) as mock_list_networks:
-            mock_list_networks.return_value = mock_networks
+            mock_list_networks.return_value = mock_payload
 
             result = await network_management_tool(action="list_networks")
 
             assert result["success"] is True
             assert result["action"] == "list_networks"
-            assert result["data"] == mock_networks
+            assert result["data"] == mock_payload
             assert result["count"] == 2
             mock_list_networks.assert_called_once()
 
@@ -105,7 +106,7 @@ class TestNetworkManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_create_network_action_success(self, network_management_tool):
         """Test create network action."""
-        mock_result = {"network_name": "TestNetwork", "created": True}
+        mock_result = {"status": "success", "network_name": "TestNetwork"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.network_management.create_hostonly_network",
@@ -125,7 +126,7 @@ class TestNetworkManagementPortmanteau:
             assert result["network_name"] == "TestNetwork"
             assert result["data"] == mock_result
             mock_create_network.assert_called_once_with(
-                network_name="TestNetwork", ip_address="192.168.56.1", netmask="255.255.255.0"
+                network_name="TestNetwork", ip="192.168.56.1", netmask="255.255.255.0"
             )
 
     @pytest.mark.asyncio
@@ -140,7 +141,7 @@ class TestNetworkManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_remove_network_action_success(self, network_management_tool):
         """Test remove network action."""
-        mock_result = {"network_name": "TestNetwork", "removed": True}
+        mock_result = {"status": "success", "network_name": "TestNetwork"}
 
         with patch(
             "virtualization_mcp.tools.portmanteau.network_management.remove_hostonly_network",
@@ -156,7 +157,7 @@ class TestNetworkManagementPortmanteau:
             assert result["action"] == "remove_network"
             assert result["network_name"] == "TestNetwork"
             assert result["data"] == mock_result
-            mock_remove_network.assert_called_once_with(network_name="TestNetwork")
+            mock_remove_network.assert_called_once_with(interface="TestNetwork")
 
     @pytest.mark.asyncio
     async def test_remove_network_action_missing_network_name(self, network_management_tool):
@@ -170,13 +171,29 @@ class TestNetworkManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_list_adapters_action_success(self, network_management_tool):
         """Test list adapters action."""
-        result = await network_management_tool(action="list_adapters", vm_name="TestVM")
+        mock_result = {
+            "status": "success",
+            "vm_name": "TestVM",
+            "adapters": [
+                {"slot": 0, "type": "nat", "enabled": True},
+                {"slot": 1, "type": "none", "enabled": False},
+                {"slot": 2, "type": "none", "enabled": False},
+                {"slot": 3, "type": "none", "enabled": False},
+            ],
+        }
+        with patch(
+            "virtualization_mcp.tools.portmanteau.network_management.list_network_adapters",
+            new_callable=AsyncMock,
+        ) as mock_list_adapters:
+            mock_list_adapters.return_value = mock_result
+            result = await network_management_tool(action="list_adapters", vm_name="TestVM")
 
-        assert result["success"] is True
-        assert result["action"] == "list_adapters"
-        assert result["vm_name"] == "TestVM"
-        assert "adapters" in result["data"]
-        assert len(result["data"]["adapters"]) == 4  # Default 4 adapters
+            assert result["success"] is True
+            assert result["action"] == "list_adapters"
+            assert result["vm_name"] == "TestVM"
+            assert "adapters" in result["data"]
+            assert len(result["data"]["adapters"]) == 4
+            mock_list_adapters.assert_called_once_with(vm_name="TestVM")
 
     @pytest.mark.asyncio
     async def test_list_adapters_action_missing_vm_name(self, network_management_tool):
@@ -190,21 +207,27 @@ class TestNetworkManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_configure_adapter_action_success(self, network_management_tool):
         """Test configure adapter action."""
-        result = await network_management_tool(
-            action="configure_adapter",
-            vm_name="TestVM",
-            adapter_slot=0,
-            network_type="hostonly",
-            network_name="TestNetwork",
-        )
+        with patch(
+            "virtualization_mcp.tools.portmanteau.network_management.configure_network_adapter",
+            new_callable=AsyncMock,
+        ) as mock_configure:
+            mock_result = {"status": "success", "message": "configured"}
+            mock_configure.return_value = mock_result
+            result = await network_management_tool(
+                action="configure_adapter",
+                vm_name="TestVM",
+                adapter_slot=0,
+                network_type="hostonly",
+                network_name="TestNetwork",
+            )
 
-        assert result["success"] is True
-        assert result["action"] == "configure_adapter"
-        assert result["vm_name"] == "TestVM"
-        assert result["data"]["adapter_slot"] == 0
-        assert result["data"]["network_type"] == "hostonly"
-        assert result["data"]["network_name"] == "TestNetwork"
-        assert result["data"]["configured"] is True
+            assert result["success"] is True
+            assert result["action"] == "configure_adapter"
+            assert result["vm_name"] == "TestVM"
+            assert result["data"] == mock_result
+            mock_configure.assert_called_once_with(
+                vm_name="TestVM", adapter_id=1, network_type="hostonly"
+            )
 
     @pytest.mark.asyncio
     async def test_configure_adapter_action_missing_vm_name(self, network_management_tool):
@@ -319,9 +342,13 @@ class TestNetworkManagementPortmanteau:
         result = await network_management_tool(action="create_network", network_name="")
         assert result["success"] is False
 
-        # Test with invalid adapter slot
-        result = await network_management_tool(
-            action="configure_adapter", vm_name="TestVM", adapter_slot=-1, network_type="nat"
-        )
-        # Should still work as validation is in the handler
-        assert result["success"] is True
+        # Test with invalid adapter slot now fails via underlying validation
+        with patch(
+            "virtualization_mcp.tools.portmanteau.network_management.configure_network_adapter",
+            new_callable=AsyncMock,
+        ) as mock_configure:
+            mock_configure.return_value = {"status": "error", "message": "Adapter ID must be between 1 and 4"}
+            result = await network_management_tool(
+                action="configure_adapter", vm_name="TestVM", adapter_slot=-1, network_type="nat"
+            )
+            assert result["success"] is False

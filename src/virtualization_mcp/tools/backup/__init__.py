@@ -6,7 +6,7 @@ and configuration management.
 """
 
 from .backup_tools import (
-    # Backup manager (stub for compatibility)
+    # Backup manager exports
     backup_manager,
     delete_backup,
     get_backup_config,
