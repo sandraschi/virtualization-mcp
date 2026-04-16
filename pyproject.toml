@@ -3,17 +3,14 @@ requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "virtualization-mcp"
+name = "schip-mcp-virtualization"
 version = "1.1.0"
 description = "Professional multi-provider VM management server (VirtualBox & Hyper-V) with comprehensive operations, networking, storage, and security features"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-    { name = "Sandra Schi", email = "sandraschipal@protonmail.com" }
-]
-maintainers = [
-    { name = "Sandra Schi", email = "sandra@sandraschi.dev" }
+    { name = "Sandra Schipal", email = "sandra@schipal.at" }
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -63,6 +60,7 @@ dependencies = [
     "loguru>=0.7.0",
     "ruff>=0.14.0",
     "google-generativeai>=0.8.0",
+    "prefab-ui>=0.14.0",
 ]
 
 # Project URLs for PyPI
@@ -233,3 +231,6 @@ ignore = ["S101", "B008"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/virtualization_mcp"]

@@ -1885,6 +1885,20 @@ wheels = [
 ]
 
 [[package]]
+name = "prefab-ui"
+version = "0.19.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cyclopts" },
+    { name = "pydantic" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/79/039ade4eb3bdd23d5850b448f125b93aef3487c30d86adad5ceb9f5929de/prefab_ui-0.19.1.tar.gz", hash = "sha256:344b8c65e8c97d7f9684152c2fd014e8427f7239f633e9a2c3c8fe125a9ce1f4", size = 4082891, upload-time = "2026-04-14T16:26:58.835Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e4/be/6721c2e4ac5a974d5cab7a5994111996e7d74c6239fb946e21af1799df59/prefab_ui-0.19.1-py3-none-any.whl", hash = "sha256:9cf937ae2a2eab98d05f47699ac5be66b14f061f9d99d83b71dd77bc2b6d6b3f", size = 1849329, upload-time = "2026-04-14T16:27:00.618Z" },
+]
+
+[[package]]
 name = "prometheus-client"
 version = "0.23.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2839,6 +2853,113 @@ wheels = [
 ]
 
 [[package]]
+name = "schip-mcp-virtualization"
+version = "1.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "aiofiles" },
+    { name = "aiohttp" },
+    { name = "black" },
+    { name = "docker" },
+    { name = "fastapi" },
+    { name = "fastmcp" },
+    { name = "google-generativeai" },
+    { name = "jinja2" },
+    { name = "loguru" },
+    { name = "pathlib2" },
+    { name = "pre-commit" },
+    { name = "prefab-ui" },
+    { name = "prometheus-client" },
+    { name = "psutil" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "python-socketio" },
+    { name = "pyvbox" },
+    { name = "pywin32" },
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "ruff" },
+    { name = "uvicorn" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "bandit" },
+    { name = "black" },
+    { name = "build" },
+    { name = "isort" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+    { name = "safety" },
+    { name = "semgrep", version = "1.79.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14' and sys_platform == 'win32'" },
+    { name = "semgrep", version = "1.85.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14' or sys_platform != 'win32'" },
+    { name = "twine" },
+    { name = "types-setuptools" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiofiles", specifier = ">=23.0.0" },
+    { name = "aiohttp", specifier = ">=3.8.0" },
+    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
+    { name = "black", specifier = ">=23.0.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
+    { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.0" },
+    { name = "docker", specifier = ">=7.0.0" },
+    { name = "fastapi", specifier = ">=0.95.0" },
+    { name = "fastmcp", specifier = ">=3.1.0" },
+    { name = "google-generativeai", specifier = ">=0.8.0" },
+    { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.0" },
+    { name = "jinja2", specifier = ">=3.1.0" },
+    { name = "loguru", specifier = ">=0.7.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
+    { name = "pathlib2", specifier = ">=2.3.7" },
+    { name = "pre-commit", specifier = ">=3.5.0" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
+    { name = "prefab-ui", specifier = ">=0.14.0" },
+    { name = "prometheus-client", specifier = ">=0.19.0" },
+    { name = "psutil", specifier = ">=5.9.0" },
+    { name = "pydantic", specifier = ">=1.10.5" },
+    { name = "pydantic-settings", specifier = ">=2.0.0" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.390" },
+    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=0.21.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.12.0" },
+    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.0.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "python-multipart", specifier = ">=0.0.5" },
+    { name = "python-socketio", specifier = ">=5.10.0" },
+    { name = "pyvbox", specifier = ">=2.1.1" },
+    { name = "pywin32", specifier = ">=306" },
+    { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=300" },
+    { name = "pyyaml", specifier = ">=6.0.1" },
+    { name = "rich", specifier = ">=13.0.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.6" },
+    { name = "safety", marker = "extra == 'dev'", specifier = ">=3.0.0" },
+    { name = "semgrep", marker = "extra == 'dev'", specifier = ">=1.0.0" },
+    { name = "twine", marker = "extra == 'dev'", specifier = ">=5.0.0" },
+    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=69.0.0" },
+    { name = "typing-extensions", marker = "python_full_version < '3.10'", specifier = ">=4.0.0" },
+    { name = "uvicorn", specifier = ">=0.21.0" },
+]
+provides-extras = ["dev"]
+
+[[package]]
 name = "secretstorage"
 version = "3.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3164,111 +3285,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/a4/d5/b0ccd381d55c8f45d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/73/d9a94da0e9d470a543c1b9d3ccbceb0f59455983088e727b8a1824ed90fb/virtualenv-20.35.3-py3-none-any.whl", hash = "sha256:63d106565078d8c8d0b206d48080f938a8b25361e19432d2c9db40d2899c810a", size = 5981061, upload-time = "2025-10-10T21:23:30.433Z" },
 ]
-
-[[package]]
-name = "virtualization-mcp"
-version = "1.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "aiofiles" },
-    { name = "aiohttp" },
-    { name = "black" },
-    { name = "docker" },
-    { name = "fastapi" },
-    { name = "fastmcp" },
-    { name = "google-generativeai" },
-    { name = "jinja2" },
-    { name = "loguru" },
-    { name = "pathlib2" },
-    { name = "pre-commit" },
-    { name = "prometheus-client" },
-    { name = "psutil" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "python-dotenv" },
-    { name = "python-multipart" },
-    { name = "python-socketio" },
-    { name = "pyvbox" },
-    { name = "pywin32" },
-    { name = "pyyaml" },
-    { name = "rich" },
-    { name = "ruff" },
-    { name = "uvicorn" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "bandit" },
-    { name = "black" },
-    { name = "build" },
-    { name = "isort" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-    { name = "safety" },
-    { name = "semgrep", version = "1.79.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14' and sys_platform == 'win32'" },
-    { name = "semgrep", version = "1.85.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14' or sys_platform != 'win32'" },
-    { name = "twine" },
-    { name = "types-setuptools" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiofiles", specifier = ">=23.0.0" },
-    { name = "aiohttp", specifier = ">=3.8.0" },
-    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
-    { name = "black", specifier = ">=23.0.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
-    { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "docker", specifier = ">=7.0.0" },
-    { name = "fastapi", specifier = ">=0.95.0" },
-    { name = "fastmcp", specifier = ">=3.1.0" },
-    { name = "google-generativeai", specifier = ">=0.8.0" },
-    { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.0" },
-    { name = "jinja2", specifier = ">=3.1.0" },
-    { name = "loguru", specifier = ">=0.7.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
-    { name = "pathlib2", specifier = ">=2.3.7" },
-    { name = "pre-commit", specifier = ">=3.5.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
-    { name = "prometheus-client", specifier = ">=0.19.0" },
-    { name = "psutil", specifier = ">=5.9.0" },
-    { name = "pydantic", specifier = ">=1.10.5" },
-    { name = "pydantic-settings", specifier = ">=2.0.0" },
-    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.390" },
-    { name = "pytest", specifier = ">=7.4.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
-    { name = "pytest-asyncio", specifier = ">=0.21.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.12.0" },
-    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "python-multipart", specifier = ">=0.0.5" },
-    { name = "python-socketio", specifier = ">=5.10.0" },
-    { name = "pyvbox", specifier = ">=2.1.1" },
-    { name = "pywin32", specifier = ">=306" },
-    { name = "pywin32", marker = "sys_platform == 'win32'", specifier = ">=300" },
-    { name = "pyyaml", specifier = ">=6.0.1" },
-    { name = "rich", specifier = ">=13.0.0" },
-    { name = "ruff", specifier = ">=0.14.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.6" },
-    { name = "safety", marker = "extra == 'dev'", specifier = ">=3.0.0" },
-    { name = "semgrep", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "twine", marker = "extra == 'dev'", specifier = ">=5.0.0" },
-    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=69.0.0" },
-    { name = "typing-extensions", marker = "python_full_version < '3.10'", specifier = ">=4.0.0" },
-    { name = "uvicorn", specifier = ">=0.21.0" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "watchfiles"
