@@ -1,0 +1,72 @@
+name: Industrial Launch (schip-mcp-virtualization)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Build Distributions
+        run: |
+          uv build
+          # Heritage support for legacy MCPB
+          if [ -d "mcpb" ]; then
+            zip -r dist/schip-mcp-virtualization.mcpb mcpb/ -x "*.git*"
+          fi
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          if [ -f "CHANGELOG.md" ]; then
+            head -n 50 CHANGELOG.md >> $GITHUB_OUTPUT
+          else
+            git log -n 10 --pretty=format:"* %s (%h)" >> $GITHUB_OUTPUT
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "schip-mcp-virtualization ${{ github.ref_name }}"
+          body: |
+            ## 🚀 Industrial Launch: ${{ github.ref_name }}
+            
+            This release marks the transition of the **Virtualization MCP Server** to the SOTA PyPI-based "Zero-Install" distribution model.
+
+            ### ⚡ Quick Start (Zero-Install)
+            ```powershell
+            uvx schip-mcp-virtualization --serve
+            ```
+
+            ### 📖 What's New
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ---
+            *Automatically published by the Industrial Launch pipeline via GitHub OIDC Trusted Publishing.*
+          files: |
+            dist/*
