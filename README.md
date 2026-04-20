@@ -1,5 +1,7 @@
 # virtualization-mcp - Professional Multi-Provider VM Management
 
+[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.1.0-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+
 **v1.1.0 - Multi-provider virtualization management (VirtualBox & Hyper-V) with advanced lifecycle controls**
 
 > ** Production Ready**: Full-featured VirtualBox management through Claude Desktop with 60+ operations organized in 5 intuitive tools!
@@ -30,10 +32,10 @@ virtualization-mcp is a professional Model Context Protocol (MCP) server that br
 - ** 499 Passing Tests** - Robust test suite with 82.5% success rate
 - ** 296 KB MCPB** - Optimized package, no bundled dependencies
 - ** 8 AI Prompts** - 25+ KB of guidance templates
-- ** FastMCP 3.1+** - Prompts and skills (virtualization_expert)
+- ** FastMCP 3.1.0+** - Prompts and skills (virtualization_expert)
 - ** Cross-Platform** - Windows, macOS, Linux support
 
-### Prompts and skills (FastMCP 3.1)
+### Prompts and skills (FastMCP 3.1.0)
 
 - **Prompt**: `virtualization_expert`  optional `focus` (general, lifecycle, storage, network). Clients can request this prompt to load instructions so the LLM acts as a virtualization expert using this server's tools.
 - **Skill**: Bundled `virtualization-expert` skill in `src/virtualization_mcp/skills/virtualization-expert/SKILL.md`, exposed via `skill://virtualization-expert/SKILL.md` for clients that support MCP resources.
@@ -249,7 +251,7 @@ Claude: Uses network_management(action="create_network",
 
 ### Technical Documentation
 - [Tool Mode Configuration](docs/mcp-technical/TOOL_MODE_CONFIGURATION.md) - Switch between modes
-- [FastMCP 2.12 Compliance](docs/mcp-technical/FASTMCP_2.12_COMPLIANCE.md) - Integration details
+- [FastMCP 3.1.0 Compliance](docs/mcp-technical/FASTMCP_2.12_COMPLIANCE.md) - Integration details
 - [Docstring Coverage](docs/mcp-technical/DOCSTRING_COVERAGE.md) - 100% coverage report
 - [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) - Complete status
 
@@ -283,7 +285,7 @@ Claude: Uses network_management(action="create_network",
 ##  Architecture
 
 ### Built With:
-- **FastMCP 3.1+** - Prompts, skills, Context, progress reporting, optional LLM sampling in tools
+- **FastMCP 3.1.0+** - Prompts, skills, Context, progress reporting, optional LLM sampling in tools
 - **UV** - Modern Python package manager
 - **Ruff** - Fast Python linter & formatter
 - **pytest** - Comprehensive test suite
@@ -437,6 +439,17 @@ See [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md) for complete de
 **GitHub:** [@sandraschi](https://github.com/sandraschi)
 
 ---
+
+
+## 🛡️ Industrial Quality Stack
+
+This project adheres to **SOTA 14.1** industrial standards for high-fidelity agentic orchestration:
+
+- **Python (Core)**: [Ruff](https://astral.sh/ruff) for linting and formatting. Zero-tolerance for `print` statements in core handlers (`T201`).
+- **Webapp (UI)**: [Biome](https://biomejs.dev/) for sub-millisecond linting. Strict `noConsoleLog` enforcement.
+- **Protocol Compliance**: Hardened `stdout/stderr` isolation to ensure crash-resistant JSON-RPC communication.
+- **Automation**: [Justfile](./justfile) recipes for all fleet operations (`just lint`, `just fix`, `just dev`).
+- **Security**: Automated audits via `bandit` and `safety`.
 
 ##  License
 
