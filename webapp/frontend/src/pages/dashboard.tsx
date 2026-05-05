@@ -1,4 +1,4 @@
-import { Activity, Box, Cpu, HardDrive, MemoryStick, Monitor, Server } from "lucide-react";
+import { Activity, Box, Cpu, ExternalLink, HardDrive, MemoryStick, Monitor, Server } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Area,
@@ -34,13 +34,26 @@ interface DashboardData {
   virtualbox: { version: string };
 }
 
+const VBOX_DOWNLOAD_URL = "https://www.virtualbox.org/wiki/Downloads";
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [vboxAvail, setVboxAvail] = useState<boolean | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/v1/vbox/status`);
+        if (r.ok) {
+          const s = await r.json();
+          setVboxAvail(s.available);
+        }
+      } catch { /* backend down */ }
+    };
+    fetchStatus();
     const fetchData = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/v1/dashboard`);
@@ -145,6 +158,27 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Virtualization stack status */}
+      {vboxAvail === false && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
+          <h3 className="font-semibold text-lg text-amber-200">VirtualBox not detected</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            VirtualBox is required to create and manage VMs. If you just installed it, open
+            VirtualBox once to initialize the service, then refresh this page.
+          </p>
+          <div className="flex gap-3 mt-4">
+            <a href={VBOX_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-200 hover:bg-amber-500/30 transition-colors font-medium text-sm">
+              <ExternalLink className="w-4 h-4" /> Download VirtualBox
+            </a>
+            <button onClick={() => window.location.reload()}
+              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-colors text-sm">
+              Refresh
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* System Resources chart */}
