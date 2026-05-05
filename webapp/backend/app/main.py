@@ -121,9 +121,9 @@ SANDBOX_DEV_SETUP_TOOLS = {
     "cursor": "Anysphere.Cursor",
     "antigravity": "Google.Antigravity",
 }
-# Claude Desktop: no winget; download and run installer
+# Claude Desktop: use MSIX for silent/headless install
 SANDBOX_DEV_SETUP_DOWNLOAD = {
-    "claude_desktop": ("https://downloads.claude.ai/releases/win32/ClaudeSetup.exe", "ClaudeSetup.exe"),
+    "claude_desktop": ("https://claude.ai/api/desktop/win32/x64/msix/latest/redirect", "Claude.msix"),
 }
 # OpenClaw (npm), OpenFang (install.ps1), RoboFang (git + pip -e) - optional post-steps
 ROBOFANG_REPO = "https://github.com/sandraschi/robofang"
@@ -185,12 +185,13 @@ if (Get-Command python -ErrorAction SilentlyContinue) {
         url, name = SANDBOX_DEV_SETUP_DOWNLOAD["claude_desktop"]
         claude_block = f"""
 # 6) Claude Desktop (download and run installer; no winget)
-    Write-Host "Downloading Claude Desktop..." -ForegroundColor Yellow
-$claudeExe = Join-Path $env:TEMP "{name}"
+    Write-Host "Downloading Claude Desktop (MSIX)..." -ForegroundColor Yellow
+$claudeMsix = Join-Path $env:TEMP "{name}"
 try {{
-    Invoke-WebRequest -Uri "{url}" -OutFile $claudeExe -UseBasicParsing
-    Write-Host "Installing Claude Desktop (may show installer UI)..." -ForegroundColor Yellow
-    Start-Process -FilePath $claudeExe -Wait -ArgumentList '/S'
+    Invoke-WebRequest -Uri "{url}" -OutFile $claudeMsix -UseBasicParsing
+    Write-Host "Installing Claude Desktop (headless MSIX)..." -ForegroundColor Yellow
+    Add-AppxPackage -Path $claudeMsix -ErrorAction Stop
+    Write-Host "Claude Desktop installed." -ForegroundColor Green
 }} catch {{ Write-Host "Claude Desktop: $($_.Exception.Message)" -ForegroundColor Yellow }}
 """
     openclaw_block = ""
