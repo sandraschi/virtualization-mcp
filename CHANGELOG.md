@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added: VRDP/VRDE Remote Desktop support + VM Console
+
+- **VRDE management** — `POST/GET /api/v1/vms/{name}/vrde` enables/disables VirtualBox's built-in VRDP server. Returns port for connection.
+- **RDP file download** — `GET /api/v1/vms/{name}/rdp` generates a `.rdp` file. Open it with `mstsc.exe` for full mouse/keyboard interaction.
+- **WebSocket VNC proxy** — `WebSocket /api/v1/vms/{name}/vnc` bridges browser to VRDP TCP socket. Ready for noVNC client integration.
+- **VM Console page** (`/vm/{name}/console`) — full-screen dark console with 3 screenshot polling, VRDE toggle, RDP download, and live/pause controls.
+- **VRDP button** on each VM card — one-click enable VRDE for running VMs.
+- **Hyper-V and Sandbox requirement notices** — both pages now show edition requirements (Pro/Enterprise) and enable instructions.
+- **Snapshot management UI** — expandable snapshot list per VM with restore/delete buttons and count badge.
+- **VirtualBox install help on Dashboard** — amber banner with download link when VBox not detected.
+
 ### Fixed: Windows Sandbox dev infra setup — winget now installs successfully
 
 - **Fixed WindowsAppRuntime dependency** — winget's App Installer MSIX requires `WindowsAppRuntime.1.8`, which was missing from the sandbox image. Changed from broken `aka.ms` URLs (return HTML instead of MSIX) to using `DesktopAppInstaller_Dependencies.zip` from the official winget-cli GitHub release. This 93 MB zip contains VCLibs, UI.Xaml, and WindowsAppRuntime as `.appx` files.
