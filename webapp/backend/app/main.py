@@ -1611,5 +1611,79 @@ async def delete_vm(name: str):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@app.post("/api/v1/vms/{name}/move-desktop")
+async def move_vm_to_desktop(name: str, desktop: int = 2):
+    """Move a running VM's window to a specific Windows virtual desktop."""
+    import subprocess as _sub
+    ps_script = f'''
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public class VBoxWindow {{
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [ComImport, Guid("aa509086-5ca9-4c6c-95c2-4cb0f5c7b5e2"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IVirtualDesktopManager {{
+        void IsWindowOnCurrentVirtualDesktop(IntPtr topLevelWindow, out bool onCurrentDesktop);
+        void GetWindowDesktopId(IntPtr topLevelWindow, out Guid desktopId);
+        void MoveWindowToDesktop(IntPtr topLevelWindow, ref Guid desktopId);
+    }}
+
+    public static void MoveToDesktop(string vmName, int targetDesktop) {{
+        IntPtr hwnd = FindWindow(null, vmName);
+        if (hwnd == IntPtr.Zero) {{
+            hwnd = FindWindow("Qt5QWindowIcon", vmName);
+        }}
+        if (hwnd == IntPtr.Zero) {{
+            hwnd = FindWindow("VBoxWindow", vmName);
+        }}
+        if (hwnd == IntPtr.Zero)
+            throw new Exception("Window not found for: " + vmName);
+
+        ShowWindow(hwnd, 1);
+        SetForegroundWindow(hwnd);
+        System.Threading.Thread.Sleep(200);
+
+        Type mgrType = Type.GetTypeFromCLSID(new Guid("aa509086-5ca9-4c6c-95c2-4cb0f5c7b5e2"));
+        var mgr = (IVirtualDesktopManager)Activator.CreateInstance(mgrType);
+
+        Guid desktopId;
+        mgr.GetWindowDesktopId(hwnd, out desktopId);
+
+        int currentDesktop = 1;
+        try {{ currentDesktop = int.Parse(Environment.GetCommandLineArgs().Skip(1).First() ?? "1"); }} catch {{ }}
+
+        int diff = targetDesktop - currentDesktop;
+        string direction = diff > 0 ? "{{RIGHT}}" : "{{LEFT}}";
+        int times = Math.Abs(diff);
+
+        for (int i = 0; i < times; i++) {{
+            System.Windows.Forms.SendKeys.SendWait("^%{direction}");
+            System.Threading.Thread.Sleep(100);
+        }}
+    }}
+}}
+"@ -ReferencedAssemblies System.Windows.Forms
+[VBoxWindow]::MoveToDesktop("{name}", {desktop})
+'''
+    try:
+        r = _sub.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, text=True, timeout=30)
+        if r.returncode == 0:
+            return {"status": "success", "message": f"Moved {name} to desktop {desktop}"}
+        else:
+            return {"status": "error", "message": r.stderr.strip() or r.stdout.strip()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=10761, reload=True)

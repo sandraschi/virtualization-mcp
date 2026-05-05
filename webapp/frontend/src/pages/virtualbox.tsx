@@ -624,6 +624,29 @@ export default function VirtualBox() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={async () => {
+                            await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/move-desktop?desktop=1`, { method: "POST" });
+                          }}
+                          className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-white transition-colors text-[10px] font-mono"
+                          title="Move to Desktop 1"
+                        >D1</button>
+                        <button
+                          onClick={async () => {
+                            await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/move-desktop?desktop=2`, { method: "POST" });
+                          }}
+                          className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-white transition-colors text-[10px] font-mono"
+                          title="Move to Desktop 2"
+                        >D2</button>
+                        <button
+                          onClick={async () => {
+                            await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/move-desktop?desktop=3`, { method: "POST" });
+                          }}
+                          className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-white transition-colors text-[10px] font-mono"
+                          title="Move to Desktop 3"
+                        >D3</button>
+                      </div>
                       {vm.state !== "running" && (
                         <button
                           onClick={async () => {
