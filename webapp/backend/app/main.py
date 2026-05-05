@@ -420,6 +420,11 @@ class ChatRequest(BaseModel):
     model: str | None = None
 
 
+class VrdeRequest(BaseModel):
+    enabled: bool = True
+    port: int | None = None
+
+
 class ToolCallRequest(BaseModel):
     name: str
     arguments: dict[str, Any] = {}
@@ -1683,6 +1688,175 @@ public class VBoxWindow {{
             return {"status": "error", "message": r.stderr.strip() or r.stdout.strip()}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/v1/vms/{vm_name}/attach-iso")
+async def attach_iso_to_vm(vm_name: str, request: AttachIsoRequest):
+    """Attach an ISO to a VM (e.g. path from assets/vbox)."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    iso_path = (request.iso_path or "").strip()
+    if not iso_path or not os.path.isfile(iso_path):
+        raise HTTPException(status_code=400, detail="iso_path must be an existing file")
+    try:
+        result = await asyncio.to_thread(
+            service_manager.vm_service.attach_iso,
+            vm_name=vm_name,
+            iso_path=os.path.abspath(iso_path),
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error attaching ISO to {vm_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/api/v1/vms/{name}/screenshot")
+async def get_vm_screenshot(name: str):
+    """Capture a screenshot of a running VM's screen."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    import subprocess as _sub
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+        tmp_path = tmp.name
+    try:
+        r = _sub.run([vbox, "controlvm", name, "screenshotpng", tmp_path], capture_output=True, text=True, timeout=15)
+        if r.returncode != 0:
+            raise Exception(r.stderr.strip())
+        from fastapi.responses import FileResponse
+        return FileResponse(tmp_path, media_type="image/png")
+    except Exception as e:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise HTTPException(status_code=501, detail=str(e))
+
+
+@app.post("/api/v1/vms/{name}/vrde")
+async def set_vm_vrde(name: str, request: VrdeRequest):
+    """Enable or disable VRDE (remote desktop) for a VM."""
+    import subprocess as _sub
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    enable = "on" if request.enabled else "off"
+    port_arg = [f"--vrdeport", str(request.port)] if request.port else []
+    try:
+        cmd = [vbox, "modifyvm", name, "--vrde", enable] + port_arg
+        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            raise HTTPException(status_code=400, detail=r.stderr.strip())
+        show_cmd = [vbox, "showvminfo", name, "--machinereadable"]
+        r2 = _sub.run(show_cmd, capture_output=True, text=True, timeout=30)
+        port = "3389"
+        for line in r2.stdout.splitlines():
+            if line.startswith("vrdeport="):
+                port = line.split("=", 1)[1].strip('"')
+                break
+        return {"status": "success", "vrde": request.enabled, "port": port}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/vms/{name}/vrde")
+async def get_vm_vrde(name: str):
+    """Get VRDE status and port for a VM."""
+    import subprocess as _sub
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    try:
+        cmd = [vbox, "showvminfo", name, "--machinereadable"]
+        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            raise HTTPException(status_code=404, detail=f"VM '{name}' not found")
+        vrde = "false"
+        port = "3389"
+        for line in r.stdout.splitlines():
+            if line.startswith("vrde="):
+                vrde = line.split("=", 1)[1].strip('"').lower()
+            elif line.startswith("vrdeport="):
+                port = line.split("=", 1)[1].strip('"')
+        return {"vrde": vrde in ("on", "true"), "port": int(port)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/vms/{name}/rdp")
+async def download_vm_rdp(name: str):
+    """Download an .rdp file for connecting to the VM via Remote Desktop."""
+    import subprocess as _sub
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    try:
+        cmd = [vbox, "showvminfo", name, "--machinereadable"]
+        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        port = "3389"
+        for line in r.stdout.splitlines():
+            if line.startswith("vrdeport="):
+                port = line.split("=", 1)[1].strip('"')
+                break
+        rdp = f"full address:s:127.0.0.1:{port}\nprompt for credentials:i:1\nusername:s:user\nscreen mode id:i:2\nsession bpp:i:32\nconnection type:i:2\nnetworkautodetect:i:1\n"
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(content=rdp, media_type="application/octet-stream", headers={"Content-Disposition": f'attachment; filename="{name}.rdp"'})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.websocket("/api/v1/vms/{name}/vnc")
+async def vm_vnc_websocket(websocket: WebSocket, name: str):
+    """WebSocket proxy: browser (noVNC) -> VM VRDP server."""
+    import subprocess as _sub
+    await websocket.accept()
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    port = 3389
+    try:
+        r = _sub.run([vbox, "showvminfo", name, "--machinereadable"], capture_output=True, text=True, timeout=15)
+        for line in r.stdout.splitlines():
+            if line.startswith("vrdeport="):
+                port = int(line.split("=", 1)[1].strip('"'))
+                break
+    except Exception:
+        pass
+    try:
+        reader, writer = await asyncio.open_connection("127.0.0.1", port)
+    except ConnectionRefusedError:
+        await websocket.send_text("ERROR: VRDE not running")
+        await websocket.close()
+        return
+    except Exception as e:
+        await websocket.send_text(f"ERROR: {e}")
+        await websocket.close()
+        return
+
+    async def ws_to_tcp():
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                writer.write(data)
+                await writer.drain()
+        except Exception:
+            pass
+        finally:
+            try:
+                writer.close()
+            except Exception:
+                pass
+
+    async def tcp_to_ws():
+        try:
+            while True:
+                data = await reader.read(65536)
+                if not data:
+                    break
+                await websocket.send_bytes(data)
+        except Exception:
+            pass
+        finally:
+            try:
+                writer.close()
+            except Exception:
+                pass
+
+    await asyncio.gather(ws_to_tcp(), tcp_to_ws())
 
 
 if __name__ == "__main__":
