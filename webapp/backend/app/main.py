@@ -1375,11 +1375,27 @@ async def chat_interaction(request: ChatRequest):
 
     prefix = "You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet.\nUser: "
 
-    # Try Ollama first
+    # Try Ollama — discover available model or use default
+    try:
+        # Probe available models to pick one that exists
+        _avail_req = _req.urlopen("http://localhost:11434/api/tags", timeout=3)
+        _avail_data = _json.loads(_avail_req.read())
+        _models = [m["name"] for m in _avail_data.get("models", [])]
+    except Exception:
+        _models = []
+    _preferred = request.model or "llama3.2:3b"
+    if _preferred not in _models and _models:
+        # Fallback to any chat-capable small model
+        for _fallback in ("llama3.2:3b", "llama3.2:1b", "llama3.1:latest", "qwen2.5-coder:latest", "llama3.1:8b"):
+            if _fallback in _models:
+                _preferred = _fallback
+                break
+        else:
+            _preferred = _models[0]
     try:
         ollama_payload = _json.dumps(
             {
-                "model": request.model or "llama3.2",
+                "model": _preferred,
                 "messages": [{"role": "user", "content": prefix + request.message}],
                 "stream": False,
             }
@@ -1389,11 +1405,11 @@ async def chat_interaction(request: ChatRequest):
             data=ollama_payload,
             headers={"Content-Type": "application/json"},
         )
-        with _req.urlopen(oreq, timeout=60) as r:
+        with _req.urlopen(oreq, timeout=120) as r:
             data = _json.loads(r.read())
             reply = data.get("message", {}).get("content", "")
             if reply:
-                return {"reply": reply, "provider": "ollama"}
+                return {"reply": reply, "provider": f"ollama ({_preferred})"}
     except Exception:
         pass
 
