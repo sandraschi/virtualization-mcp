@@ -740,6 +740,24 @@ export default function VirtualBox() {
                     <Monitor className="w-3 h-3" />
                     Console
                   </a>
+                  {vm.state === "running" && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/vrde`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ enabled: true }),
+                          });
+                        } catch { /* ignore */ }
+                      }}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      title="Enable Remote Desktop (VRDP)"
+                    >
+                      <Monitor className="w-3 h-3" />
+                      VRDP
+                    </button>
+                  )}
                   <button
                     onClick={() => toggleSnapshots(vm.name)}
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"

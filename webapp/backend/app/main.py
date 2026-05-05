@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -1618,6 +1618,158 @@ async def get_vm_screenshot(name: str):
     except Exception as e:
         logger.debug("Screenshot helper error for VM %s: %s", name, e)
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# ── VRDE / Remote Desktop ──────────────────────────────────────────────────────
+
+class VrdeRequest(BaseModel):
+    enabled: bool = True
+    port: int | None = None  # auto if None
+
+
+@app.post("/api/v1/vms/{name}/vrde")
+async def set_vm_vrde(name: str, request: VrdeRequest):
+    """Enable or disable VRDE (remote desktop) for a VM."""
+    import subprocess as _sub
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    enable = "on" if request.enabled else "off"
+    port_arg = [f"--vrdeport", str(request.port)] if request.port else []
+    try:
+        cmd = [vbox, "modifyvm", name, "--vrde", enable] + port_arg
+        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            raise HTTPException(status_code=400, detail=r.stderr.strip())
+        # Get the actual port
+        show_cmd = [vbox, "showvminfo", name, "--machinereadable"]
+        r2 = _sub.run(show_cmd, capture_output=True, text=True, timeout=30)
+        port = "3389"
+        for line in r2.stdout.splitlines():
+            if line.startswith("vrdeport="):
+                port = line.split("=", 1)[1].strip('"')
+                break
+        return {"status": "success", "vrde": request.enabled, "port": port}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/vms/{name}/vrde")
+async def get_vm_vrde(name: str):
+    """Get VRDE status and port for a VM."""
+    import subprocess as _sub
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    try:
+        cmd = [vbox, "showvminfo", name, "--machinereadable"]
+        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            raise HTTPException(status_code=404, detail=f"VM '{name}' not found")
+        vrde = "false"
+        port = "3389"
+        for line in r.stdout.splitlines():
+            if line.startswith("vrde="):
+                vrde = line.split("=", 1)[1].strip('"').lower()
+            elif line.startswith("vrdeport="):
+                port = line.split("=", 1)[1].strip('"')
+        return {"vrde": vrde == "on" or vrde == "true", "port": int(port)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/vms/{name}/rdp")
+async def download_vm_rdp(name: str):
+    """Download an .rdp file for connecting to the VM via Remote Desktop."""
+    import subprocess as _sub
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    try:
+        cmd = [vbox, "showvminfo", name, "--machinereadable"]
+        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        port = "3389"
+        for line in r.stdout.splitlines():
+            if line.startswith("vrdeport="):
+                port = line.split("=", 1)[1].strip('"')
+                break
+        rdp_content = (
+            f"full address:s:127.0.0.1:{port}\n"
+            f"prompt for credentials:i:1\n"
+            f"username:s:user\n"
+            f"screen mode id:i:2\n"
+            f"session bpp:i:32\n"
+            f"connection type:i:2\n"
+            f"networkautodetect:i:1\n"
+        )
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(
+            content=rdp_content,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{name}.rdp"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── WebSocket VNC Proxy for noVNC ──────────────────────────────────────────────
+
+@app.websocket("/api/v1/vms/{name}/vnc")
+async def vm_vnc_websocket(websocket: WebSocket, name: str):
+    """WebSocket proxy that bridges the browser (noVNC) to the VM's VRDP server."""
+    import subprocess as _sub
+    await websocket.accept()
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    port = 3389
+    try:
+        cmd = [vbox, "showvminfo", name, "--machinereadable"]
+        r = _sub.run(cmd, capture_output=True, text=True, timeout=15)
+        for line in r.stdout.splitlines():
+            if line.startswith("vrdeport="):
+                port = int(line.split("=", 1)[1].strip('"'))
+                break
+    except Exception:
+        pass
+
+    try:
+        reader, writer = await asyncio.open_connection("127.0.0.1", port)
+    except ConnectionRefusedError:
+        await websocket.send_text("ERROR: VRDE not running. Enable VRDE first.")
+        await websocket.close()
+        return
+    except Exception as e:
+        await websocket.send_text(f"ERROR: {e}")
+        await websocket.close()
+        return
+
+    async def ws_to_tcp():
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                writer.write(data)
+                await writer.drain()
+        except Exception:
+            pass
+        finally:
+            try:
+                writer.close()
+            except Exception:
+                pass
+
+    async def tcp_to_ws():
+        try:
+            while True:
+                data = await reader.read(65536)
+                if not data:
+                    break
+                await websocket.send_bytes(data)
+        except Exception:
+            pass
+        finally:
+            try:
+                writer.close()
+            except Exception:
+                pass
+
+    await asyncio.gather(ws_to_tcp(), tcp_to_ws())
 
 
 if __name__ == "__main__":
