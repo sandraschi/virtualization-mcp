@@ -1437,6 +1437,45 @@ async def create_snapshot(name: str, request: VMSnapshotRequest):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+@app.get("/api/v1/vms/{name}/snapshots")
+async def list_vm_snapshots(name: str):
+    """List all snapshots for a VM."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        result = await asyncio.to_thread(service_manager.vm_service.list_snapshots, name)
+        return result
+    except Exception as e:
+        logger.error(f"Error listing snapshots for VM {name}: {e}")
+        return {"status": "error", "snapshots": [], "error": str(e)}
+
+
+@app.post("/api/v1/vms/{name}/restore")
+async def restore_vm_snapshot(name: str, request: VMSnapshotRequest):
+    """Restore a VM snapshot."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        result = await asyncio.to_thread(service_manager.vm_service.restore_snapshot, name, request.snapshot_name)
+        return result
+    except Exception as e:
+        logger.error(f"Error restoring snapshot for VM {name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/vms/{name}/delete-snapshot")
+async def delete_vm_snapshot(name: str, request: VMSnapshotRequest):
+    """Delete a VM snapshot."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        result = await asyncio.to_thread(service_manager.vm_service.delete_snapshot, name, request.snapshot_name)
+        return result
+    except Exception as e:
+        logger.error(f"Error deleting snapshot for VM {name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 @app.post("/api/v1/vms")
 async def create_vm(request: VMCreateRequest):
     if not service_manager:

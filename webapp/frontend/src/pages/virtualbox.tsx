@@ -66,6 +66,8 @@ interface DownloadTask {
 export default function VirtualBox() {
   const [vms, setVms] = useState<VM[]>([]);
   const [loading, setLoading] = useState(true);
+  const [snapshots, setSnapshots] = useState<Record<string, any[]>>({});
+  const [expandedSnapshots, setExpandedSnapshots] = useState<Set<string>>(new Set());
   const [actionId, setActionId] = useState<string | null>(null);
   const [backendError, setBackendError] = useState<string | null>(null);
   const [vboxAvailable, setVboxAvailable] = useState<boolean | null>(null);
@@ -182,6 +184,23 @@ export default function VirtualBox() {
     } finally {
       setActionId(null);
     }
+  };
+
+  const fetchSnapshots = async (vmName: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vmName)}/snapshots`);
+      if (res.ok) {
+        const data = await res.json();
+        setSnapshots((prev) => ({ ...prev, [vmName]: data.snapshots || [] }));
+      }
+    } catch { /* ignore */ }
+  };
+
+  const toggleSnapshots = (vmName: string) => {
+    const next = new Set(expandedSnapshots);
+    if (next.has(vmName)) { next.delete(vmName); }
+    else { next.add(vmName); fetchSnapshots(vmName); }
+    setExpandedSnapshots(next);
   };
 
   const fetchVboxAssets = () => {
@@ -713,11 +732,71 @@ export default function VirtualBox() {
                       Attach ISO
                     </button>
                   )}
-                  <button className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                    Advanced Settings →
+                  <button
+                    onClick={() => toggleSnapshots(vm.name)}
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    title="View snapshots"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Snapshots
+                    {snapshots[vm.name]?.length > 0 && (
+                      <span className="text-[10px] px-1 py-0.5 rounded-full bg-primary/20 text-primary font-bold">
+                        {snapshots[vm.name].length}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
+              {expandedSnapshots.has(vm.name) && (
+                <div className="mt-4 pt-3 border-t border-border/50">
+                  {snapshots[vm.name]?.length > 0 ? (
+                    <div className="space-y-2">
+                      {snapshots[vm.name].map((snap: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-black/20 border border-border/40 text-sm">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{snap.name}</p>
+                            {snap.description && (
+                              <p className="text-xs text-muted-foreground truncate">{snap.description}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0 ml-2">
+                            <button
+                              onClick={async () => {
+                                await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/restore`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ snapshot_name: snap.name }),
+                                });
+                                toggleSnapshots(vm.name);
+                              }}
+                              className="px-2 py-1 text-xs rounded bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 transition-colors"
+                              title="Restore"
+                            >
+                              Restore
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/delete-snapshot`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ snapshot_name: snap.name }),
+                                });
+                                fetchSnapshots(vm.name);
+                              }}
+                              className="px-2 py-1 text-xs rounded bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors"
+                              title="Delete"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No snapshots yet.</p>
+                  )}
+                </div>
+              )}
             </div>
           ))}
           {vms.length === 0 && !loading && (
