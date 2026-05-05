@@ -10,6 +10,7 @@ import {
   RefreshCw,
   RotateCcw,
   Square,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { API_BASE } from "../api/config";
@@ -623,57 +624,26 @@ export default function VirtualBox() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{vm.name}</h3>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${
-                          vm.provider === "hyperv"
-                            ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                            : "bg-orange-500/20 text-orange-400 border-orange-500/30"
-                        }`}
-                      >
-                        {vm.provider || "vbox"}
-                      </span>
-                      <span
-                        className={`text-sm px-2.5 py-0.5 rounded-full border font-medium ${
-                          vm.state === "running"
-                            ? "border-green-500/30 bg-green-500/20 text-green-400"
-                            : "border-muted-foreground/30 bg-muted/20 text-muted-foreground"
-                        }`}
-                      >
-                        {vm.provider || "vbox"}
-                      </span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full border ${
-                          vm.state === "running"
-                            ? "bg-green-500/10 text-green-500 border-green-500/20"
-                            : "bg-muted/50 text-muted-foreground border-border"
-                        }`}
-                      >
-                        {vm.state}
-                      </span>
-                    </div>
-                    <p className="text-sm text-foreground/80 mt-1 font-medium">
-                      {vm.os_type} • {vm.memory_mb}MB RAM • {vm.cpus} vCPUs
-                    </p>
-
-                    {vm.state === "running" && !failedScreenshots.has(vm.name) && (
-                      <div className="mt-4 rounded-lg overflow-hidden border border-border aspect-video bg-black/20 group-hover:border-primary/30 transition-colors">
-                        <img
-                          src={`${API_BASE}/api/v1/vms/${vm.name}/screenshot?t=${Date.now()}`}
-                          alt="VM Live View"
-                          className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                          onError={() => {
-                            setFailedScreenshots((prev) => new Set(prev).add(vm.name));
+                      {vm.state !== "running" && (
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`Delete VM "${vm.name}"? This cannot be undone.`)) return;
+                            setActionId(vm.name + "delete");
+                            try {
+                              await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}`, { method: "DELETE" });
+                              setTimeout(fetchVMs, 1000);
+                            } catch { /* ignore */ }
+                            setActionId(null);
                           }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-4">
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                          disabled={actionId === vm.name + "delete"}
+                          className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-30"
+                          title="Delete VM"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                      {vm.state === "paused" && (
+                        <button
                       disabled={
                         vm.state === "running" || actionId === vm.name + "start"
                       }
