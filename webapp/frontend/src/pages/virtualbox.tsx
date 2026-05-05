@@ -77,6 +77,7 @@ export default function VirtualBox() {
   const [createMemoryMb, setCreateMemoryMb] = useState(4096);
   const [createDiskGb, setCreateDiskGb] = useState(25);
   const [createIsoPath, setCreateIsoPath] = useState("");
+  const [failedScreenshots, setFailedScreenshots] = useState<Set<string>>(new Set());
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [vboxAssets, setVboxAssets] = useState<VBoxAsset[]>([]);
   const [showAttachModal, setShowAttachModal] = useState(false);
@@ -636,15 +637,14 @@ export default function VirtualBox() {
                       {vm.os_type} • {vm.memory_mb}MB RAM • {vm.cpus} vCPUs
                     </p>
 
-                    {vm.state === "running" && (
+                    {vm.state === "running" && !failedScreenshots.has(vm.name) && (
                       <div className="mt-4 rounded-lg overflow-hidden border border-border aspect-video bg-black/20 group-hover:border-primary/30 transition-colors">
                         <img
                           src={`${API_BASE}/api/v1/vms/${vm.name}/screenshot?t=${Date.now()}`}
                           alt="VM Live View"
                           className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display =
-                              "none";
+                          onError={() => {
+                            setFailedScreenshots((prev) => new Set(prev).add(vm.name));
                           }}
                         />
                       </div>
