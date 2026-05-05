@@ -139,19 +139,18 @@ $ids = @(
 foreach ($id in $ids) {
   Write-Host "winget install $id"
   Invoke-WingetExe @(
-    'install',
-    '-e',
-    '--id',
-    $id,
+    'install', '-e', '--id', $id,
+    '--source', 'winget',
     '--accept-source-agreements',
     '--accept-package-agreements',
     '--disable-interactivity'
   )
 }
 
+# Refresh PATH so verification finds the tools
 Sync-PathFromRegistry
 
-Write-Step 'Verify versions (new shells will see the same PATH)'
+Write-Step 'Verify versions'
 $checks = @('git', 'gh', 'node', 'npm', 'python', 'ruff', 'just', 'biome')
 foreach ($c in $checks) {
   if (Test-CommandExists $c) {
