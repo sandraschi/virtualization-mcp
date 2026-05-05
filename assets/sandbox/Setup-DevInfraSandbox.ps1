@@ -75,9 +75,11 @@ function Install-WingetViaMsix {
 
   # 2) Install all dependencies (VCLibs, UI.Xaml, WindowsAppRuntime)
   Write-Step 'Installing dependencies (VCLibs, UI.Xaml, WindowsAppRuntime)'
-  # Install dependency MSIX files (frameworks). The deps zip contains
-  # .msix and .msixbundle files that provide the required frameworks.
-  $depFiles = Get-ChildItem -Path $depsDir -Include '*.msix','*.msixbundle' -Recurse | Sort-Object Name
+  $depFiles = Get-ChildItem -Path $depsDir -Include '*.appx','*.msix','*.msixbundle' -Recurse | Sort-Object Name
+  if (-not $depFiles) {
+    Write-Host "  WARNING: No installable files found in deps zip!" -ForegroundColor Red
+    Get-ChildItem -Path $depsDir -Recurse | ForEach-Object { Write-Host "    $($_.Name) ($($_.Extension))" }
+  }
   foreach ($dep in $depFiles) {
     try {
       Add-AppxPackage -Path $dep.FullName -ErrorAction Stop
