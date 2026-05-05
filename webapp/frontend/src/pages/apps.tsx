@@ -2,9 +2,11 @@ import {
   Activity,
   Book,
   Cpu,
+  Download,
   ExternalLink,
   Globe,
   Home,
+  Loader2,
   MessageSquare,
   Share2,
   Terminal,
@@ -38,6 +40,7 @@ export default function Apps() {
   const [apps, setApps] = useState<FleetApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchApps = async () => {
@@ -157,6 +160,64 @@ export default function Apps() {
           })}
         </div>
       )}
+
+      {/* Fleet Install Section */}
+      <div className="rounded-2xl border border-border bg-card/40 backdrop-blur-sm p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-lg">Fleet Installer</h3>
+            <p className="text-sm text-muted-foreground">
+              Select repos to install into a VM or Sandbox. Generates a PowerShell script.
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              const selected = apps.filter((a) => selectedApps.has(a.id));
+              if (selected.length === 0) return;
+              const res = await fetch(`${API_BASE}/api/v1/fleet/install-script`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ repos: selected.map((a) => a.id) }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                const blob = new Blob([data.script], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "fleet-install.ps1";
+                a.click();
+                URL.revokeObjectURL(url);
+              }
+            }}
+            disabled={selectedApps.size === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 text-sm"
+          >
+            <Download className="w-4 h-4" />
+            Download Script ({selectedApps.size})
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {apps.map((app) => (
+            <button
+              key={app.id}
+              onClick={() => {
+                const next = new Set(selectedApps);
+                if (next.has(app.id)) next.delete(app.id);
+                else next.add(app.id);
+                setSelectedApps(next);
+              }}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                selectedApps.has(app.id)
+                  ? "bg-primary/20 text-primary border-primary/30"
+                  : "bg-white/5 text-muted-foreground border-border hover:border-primary/30"
+              }`}
+            >
+              {app.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="p-8 rounded-3xl border border-dashed border-border bg-black/20 flex flex-col items-center justify-center text-center space-y-4">
         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
