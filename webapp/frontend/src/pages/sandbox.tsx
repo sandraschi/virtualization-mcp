@@ -157,7 +157,26 @@ export default function Sandbox() {
 </Configuration>
   `.trim();
 
+  const checkSandboxRunning = async (): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/sandbox/status`);
+      if (res.ok) {
+        const status = await res.json();
+        if (status.running) {
+          return window.confirm(
+            "A Windows Sandbox is already running.\n\n" +
+            "Close it and launch a new one?\n\n" +
+            "Click OK to close the existing sandbox and start a new one.\n" +
+            "Click Cancel to keep the existing sandbox running."
+          );
+        }
+      }
+    } catch { /* backend unreachable, proceed anyway */ }
+    return true;
+  };
+
   const handleLaunch = async () => {
+    if (!(await checkSandboxRunning())) return;
     setStatus("loading");
     setError(null);
     try {
@@ -201,6 +220,7 @@ export default function Sandbox() {
   };
 
   const handleLaunchFullDev = async () => {
+    if (!(await checkSandboxRunning())) return;
     if (!assetsFolder.trim()) {
       setDevError("Enter the assets folder path");
       return;
@@ -252,6 +272,7 @@ export default function Sandbox() {
     setDevTools((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const handleLaunchDevInfra = async () => {
+    if (!(await checkSandboxRunning())) return;
     setDevInfraStatus("loading");
     setDevInfraError(null);
     try {
