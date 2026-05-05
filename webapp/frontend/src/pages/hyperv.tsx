@@ -106,6 +106,23 @@ export default function HyperV() {
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>
       )}
 
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-muted-foreground">
+        <strong>Requirement:</strong> Hyper-V is only available on{" "}
+        <strong>Windows 11 Pro, Enterprise, or Education</strong> (not Home).
+        It must be enabled via{" "}
+        <span className="font-mono text-xs bg-white/10 px-1.5 py-0.5 rounded">
+          Turn Windows features on or off
+        </span>{" "}
+        &rarr; check{" "}
+        <span className="font-mono text-xs bg-white/10 px-1.5 py-0.5 rounded">
+          Hyper-V
+        </span>
+        , or run in PowerShell as Admin:
+        <code className="block mt-1 font-mono text-xs bg-black/20 px-2 py-1 rounded">
+          Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+        </code>
+      </div>
+
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !creating && setShowCreate(false)}>
           <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
