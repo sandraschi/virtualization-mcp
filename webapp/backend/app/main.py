@@ -167,7 +167,7 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
         has_python = True
 
     winget_blocks = "\n".join(
-        f'$wingetArgs = @("install", "-e", "--id", "{wid}", "--accept-package-agreements", "--accept-source-agreements")\n& winget @wingetArgs\nif ($LASTEXITCODE -ne 0) {{ Write-Host "winget {wid} failed." -ForegroundColor Red; exit 1 }}'
+        f'$wingetArgs = @("install", "-e", "--id", "{wid}", "--source", "winget", "--accept-package-agreements", "--accept-source-agreements")\n& winget @wingetArgs\nif ($LASTEXITCODE -ne 0) {{ Write-Host "winget {wid} failed." -ForegroundColor Red; exit 1 }}'
         for wid in winget_ids
     )
     pip_block = ""
@@ -243,62 +243,77 @@ if ($gw) {
 """
     return f"""# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
 # Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenFang, RoboFang. Optional: host Ollama.
-# Requires in C:\\Assets: DesktopAppInstaller_Dependencies.zip, Microsoft.DesktopAppInstaller_*.msixbundle
+# Downloads winget from GitHub if not present, then installs dev tools via winget.
 
 # Wait for mapped folder + network to stabilize
 Write-Host "Waiting for environment to initialize..." -ForegroundColor Cyan
 Start-Sleep 5
 
-$assetRoot = "C:\\Assets"
-if (-not (Test-Path $assetRoot)) {{
-    Write-Host "Assets folder not found at $assetRoot." -ForegroundColor Red
-    exit 1
-}}
-Set-Location $assetRoot
-
-# Start transcript for full logging
 $logPath = "$env:USERPROFILE\\Desktop\\dev-setup-ps.log"
 Start-Transcript -Path $logPath -Append
 
-# 1) Dependencies from zip
-$depsZip = Get-ChildItem -File | Where-Object {{ $_.Name -eq "DesktopAppInstaller_Dependencies.zip" }} | Select-Object -First 1
-if ($depsZip) {{
-    Write-Host "Installing dependencies..." -ForegroundColor Yellow
-    $depsDir = Join-Path $assetRoot "deps"
-    if (Test-Path $depsDir) {{ Remove-Item -Recurse -Force $depsDir }}
-    Expand-Archive -Path $depsZip.FullName -DestinationPath $depsDir -Force
-    Get-ChildItem -Path $depsDir -Filter "*.msix" -Recurse | Sort-Object Name | ForEach-Object {{
-        try {{ Add-AppxPackage -Path $_.FullName }} catch {{ Write-Host "  Failed: $($_.Exception.Message)" -ForegroundColor Red; exit 1 }}
+# 1) Check if winget already available
+$haveWinget = $false
+try {{
+    $null = (Get-Command winget -ErrorAction Stop)
+    $haveWinget = $true
+}} catch {{}}
+
+if (-not $haveWinget) {{
+    Write-Host "winget not found. Installing App Installer from GitHub..." -ForegroundColor Yellow
+
+    $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
+    $null = New-Item -ItemType Directory -Path $work -Force
+
+    $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing
+
+    # Download deps zip
+    $depsAsset = $null
+    foreach ($a in $release.assets) {{ if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') {{ $depsAsset = $a; break }} }}
+    if ($depsAsset) {{
+        Write-Host "Downloading dependencies (93 MB)..." -ForegroundColor Yellow
+        $depsPath = Join-Path $work $depsAsset.name
+        Invoke-WebRequest -Uri $depsAsset.browser_download_url -OutFile $depsPath -UseBasicParsing
+        $depsDir = Join-Path $work 'deps'
+        Expand-Archive -Path $depsPath -DestinationPath $depsDir -Force
+        Get-ChildItem -Path $depsDir -Include '*.appx','*.msix','*.msixbundle' -Recurse | Sort-Object Name | ForEach-Object {{
+            try {{ Add-AppxPackage -Path $_.FullName -ErrorAction Stop }} catch {{ Write-Host "  Skip: $($_.Name)" -ForegroundColor Yellow }}
+        }}
     }}
-}}
 
-# 2) App Installer (winget) bundle
-$bundle = Get-ChildItem -File | Where-Object {{ $_.Name -like "*.msixbundle" }} | Select-Object -First 1
-if (-not $bundle) {{ Write-Host "No .msixbundle in $assetRoot." -ForegroundColor Red; exit 1 }}
-try {{ Add-AppxPackage -Path $bundle.FullName }} catch {{ Write-Host $_.Exception.Message -ForegroundColor Red; exit 1 }}
-
-# 3) Refresh PATH for winget (check WindowsApps dir explicitly)
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-$wingetDirs = @("$env:LOCALAPPDATA\\Microsoft\\WindowsApps", "$env:ProgramFiles\\winget")
-foreach ($dir in $wingetDirs) {{
-    if (Test-Path $dir -and $env:Path -notlike "*$dir*") {{
-        $env:Path = "$dir;$env:Path"
+    # Download and install App Installer bundle
+    foreach ($a in $release.assets) {{
+        if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') {{
+            Write-Host "Downloading App Installer..." -ForegroundColor Yellow
+            $bundlePath = Join-Path $work $a.name
+            Invoke-WebRequest -Uri $a.browser_download_url -OutFile $bundlePath -UseBasicParsing
+            Add-AppxPackage -Path $bundlePath
+            break
+        }}
     }}
-}}
-if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {{
-    Write-Host "winget not found. Open a NEW PowerShell and run this script again." -ForegroundColor Red
-    exit 1
+
+    # Refresh PATH
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    $wingetDirs = @("$env:LOCALAPPDATA\\Microsoft\\WindowsApps", "$env:ProgramFiles\\winget")
+    foreach ($dir in $wingetDirs) {{
+        if (Test-Path $dir -and $env:Path -notlike "*$dir*") {{ $env:Path = "$dir;$env:Path" }}
+    }}
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {{
+        Write-Host "winget still not found after install." -ForegroundColor Red
+        exit 1
+    }}
+    Write-Host "winget installed successfully." -ForegroundColor Green
 }}
 
-# 4) Dev stack via winget (Python, Node, uv, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity)
+# 2) Dev stack via winget
 Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
-{winget_blocks}
-{pip_block}
-{claude_block}
-{openclaw_block}
-{openfang_block}
-{robofang_block}
-{ollama_block}
+{{winget_blocks}}
+{{pip_block}}
+{{claude_block}}
+{{openclaw_block}}
+{{openfang_block}}
+{{robofang_block}}
+{{ollama_block}}
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 Write-Host "Full dev setup complete." -ForegroundColor Green
 Stop-Transcript
