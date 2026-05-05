@@ -116,7 +116,7 @@ function Install-WingetViaMsix {
       $runtimeOk = $true
       break
     } catch {
-      Write-Host "Failed: $url — $($_.Exception.Message)" -ForegroundColor Yellow
+      Write-Host "Failed: $url - $($_.Exception.Message)" -ForegroundColor Yellow
     }
   }
   if (-not $runtimeOk) {
