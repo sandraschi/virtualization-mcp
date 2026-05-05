@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed: Windows Sandbox dev infra setup — winget now installs successfully
+
+- **Fixed WindowsAppRuntime dependency** — winget's App Installer MSIX requires `WindowsAppRuntime.1.8`, which was missing from the sandbox image. Changed from broken `aka.ms` URLs (return HTML instead of MSIX) to using `DesktopAppInstaller_Dependencies.zip` from the official winget-cli GitHub release. This 93 MB zip contains VCLibs, UI.Xaml, and WindowsAppRuntime as `.appx` files.
+- **Fixed `.appx` file filter** — deps zip contains `.appx` files, not `.msix`. The installer was silently skipping all dependencies. Now filters for `.appx`, `.msix`, and `.msixbundle`.
+- **Fixed `--source winget` flag** — winget was probing the `msstore` source (fails in sandbox with REST API error) before finding packages in the `winget` source. Added `--source winget` to skip msstore.
+- **Fixed PATH refresh ordering** — `Sync-PathFromRegistry` now runs before version verification so newly installed tools (git, node, python, etc.) are found on PATH.
+- **Fixed full dev setup path** — previously required pre-downloaded `.msixbundle` files in `assets/sandbox/`. Now downloads from GitHub automatically (same approach as dev infra).
+- **Claude Desktop now headless MSIX** — replaced `ClaudeSetup.exe` download + `Start-Process` (could show UI) with silent `Add-AppxPackage` MSIX install.
+- **Added running sandbox detection** — `GET /api/v1/sandbox/status` checks `tasklist` for `WindowsSandbox.exe`. All three launch paths (basic, full-dev, dev-infra) check before launching and prompt via `window.confirm()`.
+
 ### Added: ISO download pipeline + horizontal category tabs
 
 - **ISO download pipeline** — `POST /api/v1/iso/download` downloads ISOs to `assets/vbox/` in a background thread with progress tracking. `GET /api/v1/iso/download/{task_id}` for polling. `GET /api/v1/iso/candidates` returns categorized ISOs.
