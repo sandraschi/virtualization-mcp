@@ -732,6 +732,14 @@ export default function VirtualBox() {
                       Attach ISO
                     </button>
                   )}
+                  <a
+                    href={`/vm/${encodeURIComponent(vm.name)}/console`}
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    title="Live VM console"
+                  >
+                    <Monitor className="w-3 h-3" />
+                    Console
+                  </a>
                   <button
                     onClick={() => toggleSnapshots(vm.name)}
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
