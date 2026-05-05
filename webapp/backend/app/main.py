@@ -1231,6 +1231,57 @@ async def get_apps():
         return {"webapps": []}
 
 
+@app.get("/api/v1/apps/check")
+async def check_apps_health():
+    """Check which registered apps are actually running by pinging their ports."""
+    import socket as _socket
+    if not os.path.exists(REGISTRY_PATH):
+        return {"statuses": {}}
+    with open(REGISTRY_PATH, encoding="utf-8") as f:
+        registry = json.load(f)
+    statuses = {}
+    for app in registry.get("webapps", []):
+        port = app.get("port")
+        app_id = app.get("id", "")
+        if not port:
+            statuses[app_id] = "unknown"
+            continue
+        try:
+            with _socket.create_connection(("127.0.0.1", port), timeout=1):
+                statuses[app_id] = "running"
+        except (ConnectionRefusedError, OSError):
+            statuses[app_id] = "stopped"
+        except Exception:
+            statuses[app_id] = "unknown"
+    return {"statuses": statuses}
+
+
+@app.post("/api/v1/apps/{app_id}/start")
+async def start_fleet_app(app_id: str):
+    """Start a fleet app by running its start command."""
+    import subprocess as _sub
+    if not os.path.exists(REGISTRY_PATH):
+        raise HTTPException(status_code=500, detail="Registry not found")
+    with open(REGISTRY_PATH, encoding="utf-8") as f:
+        registry = json.load(f)
+    for app in registry.get("webapps", []):
+        if app.get("id") == app_id:
+            repo = app.get("repo_path", "")
+            cmd = app.get("start_command", "")
+            if not cmd:
+                raise HTTPException(status_code=400, detail="No start command configured")
+            try:
+                # Run in background
+                _sub.Popen(
+                    cmd, cwd=repo if os.path.isdir(repo) else None,
+                    shell=True, creationflags=_sub.CREATE_NEW_CONSOLE,
+                )
+                return {"status": "started", "app_id": app_id}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=404, detail=f"App '{app_id}' not found in registry")
+
+
 # ── Fleet Installer ────────────────────────────────────────────────────────────
 
 class FleetInstallRequest(BaseModel):
