@@ -129,9 +129,7 @@ export default function Apps() {
                           </div>
                         </div>
                         {app.description && (
-                          {app.description && (
-                            <p className="text-xs text-muted-foreground/70 mb-3">{app.description}</p>
-                          )}
+                          <p className="text-xs text-muted-foreground/70 mb-3">{app.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-auto">
                           {isRunning ? (
