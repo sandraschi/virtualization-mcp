@@ -82,6 +82,23 @@ class HyperVManager:
             logger.error(f"Error listing Hyper-V VMs: {e}")
             return []
 
+    async def create_vm(
+        self, name: str, memory_mb: int = 2048, disk_gb: int = 25, generation: int = 2
+    ) -> dict[str, Any]:
+        """Create a new Hyper-V VM."""
+        try:
+            vhd_path = f"C:\\VMs\\{name}\\{name}.vhdx"
+            ps = (
+                f"New-Item -ItemType Directory -Path 'C:\\VMs\\{name}' -Force | Out-Null; "
+                f"New-VM -Name '{name}' -MemoryStartupBytes {memory_mb}MB "
+                f"-BootDevice VHD -NewVHDPath '{vhd_path}' -NewVHDSizeBytes {disk_gb}GB "
+                f"-Generation {generation}"
+            )
+            await self._run_ps(ps)
+            return {"status": "success", "vm_name": name, "message": f"Hyper-V VM {name} created"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     async def start_vm(self, name: str) -> dict[str, Any]:
         """Start a Hyper-V VM."""
         try:
