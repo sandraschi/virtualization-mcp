@@ -341,6 +341,11 @@ export default function Sandbox() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
       {/* Configuration Form */}
       <div className="space-y-6">
+        <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-xs text-muted-foreground">
+          <strong>Requirement:</strong> Windows Sandbox is only available on{" "}
+          <strong>Windows 11 Pro, Enterprise, or Education</strong>. It is not
+          available on Windows Home edition.
+        </div>
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Windows Sandbox</h2>
           <p className="text-muted-foreground mt-1">
