@@ -10,6 +10,7 @@ import Settings from "./pages/settings";
 import Tools from "./pages/tools";
 import VirtualBox from "./pages/virtualbox";
 import HyperV from "./pages/hyperv";
+import VmConsole from "./pages/vm-console";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="help" element={<Help />} />
           <Route path="settings" element={<Settings />} />
         </Route>
+        <Route path="/vm/:name/console" element={<VmConsole />} />
       </Routes>
     </Router>
   );
