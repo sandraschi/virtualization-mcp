@@ -245,12 +245,20 @@ if ($gw) {
 # Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenFang, RoboFang. Optional: host Ollama.
 # Requires in C:\\Assets: DesktopAppInstaller_Dependencies.zip, Microsoft.DesktopAppInstaller_*.msixbundle
 
+# Wait for mapped folder + network to stabilize
+Write-Host "Waiting for environment to initialize..." -ForegroundColor Cyan
+Start-Sleep 5
+
 $assetRoot = "C:\\Assets"
 if (-not (Test-Path $assetRoot)) {{
     Write-Host "Assets folder not found at $assetRoot." -ForegroundColor Red
     exit 1
 }}
 Set-Location $assetRoot
+
+# Start transcript for full logging
+$logPath = "$env:USERPROFILE\\Desktop\\dev-setup-ps.log"
+Start-Transcript -Path $logPath -Append
 
 # 1) Dependencies from zip
 $depsZip = Get-ChildItem -File | Where-Object {{ $_.Name -eq "DesktopAppInstaller_Dependencies.zip" }} | Select-Object -First 1
@@ -269,8 +277,14 @@ $bundle = Get-ChildItem -File | Where-Object {{ $_.Name -like "*.msixbundle" }} 
 if (-not $bundle) {{ Write-Host "No .msixbundle in $assetRoot." -ForegroundColor Red; exit 1 }}
 try {{ Add-AppxPackage -Path $bundle.FullName }} catch {{ Write-Host $_.Exception.Message -ForegroundColor Red; exit 1 }}
 
-# 3) Refresh PATH for winget
+# 3) Refresh PATH for winget (check WindowsApps dir explicitly)
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+$wingetDirs = @("$env:LOCALAPPDATA\\Microsoft\\WindowsApps", "$env:ProgramFiles\\winget")
+foreach ($dir in $wingetDirs) {{
+    if (Test-Path $dir -and $env:Path -notlike "*$dir*") {{
+        $env:Path = "$dir;$env:Path"
+    }}
+}}
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {{
     Write-Host "winget not found. Open a NEW PowerShell and run this script again." -ForegroundColor Red
     exit 1
@@ -287,20 +301,24 @@ Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
 {ollama_block}
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 Write-Host "Full dev setup complete." -ForegroundColor Green
+Stop-Transcript
 """
 
 
 def _build_sandbox_xml_dev_setup(
     host_folder: str, memory_mb: int = 4096, vgpu: bool = True, networking: bool = True
 ) -> str:
+    """WSB: map assets/sandbox to C:\\Assets, run Run-DevSetup.cmd at logon.
+
+    Microsoft samples put MappedFolders before LogonCommand. Using a .cmd launcher
+    (rather than calling powershell -File directly) adds a startup delay for the
+    mapped folder to stabilize and captures all output to Desktop/dev-setup.log.
+    """
     import xml.sax.saxutils as sax
 
     host_escaped = sax.escape(host_folder)
-    cmd_escaped = sax.escape("powershell -ExecutionPolicy Bypass -File C:\\Assets\\Setup-DevSandbox.ps1")
+    cmd_escaped = sax.escape(r"C:\Assets\Run-DevSetup.cmd")
     return f"""<Configuration>
-<VGpu>{"Enable" if vgpu else "Disable"}</VGpu>
-<Networking>{"Enable" if networking else "Disable"}</Networking>
-<MemoryInMB>{memory_mb}</MemoryInMB>
 <MappedFolders>
 <MappedFolder>
 <HostFolder>{host_escaped}</HostFolder>
@@ -308,6 +326,9 @@ def _build_sandbox_xml_dev_setup(
 <ReadOnly>false</ReadOnly>
 </MappedFolder>
 </MappedFolders>
+<VGpu>{"Enable" if vgpu else "Disable"}</VGpu>
+<Networking>{"Enable" if networking else "Disable"}</Networking>
+<MemoryInMB>{memory_mb}</MemoryInMB>
 <LogonCommand>
 <Command>{cmd_escaped}</Command>
 </LogonCommand>
@@ -1107,6 +1128,30 @@ async def launch_sandbox(request: SandboxLaunchRequest):
                         use_host_ollama=use_host_ollama,
                     )
                 )
+            # Write .cmd launcher (delay + log capture)
+            cmd_path = os.path.join(assets_folder, "Run-DevSetup.cmd")
+            with open(cmd_path, "w", encoding="utf-8") as f:
+                f.write(
+                    '@echo off\r\n'
+                    'set "LOG=%USERPROFILE%\\Desktop\\dev-setup.log"\r\n'
+                    'echo [%DATE% %TIME%] Run-DevSetup.cmd starting > "%LOG%"\r\n'
+                    'if exist "C:\\Assets\\Run-DevSetup.cmd" ( echo [%DATE% %TIME%] C:\\Assets mapped OK >> "%LOG%" ) else ( echo [%DATE% %TIME%] C:\\Assets NOT MAPPED >> "%LOG%" )\r\n'
+                    'dir "C:\\Assets" >> "%LOG%" 2>&1\r\n'
+                    'echo [%DATE% %TIME%] Waiting 5s... >> "%LOG%"\r\n'
+                    'ping -n 6 127.0.0.1 > nul\r\n'
+                    'if exist "C:\\Assets\\Setup-DevSandbox.ps1" (\r\n'
+                    '    echo [%DATE% %TIME%] Starting Setup-DevSandbox.ps1 >> "%LOG%"\r\n'
+                    '    powershell -ExecutionPolicy Bypass -File "C:\\Assets\\Setup-DevSandbox.ps1" >> "%LOG%" 2>&1\r\n'
+                    '    echo [%DATE% %TIME%] Exit code %ERRORLEVEL% >> "%LOG%"\r\n'
+                    ') else (\r\n'
+                    '    echo [%DATE% %TIME%] ERROR: Setup-DevSandbox.ps1 NOT FOUND >> "%LOG%"\r\n'
+                    ')\r\n'
+                    'echo @echo off > "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
+                    'echo type "%LOG%" >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
+                    'echo echo. >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
+                    'echo pause >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
+                    'start "" cmd.exe /c "title Dev Setup Log & powershell -NoExit -Command Get-Content -Wait \'%LOG%\'"\r\n'
+                )
             config_xml = _build_sandbox_xml_dev_setup(
                 assets_folder,
                 memory_mb=request.memory_in_mb or 4096,
@@ -1135,7 +1180,7 @@ async def launch_sandbox(request: SandboxLaunchRequest):
             config_xml = request.config_xml
 
         with tempfile.NamedTemporaryFile(
-            suffix=".wsb", delete=False, mode="w", encoding="utf-8-sig", newline="\r\n"
+            suffix=".wsb", delete=False, mode="w", encoding="utf-8", newline="\r\n"
         ) as tmp:
             tmp.write(config_xml)
             tmp_path = tmp.name
