@@ -58,3 +58,9 @@ check-sec:
 audit-deps:
     Set-Location '{{justfile_directory()}}'
     uv run safety check
+
+# ── Unicode ──────────────────────────────────────────────────────────────────
+
+# Check for non-ASCII dashes/smart quotes that break PowerShell parsers
+check-unicode:
+    pwsh -NoProfile -File '{{justfile_directory()}}\scripts\check-unicode-safe.ps1'
