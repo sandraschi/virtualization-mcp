@@ -436,7 +436,7 @@ export default function VirtualBox() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-lg">Download Ubuntu ISOs</h3>
+              <h3 className="font-semibold text-lg">Download ISOs</h3>
               <button
                 onClick={() => setShowIsoDownload(false)}
                 className="p-1 rounded hover:bg-white/10 text-muted-foreground"
