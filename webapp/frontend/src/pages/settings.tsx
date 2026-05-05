@@ -50,6 +50,7 @@ export default function Settings() {
   const [customEndpoint, setCustomEndpoint] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [gpuAccel, setGpuAccel] = useState(true);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const fetchProviders = useCallback(async () => {
     setLoading(true);
@@ -245,24 +246,36 @@ export default function Settings() {
                 <button
                   onClick={async () => {
                     setLoading(true);
+                    setTestResult(null);
                     try {
                       const ep = customEndpoint || (selectedProvider === "ollama" ? "http://localhost:11434" : "http://localhost:1234");
                       const res = await fetch(`${API_BASE}/api/v1/settings/llm/models?endpoint=${encodeURIComponent(ep)}&provider=${selectedProvider}`);
                       if (res.ok) {
                         const data = await res.json();
-                        setProviders((prev) => ({
-                          ...prev!,
-                          [selectedProvider]: data,
-                        }));
-                        if (data.models?.length > 0) setSelectedModel(data.models[0].name);
+                        if (data.available) {
+                          setTestResult({ ok: true, msg: `${data.models?.length || 0} models found` });
+                          setProviders((prev) => ({ ...prev!, [selectedProvider]: data }));
+                          if (data.models?.length > 0) setSelectedModel(data.models[0].name);
+                        } else {
+                          setTestResult({ ok: false, msg: data.error || "Not available" });
+                        }
+                      } else {
+                        setTestResult({ ok: false, msg: `HTTP ${res.status}` });
                       }
-                    } catch { /* ignore */ }
+                    } catch (e: any) {
+                      setTestResult({ ok: false, msg: e.message || "Connection failed" });
+                    }
                     setLoading(false);
                   }}
                   className="px-3 py-2 text-sm rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
                 >
                   Test
                 </button>
+                {testResult && (
+                  <span className={`text-xs flex items-center gap-1 ${testResult.ok ? "text-green-500" : "text-red-500"}`}>
+                    {testResult.ok ? "\u2713" : "\u2717"} {testResult.msg}
+                  </span>
+                )}
               </div>
             </div>
 
