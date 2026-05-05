@@ -1526,14 +1526,14 @@ async def get_vm_screenshot(name: str):
         except Exception as e:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
-            logger.error(f"Error taking snapshot for VM {name}: {e}")
+            logger.debug("Screenshot failed for VM %s: %s", name, e)
             raise HTTPException(
                 status_code=501,
                 detail=(f"Screenshot capture is under construction for this VM/provider: {e!s}"),
             ) from e
 
     except Exception as e:
-        logger.error(f"Error in screenshot helper: {e}")
+        logger.debug("Screenshot helper error for VM %s: %s", name, e)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
