@@ -1,0 +1,12 @@
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>D:\Dev\repos\virtualization-mcp\assets\sandbox</HostFolder>
+      <SandboxFolder>C:\Assets</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>cmd.exe /c echo [%date% %time%] LogonCommand FIRED > "%USERPROFILE%\Desktop\wsb-test.log" &amp;&amp; dir C:\Assets >> "%USERPROFILE%\Desktop\wsb-test.log" 2>&1</Command>
+  </LogonCommand>
+</Configuration>
