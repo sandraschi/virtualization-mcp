@@ -608,205 +608,115 @@ export default function VirtualBox() {
           {vms.map((vm) => (
             <div
               key={vm.uuid || vm.name}
-              className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm hover:border-primary/20 transition-all duration-300 group"
+              className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm hover:border-primary/30 transition-all duration-300"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="relative">
-                    <div
-                      className={`p-3 rounded-lg ${vm.state === "running" ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}
-                    >
-                      <Monitor className="w-6 h-6" />
-                    </div>
-                    {vm.state === "running" && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full animate-pulse" />
-                    )}
+              {/* Top row: icon, name, state, actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`relative p-3 rounded-xl ${vm.state === "running" ? "bg-green-500/15 text-green-400" : "bg-muted/50 text-muted-foreground"}`}>
+                    <Monitor className="w-7 h-7" />
+                    {vm.state === "running" && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-background rounded-full animate-pulse" />}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={async () => {
-                            await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/move-desktop?desktop=1`, { method: "POST" });
-                          }}
-                          className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-white transition-colors text-[10px] font-mono"
-                          title="Move to Desktop 1"
-                        >D1</button>
-                        <button
-                          onClick={async () => {
-                            await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/move-desktop?desktop=2`, { method: "POST" });
-                          }}
-                          className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-white transition-colors text-[10px] font-mono"
-                          title="Move to Desktop 2"
-                        >D2</button>
-                        <button
-                          onClick={async () => {
-                            await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/move-desktop?desktop=3`, { method: "POST" });
-                          }}
-                          className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-white transition-colors text-[10px] font-mono"
-                          title="Move to Desktop 3"
-                        >D3</button>
-                      </div>
-                      {vm.state !== "running" && (
-                        <button
-                          onClick={async () => {
-                            if (!window.confirm(`Delete VM "${vm.name}"? This cannot be undone.`)) return;
-                            setActionId(vm.name + "delete");
-                            try {
-                              await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}`, { method: "DELETE" });
-                              setTimeout(fetchVMs, 1000);
-                            } catch { /* ignore */ }
-                            setActionId(null);
-                          }}
-                          disabled={actionId === vm.name + "delete"}
-                          className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-30"
-                          title="Delete VM"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
-                      {vm.state === "paused" && (
-                        <button
-                      disabled={
-                        vm.state === "running" || actionId === vm.name + "start"
-                      }
-                      onClick={() =>
-                        handleAction(vm.name, "start", vm.provider)
-                      }
-                      className="p-2 rounded-lg hover:bg-green-500/10 hover:text-green-500 transition-colors disabled:opacity-30"
-                      title="Start"
-                    >
-                      {actionId === vm.name + "start" ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Play className="w-5 h-5" />
-                      )}
-                    </button>
-                    <button
-                      disabled={
-                        vm.state !== "running" || actionId === vm.name + "pause"
-                      }
-                      onClick={() =>
-                        handleAction(vm.name, "pause", vm.provider)
-                      }
-                      className="p-2 rounded-lg hover:bg-yellow-500/10 hover:text-yellow-500 transition-colors disabled:opacity-30"
-                      title="Pause"
-                    >
-                      <Pause className="w-5 h-5" />
-                    </button>
-                    <button
-                      disabled={
-                        vm.state !== "running" || actionId === vm.name + "stop"
-                      }
-                      onClick={() => handleAction(vm.name, "stop", vm.provider)}
-                      className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-30"
-                      title="Stop"
-                    >
-                      <Square className="w-5 h-5" />
-                    </button>
-                    <div className="w-px h-6 bg-border mx-1" />
-                    <button
-                      onClick={() =>
-                        handleAction(vm.name, "snapshot", vm.provider)
-                      }
-                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                      title="Take Snapshot"
-                    >
-                      <RotateCcw className="w-5 h-5" />
-                    </button>
-                  </div>
-                  {vm.provider === "virtualbox" && (
-                    <button
-                      onClick={() => openAttachModal(vm.name)}
-                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                      title="Attach ISO from repo assets"
-                    >
-                      <Disc className="w-3 h-3" />
-                      Attach ISO
-                    </button>
-                  )}
-                  <a
-                    href={`/vm/${encodeURIComponent(vm.name)}/console`}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                    title="Live VM console"
-                  >
-                    <Monitor className="w-3 h-3" />
-                    Console
-                  </a>
-                  {vm.state === "running" && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/vrde`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ enabled: true }),
-                          });
-                        } catch { /* ignore */ }
-                      }}
-                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                      title="Enable Remote Desktop (VRDP)"
-                    >
-                      <Monitor className="w-3 h-3" />
-                      VRDP
-                    </button>
-                  )}
-                  <button
-                    onClick={() => toggleSnapshots(vm.name)}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                    title="View snapshots"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    Snapshots
-                    {snapshots[vm.name]?.length > 0 && (
-                      <span className="text-[10px] px-1 py-0.5 rounded-full bg-primary/20 text-primary font-bold">
-                        {snapshots[vm.name].length}
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-xl font-bold">{vm.name}</h3>
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full border font-semibold ${
+                        vm.provider === "hyperv" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                      }`}>
+                        {vm.provider || "vbox"}
                       </span>
-                    )}
-                  </button>
+                      <span className={`text-sm px-2.5 py-0.5 rounded-full border font-medium ${
+                        vm.state === "running" ? "border-green-500/30 bg-green-500/20 text-green-400"
+                        : vm.state === "paused" ? "border-yellow-500/30 bg-yellow-500/20 text-yellow-400"
+                        : "border-muted-foreground/30 bg-muted/20 text-muted-foreground"
+                      }`}>{vm.state}</span>
+                    </div>
+                    <p className="text-sm text-foreground/70 mt-1 font-medium">
+                      {vm.os_type || "Unknown OS"} &bull; {vm.memory_mb || "?"}MB RAM &bull; {vm.cpus || "?"} vCPUs
+                    </p>
+                  </div>
+                </div>
+                {/* Primary actions */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 mr-1 pr-2 border-r border-border/50">
+                    <span className="text-[11px] text-muted-foreground font-mono">Dsk:</span>
+                    {[1, 2, 3].map((d) => (
+                      <button key={d} onClick={async () => { await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/move-desktop?desktop=${d}`, { method: "POST" }); }}
+                        className="px-2 py-1 text-xs rounded-md bg-white/5 text-muted-foreground hover:bg-white/20 hover:text-white transition-colors font-mono"
+                        title={`Move to Desktop ${d}`}>D{d}</button>
+                    ))}
+                  </div>
+                  {vm.state === "running" ? (
+                    <>
+                      <button onClick={() => handleAction(vm.name, "pause", vm.provider)} disabled={actionId === vm.name + "pause"}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors font-medium disabled:opacity-40">
+                        {actionId === vm.name + "pause" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pause className="w-4 h-4" />} Pause
+                      </button>
+                      <button onClick={() => handleAction(vm.name, "stop", vm.provider)} disabled={actionId === vm.name + "stop"}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors font-medium disabled:opacity-40">
+                        {actionId === vm.name + "stop" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />} Stop
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={() => handleAction(vm.name, "start", vm.provider)} disabled={actionId === vm.name + "start"}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors font-medium disabled:opacity-40">
+                      {actionId === vm.name + "start" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Start
+                    </button>
+                  )}
                 </div>
               </div>
+              {/* Bottom bar: secondary actions */}
+              <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/40">
+                <button onClick={() => handleAction(vm.name, "snapshot", vm.provider)} disabled={actionId === vm.name + "snapshot"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
+                  {actionId === vm.name + "snapshot" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Snapshot
+                </button>
+                <button onClick={() => toggleSnapshots(vm.name)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
+                  <RotateCcw className="w-3.5 h-3.5" /> Snapshots
+                  {snapshots[vm.name]?.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">{snapshots[vm.name].length}</span>}
+                </button>
+                {vm.provider === "virtualbox" && (
+                  <button onClick={() => openAttachModal(vm.name)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
+                    <Disc className="w-3.5 h-3.5" /> Attach ISO
+                  </button>
+                )}
+                <a href={`/vm/${encodeURIComponent(vm.name)}/console`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
+                  <Monitor className="w-3.5 h-3.5" /> Console
+                </a>
+                {vm.state === "running" && (
+                  <button onClick={async () => { await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/vrde`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({enabled: true}) }); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
+                    VRDP
+                  </button>
+                )}
+                <div className="flex-1" />
+                {vm.state !== "running" && (
+                  <button onClick={async () => { if (!window.confirm(`Delete VM "${vm.name}"?`)) return; setActionId(vm.name + "delete"); try { await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}`, { method: "DELETE" }); setTimeout(fetchVMs, 1000); } catch {} setActionId(null); }}
+                    disabled={actionId === vm.name + "delete"}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 transition-colors font-medium disabled:opacity-40">
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                  </button>
+                )}
+              </div>
+              {/* Snapshots */}
               {expandedSnapshots.has(vm.name) && (
-                <div className="mt-4 pt-3 border-t border-border/50">
+                <div className="mt-3 pt-3 border-t border-border/40">
                   {snapshots[vm.name]?.length > 0 ? (
                     <div className="space-y-2">
                       {snapshots[vm.name].map((snap: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-black/20 border border-border/40 text-sm">
+                        <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-black/20 border border-border/40">
                           <div className="min-w-0">
-                            <p className="font-medium truncate">{snap.name}</p>
-                            {snap.description && (
-                              <p className="text-xs text-muted-foreground truncate">{snap.description}</p>
-                            )}
+                            <p className="text-sm font-medium">{snap.name}</p>
+                            {snap.description && <p className="text-xs text-muted-foreground">{snap.description}</p>}
                           </div>
-                          <div className="flex gap-1 flex-shrink-0 ml-2">
-                            <button
-                              onClick={async () => {
-                                await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/restore`, {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ snapshot_name: snap.name }),
-                                });
-                                toggleSnapshots(vm.name);
-                              }}
-                              className="px-2 py-1 text-xs rounded bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 transition-colors"
-                              title="Restore"
-                            >
-                              Restore
-                            </button>
-                            <button
-                              onClick={async () => {
-                                await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/delete-snapshot`, {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ snapshot_name: snap.name }),
-                                });
-                                fetchSnapshots(vm.name);
-                              }}
-                              className="px-2 py-1 text-xs rounded bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors"
-                              title="Delete"
-                            >
-                              Delete
-                            </button>
+                          <div className="flex gap-2 ml-3">
+                            <button onClick={async () => { await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/restore`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({snapshot_name: snap.name}) }); toggleSnapshots(vm.name); }}
+                              className="px-3 py-1 text-xs rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors font-medium">Restore</button>
+                            <button onClick={async () => { await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/delete-snapshot`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({snapshot_name: snap.name}) }); fetchSnapshots(vm.name); }}
+                              className="px-3 py-1 text-xs rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors font-medium">Delete</button>
                           </div>
                         </div>
                       ))}
