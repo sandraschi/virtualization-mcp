@@ -107,7 +107,7 @@ export default function Apps() {
                   {cat.label}
                   <span className="text-xs font-mono text-muted-foreground/50">{items.length}</span>
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {items.map((app) => {
                     const status = statuses[app.id] || "unknown";
                     const isRunning = status === "running";
@@ -118,8 +118,8 @@ export default function Apps() {
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-semibold text-sm truncate">{app.label}</h4>
-                            <p className="text-[11px] text-muted-foreground/60 mt-0.5 truncate">{app.id}</p>
+                            <h4 className="font-semibold text-sm">{app.label}</h4>
+                            <p className="text-[11px] text-muted-foreground/60 mt-0.5">{app.id}</p>
                           </div>
                           <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ml-2 ${
                             isRunning ? "bg-green-500/20 text-green-500" : "bg-muted/30 text-muted-foreground"
@@ -129,7 +129,9 @@ export default function Apps() {
                           </div>
                         </div>
                         {app.description && (
-                          <p className="text-xs text-muted-foreground/70 line-clamp-2 mb-3">{app.description}</p>
+                          {app.description && (
+                            <p className="text-xs text-muted-foreground/70 mb-3">{app.description}</p>
+                          )}
                         )}
                         <div className="flex items-center gap-2 mt-auto">
                           {isRunning ? (
