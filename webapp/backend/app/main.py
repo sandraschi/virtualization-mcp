@@ -695,13 +695,13 @@ ISO_CATEGORIES = [
         "items": [
             {
                 "version": "Debian 12 Bookworm",
-                "url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.9.0-amd64-netinst.iso",
+                "url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.10.0-amd64-netinst.iso",
                 "description": "Debian 12 netinstall — minimal, rock-solid",
                 "size": "~700 MB",
             },
             {
                 "version": "Debian 12 Live XFCE",
-                "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-cd/debian-live-12.9.0-amd64-xfce.iso",
+                "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-12.10.0-amd64-xfce.iso",
                 "description": "Debian 12 with XFCE desktop",
                 "size": "~3.1 GB",
             },
@@ -713,19 +713,13 @@ ISO_CATEGORIES = [
         "items": [
             {
                 "version": "Windows 11 24H2 (eval)",
-                "url": "https://software-static.download.prss.microsoft.com/dbazure/988969d5-f34g-4e03-ac9d-1f9786c66751/26100.1742.240906-0331.ge_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso",
-                "description": "Windows 11 Enterprise Evaluation — 90-day trial",
+                "url": "https://go.microsoft.com/fwlink/?linkid=2294090",
+                "description": "Windows 11 Enterprise Evaluation — 90-day trial (redirects to latest)",
                 "size": "~6.4 GB",
             },
             {
-                "version": "Windows 10 22H2 (eval)",
-                "url": "https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66751/19045.2006.220908-0225.22h2_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso",
-                "description": "Windows 10 Enterprise Evaluation — 90-day trial",
-                "size": "~5.8 GB",
-            },
-            {
                 "version": "Windows Server 2025 (eval)",
-                "url": "https://software-static.download.prss.microsoft.com/dbazure/888969d5-f34g-4e03-ac9d-1f9786c66749/26100.1742.240906-0331.ge_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso",
+                "url": "https://go.microsoft.com/fwlink/?linkid=2294501",
                 "description": "Windows Server 2025 Evaluation — 180-day trial",
                 "size": "~6.0 GB",
             },
@@ -741,24 +735,6 @@ ISO_CATEGORIES = [
                 "description": "Partition manager — resize, repair, recover disks",
                 "size": "~550 MB",
             },
-            {
-                "version": "SystemRescue 11",
-                "url": "https://downloads.sourceforge.net/systemrescue/systemrescue-11.02-amd64.iso",
-                "description": "System rescue toolkit — fsck, backup, network tools",
-                "size": "~850 MB",
-            },
-            {
-                "version": "Hiren's Boot CD PE",
-                "url": "https://archive.org/download/hirens-boot-cd-pe-x64-2023/Hirens.Boot.CD.PE.x64.2023.iso",
-                "description": "All-in-one diagnostics and recovery environment",
-                "size": "~2.0 GB",
-            },
-            {
-                "version": "Clonezilla Live",
-                "url": "https://downloads.sourceforge.net/clonezilla/clonezilla-live-3.1.3-9-amd64.iso",
-                "description": "Disk cloning and imaging — bare-metal backup",
-                "size": "~450 MB",
-            },
         ],
     },
     {
@@ -766,22 +742,16 @@ ISO_CATEGORIES = [
         "label": "Safety Tools",
         "items": [
             {
-                "version": "Kali Linux 2024",
-                "url": "https://cdimage.kali.org/kali-2024.4/kali-linux-2024.4-installer-amd64.iso",
+                "version": "Kali Linux 2025",
+                "url": "https://cdimage.kali.org/kali-2025.1/kali-linux-2025.1-installer-amd64.iso",
                 "description": "Penetration testing and security auditing distro",
                 "size": "~4.6 GB",
             },
             {
-                "version": "Kali Linux Live (2024)",
-                "url": "https://cdimage.kali.org/kali-2024.4/kali-linux-2024.4-live-amd64.iso",
+                "version": "Kali Linux Live (2025)",
+                "url": "https://cdimage.kali.org/kali-2025.1/kali-linux-2025.1-live-amd64.iso",
                 "description": "Kali live environment — no install needed",
                 "size": "~4.2 GB",
-            },
-            {
-                "version": "Security Onion 2",
-                "url": "https://download.securityonion.net/file/securityonion/securityonion-2.4.110-20240805.iso",
-                "description": "IDS/IPS, SIEM, and security monitoring platform",
-                "size": "~9.0 GB",
             },
         ],
     },
