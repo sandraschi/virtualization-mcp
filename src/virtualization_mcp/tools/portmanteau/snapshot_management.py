@@ -43,7 +43,7 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
     ) -> dict[str, Any]:
         """
         Comprehensive snapshot management portmanteau tool.
-        
+
         This tool consolidates all VM snapshot operations into a single interface. Use the 'action' parameter
         to specify which operation to perform. All actions require vm_name, and most require snapshot_name.
 
@@ -126,14 +126,10 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
                 )
 
             elif action == "restore":
-                return await _handle_restore_snapshot(
-                    vm_name=vm_name, snapshot_name=snapshot_name
-                )
+                return await _handle_restore_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
 
             elif action == "delete":
-                return await _handle_delete_snapshot(
-                    vm_name=vm_name, snapshot_name=snapshot_name
-                )
+                return await _handle_delete_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
 
             else:
                 return {
@@ -149,7 +145,7 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
             )
             return {
                 "success": False,
-                "error": f"Failed to execute action '{action}': {str(e)}",
+                "error": f"Failed to execute action '{action}': {e!s}",
                 "action": action,
                 "vm_name": vm_name,
                 "available_actions": SNAPSHOT_ACTIONS,
@@ -170,9 +166,7 @@ def _paginate(items: list[dict[str, Any]], limit: int, offset: int) -> dict[str,
     }
 
 
-async def _handle_list_snapshots(
-    vm_name: str, limit: int = 100, offset: int = 0
-) -> dict[str, Any]:
+async def _handle_list_snapshots(vm_name: str, limit: int = 100, offset: int = 0) -> dict[str, Any]:
     """Handle list snapshots action."""
     try:
         result = await list_snapshots(vm_name=vm_name)
@@ -195,7 +189,7 @@ async def _handle_list_snapshots(
             "success": False,
             "action": "list",
             "vm_name": vm_name,
-            "error": f"Failed to list snapshots: {str(e)}",
+            "error": f"Failed to list snapshots: {e!s}",
         }
 
 
@@ -212,9 +206,7 @@ async def _handle_create_snapshot(
         }
 
     try:
-        result = await create_snapshot(
-            vm_name=vm_name, snapshot_name=snapshot_name, description=description
-        )
+        result = await create_snapshot(vm_name=vm_name, snapshot_name=snapshot_name, description=description)
         return {
             "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "create",
@@ -228,13 +220,11 @@ async def _handle_create_snapshot(
             "action": "create",
             "vm_name": vm_name,
             "snapshot_name": snapshot_name,
-            "error": f"Failed to create snapshot: {str(e)}",
+            "error": f"Failed to create snapshot: {e!s}",
         }
 
 
-async def _handle_restore_snapshot(
-    vm_name: str, snapshot_name: str | None = None
-) -> dict[str, Any]:
+async def _handle_restore_snapshot(vm_name: str, snapshot_name: str | None = None) -> dict[str, Any]:
     """Handle restore snapshot action."""
     if not snapshot_name:
         return {
@@ -259,13 +249,11 @@ async def _handle_restore_snapshot(
             "action": "restore",
             "vm_name": vm_name,
             "snapshot_name": snapshot_name,
-            "error": f"Failed to restore snapshot: {str(e)}",
+            "error": f"Failed to restore snapshot: {e!s}",
         }
 
 
-async def _handle_delete_snapshot(
-    vm_name: str, snapshot_name: str | None = None
-) -> dict[str, Any]:
+async def _handle_delete_snapshot(vm_name: str, snapshot_name: str | None = None) -> dict[str, Any]:
     """Handle delete snapshot action."""
     if not snapshot_name:
         return {
@@ -290,5 +278,5 @@ async def _handle_delete_snapshot(
             "action": "delete",
             "vm_name": vm_name,
             "snapshot_name": snapshot_name,
-            "error": f"Failed to delete snapshot: {str(e)}",
+            "error": f"Failed to delete snapshot: {e!s}",
         }

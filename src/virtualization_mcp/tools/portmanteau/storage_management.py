@@ -15,9 +15,13 @@ from virtualization_mcp.schemas.vbox_types import STORAGE_CONTROLLER_TYPE
 # Import existing storage tools
 from virtualization_mcp.tools.storage.storage_tools import (
     attach_disk as attach_disk_tool,
+)
+from virtualization_mcp.tools.storage.storage_tools import (
     create_disk as create_disk_tool,
-    list_disks,
+)
+from virtualization_mcp.tools.storage.storage_tools import (
     create_storage_controller,
+    list_disks,
     list_storage_controllers,
     remove_storage_controller,
 )
@@ -40,7 +44,9 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def storage_management(
-        action: Literal["list_controllers", "create_controller", "remove_controller", "list_disks", "create_disk", "attach_disk"],
+        action: Literal[
+            "list_controllers", "create_controller", "remove_controller", "list_disks", "create_disk", "attach_disk"
+        ],
         vm_name: str | None = None,
         controller_name: str | None = None,
         controller_type: STORAGE_CONTROLLER_TYPE | None = None,
@@ -52,7 +58,7 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
     ) -> dict[str, Any]:
         """
         Comprehensive storage management portmanteau tool.
-        
+
         This tool consolidates all storage operations into a single interface. Use the 'action' parameter
         to specify which operation to perform. Different actions require different parameters.
 
@@ -139,17 +145,13 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
                 )
 
             elif action == "remove_controller":
-                return await _handle_remove_controller(
-                    vm_name=vm_name, controller_name=controller_name
-                )
+                return await _handle_remove_controller(vm_name=vm_name, controller_name=controller_name)
 
             elif action == "list_disks":
                 return await _handle_list_disks(vm_name=vm_name, limit=limit, offset=offset)
 
             elif action == "create_disk":
-                return await _handle_create_disk(
-                    disk_name=disk_name, disk_size_gb=disk_size_gb
-                )
+                return await _handle_create_disk(disk_name=disk_name, disk_size_gb=disk_size_gb)
 
             elif action == "attach_disk":
                 return await _handle_attach_disk(vm_name=vm_name, disk_path=disk_path)
@@ -165,7 +167,7 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
             logger.error(f"Error in storage management action '{action}': {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"Failed to execute action '{action}': {str(e)}",
+                "error": f"Failed to execute action '{action}': {e!s}",
                 "action": action,
                 "available_actions": STORAGE_ACTIONS,
             }
@@ -185,9 +187,7 @@ def _paginate(items: list[dict[str, Any]], limit: int, offset: int) -> dict[str,
     }
 
 
-async def _handle_list_controllers(
-    vm_name: str | None = None, limit: int = 100, offset: int = 0
-) -> dict[str, Any]:
+async def _handle_list_controllers(vm_name: str | None = None, limit: int = 100, offset: int = 0) -> dict[str, Any]:
     """Handle list controllers action."""
     if not vm_name:
         return {
@@ -218,7 +218,7 @@ async def _handle_list_controllers(
             "success": False,
             "action": "list_controllers",
             "vm_name": vm_name,
-            "error": f"Failed to list controllers: {str(e)}",
+            "error": f"Failed to list controllers: {e!s}",
         }
 
 
@@ -268,13 +268,11 @@ async def _handle_create_controller(
             "action": "create_controller",
             "vm_name": vm_name,
             "controller_name": controller_name,
-            "error": f"Failed to create controller: {str(e)}",
+            "error": f"Failed to create controller: {e!s}",
         }
 
 
-async def _handle_remove_controller(
-    vm_name: str | None = None, controller_name: str | None = None
-) -> dict[str, Any]:
+async def _handle_remove_controller(vm_name: str | None = None, controller_name: str | None = None) -> dict[str, Any]:
     """Handle remove controller action."""
     if not vm_name:
         return {
@@ -291,9 +289,7 @@ async def _handle_remove_controller(
         }
 
     try:
-        result = await remove_storage_controller(
-            vm_name=vm_name, controller_name=controller_name
-        )
+        result = await remove_storage_controller(vm_name=vm_name, controller_name=controller_name)
         return {
             "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "remove_controller",
@@ -307,7 +303,7 @@ async def _handle_remove_controller(
             "action": "remove_controller",
             "vm_name": vm_name,
             "controller_name": controller_name,
-            "error": f"Failed to remove controller: {str(e)}",
+            "error": f"Failed to remove controller: {e!s}",
             "recovery_options": [
                 "Detach all media from this controller before removal",
                 "List controllers with list_controllers to match controller_name exactly",
@@ -316,9 +312,7 @@ async def _handle_remove_controller(
         }
 
 
-async def _handle_list_disks(
-    vm_name: str | None = None, limit: int = 100, offset: int = 0
-) -> dict[str, Any]:
+async def _handle_list_disks(vm_name: str | None = None, limit: int = 100, offset: int = 0) -> dict[str, Any]:
     """Handle list disks action."""
     if not vm_name:
         return {
@@ -349,13 +343,11 @@ async def _handle_list_disks(
             "success": False,
             "action": "list_disks",
             "vm_name": vm_name,
-            "error": f"Failed to list disks: {str(e)}",
+            "error": f"Failed to list disks: {e!s}",
         }
 
 
-async def _handle_create_disk(
-    disk_name: str | None = None, disk_size_gb: int | None = None
-) -> dict[str, Any]:
+async def _handle_create_disk(disk_name: str | None = None, disk_size_gb: int | None = None) -> dict[str, Any]:
     """Handle create disk action."""
     if not disk_name:
         return {
@@ -386,13 +378,11 @@ async def _handle_create_disk(
             "success": False,
             "action": "create_disk",
             "disk_name": disk_name,
-            "error": f"Failed to create disk: {str(e)}",
+            "error": f"Failed to create disk: {e!s}",
         }
 
 
-async def _handle_attach_disk(
-    vm_name: str | None = None, disk_path: str | None = None
-) -> dict[str, Any]:
+async def _handle_attach_disk(vm_name: str | None = None, disk_path: str | None = None) -> dict[str, Any]:
     """Handle attach disk action."""
     if not vm_name:
         return {
@@ -429,5 +419,5 @@ async def _handle_attach_disk(
             "success": False,
             "action": "attach_disk",
             "vm_name": vm_name,
-            "error": f"Failed to attach disk: {str(e)}",
+            "error": f"Failed to attach disk: {e!s}",
         }

@@ -100,9 +100,7 @@ class Test_vm_tools_Generated:
 
         with patch("virtualization_mcp.vbox.compat_adapter.VBoxManager"):
             try:
-                result = await clone_vm(
-                    source_vm=None, new_name="test-value", snapshot=None, mode=None, options=None
-                )
+                result = await clone_vm(source_vm=None, new_name="test-value", snapshot=None, mode=None, options=None)
                 assert result is not None or result is None
             except Exception:
                 pass  # Expected for functions needing specific setup
@@ -284,9 +282,7 @@ class Test_snapshot_tools_Generated:
 
         with patch("virtualization_mcp.vbox.compat_adapter.VBoxManager"):
             try:
-                result = await restore_snapshot(
-                    vm_name="test-value", snapshot_name="test-value", start_vm=None
-                )
+                result = await restore_snapshot(vm_name="test-value", snapshot_name="test-value", start_vm=None)
                 assert result is not None or result is None
             except Exception:
                 pass  # Expected for functions needing specific setup
@@ -380,9 +376,7 @@ class Test_storage_tools_Generated:
 
         with patch("virtualization_mcp.vbox.compat_adapter.VBoxManager"):
             try:
-                result = await remove_storage_controller(
-                    vm_name="test-value", controller_name="test-value"
-                )
+                result = await remove_storage_controller(vm_name="test-value", controller_name="test-value")
                 assert result is not None or result is None
             except Exception:
                 pass  # Expected for functions needing specific setup
@@ -414,9 +408,7 @@ class Test_storage_tools_Generated:
 
         with patch("virtualization_mcp.vbox.compat_adapter.VBoxManager"):
             try:
-                result = await detach_disk(
-                    vm_name="test-value", controller_name="test-value", port=None, device=None
-                )
+                result = await detach_disk(vm_name="test-value", controller_name="test-value", port=None, device=None)
                 assert result is not None or result is None
             except Exception:
                 pass  # Expected for functions needing specific setup
@@ -447,9 +439,7 @@ class Test_storage_tools_Generated:
 
         with patch("virtualization_mcp.vbox.compat_adapter.VBoxManager"):
             try:
-                result = await unmount_iso(
-                    vm_name="test-value", controller_name="test-value", port=None, device=None
-                )
+                result = await unmount_iso(vm_name="test-value", controller_name="test-value", port=None, device=None)
                 assert result is not None or result is None
             except Exception:
                 pass  # Expected for functions needing specific setup
@@ -473,9 +463,7 @@ class Test_storage_tools_Generated:
 
         with patch("virtualization_mcp.vbox.compat_adapter.VBoxManager"):
             try:
-                result = await create_disk(
-                    disk_path=Path("/test"), size_mb=None, disk_format=None, variant=None
-                )
+                result = await create_disk(disk_path=Path("/test"), size_mb=None, disk_format=None, variant=None)
                 assert result is not None or result is None
             except Exception:
                 pass  # Expected for functions needing specific setup
@@ -511,9 +499,7 @@ class Test_storage_tools_Generated:
 
         with patch("virtualization_mcp.vbox.compat_adapter.VBoxManager"):
             try:
-                result = await clone_disk(
-                    source_disk=None, target_disk=None, disk_format=None, variant=None
-                )
+                result = await clone_disk(source_disk=None, target_disk=None, disk_format=None, variant=None)
                 assert result is not None or result is None
             except Exception:
                 pass  # Expected for functions needing specific setup

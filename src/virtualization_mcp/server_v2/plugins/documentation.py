@@ -7,7 +7,7 @@ following the FastMCP 2.11 standard for MCP servers.
 
 import inspect
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -75,7 +75,7 @@ class APIDocumentation(BaseModel):
     description: str
     base_path: str = "/"
     plugins: dict[str, PluginDocumentation] = {}
-    generated_at: str = datetime.now(timezone.utc).isoformat()
+    generated_at: str = datetime.now(UTC).isoformat()
 
 
 @register_plugin("documentation")
@@ -161,10 +161,7 @@ class DocumentationPlugin(BasePlugin):
             name=plugin.__class__.__name__,
             version=getattr(plugin, "__version__", "1.0.0"),
             description=plugin.__doc__ or "",
-            configuration={
-                k: str(v) if not isinstance(v, (dict, list)) else v
-                for k, v in plugin.config.items()
-            },
+            configuration={k: str(v) if not isinstance(v, (dict, list)) else v for k, v in plugin.config.items()},
         )
 
         # Extract documentation from the plugin's router
@@ -276,7 +273,7 @@ class DocumentationPlugin(BasePlugin):
 
     def _get_type_name(self, type_hint) -> str:
         """Convert a Python type to its string representation."""
-        if type_hint is type(None):  # noqa: E721
+        if type_hint is type(None):
             return "null"
 
         type_name = str(type_hint)

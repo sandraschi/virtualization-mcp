@@ -110,9 +110,7 @@ class MetricsManager:
             if len(self.system_metrics) > 1000:
                 self.system_metrics = self.system_metrics[-1000:]
 
-    def record_api_request(
-        self, endpoint: str, method: str, status_code: int, processing_time: float
-    ) -> None:
+    def record_api_request(self, endpoint: str, method: str, status_code: int, processing_time: float) -> None:
         """Record an API request for monitoring."""
         with self.lock:
             self.api_requests.append(
@@ -186,21 +184,15 @@ class PrometheusMetrics:
         """Register all Prometheus metrics."""
         self.metrics = {
             "vm_cpu_usage": Gauge("virtualization-mcp_vm_cpu_usage", "CPU usage per VM", ["vm_id"]),
-            "vm_memory_usage": Gauge(
-                "virtualization-mcp_vm_memory_usage", "Memory usage per VM", ["vm_id"]
-            ),
+            "vm_memory_usage": Gauge("virtualization-mcp_vm_memory_usage", "Memory usage per VM", ["vm_id"]),
             "system_cpu_usage": Gauge("virtualization-mcp_system_cpu_usage", "System CPU usage"),
-            "system_memory_usage": Gauge(
-                "virtualization-mcp_system_memory_usage", "System memory usage"
-            ),
+            "system_memory_usage": Gauge("virtualization-mcp_system_memory_usage", "System memory usage"),
             "api_requests_total": Counter(
                 "virtualization-mcp_api_requests_total",
                 "Total API requests",
                 ["endpoint", "method", "status"],
             ),
-            "errors_total": Counter(
-                "virtualization-mcp_errors_total", "Total errors", ["error_type"]
-            ),
+            "errors_total": Counter("virtualization-mcp_errors_total", "Total errors", ["error_type"]),
         }
 
     def start_http_server(self):
@@ -221,23 +213,26 @@ class PrometheusMetrics:
     def record_api_request(self, endpoint: str, method: str, status_code: int):
         """Record an API request."""
         status = f"{status_code}"
-        self.metrics["api_requests_total"].labels(
-            endpoint=endpoint, method=method.lower(), status=status
-        ).inc()
+        self.metrics["api_requests_total"].labels(endpoint=endpoint, method=method.lower(), status=status).inc()
 
     def record_error(self, error_type: str):
         """Record an error."""
         self.metrics["errors_total"].labels(error_type=error_type).inc()
 
 
-# Global instances
-metrics_manager = MetricsManager()
-prometheus_metrics = PrometheusMetrics()
+# Global instances — guarded for test environments where re-imports collide
+try:
+    metrics_manager = MetricsManager()
+except Exception:
+    metrics_manager = None
+
+try:
+    prometheus_metrics = PrometheusMetrics()
+except Exception:
+    prometheus_metrics = None
 
 
-def start_metrics_server(
-    host: str = "0.0.0.0", port: int = 8000, prometheus_port: int = 9090
-) -> FastAPI:
+def start_metrics_server(host: str = "0.0.0.0", port: int = 8000, prometheus_port: int = 9090) -> FastAPI:
     """
     Start a FastAPI server to expose metrics via HTTP.
 
@@ -279,9 +274,7 @@ def start_metrics_server(
 
 
 # Convenience functions for metrics collection
-def record_api_request(
-    endpoint: str, method: str, status_code: int, processing_time: float | None = None
-) -> None:
+def record_api_request(endpoint: str, method: str, status_code: int, processing_time: float | None = None) -> None:
     """
     Record an API request in both the metrics manager and Prometheus.
 

@@ -82,6 +82,7 @@ class VMService:
         template: str = "ubuntu-dev",
         memory_mb: int | None = None,
         disk_gb: int | None = None,
+        cpus: int | None = None,
     ) -> dict[str, Any]:
         """
         Create a new VirtualBox virtual machine from a template with optional resource overrides.
@@ -130,6 +131,8 @@ class VMService:
                 custom_settings["memory_mb"] = memory_mb
             if disk_gb is not None:
                 custom_settings["disk_gb"] = disk_gb
+            if cpus is not None:
+                custom_settings["cpus"] = cpus
 
             # Create the VM using VMOperations
             result = self.vm_operations.create_vm(
@@ -137,6 +140,7 @@ class VMService:
                 template=template,
                 memory_mb=memory_mb,
                 disk_gb=disk_gb,
+                cpus=cpus,
                 custom_settings=custom_settings,
             )
 
@@ -168,9 +172,7 @@ class VMService:
 
             # Add template-specific next steps
             if "docker" in template.lower():
-                response["next_steps"].append(
-                    "Install Docker: curl -sSL https://get.docker.com | sh"
-                )
+                response["next_steps"].append("Install Docker: curl -sSL https://get.docker.com | sh")
             elif "kubernetes" in template.lower():
                 response["next_steps"].extend(
                     [
@@ -246,9 +248,9 @@ class VMService:
             if not self.vbox_manager.vm_exists(name):
                 raise VBoxManagerError(f"VM '{name}' does not exist")
 
-            # Get current VM state
+            # Get current VM state (keys lowercased by vbox_compat parser)
             vm_info = self.vbox_manager.get_vm_info(name)
-            current_state = vm_info.get("VMState", "").lower()
+            current_state = str(vm_info.get("vmstate", vm_info.get("VMState", "poweroff"))).lower()
 
             # Handle different VM states
             if current_state == "running":
@@ -258,14 +260,11 @@ class VMService:
                     "state": "running",
                     "headless": headless,
                     "message": f"✓ VM '{name}' is already running",
-                    "troubleshooting": [
-                        "If you want to restart the VM, stop it first and then start it again"
-                    ],
+                    "troubleshooting": ["If you want to restart the VM, stop it first and then start it again"],
                 }
             elif current_state not in ["poweroff", "saved", "aborted"]:
                 raise VBoxManagerError(
-                    f"Cannot start VM in state '{current_state}'. "
-                    "VM must be powered off, saved, or aborted."
+                    f"Cannot start VM in state '{current_state}'. VM must be powered off, saved, or aborted."
                 )
 
             # Start the VM using VMOperations
@@ -384,9 +383,7 @@ class VMService:
 
             # Validate VM state
             if current_state not in ["running", "paused"]:
-                raise VBoxManagerError(
-                    f"Cannot stop VM in state '{current_state}'. VM must be running or paused."
-                )
+                raise VBoxManagerError(f"Cannot stop VM in state '{current_state}'. VM must be running or paused.")
 
             # Stop the VM using VMOperations
             result = self.vm_operations.stop_vm(name=name, force=force)
@@ -401,9 +398,7 @@ class VMService:
                 "vm_name": name,
                 "force": force,
                 "previous_state": current_state,
-                "message": (
-                    f"✓ VM '{name}' was {'forcefully powered off' if force else 'gracefully shut down'}"
-                ),
+                "message": (f"✓ VM '{name}' was {'forcefully powered off' if force else 'gracefully shut down'}"),
                 "troubleshooting": [
                     "The VM may take a moment to fully shut down",
                     "Check VM state with: list_vms()",
@@ -412,9 +407,7 @@ class VMService:
 
             # Add warning for forced stop
             if force:
-                response["warning"] = (
-                    "Forced power-off may cause data loss. Use graceful shutdown when possible."
-                )
+                response["warning"] = "Forced power-off may cause data loss. Use graceful shutdown when possible."
                 response["troubleshooting"].extend(
                     [
                         "Check for filesystem errors on next boot",
@@ -528,9 +521,7 @@ class VMService:
             # Check VM state (must be powered off to delete)
             current_state = vm_info.get("VMState", "").lower()
             if current_state not in ["poweroff", "aborted", "saved"]:
-                raise VBoxManagerError(
-                    f"Cannot delete VM in state '{current_state}'. VM must be powered off or saved."
-                )
+                raise VBoxManagerError(f"Cannot delete VM in state '{current_state}'. VM must be powered off or saved.")
 
             # Delete the VM using VMOperations
             result = self.vm_operations.delete_vm(name=name, delete_disk=delete_disk)
@@ -664,9 +655,7 @@ class VMService:
 
             # Apply state filter if not "all"
             if state_filter.lower() != "all":
-                filtered_vms = [
-                    vm for vm in all_vms if vm.get("state", "").lower() == state_filter.lower()
-                ]
+                filtered_vms = [vm for vm in all_vms if vm.get("state", "").lower() == state_filter.lower()]
             else:
                 filtered_vms = all_vms
 
@@ -722,9 +711,7 @@ class VMService:
                 ],
             }
 
-    def create_snapshot(
-        self, vm_name: str, snapshot_name: str, description: str = ""
-    ) -> dict[str, Any]:
+    def create_snapshot(self, vm_name: str, snapshot_name: str, description: str = "") -> dict[str, Any]:
         """
         Create a snapshot of a virtual machine.
 
@@ -924,9 +911,7 @@ class VMService:
                 ],
             }
 
-    def restore_snapshot(
-        self, vm_name: str, snapshot_name: str, start_vm: bool = False
-    ) -> dict[str, Any]:
+    def restore_snapshot(self, vm_name: str, snapshot_name: str, start_vm: bool = False) -> dict[str, Any]:
         """
         Restore a virtual machine to a previous snapshot.
 
@@ -969,9 +954,7 @@ class VMService:
                 raise VBoxManagerError(f"VM '{vm_name}' does not exist")
 
             # Restore the snapshot using VMOperations
-            result = self.vm_operations.restore_snapshot(
-                vm_name=vm_name, snapshot_name=snapshot_name
-            )
+            result = self.vm_operations.restore_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
 
             if not result.get("success", False):
                 error_msg = result.get("error", "Unknown error restoring snapshot")
@@ -1054,9 +1037,7 @@ class VMService:
                 raise VBoxManagerError(f"VM '{vm_name}' does not exist")
 
             # Delete the snapshot using VMOperations
-            result = self.vm_operations.delete_snapshot(
-                vm_name=vm_name, snapshot_name=snapshot_name
-            )
+            result = self.vm_operations.delete_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
 
             if not result.get("success", False):
                 error_msg = result.get("error", "Unknown error deleting snapshot")
@@ -1088,9 +1069,7 @@ class VMService:
                 ],
             }
 
-    def configure_network(
-        self, vm_name: str, adapter_configs: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def configure_network(self, vm_name: str, adapter_configs: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Configure network adapters for a virtual machine.
 
@@ -1157,9 +1136,7 @@ class VMService:
                 raise VBoxManagerError("At least one adapter configuration is required")
 
             # Configure network adapters using VMOperations
-            result = self.vm_operations.configure_network(
-                vm_name=vm_name, adapter_configs=adapter_configs
-            )
+            result = self.vm_operations.configure_network(vm_name=vm_name, adapter_configs=adapter_configs)
 
             if not result.get("success", False):
                 error_msg = result.get("error", "Unknown error configuring network")
@@ -1191,9 +1168,7 @@ class VMService:
                 ],
             }
 
-    def create_template(
-        self, vm_name: str, template_name: str, description: str = ""
-    ) -> dict[str, Any]:
+    def create_template(self, vm_name: str, template_name: str, description: str = "") -> dict[str, Any]:
         """
         Create a template from an existing virtual machine.
 
@@ -1268,9 +1243,7 @@ class VMService:
                 ],
             }
 
-    def deploy_from_template(
-        self, template_name: str, new_vm_name: str, **kwargs
-    ) -> dict[str, Any]:
+    def deploy_from_template(self, template_name: str, new_vm_name: str, **kwargs) -> dict[str, Any]:
         """
         Deploy a new virtual machine from a template.
 
@@ -1677,9 +1650,7 @@ class VMService:
             attached_disks = self.vbox_manager.get_attached_disks(vm_name)
             for disk in attached_disks:
                 if disk["port"] == port and disk["device"] == device:
-                    raise VBoxManagerError(
-                        f"Port {port} and device {device} already in use by {disk['path']}"
-                    )
+                    raise VBoxManagerError(f"Port {port} and device {device} already in use by {disk['path']}")
 
             # Attach the disk
             result = self.vm_operations.attach_disk(
@@ -1763,9 +1734,7 @@ class VMService:
                     break
 
             if not disk_found:
-                raise VBoxManagerError(
-                    f"No disk found at port {port}, device {device} on VM '{vm_name}'"
-                )
+                raise VBoxManagerError(f"No disk found at port {port}, device {device} on VM '{vm_name}'")
 
             # Detach the disk
             result = self.vm_operations.detach_disk(vm_name=vm_name, port=port, device=device)
@@ -1802,9 +1771,7 @@ class VMService:
                 ],
             }
 
-    def attach_iso(
-        self, vm_name: str, iso_path: str, port: int = 1, device: int = 0
-    ) -> dict[str, Any]:
+    def attach_iso(self, vm_name: str, iso_path: str, port: int = 1, device: int = 0) -> dict[str, Any]:
         """
         Attach an ISO file to a virtual machine's virtual CD/DVD drive.
 
@@ -1847,9 +1814,7 @@ class VMService:
             attached_media = self.vbox_manager.get_attached_media(vm_name)
             for media in attached_media:
                 if media["port"] == port and media["device"] == device and media["type"] == "dvd":
-                    raise VBoxManagerError(
-                        f"Port {port} and device {device} already in use by {media['path']}"
-                    )
+                    raise VBoxManagerError(f"Port {port} and device {device} already in use by {media['path']}")
 
             # Attach the ISO
             result = self.vm_operations.attach_iso(
@@ -1919,7 +1884,7 @@ class VMService:
             logger.error(f"Failed to detach ISO from VM {vm_name}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
 
-    def install_guest_additions(self, vm_name: str, iso_path: str = None) -> dict[str, Any]:
+    def install_guest_additions(self, vm_name: str, iso_path: str | None = None) -> dict[str, Any]:
         """
         Install or update VirtualBox Guest Additions in a virtual machine.
 
@@ -2014,9 +1979,7 @@ class VMService:
             logger.error(f"Failed to export VM {vm_name}: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
 
-    def clone_vm(
-        self, source_vm: str, new_vm_name: str, clone_type: str = "full"
-    ) -> dict[str, Any]:
+    def clone_vm(self, source_vm: str, new_vm_name: str, clone_type: str = "full") -> dict[str, Any]:
         """
         Clone a virtual machine.
 
@@ -2046,7 +2009,7 @@ class VMService:
             return {"status": "error", "error": str(e)}
 
     # --- Media Management ---
-    def list_media(self, media_type: str = None) -> dict[str, Any]:
+    def list_media(self, media_type: str | None = None) -> dict[str, Any]:
         """
         List all media (ISOs, disk images) registered with VirtualBox.
 
@@ -2159,7 +2122,7 @@ class VMService:
         adapter_id: int,
         enabled: bool = True,
         network_type: str = "nat",
-        mac_address: str = None,
+        mac_address: str | None = None,
         cable_connected: bool = True,
     ) -> dict[str, Any]:
         """
@@ -2247,37 +2210,54 @@ class VMService:
     # --- System Information ---
     def get_system_info(self) -> dict[str, Any]:
         """
-        Get information about the host system and VirtualBox installation.
+        Get live host system information using psutil.
 
         Returns:
-            Dict containing system and VirtualBox information
+            Dict with cpu_usage, memory_total, memory_available, disk_usage, virtualbox info
         """
+        import psutil
+
         try:
-            # Implementation will be added
+            cpu_usage = psutil.cpu_percent(interval=0.5)
+            mem = psutil.virtual_memory()
+            disk = psutil.disk_usage(os.path.split(os.path.abspath(__file__))[0][:2] + "\\")
+            vbox_version = ""
+            try:
+                result = self.vbox_manager.run_command(["--version"])
+                vbox_version = str(result.get("output", "")).strip()
+            except Exception:
+                vbox_version = getattr(self.vbox_manager, "_version", "")
+
             return {
-                "status": "success",
-                "system": {
-                    "os": "Windows",
-                    "version": "10.0.19045",
-                    "cpu_cores": 8,
-                    "memory_gb": 32,
+                "cpu_usage": cpu_usage,
+                "memory_total": mem.total,
+                "memory_available": mem.available,
+                "memory_percent": mem.percent,
+                "disk_usage": {
+                    "total": disk.total,
+                    "free": disk.free,
+                    "used": disk.used,
+                    "percent": disk.percent,
                 },
                 "virtualbox": {
-                    "version": "7.0.12",
-                    "api_version": "7_0",
-                    "home": "C:\\Program Files\\Oracle\\VirtualBox",
+                    "version": vbox_version,
                 },
             }
         except Exception as e:
-            logger.error(f"Failed to get system info: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
+            logger.error("Failed to get system info: %s", e, exc_info=True)
+            return {
+                "cpu_usage": 0,
+                "memory_total": 0,
+                "memory_available": 0,
+                "disk_usage": {"total": 0, "free": 0, "used": 0},
+            }
 
     def take_screenshot(
         self,
         vm_name: str,
-        output_file: str = None,
-        width: int = None,
-        height: int = None,
+        output_file: str | None = None,
+        width: int | None = None,
+        height: int | None = None,
     ) -> dict[str, Any]:
         """
         Take a screenshot of a running VM.

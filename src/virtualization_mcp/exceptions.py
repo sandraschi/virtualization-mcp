@@ -6,7 +6,7 @@ Custom exceptions for the VirtualBox MCP server.
 class VMError(Exception):
     """Base exception for VM-related errors."""
 
-    def __init__(self, message: str = "VM operation failed", details: dict = None):
+    def __init__(self, message: str = "VM operation failed", details: dict | None = None):
         self.message = message
         self.details = details or {}
         super().__init__(self.message)
@@ -15,7 +15,7 @@ class VMError(Exception):
 class ValidationError(VMError):
     """Raised when input validation fails."""
 
-    def __init__(self, message: str = "Validation failed", details: dict = None):
+    def __init__(self, message: str = "Validation failed", details: dict | None = None):
         super().__init__(f"Validation error: {message}", details)
 
 
@@ -107,7 +107,7 @@ class TimeoutError(VMError):
 class InvalidStateError(VMError):
     """Raised when an operation is performed in an invalid state."""
 
-    def __init__(self, operation: str, current_state: str, expected_states: list = None):
+    def __init__(self, operation: str, current_state: str, expected_states: list | None = None):
         message = f"Cannot {operation} in state '{current_state}'"
         if expected_states:
             message += f". Expected states: {', '.join(expected_states)}"

@@ -30,8 +30,8 @@ async def run_server():
         from virtualization_mcp.all_tools_server import start_mcp_server
 
         logger.info("Starting virtualization-mcp server...")
-        await start_mcp_server(host="0.0.0.0", port=8000)
-        logger.info("virtualization-mcp server started successfully")
+        _mcp = start_mcp_server(host="0.0.0.0", port=8000)
+        logger.info("virtualization-mcp FastMCP ready: %s", getattr(_mcp, "name", _mcp))
 
         # Keep the server running
         while True:
@@ -39,9 +39,7 @@ async def run_server():
 
     except ImportError as e:
         logger.error(f"Failed to import virtualization-mcp: {e}")
-        logger.error(
-            "Make sure all dependencies are installed and the module is in the Python path."
-        )
+        logger.error("Make sure all dependencies are installed and the module is in the Python path.")
         logger.error(f"Python path: {sys.path}")
         sys.exit(1)
     except Exception as e:

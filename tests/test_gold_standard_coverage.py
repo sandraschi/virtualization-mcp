@@ -290,7 +290,7 @@ class TestPluginModules:
         """Test sandbox configuration."""
         from virtualization_mcp.plugins.sandbox.manager import SandboxConfig
 
-        config = SandboxConfig(name="test") #
+        config = SandboxConfig(name="test")  #
         assert config is not None
 
 

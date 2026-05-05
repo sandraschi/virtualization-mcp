@@ -1,14 +1,15 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './Layout';
-import Dashboard from './pages/dashboard';
-import VirtualBox from './pages/virtualbox';
-import Sandbox from './pages/sandbox';
-import Tools from './pages/tools';
-import Apps from './pages/apps';
-import Chat from './pages/chat';
-import Help from './pages/help';
-import Settings from './pages/settings';
-import PromptsSkills from './pages/prompts-skills';
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import Layout from "./Layout";
+import Apps from "./pages/apps";
+import Chat from "./pages/chat";
+import Dashboard from "./pages/dashboard";
+import Help from "./pages/help";
+import PromptsSkills from "./pages/prompts-skills";
+import Sandbox from "./pages/sandbox";
+import Settings from "./pages/settings";
+import Tools from "./pages/tools";
+import VirtualBox from "./pages/virtualbox";
+import HyperV from "./pages/hyperv";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="virtualbox" element={<VirtualBox />} />
+          <Route path="hyperv" element={<HyperV />} />
           <Route path="sandbox" element={<Sandbox />} />
           <Route path="tools" element={<Tools />} />
           <Route path="apps" element={<Apps />} />

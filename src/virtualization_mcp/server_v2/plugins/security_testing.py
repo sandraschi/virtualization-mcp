@@ -153,7 +153,7 @@ class SecurityTestingPlugin(BasePlugin):
             logger.error(f"Failed to start security scan: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to start security scan: {str(e)}",
+                detail=f"Failed to start security scan: {e!s}",
             ) from e
 
     async def _run_scan(
@@ -233,9 +233,7 @@ class SecurityTestingPlugin(BasePlugin):
             if scan["id"] == scan_id:
                 return scan
 
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Scan with ID {scan_id} not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Scan with ID {scan_id} not found")
 
     async def list_scans(self, limit: int = 10) -> list[dict[str, Any]]:
         """List recent security scans."""
@@ -246,9 +244,7 @@ class SecurityTestingPlugin(BasePlugin):
         scan = next((s for s in self.scan_history if s["id"] == scan_id), None)
 
         if not scan:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"Scan with ID {scan_id} not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Scan with ID {scan_id} not found")
 
         report_path = Path(scan["report_path"])
         if not report_path.exists():
@@ -272,7 +268,7 @@ class SecurityTestingPlugin(BasePlugin):
             logger.error(f"Failed to read scan report: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to read scan report: {str(e)}",
+                detail=f"Failed to read scan report: {e!s}",
             ) from e
 
     async def _get_vm_info(self, vm_name: str) -> dict[str, Any]:

@@ -130,9 +130,7 @@ class AISecurityAnalyzer:
             "summary": report.summary,
         }
 
-    async def _run_scan(
-        self, report: SecurityReport, vm_names: list[str], scan_types: list[str], api_key: str
-    ) -> None:
+    async def _run_scan(self, report: SecurityReport, vm_names: list[str], scan_types: list[str], api_key: str) -> None:
         """Run a security scan in the background."""
         try:
             report.status = "running"
@@ -145,8 +143,8 @@ class AISecurityAnalyzer:
             await self._save_report(report)
 
         except Exception as e:
-            logger.error(f"Error during security scan: {str(e)}", exc_info=True)
-            report.status = f"error: {str(e)}"
+            logger.error(f"Error during security scan: {e!s}", exc_info=True)
+            report.status = f"error: {e!s}"
 
     async def _save_report(self, report: SecurityReport) -> None:
         """Save a security report to disk."""

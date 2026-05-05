@@ -10,6 +10,7 @@ import logging
 from typing import Any, Literal
 
 from fastmcp import FastMCP
+
 from virtualization_mcp.config import settings
 from virtualization_mcp.tools.portmanteau.network_management import NETWORK_ACTIONS
 from virtualization_mcp.tools.portmanteau.snapshot_management import SNAPSHOT_ACTIONS
@@ -40,7 +41,7 @@ def register_info_tools_tool(mcp: FastMCP) -> None:
     ) -> dict[str, Any]:
         """
         Comprehensive tool discovery and help portmanteau tool.
-        
+
         This tool consolidates application-specific help and introspection operations into a single interface.
         Provides information about available tools, their operations, and usage. Use the 'action' parameter
         to specify which operation to perform.
@@ -149,7 +150,7 @@ def register_info_tools_tool(mcp: FastMCP) -> None:
             logger.error(f"Info tools error for action '{action}': {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"Info tools operation failed: {str(e)}",
+                "error": f"Info tools operation failed: {e!s}",
                 "action": action,
             }
 
@@ -160,7 +161,11 @@ async def _handle_list_tools(category: str | None = None, search: str | None = N
         portmanteau = [
             {"name": "vm_management", "operations": sorted(list(VM_ACTIONS.keys())), "category": "vm"},
             {"name": "network_management", "operations": sorted(list(NETWORK_ACTIONS.keys())), "category": "network"},
-            {"name": "snapshot_management", "operations": sorted(list(SNAPSHOT_ACTIONS.keys())), "category": "snapshot"},
+            {
+                "name": "snapshot_management",
+                "operations": sorted(list(SNAPSHOT_ACTIONS.keys())),
+                "category": "snapshot",
+            },
             {"name": "storage_management", "operations": sorted(list(STORAGE_ACTIONS.keys())), "category": "storage"},
             {"name": "system_management", "operations": sorted(list(SYSTEM_ACTIONS.keys())), "category": "system"},
             {"name": "info_tools", "operations": sorted(list(INFO_ACTIONS.keys())), "category": "discovery"},
@@ -174,8 +179,7 @@ async def _handle_list_tools(category: str | None = None, search: str | None = N
             items = [
                 item
                 for item in items
-                if needle in item["name"].lower()
-                or any(needle in op.lower() for op in item["operations"])
+                if needle in item["name"].lower() or any(needle in op.lower() for op in item["operations"])
             ]
 
         tools = {
@@ -255,7 +259,7 @@ async def _handle_tool_schema(tool_name: str | None = None) -> dict[str, Any]:
         "success": True,
         "tool_name": tool_name,
         "message": "Tool schemas available via MCP protocol - check inputSchema in tools/list response",
-        "note": "All portmanteau tools use Literal types for action enums in the schema"
+        "note": "All portmanteau tools use Literal types for action enums in the schema",
     }
 
 
@@ -268,14 +272,17 @@ async def _handle_help() -> dict[str, Any]:
             "description": "Professional VirtualBox management MCP server",
             "tool_modes": {
                 "production": "5-6 portmanteau tools (default)",
-                "testing": "60+ individual tools + portmanteau"
+                "testing": "60+ individual tools + portmanteau",
             },
             "portmanteau_tools": [
-                "vm_management", "network_management", "snapshot_management",
-                "storage_management", "system_management", "hyperv_management (Windows)"
+                "vm_management",
+                "network_management",
+                "snapshot_management",
+                "storage_management",
+                "system_management",
+                "hyperv_management (Windows)",
             ],
             "documentation": "See docs/ directory for comprehensive guides",
             "quick_start": f"Current TOOL_MODE={settings.TOOL_MODE}. Use production for clean UI or testing/all for legacy individual tools.",
-        }
+        },
     }
-

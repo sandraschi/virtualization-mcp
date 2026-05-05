@@ -352,6 +352,7 @@ class TestSandboxModule:
         try:
             import virtualization_mcp.services.vm.sandbox as sandbox
             from virtualization_mcp.services.vm.sandbox import VMSandboxManager
+
             assert sandbox is not None
             assert VMSandboxManager is not None
         except (ImportError, AttributeError):

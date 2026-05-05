@@ -1,18 +1,21 @@
+import asyncio
+import json
+import logging
+import os
+import sys
+import tempfile
+import threading
+import time
+import urllib.request
+import warnings
+from contextlib import asynccontextmanager
+from typing import Any
+
+import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import uvicorn
-import os
-import sys
-import subprocess
-import tempfile
-import asyncio
-from contextlib import asynccontextmanager
-import logging
-import json
-from typing import List, Optional, Any, Dict
 
-import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", FutureWarning)
     try:
@@ -39,6 +42,10 @@ else:
 ASSETS_SANDBOX = os.path.join(_repo_root, "assets", "sandbox")
 ASSETS_VBOX = os.path.join(_repo_root, "assets", "vbox")
 
+# API key storage (user-set via Settings UI, overrides .env)
+KEYS_FILE = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "virtualization-mcp", "keys.json")
+os.makedirs(os.path.dirname(KEYS_FILE), exist_ok=True)
+
 # MCP and service manager set at startup in lifespan
 mcp = None
 service_manager = None
@@ -63,7 +70,7 @@ async def lifespan(app: FastAPI):
     try:
         from virtualization_mcp.all_tools_server import start_mcp_server
 
-        mcp = await start_mcp_server()
+        mcp = start_mcp_server()
         if mcp:
             logger.info("MCP Server: %s", mcp.name)
     except Exception as e:
@@ -146,9 +153,16 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
             do_robofang = True
     if not winget_ids and not any((do_claude_desktop, do_openclaw, do_openfang, do_robofang)):
         winget_ids = [
-            "Python.Python.3.12", "Git.Git", "OpenJS.NodeJS.LTS", "Casey.Just",
-            "Microsoft.VisualStudioCode", "Notepad++.Notepad++", "astral-sh.uv",
-            "Codeium.Windsurf", "Anysphere.Cursor", "Google.Antigravity",
+            "Python.Python.3.12",
+            "Git.Git",
+            "OpenJS.NodeJS.LTS",
+            "Casey.Just",
+            "Microsoft.VisualStudioCode",
+            "Notepad++.Notepad++",
+            "astral-sh.uv",
+            "Codeium.Windsurf",
+            "Anysphere.Cursor",
+            "Google.Antigravity",
         ]
         has_python = True
 
@@ -227,7 +241,7 @@ if ($gw) {
     Write-Host "OLLAMA_HOST set to $env:OLLAMA_HOST (host Ollama)" -ForegroundColor Cyan
 }
 """
-    return f'''# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
+    return f"""# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
 # Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenFang, RoboFang. Optional: host Ollama.
 # Requires in C:\\Assets: DesktopAppInstaller_Dependencies.zip, Microsoft.DesktopAppInstaller_*.msixbundle
 
@@ -273,13 +287,16 @@ Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
 {ollama_block}
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 Write-Host "Full dev setup complete." -ForegroundColor Green
-'''
+"""
 
 
-def _build_sandbox_xml_dev_setup(host_folder: str, memory_mb: int = 4096, vgpu: bool = True, networking: bool = True) -> str:
+def _build_sandbox_xml_dev_setup(
+    host_folder: str, memory_mb: int = 4096, vgpu: bool = True, networking: bool = True
+) -> str:
     import xml.sax.saxutils as sax
+
     host_escaped = sax.escape(host_folder)
-    cmd_escaped = sax.escape(f'powershell -ExecutionPolicy Bypass -File C:\\Assets\\Setup-DevSandbox.ps1')
+    cmd_escaped = sax.escape("powershell -ExecutionPolicy Bypass -File C:\\Assets\\Setup-DevSandbox.ps1")
     return f"""<Configuration>
 <VGpu>{"Enable" if vgpu else "Disable"}</VGpu>
 <Networking>{"Enable" if networking else "Disable"}</Networking>
@@ -297,26 +314,57 @@ def _build_sandbox_xml_dev_setup(host_folder: str, memory_mb: int = 4096, vgpu: 
 </Configuration>"""
 
 
+def _build_sandbox_xml_dev_infra(
+    host_folder: str, memory_mb: int = 8192, vgpu: bool = True, networking: bool = True
+) -> str:
+    """WSB: map assets/sandbox to C:\\Assets, run Run-DevInfra.cmd at logon (cmd + short delay + powershell setup).
+
+    Microsoft samples put MappedFolders before LogonCommand; LogonCommand is executed by cmd.exe — a small .cmd
+    launcher is more reliable than calling powershell -File on a mapped .ps1 immediately at logon.
+    """
+    import xml.sax.saxutils as sax
+
+    host_escaped = sax.escape(host_folder)
+    cmd_escaped = sax.escape(r"C:\Assets\Run-DevInfra.cmd")
+    return f"""<Configuration>
+<MappedFolders>
+<MappedFolder>
+<HostFolder>{host_escaped}</HostFolder>
+<SandboxFolder>C:\\Assets</SandboxFolder>
+<ReadOnly>false</ReadOnly>
+</MappedFolder>
+</MappedFolders>
+<VGpu>{"Enable" if vgpu else "Disable"}</VGpu>
+<Networking>{"Enable" if networking else "Disable"}</Networking>
+<MemoryInMB>{memory_mb}</MemoryInMB>
+<LogonCommand>
+<Command>{cmd_escaped}</Command>
+</LogonCommand>
+</Configuration>"""
+
+
 # Models
 class SandboxLaunchRequest(BaseModel):
     name: str
     config_xml: str
-    full_dev_setup: Optional[bool] = None
-    assets_folder: Optional[str] = None
-    dev_tools: Optional[List[str]] = None
-    memory_in_mb: Optional[int] = 4096
-    vgpu: Optional[bool] = True
-    networking: Optional[bool] = True
-    airgap: Optional[bool] = None  # if True: networking disabled (OpenClaw 100% safe, no egress)
-    use_host_ollama: Optional[bool] = None  # if True: set OLLAMA_HOST to host gateway so sandbox can use host Ollama
+    full_dev_setup: bool | None = None
+    dev_infra_setup: bool | None = None  # maps assets/sandbox, runs Setup-DevInfraSandbox.ps1 (no offline msix zip)
+    assets_folder: str | None = None
+    dev_tools: list[str] | None = None
+    memory_in_mb: int | None = 4096
+    vgpu: bool | None = True
+    networking: bool | None = True
+    airgap: bool | None = None  # if True: networking disabled (OpenClaw 100% safe, no egress)
+    use_host_ollama: bool | None = None  # if True: set OLLAMA_HOST to host gateway so sandbox can use host Ollama
 
 
 class VMCreateRequest(BaseModel):
     name: str
     template: str = "ubuntu-dev"
-    memory_mb: Optional[int] = None
-    disk_gb: Optional[int] = None
-    iso_path: Optional[str] = None  # optional ISO from assets/vbox for first-boot install
+    memory_mb: int | None = None
+    disk_gb: int | None = None
+    cpus: int | None = None
+    iso_path: str | None = None  # optional ISO from assets/vbox for first-boot install
 
 
 class AttachIsoRequest(BaseModel):
@@ -330,12 +378,13 @@ class VMSnapshotRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    history: List[Dict[str, str]] = []
+    history: list[dict[str, str]] = []
+    model: str | None = None
 
 
 class ToolCallRequest(BaseModel):
     name: str
-    arguments: Dict[str, Any] = {}
+    arguments: dict[str, Any] = {}
 
 
 # API Endpoints
@@ -352,6 +401,173 @@ async def health_check():
         "mcp_connected": mcp is not None,
         "service_manager": service_manager is not None,
     }
+
+
+@app.get("/api/v1/dashboard")
+async def dashboard():
+    """Aggregated dashboard data: host info, VMs, VBox status, sandbox."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="Service not available")
+    try:
+        host_info = await asyncio.to_thread(service_manager.vm_service.get_system_info)
+        vbox_status = {"version": host_info.get("virtualbox", {}).get("version", "")} if host_info else {}
+        # Get VMs
+        vms = []
+        try:
+            vms_result = await asyncio.to_thread(service_manager.vm_service.list_vms, details=False)
+            vms = (
+                vms_result
+                if isinstance(vms_result, list)
+                else vms_result.get("vms", [])
+                if isinstance(vms_result, dict)
+                else []
+            )
+        except Exception:
+            pass
+        running = sum(1 for v in vms if v.get("state") == "running")
+        stopped = sum(1 for v in vms if v.get("state") == "poweroff")
+        paused = sum(1 for v in vms if v.get("state") == "paused")
+        return {
+            "host": host_info or {},
+            "vms": {"total": len(vms), "running": running, "stopped": stopped, "paused": paused, "list": vms[:10]},
+            "virtualbox": vbox_status or {},
+        }
+    except Exception as e:
+        logger.error("Dashboard aggregation error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# ── API Key Management ─────────────────────────────────────────────────────────
+
+
+def _load_keys() -> dict[str, str]:
+    """Load saved API keys from keys.json."""
+    try:
+        if os.path.isfile(KEYS_FILE):
+            with open(KEYS_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def _save_keys(keys: dict[str, str]) -> None:
+    """Save API keys to keys.json."""
+    os.makedirs(os.path.dirname(KEYS_FILE), exist_ok=True)
+    with open(KEYS_FILE, "w") as f:
+        json.dump(keys, f, indent=2)
+
+
+def _mask_key(key: str) -> str:
+    """Return masked key showing first 8 + last 4 chars."""
+    if len(key) < 16:
+        return key[:4] + "..." + key[-4:] if len(key) > 8 else "****"
+    return key[:8] + "..." + key[-4:]
+
+
+KEY_DEFINITIONS = [
+    {"id": "DEEPSEEK_API_KEY", "label": "DeepSeek", "link": "https://platform.deepseek.com/api_keys"},
+    {"id": "ANTHROPIC_API_KEY", "label": "Anthropic (Claude)", "link": "https://console.anthropic.com/settings/keys"},
+    {"id": "GOOGLE_API_KEY", "label": "Google (Gemini)", "link": "https://aistudio.google.com/app/apikey"},
+    {"id": "OPENAI_API_KEY", "label": "OpenAI", "link": "https://platform.openai.com/api-keys"},
+]
+
+
+class ApiKeysRequest(BaseModel):
+    keys: dict[str, str]  # full key values to save
+
+
+class ApiKeysResponse(BaseModel):
+    keys: dict[str, str]  # masked key values for display
+
+
+@app.get("/api/v1/settings/keys")
+async def get_api_keys():
+    """Return masked API keys for display."""
+    saved = _load_keys()
+    masked = {}
+    for kd in KEY_DEFINITIONS:
+        kid = kd["id"]
+        val = saved.get(kid) or os.environ.get(kid, "")
+        masked[kid] = _mask_key(val) if val else ""
+    return {"keys": masked, "definitions": KEY_DEFINITIONS}
+
+
+@app.post("/api/v1/settings/keys")
+async def set_api_keys(request: ApiKeysRequest):
+    """Save API keys. Also sets them in os.environ for the current process."""
+    current = _load_keys()
+    for kid, val in request.keys.items():
+        if val:
+            current[kid] = val
+            os.environ[kid] = val  # live update for this process
+        else:
+            current.pop(kid, None)
+            os.environ.pop(kid, None)
+    _save_keys(current)
+    # Return masked
+    masked = {k: _mask_key(v) if v else "" for k, v in current.items()}
+    return {"keys": masked, "definitions": KEY_DEFINITIONS, "saved": True}
+
+
+# ── LLM Provider Discovery ────────────────────────────────────────────────────
+
+
+async def _check_ollama(endpoint: str) -> dict:
+    """Check if Ollama is reachable and return its version + models."""
+    import json as _json
+
+    try:
+        import urllib.request as _req
+
+        r = _req.urlopen(f"{endpoint}/api/version", timeout=3)
+        version_data = _json.loads(r.read())
+        r2 = _req.urlopen(f"{endpoint}/api/tags", timeout=5)
+        tags_data = _json.loads(r2.read())
+        models = [{"name": m["name"], "size": m.get("size", 0)} for m in tags_data.get("models", [])]
+        return {"available": True, "version": version_data.get("version", ""), "models": models}
+    except Exception as e:
+        return {"available": False, "error": str(e), "models": []}
+
+
+async def _check_lm_studio(endpoint: str) -> dict:
+    """Check if LM Studio is reachable and return its loaded models."""
+    import json as _json
+
+    try:
+        import urllib.request as _req
+
+        r = _req.urlopen(f"{endpoint}/v1/models", timeout=3)
+        data = _json.loads(r.read())
+        models = [{"name": m["id"], "size": m.get("owned_by", "")} for m in data.get("data", [])]
+        return {"available": True, "version": "LM Studio", "models": models}
+    except Exception as e:
+        return {"available": False, "error": str(e), "models": []}
+
+
+@app.get("/api/v1/settings/llm/providers")
+async def llm_providers():
+    """Check default Ollama and LM Studio endpoints, return what's available."""
+    ollama, lm = await asyncio.gather(
+        _check_ollama("http://localhost:11434"),
+        _check_lm_studio("http://localhost:1234"),
+        return_exceptions=True,
+    )
+    if isinstance(ollama, Exception):
+        ollama = {"available": False, "error": str(ollama), "models": []}
+    if isinstance(lm, Exception):
+        lm = {"available": False, "error": str(lm), "models": []}
+    return {"ollama": ollama, "lm_studio": lm}
+
+
+@app.get("/api/v1/settings/llm/models")
+async def llm_models(endpoint: str = "", provider: str = ""):
+    """List models from a specific LLM provider endpoint."""
+    if not provider:
+        provider = "ollama" if "11434" in endpoint else "lm_studio"
+    if provider == "ollama":
+        return await _check_ollama(endpoint or "http://localhost:11434")
+    return await _check_lm_studio(endpoint or "http://localhost:1234")
 
 
 @app.get("/api/v1/status")
@@ -392,20 +608,289 @@ async def list_vbox_assets():
     return {"files": files, "assets_path": ASSETS_VBOX}
 
 
+# ── ISO Download Pipeline ──────────────────────────────────────────────────────
+# In-memory download task tracker
+_download_tasks: dict[str, dict[str, Any]] = {}
+_download_lock = threading.Lock()
+
+# Common Ubuntu releases (amd64 live-server)
+ISO_CATEGORIES = [
+    {
+        "id": "ubuntu",
+        "label": "Ubuntu",
+        "items": [
+            {
+                "version": "24.04 LTS Server",
+                "url": "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-live-server-amd64.iso",
+                "description": "Ubuntu Server 24.04 LTS — recommended for VMs",
+                "size": "~2.6 GB",
+            },
+            {
+                "version": "24.04 LTS Desktop",
+                "url": "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-desktop-amd64.iso",
+                "description": "Ubuntu Desktop 24.04 LTS — full GUI",
+                "size": "~5.7 GB",
+            },
+            {
+                "version": "22.04 LTS Server",
+                "url": "https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso",
+                "description": "Ubuntu Server 22.04 LTS — stable, long support",
+                "size": "~2.6 GB",
+            },
+            {
+                "version": "22.04 LTS Desktop",
+                "url": "https://releases.ubuntu.com/22.04/ubuntu-22.04.5-desktop-amd64.iso",
+                "description": "Ubuntu Desktop 22.04 LTS",
+                "size": "~4.6 GB",
+            },
+            {
+                "version": "25.04 Server",
+                "url": "https://releases.ubuntu.com/25.04/ubuntu-25.04-live-server-amd64.iso",
+                "description": "Ubuntu Server 25.04 — latest release",
+                "size": "~2.8 GB",
+            },
+        ],
+    },
+    {
+        "id": "debian",
+        "label": "Debian",
+        "items": [
+            {
+                "version": "Debian 12 Bookworm",
+                "url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.9.0-amd64-netinst.iso",
+                "description": "Debian 12 netinstall — minimal, rock-solid",
+                "size": "~700 MB",
+            },
+            {
+                "version": "Debian 12 Live XFCE",
+                "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-cd/debian-live-12.9.0-amd64-xfce.iso",
+                "description": "Debian 12 with XFCE desktop",
+                "size": "~3.1 GB",
+            },
+        ],
+    },
+    {
+        "id": "windows",
+        "label": "Windows",
+        "items": [
+            {
+                "version": "Windows 11 24H2 (eval)",
+                "url": "https://software-static.download.prss.microsoft.com/dbazure/988969d5-f34g-4e03-ac9d-1f9786c66751/26100.1742.240906-0331.ge_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso",
+                "description": "Windows 11 Enterprise Evaluation — 90-day trial",
+                "size": "~6.4 GB",
+            },
+            {
+                "version": "Windows 10 22H2 (eval)",
+                "url": "https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66751/19045.2006.220908-0225.22h2_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso",
+                "description": "Windows 10 Enterprise Evaluation — 90-day trial",
+                "size": "~5.8 GB",
+            },
+            {
+                "version": "Windows Server 2025 (eval)",
+                "url": "https://software-static.download.prss.microsoft.com/dbazure/888969d5-f34g-4e03-ac9d-1f9786c66749/26100.1742.240906-0331.ge_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso",
+                "description": "Windows Server 2025 Evaluation — 180-day trial",
+                "size": "~6.0 GB",
+            },
+        ],
+    },
+    {
+        "id": "utilities",
+        "label": "Utilities",
+        "items": [
+            {
+                "version": "GParted Live",
+                "url": "https://downloads.sourceforge.net/gparted/gparted-live-1.6.0-1-amd64.iso",
+                "description": "Partition manager — resize, repair, recover disks",
+                "size": "~550 MB",
+            },
+            {
+                "version": "SystemRescue 11",
+                "url": "https://downloads.sourceforge.net/systemrescue/systemrescue-11.02-amd64.iso",
+                "description": "System rescue toolkit — fsck, backup, network tools",
+                "size": "~850 MB",
+            },
+            {
+                "version": "Hiren's Boot CD PE",
+                "url": "https://archive.org/download/hirens-boot-cd-pe-x64-2023/Hirens.Boot.CD.PE.x64.2023.iso",
+                "description": "All-in-one diagnostics and recovery environment",
+                "size": "~2.0 GB",
+            },
+            {
+                "version": "Clonezilla Live",
+                "url": "https://downloads.sourceforge.net/clonezilla/clonezilla-live-3.1.3-9-amd64.iso",
+                "description": "Disk cloning and imaging — bare-metal backup",
+                "size": "~450 MB",
+            },
+        ],
+    },
+    {
+        "id": "safety",
+        "label": "Safety Tools",
+        "items": [
+            {
+                "version": "Kali Linux 2024",
+                "url": "https://cdimage.kali.org/kali-2024.4/kali-linux-2024.4-installer-amd64.iso",
+                "description": "Penetration testing and security auditing distro",
+                "size": "~4.6 GB",
+            },
+            {
+                "version": "Kali Linux Live (2024)",
+                "url": "https://cdimage.kali.org/kali-2024.4/kali-linux-2024.4-live-amd64.iso",
+                "description": "Kali live environment — no install needed",
+                "size": "~4.2 GB",
+            },
+            {
+                "version": "Security Onion 2",
+                "url": "https://download.securityonion.net/file/securityonion/securityonion-2.4.110-20240805.iso",
+                "description": "IDS/IPS, SIEM, and security monitoring platform",
+                "size": "~9.0 GB",
+            },
+        ],
+    },
+]
+
+
+def _download_iso_worker(task_id: str, url: str, dest: str) -> None:
+    """Download ISO in a background thread with progress tracking."""
+    with _download_lock:
+        if task_id in _download_tasks:
+            _download_tasks[task_id]["status"] = "connecting"
+    try:
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        req = urllib.request.Request(url, headers={"User-Agent": "virtualization-mcp/1.0"})
+        with _download_lock:
+            if task_id in _download_tasks:
+                _download_tasks[task_id]["status"] = "downloading"
+        # Follow redirects (Ubuntu releases use redirects)
+        opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
+        with opener.open(req, timeout=300) as response:
+            total = int(response.headers.get("Content-Length", 0))
+            chunk_size = 65536
+            downloaded = 0
+            with open(dest, "wb") as f:
+                while True:
+                    chunk = response.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    with _download_lock:
+                        if task_id in _download_tasks:
+                            t = _download_tasks[task_id]
+                            t["downloaded"] = downloaded
+                            t["total"] = total
+                            t["progress"] = round(downloaded / max(total, 1) * 100, 1)
+                            t["human_size"] = _human_bytes(downloaded)
+        with _download_lock:
+            if task_id in _download_tasks:
+                _download_tasks[task_id].update(status="completed", progress=100.0, file_path=dest)
+    except Exception as e:
+        logger.error("ISO download failed for %s: %s", url, e)
+        with _download_lock:
+            if task_id in _download_tasks:
+                _download_tasks[task_id].update(status="failed", error=str(e))
+        try:
+            if os.path.exists(dest):
+                os.remove(dest)
+        except Exception:
+            pass
+
+
+def _human_bytes(n: int) -> str:
+    """Format bytes as human-readable string."""
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024:
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} TB"
+
+
+class IsoDownloadRequest(BaseModel):
+    url: str
+    filename: str | None = None  # optional override, else derived from URL
+
+
+@app.get("/api/v1/iso/candidates")
+async def iso_candidates():
+    """List downloadable Ubuntu ISO candidates."""
+    return {"categories": ISO_CATEGORIES, "assets_vbox": ASSETS_VBOX}
+
+
+@app.post("/api/v1/iso/download")
+async def iso_download(request: IsoDownloadRequest):
+    """Start downloading an ISO to assets/vbox in the background."""
+    url = request.url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="url is required")
+
+    filename = request.filename or os.path.basename(url.split("?")[0])
+    if not filename.lower().endswith(".iso"):
+        filename += ".iso"
+
+    dest = os.path.join(ASSETS_VBOX, filename)
+    task_id = f"dl_{int(time.time())}_{filename}"
+
+    with _download_lock:
+        _download_tasks[task_id] = {
+            "task_id": task_id,
+            "url": url,
+            "filename": filename,
+            "dest": dest,
+            "status": "queued",
+            "progress": 0.0,
+            "downloaded": 0,
+            "total": 0,
+            "human_size": "0 B",
+            "error": None,
+            "file_path": None,
+        }
+
+    thread = threading.Thread(target=_download_iso_worker, args=(task_id, url, dest), daemon=True)
+    thread.start()
+
+    return {"task_id": task_id, "filename": filename, "dest": dest, "status": "starting"}
+
+
+@app.get("/api/v1/iso/download/{task_id}")
+async def iso_download_status(task_id: str):
+    """Poll the status of an ISO download task."""
+    with _download_lock:
+        task = _download_tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Download task not found")
+    return task
+
+
+@app.get("/api/v1/iso/downloads")
+async def iso_downloads_list():
+    """List all download tasks (active and completed)."""
+    with _download_lock:
+        tasks = list(_download_tasks.values())
+    return {"tasks": tasks}
+
+
 # FastMCP 3.1 prompts and skills (for webapp page)
 PROMPTS_META = [
     {
         "name": "virtualization_expert",
         "description": "Load instructions for acting as a virtualization expert using this MCP server's tools (VMs, snapshots, storage, networking).",
-        "arguments": [{"name": "focus", "default": "general", "description": "Focus area: general, lifecycle, storage, or network"}],
+        "arguments": [
+            {
+                "name": "focus",
+                "default": "general",
+                "description": "Focus area: general, lifecycle, storage, or network",
+            }
+        ],
     },
 ]
 
 
 def _get_skills_dir():
     try:
-        import virtualization_mcp
         from pathlib import Path
+
+        import virtualization_mcp
+
         return Path(virtualization_mcp.__file__).resolve().parent / "skills"
     except Exception:
         return None
@@ -469,9 +954,7 @@ async def get_vms():
 
     try:
         # Get VirtualBox VMs
-        vbox_vms = await asyncio.to_thread(
-            service_manager.vm_service.list_vms, details=True
-        )
+        vbox_vms = await asyncio.to_thread(service_manager.vm_service.list_vms, details=True)
         vbox_list = vbox_vms.get("vms", [])
         for vm in vbox_list:
             vm["provider"] = "virtualbox"
@@ -493,20 +976,25 @@ async def vbox_status():
     available = service_manager is not None
     return {
         "available": available,
-        "message": None if available else "VirtualBox not detected. Install VirtualBox and ensure VBoxManage is in PATH, or open VirtualBox once.",
+        "message": None
+        if available
+        else "VirtualBox not detected. Install VirtualBox and ensure VBoxManage is in PATH, or open VirtualBox once.",
     }
 
 
 @app.post("/api/v1/vbox/launch")
 async def vbox_launch():
     """Try to launch the VirtualBox GUI. Helps ensure the VirtualBox service is running."""
-    import shutil
     import platform
+    import shutil
+
     vbox_exe = None
     if platform.system() == "Windows":
         for path in [
             os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"), "Oracle", "VirtualBox", "VirtualBox.exe"),
-            os.path.join(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"), "Oracle", "VirtualBox", "VirtualBox.exe"),
+            os.path.join(
+                os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"), "Oracle", "VirtualBox", "VirtualBox.exe"
+            ),
         ]:
             if os.path.isfile(path):
                 vbox_exe = path
@@ -522,7 +1010,9 @@ async def vbox_launch():
         return {"success": False, "message": "VirtualBox executable not found in standard locations."}
     try:
         if vbox_exe == "open":
-            await asyncio.create_subprocess_exec("open", *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+            await asyncio.create_subprocess_exec(
+                "open", *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
+            )
         else:
             kwargs = {"stdout": asyncio.subprocess.DEVNULL, "stderr": asyncio.subprocess.DEVNULL}
             if sys.platform == "win32":
@@ -540,9 +1030,7 @@ async def get_host_info():
         raise HTTPException(status_code=503, detail="VM Service not available")
 
     try:
-        info_result = await asyncio.to_thread(
-            service_manager.vm_service.get_system_info
-        )
+        info_result = await asyncio.to_thread(service_manager.vm_service.get_system_info)
         return info_result
     except Exception as e:
         logger.error(f"Error fetching system info: {e}")
@@ -550,11 +1038,49 @@ async def get_host_info():
 
 
 @app.get("/api/v1/sandbox/dev-setup-script")
-async def get_dev_setup_script(tools: Optional[str] = None, use_host_ollama: Optional[bool] = None):
+async def get_dev_setup_script(tools: str | None = None, use_host_ollama: bool | None = None):
     """Return PowerShell script for full dev setup in Sandbox. Query: tools (comma-separated), use_host_ollama (true/false)."""
-    tool_list = [t.strip() for t in (tools or "").split(",") if t.strip()] if tools else list(SANDBOX_DEV_SETUP_TOOLS.keys())
+    tool_list = (
+        [t.strip() for t in (tools or "").split(",") if t.strip()] if tools else list(SANDBOX_DEV_SETUP_TOOLS.keys())
+    )
     script = _get_dev_setup_script(tool_list, use_host_ollama=bool(use_host_ollama))
     return {"script": script, "tools": tool_list}
+
+
+@app.get("/api/v1/sandbox/wsb-preview")
+async def sandbox_wsb_preview(
+    preset: str = "dev-infra",
+    assets_folder: str | None = None,
+    memory_in_mb: int = 8192,
+    vgpu: bool = True,
+    networking: bool = True,
+):
+    """Return WSB XML for download or UI preview. preset=dev-infra (default) or full-dev."""
+    p = (preset or "dev-infra").lower().strip()
+    mem = int(memory_in_mb) if memory_in_mb else 8192
+    if p == "dev-infra":
+        folder = (assets_folder or "").strip() or ASSETS_SANDBOX
+        if not os.path.isdir(folder):
+            raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {folder}")
+        for required in ("Setup-DevInfraSandbox.ps1", "Run-DevInfra.cmd", "Show-DevInfraLog.ps1"):
+            rp = os.path.join(folder, required)
+            if not os.path.isfile(rp):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Missing {required} in {folder}. Use virtualization-mcp assets/sandbox.",
+                )
+        xml = _build_sandbox_xml_dev_infra(folder, memory_mb=mem, vgpu=vgpu, networking=networking)
+        return {"xml": xml, "preset": p, "assets_folder": folder, "filename": "DevInfra.wsb"}
+    if p == "full-dev":
+        folder = (assets_folder or "").strip()
+        if not folder or not os.path.isdir(folder):
+            raise HTTPException(
+                status_code=400,
+                detail="full-dev requires assets_folder query parameter (existing host directory with offline winget assets).",
+            )
+        xml = _build_sandbox_xml_dev_setup(folder, memory_mb=mem, vgpu=vgpu, networking=networking)
+        return {"xml": xml, "preset": p, "assets_folder": folder, "filename": "FullDev.wsb"}
+    raise HTTPException(status_code=400, detail="Unknown preset (use dev-infra or full-dev).")
 
 
 @app.post("/api/v1/sandbox/launch")
@@ -575,29 +1101,60 @@ async def launch_sandbox(request: SandboxLaunchRequest):
                 networking = request.networking if request.networking is not None else True
             script_path = os.path.join(assets_folder, "Setup-DevSandbox.ps1")
             with open(script_path, "w", encoding="utf-8") as f:
-                f.write(_get_dev_setup_script(
-                    request.dev_tools or list(SANDBOX_DEV_SETUP_TOOLS.keys()),
-                    use_host_ollama=use_host_ollama,
-                ))
+                f.write(
+                    _get_dev_setup_script(
+                        request.dev_tools or list(SANDBOX_DEV_SETUP_TOOLS.keys()),
+                        use_host_ollama=use_host_ollama,
+                    )
+                )
             config_xml = _build_sandbox_xml_dev_setup(
                 assets_folder,
                 memory_mb=request.memory_in_mb or 4096,
                 vgpu=request.vgpu if request.vgpu is not None else True,
                 networking=networking,
             )
+        elif getattr(request, "dev_infra_setup", None):
+            raw = getattr(request, "assets_folder", None) or ""
+            host_folder = raw.strip() if isinstance(raw, str) else ""
+            if not host_folder:
+                host_folder = ASSETS_SANDBOX
+            if not os.path.isdir(host_folder):
+                raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {host_folder}")
+            for required in ("Setup-DevInfraSandbox.ps1", "Run-DevInfra.cmd", "Show-DevInfraLog.ps1"):
+                rp = os.path.join(host_folder, required)
+                if not os.path.isfile(rp):
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Missing {required} in {host_folder}",
+                    )
+            mem = request.memory_in_mb if request.memory_in_mb is not None else 8192
+            net = request.networking if request.networking is not None else True
+            vg = request.vgpu if request.vgpu is not None else True
+            config_xml = _build_sandbox_xml_dev_infra(host_folder, memory_mb=mem, vgpu=vg, networking=net)
         else:
             config_xml = request.config_xml
 
-        with tempfile.NamedTemporaryFile(suffix=".wsb", delete=False, mode="w", encoding="utf-8") as tmp:
+        with tempfile.NamedTemporaryFile(
+            suffix=".wsb", delete=False, mode="w", encoding="utf-8-sig", newline="\r\n"
+        ) as tmp:
             tmp.write(config_xml)
             tmp_path = tmp.name
 
-        logger.info(f"Launching sandbox with config: {tmp_path}")
-        await asyncio.create_subprocess_shell(
-            f'start "" "{tmp_path}"',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        logger.info("Launching sandbox with config: %s", tmp_path)
+        wsb_exe = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "WindowsSandbox.exe")
+        if os.path.isfile(wsb_exe):
+            await asyncio.create_subprocess_exec(
+                wsb_exe,
+                tmp_path,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+        else:
+            await asyncio.create_subprocess_shell(
+                f'start "" "{tmp_path}"',
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
         return {
             "status": "success",
             "message": "Windows Sandbox launch initiated",
@@ -618,7 +1175,7 @@ async def get_apps():
         return {"webapps": []}
 
     try:
-        with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
+        with open(REGISTRY_PATH, encoding="utf-8") as f:
             data = json.load(f)
             return data
     except Exception as e:
@@ -628,22 +1185,68 @@ async def get_apps():
 
 @app.post("/api/v1/chat")
 async def chat_interaction(request: ChatRequest):
-    """Handle AI chat interactions using Gemini."""
-    if not chat_model:
-        return {"reply": "Gemini backend is not configured. Please set GOOGLE_API_KEY."}
+    """Handle AI chat using local LLM (Ollama/LM Studio) or Gemini fallback."""
+    import json as _json
+    import urllib.request as _req
 
+    prefix = "You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet.\nUser: "
+
+    # Try Ollama first
     try:
-        # Convert history format if needed (GenAI uses different format)
-        # Simplified for now: just send the message
-        # In a real SOTA app, we would inject fleet context here
-        prefix = "Context: You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet.\n"
-        response = await asyncio.to_thread(
-            chat_model.generate_content, f"{prefix}{request.message}"
+        ollama_payload = _json.dumps(
+            {
+                "model": request.model or "llama3.2",
+                "messages": [{"role": "user", "content": prefix + request.message}],
+                "stream": False,
+            }
+        ).encode()
+        oreq = _req.Request(
+            "http://localhost:11434/api/chat",
+            data=ollama_payload,
+            headers={"Content-Type": "application/json"},
         )
-        return {"reply": response.text}
-    except Exception as e:
-        logger.error(f"Chat error: {e}")
-        return {"reply": f"Sorry, I encountered an error: {str(e)}"}
+        with _req.urlopen(oreq, timeout=60) as r:
+            data = _json.loads(r.read())
+            reply = data.get("message", {}).get("content", "")
+            if reply:
+                return {"reply": reply, "provider": "ollama"}
+    except Exception:
+        pass
+
+    # Fallback: LM Studio
+    try:
+        lm_payload = _json.dumps(
+            {
+                "messages": [{"role": "user", "content": prefix + request.message}],
+                "max_tokens": 1024,
+                "stream": False,
+            }
+        ).encode()
+        lreq = _req.Request(
+            "http://localhost:1234/v1/chat/completions",
+            data=lm_payload,
+            headers={"Content-Type": "application/json"},
+        )
+        with _req.urlopen(lreq, timeout=60) as r:
+            data = _json.loads(r.read())
+            reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            if reply:
+                return {"reply": reply, "provider": "lm_studio"}
+    except Exception:
+        pass
+
+    # Fallback: Gemini (if configured)
+    if chat_model:
+        try:
+            response = await asyncio.to_thread(chat_model.generate_content, prefix + request.message)
+            return {"reply": response.text, "provider": "gemini"}
+        except Exception as e:
+            logger.error("Gemini chat error: %s", e)
+
+    return {
+        "reply": "No LLM provider available. Start Ollama (`ollama serve`), LM Studio, or set GOOGLE_API_KEY.",
+        "provider": None,
+    }
 
 
 @app.post("/api/v1/vms/{name}/start")
@@ -695,15 +1298,11 @@ async def pause_vm(name: str, request: Request):
             result = await service_manager.vm_service.hyperv_manager.pause_vm(name)
         else:
             # Check current state first
-            info = await asyncio.to_thread(
-                service_manager.vm_service.vbox_manager.get_vm_info, name
-            )
+            info = await asyncio.to_thread(service_manager.vm_service.vbox_manager.get_vm_info, name)
             state = info.get("VMState", "").lower()
 
             if state == "running":
-                result = await asyncio.to_thread(
-                    service_manager.vm_service.vbox_manager.pause_vm, name
-                )
+                result = await asyncio.to_thread(service_manager.vm_service.vbox_manager.pause_vm, name)
                 result = {
                     "status": "success",
                     "message": f"VM {name} paused",
@@ -731,9 +1330,7 @@ async def resume_vm(name: str, request: Request):
         if provider == "hyperv":
             result = await service_manager.vm_service.hyperv_manager.resume_vm(name)
         else:
-            result = await asyncio.to_thread(
-                service_manager.vm_service.vbox_manager.resume_vm, name
-            )
+            result = await asyncio.to_thread(service_manager.vm_service.vbox_manager.resume_vm, name)
             result = {
                 "status": "success",
                 "message": f"VM {name} resumed",
@@ -773,6 +1370,7 @@ async def create_vm(request: VMCreateRequest):
             template=request.template,
             memory_mb=request.memory_mb,
             disk_gb=request.disk_gb,
+            cpus=request.cpus,
         )
         if request.iso_path and os.path.isfile(request.iso_path.strip()):
             await asyncio.to_thread(
@@ -870,7 +1468,7 @@ async def get_vm_screenshot(name: str):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await process.communicate()
+            _stdout, stderr = await process.communicate()
 
             if process.returncode != 0:
                 # If it's not a VBox VM, or VBox fails, check if we can do something for Hyper-V
@@ -886,9 +1484,7 @@ async def get_vm_screenshot(name: str):
             logger.error(f"Error taking snapshot for VM {name}: {e}")
             raise HTTPException(
                 status_code=501,
-                detail=(
-                    f"Screenshot capture is under construction for this VM/provider: {str(e)}"
-                ),
+                detail=(f"Screenshot capture is under construction for this VM/provider: {e!s}"),
             ) from e
 
     except Exception as e:

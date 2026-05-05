@@ -52,9 +52,7 @@ class ServiceManager:
 
                     vboxmanage_path = get_vbox_manage_path()
                     logger.info(f"Using VBoxManage path: {vboxmanage_path}")
-                    self._services["vbox_manager"] = VBoxManager(
-                        vboxmanage_path=str(vboxmanage_path)
-                    )
+                    self._services["vbox_manager"] = VBoxManager(vboxmanage_path=str(vboxmanage_path))
                 except Exception as e:
                     logger.warning(f"Failed to get VBoxManage path, using default: {e}")
                     self._services["vbox_manager"] = VBoxManager()

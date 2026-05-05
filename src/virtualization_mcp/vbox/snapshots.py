@@ -29,9 +29,7 @@ class SnapshotManager:
         """
         self.manager = manager
 
-    def create_snapshot(
-        self, vm_name: str, snapshot_name: str, description: str = ""
-    ) -> dict[str, Any]:
+    def create_snapshot(self, vm_name: str, snapshot_name: str, description: str = "") -> dict[str, Any]:
         """
         Create VM snapshot for testing rollback
 
@@ -54,9 +52,7 @@ class SnapshotManager:
             # Check if snapshot already exists
             existing_snapshots = self.list_snapshots(vm_name)
             if any(snap["name"] == snapshot_name for snap in existing_snapshots):
-                raise VBoxManagerError(
-                    f"Snapshot '{snapshot_name}' already exists for VM '{vm_name}'"
-                )
+                raise VBoxManagerError(f"Snapshot '{snapshot_name}' already exists for VM '{vm_name}'")
 
             # Add timestamp to description if not provided
             if not description:
@@ -65,9 +61,7 @@ class SnapshotManager:
             logger.info(f"Creating snapshot '{snapshot_name}' for VM '{vm_name}'")
 
             # Create snapshot
-            self.manager.run_command(
-                ["snapshot", vm_name, "take", snapshot_name, "--description", description]
-            )
+            self.manager.run_command(["snapshot", vm_name, "take", snapshot_name, "--description", description])
 
             # Get snapshot info
             snapshot_info = self._get_snapshot_info(vm_name, snapshot_name)
@@ -90,7 +84,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error creating snapshot: {e}")
-            raise VBoxManagerError(f"Failed to create snapshot: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to create snapshot: {e!s}") from e
 
     def restore_snapshot(self, vm_name: str, snapshot_name: str) -> dict[str, Any]:
         """
@@ -112,8 +106,7 @@ class SnapshotManager:
             if not any(snap["name"] == snapshot_name for snap in existing_snapshots):
                 available = [snap["name"] for snap in existing_snapshots]
                 raise VBoxManagerError(
-                    f"Snapshot '{snapshot_name}' not found for VM '{vm_name}'. "
-                    f"Available: {available}"
+                    f"Snapshot '{snapshot_name}' not found for VM '{vm_name}'. Available: {available}"
                 )
 
             # Stop VM if running (required for restore)
@@ -149,7 +142,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error restoring snapshot: {e}")
-            raise VBoxManagerError(f"Failed to restore snapshot: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to restore snapshot: {e!s}") from e
 
     def delete_snapshot(self, vm_name: str, snapshot_name: str) -> dict[str, Any]:
         """
@@ -192,7 +185,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error deleting snapshot: {e}")
-            raise VBoxManagerError(f"Failed to delete snapshot: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to delete snapshot: {e!s}") from e
 
     def list_snapshots(self, vm_name: str) -> list[dict[str, Any]]:
         """
@@ -221,7 +214,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error listing snapshots: {e}")
-            raise VBoxManagerError(f"Failed to list snapshots: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to list snapshots: {e!s}") from e
 
     def _parse_snapshots_list(self, output: str) -> list[dict[str, Any]]:
         """Parse VBoxManage snapshot list output"""
@@ -270,9 +263,7 @@ class SnapshotManager:
             Dict with combined operation result
         """
         try:
-            logger.info(
-                f"Starting rollback and restart for VM '{vm_name}' to snapshot '{snapshot_name}'"
-            )
+            logger.info(f"Starting rollback and restart for VM '{vm_name}' to snapshot '{snapshot_name}'")
 
             # Restore snapshot
             restore_result = self.restore_snapshot(vm_name, snapshot_name)
@@ -301,7 +292,7 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error in rollback and restart: {e}")
-            raise VBoxManagerError(f"Failed rollback and restart: {str(e)}") from e
+            raise VBoxManagerError(f"Failed rollback and restart: {e!s}") from e
 
     def get_current_snapshot(self, vm_name: str) -> dict[str, Any] | None:
         """
@@ -401,4 +392,4 @@ class SnapshotManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error cloning VM: {e}")
-            raise VBoxManagerError(f"Failed to clone VM: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to clone VM: {e!s}") from e

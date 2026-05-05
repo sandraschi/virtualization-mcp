@@ -139,9 +139,7 @@ class TestQuickExecution:
         import virtualization_mcp.exceptions as exceptions
 
         # Check for common exception types
-        exception_types = [
-            attr for attr in dir(exceptions) if "Error" in attr or "Exception" in attr
-        ]
+        exception_types = [attr for attr in dir(exceptions) if "Error" in attr or "Exception" in attr]
         assert len(exception_types) > 0
 
     def test_async_wrapper_functions(self):

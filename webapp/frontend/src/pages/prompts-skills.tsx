@@ -1,6 +1,12 @@
-import { useEffect, useState } from 'react';
-import { BookOpen, FileText, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { API_BASE } from '../api/config';
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Loader2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { API_BASE } from "../api/config";
 
 interface PromptMeta {
   name: string;
@@ -34,7 +40,7 @@ export default function PromptsSkills() {
         setPrompts(pData.prompts ?? []);
         setSkills(sData.skills ?? []);
       } catch (e) {
-        console.error('Failed to fetch prompts/skills:', e);
+        console.error("Failed to fetch prompts/skills:", e);
       } finally {
         setLoading(false);
       }
@@ -50,10 +56,10 @@ export default function PromptsSkills() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/skills/${id}`);
       const data = await res.json();
-      setSkillContent((prev) => ({ ...prev, [id]: data.content ?? '' }));
+      setSkillContent((prev) => ({ ...prev, [id]: data.content ?? "" }));
       setExpandedSkill(id);
     } catch (e) {
-      console.error('Failed to load skill content:', e);
+      console.error("Failed to load skill content:", e);
     }
   };
 
@@ -72,9 +78,12 @@ export default function PromptsSkills() {
           <BookOpen className="w-3 h-3" />
           FastMCP 3.1
         </div>
-        <h2 className="text-4xl font-black tracking-tighter">Prompts & Skills</h2>
+        <h2 className="text-4xl font-black tracking-tighter">
+          Prompts & Skills
+        </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-          MCP prompts and bundled skills for virtualization-expert behavior in AI clients.
+          MCP prompts and bundled skills for virtualization-expert behavior in
+          AI clients.
         </p>
       </div>
 
@@ -84,12 +93,14 @@ export default function PromptsSkills() {
           Prompts
         </h3>
         <p className="text-sm text-muted-foreground">
-          Prompts return instruction text that clients can inject so the LLM behaves as a virtualization expert.
+          Prompts return instruction text that clients can inject so the LLM
+          behaves as a virtualization expert.
         </p>
         <div className="grid gap-4">
           {prompts.length === 0 ? (
             <div className="p-6 rounded-2xl border border-border bg-card/40 text-muted-foreground text-center">
-              No prompts available. Ensure the backend is running and MCP is initialized.
+              No prompts available. Ensure the backend is running and MCP is
+              initialized.
             </div>
           ) : (
             prompts.map((p) => (
@@ -97,12 +108,21 @@ export default function PromptsSkills() {
                 key={p.name}
                 className="p-6 rounded-2xl border border-border bg-card/40 hover:bg-white/5 transition-colors"
               >
-                <div className="font-mono font-bold text-primary mb-2">{p.name}</div>
-                <p className="text-muted-foreground text-sm mb-3">{p.description}</p>
+                <div className="font-mono font-bold text-primary mb-2">
+                  {p.name}
+                </div>
+                <p className="text-muted-foreground text-sm mb-3">
+                  {p.description}
+                </p>
                 {p.arguments && p.arguments.length > 0 && (
                   <div className="text-xs text-muted-foreground">
-                    <span className="font-medium">Arguments:</span>{' '}
-                    {p.arguments.map((a) => `${a.name}${a.default != null ? `=${a.default}` : ''}`).join(', ')}
+                    <span className="font-medium">Arguments:</span>{" "}
+                    {p.arguments
+                      .map(
+                        (a) =>
+                          `${a.name}${a.default != null ? `=${a.default}` : ""}`,
+                      )
+                      .join(", ")}
                   </div>
                 )}
               </div>
@@ -117,7 +137,8 @@ export default function PromptsSkills() {
           Skills
         </h3>
         <p className="text-sm text-muted-foreground">
-          Bundled skills exposed as MCP resources (e.g. skill://virtualization-expert/SKILL.md).
+          Bundled skills exposed as MCP resources (e.g.
+          skill://virtualization-expert/SKILL.md).
         </p>
         <div className="grid gap-4">
           {skills.length === 0 ? (
@@ -137,7 +158,9 @@ export default function PromptsSkills() {
                 >
                   <div>
                     <div className="font-bold">{s.name}</div>
-                    <div className="text-sm text-muted-foreground mt-1">{s.description}</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {s.description}
+                    </div>
                   </div>
                   {expandedSkill === s.id ? (
                     <ChevronUp className="w-5 h-5 text-muted-foreground" />

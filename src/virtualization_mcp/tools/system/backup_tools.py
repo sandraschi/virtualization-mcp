@@ -27,9 +27,7 @@ class BackupManager:
         # Active backup tasks
         self.active_tasks: dict[str, asyncio.Task] = {}
 
-    async def create_backup(
-        self, vm_name: str, name: str | None = None, description: str = ""
-    ) -> dict[str, Any]:
+    async def create_backup(self, vm_name: str, name: str | None = None, description: str = "") -> dict[str, Any]:
         """Create a backup of a VM.
 
         Args:
@@ -105,11 +103,9 @@ class BackupManager:
             shutil.rmtree(backup_path)
             return {"status": "success", "name": backup_name}
         except Exception as e:
-            return {"status": "error", "error": f"Failed to delete backup: {str(e)}"}
+            return {"status": "error", "error": f"Failed to delete backup: {e!s}"}
 
-    async def _create_backup(
-        self, vm_name: str, backup_name: str, description: str = ""
-    ) -> dict[str, Any]:
+    async def _create_backup(self, vm_name: str, backup_name: str, description: str = "") -> dict[str, Any]:
         """Internal method to create a backup.
 
         Args:

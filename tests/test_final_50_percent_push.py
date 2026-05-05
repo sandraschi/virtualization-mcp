@@ -134,6 +134,7 @@ class TestMCPToolsComplete:
             def decorator(f):
                 tools.append(f)
                 return f
+
             return decorator
 
         mock_mcp.tool = mock_tool
@@ -171,6 +172,7 @@ class TestAllToolsServerComplete:
             def decorator(f):
                 tools.append(f)
                 return f
+
             return decorator
 
         mock_mcp.tool = mock_tool

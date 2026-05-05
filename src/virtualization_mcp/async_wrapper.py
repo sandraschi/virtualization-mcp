@@ -46,9 +46,7 @@ class AsyncWrapper:
 
     async def run_sync(self, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         """Run a synchronous function in a thread pool."""
-        return await self.loop.run_in_executor(
-            self.executor, functools.partial(func, *args, **kwargs)
-        )
+        return await self.loop.run_in_executor(self.executor, functools.partial(func, *args, **kwargs))
 
     def wrap(self, func: Callable) -> AsyncFunc:
         """Wrap a synchronous function to make it async."""
@@ -144,9 +142,7 @@ async def main() -> None:
         await mcp.run()
 
     except Exception as e:
-        logger.critical(
-            "Fatal error in virtualization-mcp async wrapper: %s", str(e), exc_info=True
-        )
+        logger.critical("Fatal error in virtualization-mcp async wrapper: %s", str(e), exc_info=True)
         raise
 
 

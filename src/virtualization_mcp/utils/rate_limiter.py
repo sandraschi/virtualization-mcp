@@ -60,9 +60,7 @@ class RateLimiter:
             tokens_to_add = (time_passed / self.period) * self.max_calls
 
             # Update token count, but don't exceed max_calls
-            self._tokens[client_id] = min(
-                self._tokens.get(client_id, self.max_calls) + tokens_to_add, self.max_calls
-            )
+            self._tokens[client_id] = min(self._tokens.get(client_id, self.max_calls) + tokens_to_add, self.max_calls)
 
             # Update the last request time
             self._timestamps[client_id] = now

@@ -54,13 +54,9 @@ class WindowsSandboxHelper:
             raise WindowsSandboxError("Windows Sandbox is only available on Windows 10/11")
 
         if not os.path.exists(self.WSX_EXECUTABLE):
-            raise WindowsSandboxError(
-                "Windows Sandbox is not installed or not available on this system"
-            )
+            raise WindowsSandboxError("Windows Sandbox is not installed or not available on this system")
 
-        self.sandbox_dir = (
-            Path(sandbox_dir or tempfile.gettempdir()) / "virtualization-mcp_sandboxes"
-        )
+        self.sandbox_dir = Path(sandbox_dir or tempfile.gettempdir()) / "virtualization-mcp_sandboxes"
         self.sandbox_dir.mkdir(parents=True, exist_ok=True)
 
         # Track running sandboxes
@@ -190,7 +186,7 @@ class WindowsSandboxHelper:
                     "stdout": output,
                     "stderr": error,
                 }
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.terminate()
                 return {
                     "status": "timeout",
@@ -240,9 +236,7 @@ class WindowsSandboxHelper:
         result = await self.execute_command(sandbox_name, move_cmd)
 
         if result.get("exit_code", 1) != 0:
-            raise WindowsSandboxError(
-                f"Failed to move file in sandbox: {result.get('stderr', 'Unknown error')}"
-            )
+            raise WindowsSandboxError(f"Failed to move file in sandbox: {result.get('stderr', 'Unknown error')}")
 
         return {
             "status": "success",
@@ -285,9 +279,7 @@ class WindowsSandboxHelper:
         result = await self.execute_command(sandbox_name, copy_cmd)
 
         if result.get("exit_code", 1) != 0:
-            raise WindowsSandboxError(
-                f"Failed to copy file to shared folder: {result.get('stderr', 'Unknown error')}"
-            )
+            raise WindowsSandboxError(f"Failed to copy file to shared folder: {result.get('stderr', 'Unknown error')}")
 
         # Copy from shared folder to destination
         temp_file = temp_dir / source_path.name
@@ -331,7 +323,7 @@ class WindowsSandboxHelper:
                 process.terminate()
                 try:
                     await asyncio.wait_for(process.wait(), timeout=10)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Force terminate if it doesn't exit gracefully
                     self._kill_process_tree(process.pid)
 
@@ -341,7 +333,7 @@ class WindowsSandboxHelper:
             return {"status": "terminated", "sandbox": sandbox_name, "force": force}
 
         except Exception as e:
-            raise WindowsSandboxError(f"Failed to terminate sandbox: {str(e)}") from e
+            raise WindowsSandboxError(f"Failed to terminate sandbox: {e!s}") from e
 
     async def list_sandboxes(self) -> list[dict[str, Any]]:
         """List all active sandboxes.
@@ -379,7 +371,7 @@ class WindowsSandboxHelper:
                 try:
                     process.terminate()
                     await asyncio.wait_for(process.wait(), timeout=5)
-                except (ProcessLookupError, asyncio.TimeoutError):
+                except (TimeoutError, ProcessLookupError):
                     pass
 
             # Clean up temporary files
@@ -538,7 +530,7 @@ class WindowsSandboxHelper:
                 pass
 
             # Wait for processes to terminate
-            gone, still_alive = psutil.wait_procs(children + [parent], timeout=5)
+            _gone, still_alive = psutil.wait_procs([*children, parent], timeout=5)
 
             # Force kill any remaining processes
             for p in still_alive:

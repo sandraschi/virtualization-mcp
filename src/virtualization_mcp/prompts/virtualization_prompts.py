@@ -48,13 +48,7 @@ def register_prompts(mcp: "FastMCP") -> None:
                 + "\n\n**Focus: Lifecycle** Emphasize create, start, stop, pause, resume, snapshot, and clone; confirm before delete or force stop."
             )
         if focus == "storage":
-            return (
-                base
-                + "\n\n**Focus: Storage** Emphasize disks, controllers, attach/detach, and shared folders."
-            )
+            return base + "\n\n**Focus: Storage** Emphasize disks, controllers, attach/detach, and shared folders."
         if focus == "network":
-            return (
-                base
-                + "\n\n**Focus: Networking** Emphasize adapter types, port forwarding, and host-only networks."
-            )
+            return base + "\n\n**Focus: Networking** Emphasize adapter types, port forwarding, and host-only networks."
         return base

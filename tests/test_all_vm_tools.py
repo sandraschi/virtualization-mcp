@@ -16,9 +16,7 @@ class TestVMToolsComprehensive:
     async def test_list_vms_with_mock(self):
         """Test list_vms with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout='"vm1" {uuid-123}\n"vm2" {uuid-456}', stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout='"vm1" {uuid-123}\n"vm2" {uuid-456}', stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import list_vms
 
@@ -50,18 +48,14 @@ class TestVMToolsComprehensive:
 
             from virtualization_mcp.tools.vm.vm_tools import create_vm
 
-            result = await create_vm(
-                name="new-vm", ostype="Linux_64", memory_mb=2048, cpu_count=2, disk_size_gb=20
-            )
+            result = await create_vm(name="new-vm", ostype="Linux_64", memory_mb=2048, cpu_count=2, disk_size_gb=20)
             assert result is not None
 
     @pytest.mark.asyncio
     async def test_start_vm_with_mock(self):
         """Test start_vm with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="VM started successfully", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="VM started successfully", stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import start_vm
 
@@ -72,9 +66,7 @@ class TestVMToolsComprehensive:
     async def test_stop_vm_with_mock(self):
         """Test stop_vm with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="VM stopped successfully", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="VM stopped successfully", stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import stop_vm
 
@@ -85,9 +77,7 @@ class TestVMToolsComprehensive:
     async def test_delete_vm_with_mock(self):
         """Test delete_vm with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="VM deleted successfully", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="VM deleted successfully", stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import delete_vm
 
@@ -98,9 +88,7 @@ class TestVMToolsComprehensive:
     async def test_clone_vm_with_mock(self):
         """Test clone_vm with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="VM cloned successfully", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="VM cloned successfully", stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import clone_vm
 
@@ -111,9 +99,7 @@ class TestVMToolsComprehensive:
     async def test_reset_vm_with_mock(self):
         """Test reset_vm with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="VM reset successfully", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="VM reset successfully", stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import reset_vm
 
@@ -124,9 +110,7 @@ class TestVMToolsComprehensive:
     async def test_pause_vm_with_mock(self):
         """Test pause_vm with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="VM paused successfully", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="VM paused successfully", stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import pause_vm
 
@@ -137,9 +121,7 @@ class TestVMToolsComprehensive:
     async def test_resume_vm_with_mock(self):
         """Test resume_vm with full mock."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="VM resumed successfully", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="VM resumed successfully", stderr="")
 
             from virtualization_mcp.tools.vm.vm_tools import resume_vm
 
@@ -168,9 +150,7 @@ class TestSnapshotToolsComprehensive:
         """Test create_snapshot."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout="Snapshot taken. UUID: 12345678-1234-1234-1234-123456789012",
-                stderr=""
+                returncode=0, stdout="Snapshot taken. UUID: 12345678-1234-1234-1234-123456789012", stderr=""
             )
 
             from virtualization_mcp.tools.snapshot.snapshot_tools import create_snapshot
@@ -183,11 +163,7 @@ class TestSnapshotToolsComprehensive:
     async def test_restore_snapshot_with_mock(self):
         """Test restore_snapshot."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout="Restoring snapshot 'snap1'",
-                stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="Restoring snapshot 'snap1'", stderr="")
 
             from virtualization_mcp.tools.snapshot.snapshot_tools import restore_snapshot
 
@@ -199,11 +175,7 @@ class TestSnapshotToolsComprehensive:
     async def test_delete_snapshot_with_mock(self):
         """Test delete_snapshot."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout="Deleting snapshot 'snap1'",
-                stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="Deleting snapshot 'snap1'", stderr="")
 
             from virtualization_mcp.tools.snapshot.snapshot_tools import delete_snapshot
 
@@ -220,9 +192,7 @@ class TestStorageToolsComprehensive:
         """Test list_storage_controllers."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout="StorageControllerName0=SATA\nStorageControllerType0=IntelAhci",
-                stderr=""
+                returncode=0, stdout="StorageControllerName0=SATA\nStorageControllerType0=IntelAhci", stderr=""
             )
 
             from virtualization_mcp.tools.storage.storage_tools import list_storage_controllers
@@ -249,11 +219,7 @@ class TestSystemToolsComprehensive:
     async def test_get_vbox_version_with_mock(self):
         """Test get_vbox_version via get_vbox_info."""
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout="7.0.14r161095",
-                stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="7.0.14r161095", stderr="")
 
             from virtualization_mcp.tools.system.system_tools import get_vbox_info
 
@@ -265,9 +231,7 @@ class TestSystemToolsComprehensive:
         """Test list_ostypes."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
-                returncode=0,
-                stdout="ID: Linux_64\nDescription: Linux (64-bit)",
-                stderr=""
+                returncode=0, stdout="ID: Linux_64\nDescription: Linux (64-bit)", stderr=""
             )
 
             from virtualization_mcp.tools.system.system_tools import list_ostypes

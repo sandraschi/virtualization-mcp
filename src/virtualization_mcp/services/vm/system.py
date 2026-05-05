@@ -103,17 +103,13 @@ class SystemSettings(BaseModel):
     vtx_ux: bool = False  # Unrestricted guest (Intel VT-x only)
 
     # Boot configuration
-    boot_order: list[str] = Field(
-        ["disk", "dvd", "net"], description="Boot order (disk, dvd, net, none, floppy)"
-    )
+    boot_order: list[str] = Field(["disk", "dvd", "net"], description="Boot order (disk, dvd, net, none, floppy)")
     efi_nvram: str | None = None  # Path to NVRAM file for EFI
     secure_boot: bool = True  # Enable UEFI secure boot
 
     # Time settings
     rtc_use_utc: RTCUseUTC = RTCUseUTC.UTC
-    time_offset: timedelta = Field(
-        timedelta(), description="Time offset from host (positive or negative)"
-    )
+    time_offset: timedelta = Field(timedelta(), description="Time offset from host (positive or negative)")
     time_sync: str = Field("host", description="Time sync mode: 'host', 'guest', or 'none'")
 
     # Advanced settings
@@ -170,9 +166,7 @@ class SystemSettingsManager(BasePlugin):
         # Implementation would query the actual VM's system settings
         return SystemSettings()
 
-    async def update_system_settings(
-        self, vm_name: str, settings: SystemSettings
-    ) -> SystemSettings:
+    async def update_system_settings(self, vm_name: str, settings: SystemSettings) -> SystemSettings:
         """Update system settings for a VM."""
         # Implementation would update the actual VM's system settings
         return settings

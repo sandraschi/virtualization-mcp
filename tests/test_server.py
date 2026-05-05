@@ -168,9 +168,7 @@ class TestMainFunction:
     def test_main_function(self, mock_vbox, mock_template, mock_mcp, tmp_path):
         """Test the main function with a mock environment."""
         # This test is disabled because the main() function doesn't directly instantiate VBoxManager or TemplateManager
-        pytest.skip(
-            "Test disabled - main() function doesn't directly instantiate VBoxManager or TemplateManager"
-        )
+        pytest.skip("Test disabled - main() function doesn't directly instantiate VBoxManager or TemplateManager")
 
 
 # Run the tests

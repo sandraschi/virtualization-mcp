@@ -175,9 +175,7 @@ class VMDeviceMixin:
         if self.hypervisor == "hyperv":
             return self._attach_iso_hyperv(vm_name, iso_path, port, device, temporary)
         else:
-            return self._attach_iso_virtualbox(
-                vm_name, iso_path, port, device, controller, temporary
-            )
+            return self._attach_iso_virtualbox(vm_name, iso_path, port, device, controller, temporary)
 
     def _attach_iso_virtualbox(
         self, vm_name: str, iso_path: str, port: int, device: int, controller: str, temporary: bool
@@ -312,9 +310,7 @@ class VMDeviceMixin:
         else:
             return self._detach_iso_virtualbox(vm_name, port, device, controller)
 
-    def _detach_iso_virtualbox(
-        self, vm_name: str, port: int, device: int, controller: str
-    ) -> dict[str, Any]:
+    def _detach_iso_virtualbox(self, vm_name: str, port: int, device: int, controller: str) -> dict[str, Any]:
         """Internal method to detach ISO in VirtualBox."""
         # Open a session
         session = self.vbox_manager.mgr.get_session_object()
@@ -476,14 +472,12 @@ class VMDeviceMixin:
             }
 
         except Exception as e:
-            raise RuntimeError(f"Failed to attach USB device: {str(e)}") from e
+            raise RuntimeError(f"Failed to attach USB device: {e!s}") from e
         finally:
             if session.state == self.vbox_manager.constants.SessionState_Locked:
                 session.unlock_machine()
 
-    def _attach_usb_hyperv(
-        self, vm_name: str, usb_filter: str, port: int, capture: bool
-    ) -> dict[str, Any]:
+    def _attach_usb_hyperv(self, vm_name: str, usb_filter: str, port: int, capture: bool) -> dict[str, Any]:
         """Attach a USB device in Hyper-V (limited support)."""
         try:
             # Hyper-V has limited USB passthrough capabilities
@@ -524,7 +518,7 @@ class VMDeviceMixin:
             raise RuntimeError(f"Failed to parse USB device info from Hyper-V: {e}") from e
 
     @device_operation
-    def detach_usb(self, vm_name: str, usb_filter: str = None, port: int = None) -> dict[str, Any]:
+    def detach_usb(self, vm_name: str, usb_filter: str | None = None, port: int | None = None) -> dict[str, Any]:
         """
         Detach a USB device from a virtual machine.
 
@@ -567,7 +561,7 @@ class VMDeviceMixin:
             return self._detach_usb_virtualbox(vm_name, usb_filter, port)
 
     def _detach_usb_virtualbox(
-        self, vm_name: str, usb_filter: str = None, port: int = None
+        self, vm_name: str, usb_filter: str | None = None, port: int | None = None
     ) -> dict[str, Any]:
         """Detach a USB device in VirtualBox."""
         session = self.vbox_manager.mgr.get_session_object()
@@ -603,13 +597,13 @@ class VMDeviceMixin:
             return {"status": "success", "vm_name": vm_name, "usb_filter": usb_filter, "port": port}
 
         except Exception as e:
-            raise RuntimeError(f"Failed to detach USB device: {str(e)}") from e
+            raise RuntimeError(f"Failed to detach USB device: {e!s}") from e
         finally:
             if session.state == self.vbox_manager.constants.SessionState_Locked:
                 session.unlock_machine()
 
     def _detach_usb_hyperv(
-        self, vm_name: str, usb_filter: str = None, port: int = None
+        self, vm_name: str, usb_filter: str | None = None, port: int | None = None
     ) -> dict[str, Any]:
         """Detach a USB device in Hyper-V (limited support)."""
         try:
@@ -681,9 +675,7 @@ class VMDeviceMixin:
                                     }
                                     controller_info["devices"].append(device_info)
                             except Exception as e:
-                                logger.debug(
-                                    f"No device at {controller.name}:{port}:{device}: {str(e)}"
-                                )
+                                logger.debug(f"No device at {controller.name}:{port}:{device}: {e!s}")
 
                     devices.append(controller_info)
 
@@ -704,12 +696,12 @@ class VMDeviceMixin:
                                 }
                             )
                     except Exception as e:
-                        logger.debug(f"No network adapter at slot {i}: {str(e)}")
+                        logger.debug(f"No network adapter at slot {i}: {e!s}")
 
                 return devices
 
             except Exception as e:
-                logger.error(f"Error listing devices: {str(e)}")
+                logger.error(f"Error listing devices: {e!s}")
                 raise
 
             finally:
@@ -721,10 +713,10 @@ class VMDeviceMixin:
                     try:
                         session.unlock_machine()
                     except Exception as unlock_error:
-                        logger.error(f"Error unlocking session: {str(unlock_error)}")
+                        logger.error(f"Error unlocking session: {unlock_error!s}")
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list devices for VM {vm_name}: {str(e)}") from e
+            raise RuntimeError(f"Failed to list devices for VM {vm_name}: {e!s}") from e
 
     def _list_devices_hyperv(self, vm_name: str) -> dict[str, Any]:
         """
@@ -752,7 +744,7 @@ class VMDeviceMixin:
             return {"status": "success", "vm_name": vm_name, "devices": devices}
 
         except Exception as e:
-            logger.error(f"Failed to list devices for VM {vm_name}: {str(e)}")
+            logger.error(f"Failed to list devices for VM {vm_name}: {e!s}")
             return {"status": "error", "vm_name": vm_name, "error": str(e), "devices": []}
 
     @device_operation
@@ -806,9 +798,7 @@ class VMDeviceMixin:
         else:
             return self._update_network_adapter_virtualbox(vm_name, adapter_number, **kwargs)
 
-    def _update_network_adapter_virtualbox(
-        self, vm_name: str, adapter_number: int, **kwargs
-    ) -> dict[str, Any]:
+    def _update_network_adapter_virtualbox(self, vm_name: str, adapter_number: int, **kwargs) -> dict[str, Any]:
         """Update network adapter settings in VirtualBox."""
         session = self.vbox_manager.mgr.get_session_object()
         try:
@@ -820,7 +810,7 @@ class VMDeviceMixin:
             try:
                 adapter = session.machine.get_network_adapter(adapter_number)
             except Exception as e:
-                raise RuntimeError(f"Network adapter {adapter_number} not found: {str(e)}") from e
+                raise RuntimeError(f"Network adapter {adapter_number} not found: {e!s}") from e
 
             # Update adapter settings
             if "enabled" in kwargs:
@@ -853,24 +843,16 @@ class VMDeviceMixin:
                 ]
             ):
                 if "nat_network" in kwargs:
-                    adapter.attachment_type = (
-                        self.vbox_manager.constants.NetworkAttachmentType_NATNetwork
-                    )
+                    adapter.attachment_type = self.vbox_manager.constants.NetworkAttachmentType_NATNetwork
                     adapter.nat_network = kwargs["nat_network"]
                 elif "bridged_interface" in kwargs:
-                    adapter.attachment_type = (
-                        self.vbox_manager.constants.NetworkAttachmentType_Bridged
-                    )
+                    adapter.attachment_type = self.vbox_manager.constants.NetworkAttachmentType_Bridged
                     adapter.bridged_interface = kwargs["bridged_interface"]
                 elif "internal_network" in kwargs:
-                    adapter.attachment_type = (
-                        self.vbox_manager.constants.NetworkAttachmentType_Internal
-                    )
+                    adapter.attachment_type = self.vbox_manager.constants.NetworkAttachmentType_Internal
                     adapter.internal_network = kwargs["internal_network"]
                 elif "host_only_interface" in kwargs:
-                    adapter.attachment_type = (
-                        self.vbox_manager.constants.NetworkAttachmentType_HostOnly
-                    )
+                    adapter.attachment_type = self.vbox_manager.constants.NetworkAttachmentType_HostOnly
                     adapter.host_only_interface = kwargs["host_only_interface"]
 
             # Save settings
@@ -894,14 +876,12 @@ class VMDeviceMixin:
             }
 
         except Exception as e:
-            raise RuntimeError(f"Failed to update network adapter: {str(e)}") from e
+            raise RuntimeError(f"Failed to update network adapter: {e!s}") from e
         finally:
             if session.state == self.vbox_manager.constants.SessionState_Locked:
                 session.unlock_machine()
 
-    def _update_network_adapter_hyperv(
-        self, vm_name: str, adapter_number: int, **kwargs
-    ) -> dict[str, Any]:
+    def _update_network_adapter_hyperv(self, vm_name: str, adapter_number: int, **kwargs) -> dict[str, Any]:
         """Update network adapter settings in Hyper-V."""
         try:
             # Build the PowerShell command
@@ -916,9 +896,7 @@ class VMDeviceMixin:
             updates = []
             if "enabled" in kwargs:
                 state = "On" if kwargs["enabled"] else "Off"
-                updates.append(
-                    f"Set-VMNetworkAdapter -VMNetworkAdapter $adapter -DeviceNaming {state}"
-                )
+                updates.append(f"Set-VMNetworkAdapter -VMNetworkAdapter $adapter -DeviceNaming {state}")
 
             if "mac_address" in kwargs:
                 updates.append(
@@ -1018,14 +996,9 @@ class VMDeviceMixin:
 
         # Handle based on hypervisor
         if self.hypervisor == "hyperv":
-            return self._add_disk_hyperv(
-                vm_name, disk_path, disk_type, size_mb, controller, port, device
-            )
+            return self._add_disk_hyperv(vm_name, disk_path, disk_type, size_mb, controller, port, device)
         else:
-            return self._add_disk_virtualbox(
-                vm_name, disk_path, disk_type, size_mb, controller, port, device
-            )
-
+            return self._add_disk_virtualbox(vm_name, disk_path, disk_type, size_mb, controller, port, device)
 
     def list_attached_devices(self, vm_name: str) -> dict[str, Any]:
         """

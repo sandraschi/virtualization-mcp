@@ -84,7 +84,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
         @self.router.post("/scans/start", response_model=dict[str, str])
         async def start_scan(
             vm_names: list[str],
-            scan_types: list[str] = None,
+            scan_types: list[str] | None = None,
             background_tasks: BackgroundTasks = None,
         ) -> dict[str, str]:
             """Start a new security scan for the specified VMs."""
@@ -120,9 +120,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                 # Try to load from disk
                 report_path = self.reports_dir / f"{scan_id}.json"
                 if not report_path.exists():
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, detail=f"Scan '{scan_id}' not found"
-                    )
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Scan '{scan_id}' not found")
 
                 try:
                     report_data = json.loads(report_path.read_text())
@@ -130,7 +128,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                 except Exception as e:
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Error loading report: {str(e)}",
+                        detail=f"Error loading report: {e!s}",
                     ) from e
 
             return self.reports[scan_id]
@@ -151,14 +149,14 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                     "findings_count": len(report.findings),
                     "summary": report.summary,
                 }
-                for report in sorted(
-                    self.reports.values(), key=lambda r: r.timestamp, reverse=True
-                )[offset : offset + limit]
+                for report in sorted(self.reports.values(), key=lambda r: r.timestamp, reverse=True)[
+                    offset : offset + limit
+                ]
             ]
 
         @self.router.post("/analyze/network_behavior")
         async def analyze_network_behavior(
-            vm_name: str, pcap_data: bytes = None, pcap_url: str = None
+            vm_name: str, pcap_data: bytes | None = None, pcap_url: str | None = None
         ) -> dict[str, Any]:
             """Analyze network behavior using AI."""
             if not pcap_data and not pcap_url:
@@ -169,17 +167,6 @@ class AISecurityAnalyzerPlugin(BasePlugin):
 
             try:
                 # Prepare the prompt for the AI
-                prompt = (
-                    "Analyze this network behavior and identify any security concerns. "
-                    f"VM: {vm_name}\n"
-                    "Provide a detailed analysis including:\n"
-                    "1. Suspicious connections or domains\n"
-                    "2. Potential data exfiltration attempts\n"
-                    "3. Unusual traffic patterns\n"
-                    "4. Recommended actions\n"
-                    "Format the response as a JSON object with the following structure:\n"
-                    '{\n                      "analysis": "Overall analysis summary",\n                      "findings": [\n                        {\n                          "title": "Finding title",\n                          "description": "Detailed description",\n                          "threat_level": "low/medium/high/critical",\n                          "recommendations": ["Recommendation 1", "Recommendation 2"]\n                        }\n                      ],\n                      "summary": {\n                        "total_findings": 0,\n                        "critical": 0,\n                        "high": 0,\n                        "medium": 0,\n                        "low": 0\n                      }\n                    }'
-                )
 
                 raise HTTPException(
                     status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -190,15 +177,13 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                 )
 
             except Exception as e:
-                logger.error(f"Error analyzing network behavior: {str(e)}", exc_info=True)
+                logger.error(f"Error analyzing network behavior: {e!s}", exc_info=True)
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Error analyzing network behavior: {str(e)}",
+                    detail=f"Error analyzing network behavior: {e!s}",
                 ) from e
 
-    async def _run_scan(
-        self, report: SecurityReport, vm_names: list[str], scan_types: list[str]
-    ) -> None:
+    async def _run_scan(self, report: SecurityReport, vm_names: list[str], scan_types: list[str]) -> None:
         """Run a security scan on the specified VMs."""
         try:
             report.status = "scanning"
@@ -220,7 +205,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
             report.metadata["completed_at"] = datetime.utcnow().isoformat()
 
         except Exception as e:
-            logger.error(f"Error running security scan: {str(e)}", exc_info=True)
+            logger.error(f"Error running security scan: {e!s}", exc_info=True)
             report.status = "failed"
             report.metadata["error"] = str(e)
 
@@ -280,7 +265,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
             with open(report_path, "w") as f:
                 f.write(report.json(indent=2))
         except Exception as e:
-            logger.error(f"Error saving report {report.scan_id}: {str(e)}")
+            logger.error(f"Error saving report {report.scan_id}: {e!s}")
 
     async def _load_reports(self) -> None:
         """Load reports from disk."""
@@ -291,9 +276,9 @@ class AISecurityAnalyzerPlugin(BasePlugin):
                     report = SecurityReport(**report_data)
                     self.reports[report.scan_id] = report
                 except Exception as e:
-                    logger.error(f"Error loading report {report_file}: {str(e)}")
+                    logger.error(f"Error loading report {report_file}: {e!s}")
         except Exception as e:
-            logger.error(f"Error loading reports: {str(e)}")
+            logger.error(f"Error loading reports: {e!s}")
 
     async def startup(self) -> None:
         """Startup tasks."""

@@ -48,7 +48,7 @@ class VMSandboxManager:
     def create_sandbox(
         self,
         source_vm: str,
-        name: str = None,
+        name: str | None = None,
         network_isolated: bool = True,
         resource_limits: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
@@ -121,7 +121,7 @@ class VMSandboxManager:
             # Cleanup on failure
             if os.path.exists(sandbox_path):
                 shutil.rmtree(sandbox_path, ignore_errors=True)
-            raise RuntimeError(f"Failed to create sandbox: {str(e)}") from e
+            raise RuntimeError(f"Failed to create sandbox: {e!s}") from e
 
     def destroy_sandbox(self, name: str, force: bool = False) -> dict[str, Any]:
         """
@@ -169,7 +169,7 @@ class VMSandboxManager:
             }
 
         except Exception as e:
-            raise RuntimeError(f"Failed to destroy sandbox: {str(e)}") from e
+            raise RuntimeError(f"Failed to destroy sandbox: {e!s}") from e
 
     def list_sandboxes(self) -> list[dict[str, Any]]:
         """
@@ -182,9 +182,7 @@ class VMSandboxManager:
         """
         return list(self.active_sandboxes.values())
 
-    def _clone_vm_virtualbox(
-        self, source_vm: str, clone_name: str, target_path: str
-    ) -> dict[str, Any]:
+    def _clone_vm_virtualbox(self, source_vm: str, clone_name: str, target_path: str) -> dict[str, Any]:
         """
         Clone a VM in VirtualBox using VBoxManage.
 
@@ -245,7 +243,7 @@ class VMSandboxManager:
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Failed to clone VM: {e.stderr}") from e
         except Exception as e:
-            raise RuntimeError(f"Error during VM cloning: {str(e)}") from e
+            raise RuntimeError(f"Error during VM cloning: {e!s}") from e
 
     def _clone_vm_hyperv(self, source_vm: str, clone_name: str, target_path: str) -> dict[str, Any]:
         """
@@ -323,7 +321,7 @@ class VMSandboxManager:
         except json.JSONDecodeError as e:
             raise RuntimeError("Failed to parse VM information from Hyper-V") from e
         except Exception as e:
-            raise RuntimeError(f"Error during Hyper-V VM cloning: {str(e)}") from e
+            raise RuntimeError(f"Error during Hyper-V VM cloning: {e!s}") from e
 
     def _isolate_network(self, vm_name: str) -> None:
         """
@@ -461,9 +459,7 @@ class VMSandboxManager:
 
             # Execute the script if we have any commands
             if len(script) > 1:
-                subprocess.run(
-                    ["powershell", "-Command", ";".join(script)], check=True, capture_output=True
-                )
+                subprocess.run(["powershell", "-Command", ";".join(script)], check=True, capture_output=True)
 
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Failed to apply resource limits in Hyper-V: {e.stderr}") from e
@@ -484,9 +480,7 @@ class VMSandboxManager:
             )
 
             # Unregister and delete the VM
-            subprocess.run(
-                ["VBoxManage", "unregistervm", vm_name, "--delete"], check=True, capture_output=True
-            )
+            subprocess.run(["VBoxManage", "unregistervm", vm_name, "--delete"], check=True, capture_output=True)
 
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Failed to delete VM in VirtualBox: {e.stderr}") from e

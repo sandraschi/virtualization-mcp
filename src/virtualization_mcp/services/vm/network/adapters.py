@@ -88,9 +88,7 @@ class NetworkAdapterService:
 
             # Set basic adapter properties
             cmd.extend([f"--nic{adapter_number}", config.adapter_type.value])
-            cmd.extend(
-                [f"--cableconnected{adapter_number}", "on" if config.cable_connected else "off"]
-            )
+            cmd.extend([f"--cableconnected{adapter_number}", "on" if config.cable_connected else "off"])
 
             # Set type-specific properties
             if config.mac_address:

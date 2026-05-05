@@ -98,10 +98,11 @@ class TestDualModeInfrastructure:
         assert vbox_manager is not None
 
         # Should have list_vms method regardless of mode
-        assert hasattr(vbox_manager, 'list_vms')
+        assert hasattr(vbox_manager, "list_vms")
 
     def test_requires_vbox_decorator_works(self):
         """Test that @requires_vbox decorator works correctly."""
+
         @requires_vbox
         def dummy_test():
             return "real vbox test"
@@ -114,5 +115,3 @@ class TestDualModeInfrastructure:
             # Should raise skip
             with pytest.raises(pytest.skip.Exception):
                 dummy_test()
-
-

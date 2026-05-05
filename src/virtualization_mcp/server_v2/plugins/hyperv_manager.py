@@ -191,9 +191,7 @@ class HyperVManagerPlugin(BasePlugin):
             return await self._execute_vm_action(action, vm_name, wait)
 
         @self.router.post("/vms/{vm_name}/restart")
-        async def restart_vm(
-            vm_name: str, force: bool = False, wait: bool = False
-        ) -> dict[str, Any]:
+        async def restart_vm(vm_name: str, force: bool = False, wait: bool = False) -> dict[str, Any]:
             """Restart a virtual machine."""
             action = "restart" if not force else "force_restart"
             return await self._execute_vm_action(action, vm_name, wait)
@@ -220,23 +218,19 @@ class HyperVManagerPlugin(BasePlugin):
 
         @self.router.post("/vms/{vm_name}/export")
         async def export_vm(
-            vm_name: str, export_path: str = None, compress: bool = True, wait: bool = False
+            vm_name: str, export_path: str | None = None, compress: bool = True, wait: bool = False
         ) -> dict[str, Any]:
             """Export a virtual machine."""
             if not export_path:
-                export_path = str(
-                    self.vm_export_path / f"{vm_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                )
+                export_path = str(self.vm_export_path / f"{vm_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
-            return await self._execute_vm_action(
-                "export", vm_name, wait, export_path=export_path, compress=compress
-            )
+            return await self._execute_vm_action("export", vm_name, wait, export_path=export_path, compress=compress)
 
         @self.router.post("/vms/import")
         async def import_vm(
             name: str,
             import_path: str,
-            vhd_path: str = None,
+            vhd_path: str | None = None,
             generate_new_id: bool = True,
             wait: bool = False,
         ) -> dict[str, Any]:
@@ -253,7 +247,7 @@ class HyperVManagerPlugin(BasePlugin):
                         "message": "Hyper-V import workflow is under construction.",
                     }
                 except Exception as e:
-                    logger.error(f"Error importing VM: {str(e)}", exc_info=True)
+                    logger.error(f"Error importing VM: {e!s}", exc_info=True)
                     raise
 
             # Start the import task
@@ -298,22 +292,14 @@ class HyperVManagerPlugin(BasePlugin):
             return [s.dict() for s in self.virtual_machines[vm_name].snapshots]
 
         @self.router.post("/vms/{vm_name}/restore")
-        async def restore_snapshot(
-            vm_name: str, snapshot_id: str, wait: bool = False
-        ) -> dict[str, Any]:
+        async def restore_snapshot(vm_name: str, snapshot_id: str, wait: bool = False) -> dict[str, Any]:
             """Restore a virtual machine to a specific snapshot."""
-            return await self._execute_vm_action(
-                "restore_snapshot", vm_name, wait, snapshot_id=snapshot_id
-            )
+            return await self._execute_vm_action("restore_snapshot", vm_name, wait, snapshot_id=snapshot_id)
 
         @self.router.delete("/vms/{vm_name}/snapshots/{snapshot_id}")
-        async def delete_snapshot(
-            vm_name: str, snapshot_id: str, wait: bool = False
-        ) -> dict[str, Any]:
+        async def delete_snapshot(vm_name: str, snapshot_id: str, wait: bool = False) -> dict[str, Any]:
             """Delete a snapshot."""
-            return await self._execute_vm_action(
-                "delete_snapshot", vm_name, wait, snapshot_id=snapshot_id
-            )
+            return await self._execute_vm_action("delete_snapshot", vm_name, wait, snapshot_id=snapshot_id)
 
         @self.router.get("/switches")
         async def list_switches() -> list[dict[str, Any]]:
@@ -332,14 +318,12 @@ class HyperVManagerPlugin(BasePlugin):
                     # Keep connection alive
                     await websocket.receive_text()
             except Exception as e:
-                logger.error(f"WebSocket error: {str(e)}")
+                logger.error(f"WebSocket error: {e!s}")
             finally:
                 if websocket in self.websockets:
                     self.websockets.remove(websocket)
 
-    async def _execute_vm_action(
-        self, action: str, vm_name: str, wait: bool = False, **kwargs
-    ) -> dict[str, Any]:
+    async def _execute_vm_action(self, action: str, vm_name: str, wait: bool = False, **kwargs) -> dict[str, Any]:
         """Execute a VM action and return the result."""
         task_id = f"{action}_{vm_name}_{int(time.time())}"
 
@@ -354,9 +338,7 @@ class HyperVManagerPlugin(BasePlugin):
                     "timestamp": datetime.utcnow().isoformat(),
                 }
             except Exception as e:
-                logger.error(
-                    f"Error executing action '{action}' on VM '{vm_name}': {str(e)}", exc_info=True
-                )
+                logger.error(f"Error executing action '{action}' on VM '{vm_name}': {e!s}", exc_info=True)
                 raise
 
         # Start the action task
@@ -397,7 +379,7 @@ class HyperVManagerPlugin(BasePlugin):
             try:
                 await websocket.send_json(message)
             except Exception as e:
-                logger.error(f"Error sending WebSocket message: {str(e)}")
+                logger.error(f"Error sending WebSocket message: {e!s}")
                 if websocket in self.websockets:
                     self.websockets.remove(websocket)
 
@@ -410,7 +392,7 @@ class HyperVManagerPlugin(BasePlugin):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in performance monitoring: {str(e)}", exc_info=True)
+                logger.error(f"Error in performance monitoring: {e!s}", exc_info=True)
                 await asyncio.sleep(10)  # Wait longer on error
 
     async def startup(self) -> None:

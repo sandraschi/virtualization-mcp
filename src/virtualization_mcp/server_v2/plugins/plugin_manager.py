@@ -62,11 +62,7 @@ class PluginManager:
 
                 # Find all classes that inherit from BasePlugin
                 for _, obj in inspect.getmembers(module, inspect.isclass):
-                    if (
-                        issubclass(obj, BasePlugin)
-                        and obj != BasePlugin
-                        and obj.__module__ == module.__name__
-                    ):
+                    if issubclass(obj, BasePlugin) and obj != BasePlugin and obj.__module__ == module.__name__:
                         # Create an instance of the plugin with its config
                         plugin_config = {}
                         if hasattr(self.config, "plugins") and name in self.config.plugins:

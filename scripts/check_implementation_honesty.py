@@ -7,7 +7,6 @@ import re
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 SCAN_DIRS = [
@@ -89,8 +88,7 @@ def main() -> int:
         print(f"- {rel}:{line_no} pattern={pattern} line={line}")
 
     print(
-        "\nFix required: implement behavior or replace with explicit "
-        "'not_implemented' / 'under construction' contract."
+        "\nFix required: implement behavior or replace with explicit 'not_implemented' / 'under construction' contract."
     )
     return 1
 

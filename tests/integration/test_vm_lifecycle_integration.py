@@ -89,9 +89,7 @@ class TestPortmanteauIntegration:
         register_vm_management_tool(mock_mcp)
 
         # Test workflow: list → create → start → info → stop → delete
-        with patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.list_vms", new_callable=AsyncMock
-        ) as m1:
+        with patch("virtualization_mcp.tools.portmanteau.vm_management.list_vms", new_callable=AsyncMock) as m1:
             with patch(
                 "virtualization_mcp.tools.portmanteau.vm_management.create_vm",
                 new_callable=AsyncMock,

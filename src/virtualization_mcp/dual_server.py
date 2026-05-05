@@ -5,7 +5,6 @@ Runs both FastMCP (stdio) and FastAPI (HTTP) servers concurrently.
 Both servers share the same backend services.
 """
 
-import asyncio
 import logging
 import multiprocessing
 import os
@@ -26,7 +25,7 @@ def run_mcp_server():
 
     configure_logging()
     logger.info("Starting FastMCP server (stdio transport)...")
-    
+
     try:
         mcp = start_mcp_server()
         logger.info("FastMCP server started successfully")
@@ -40,17 +39,18 @@ def run_mcp_server():
 def run_web_server():
     """Run the FastAPI web server (HTTP transport)."""
     import uvicorn
+
     from virtualization_mcp.web.app import app
 
     configure_logging()
-    
+
     port = int(os.getenv("WEB_PORT", getattr(settings, "WEB_PORT", 3080)))
     host = os.getenv("WEB_HOST", "0.0.0.0")
-    
+
     logger.info(f"Starting FastAPI web server on http://{host}:{port}")
     logger.info(f"Web interface: http://localhost:{port}")
     logger.info(f"API docs: http://localhost:{port}/docs")
-    
+
     try:
         uvicorn.run(
             app,
@@ -67,9 +67,9 @@ def run_web_server():
 def main():
     """Run both servers in separate processes."""
     configure_logging()
-    
+
     mode = os.getenv("SERVER_MODE", "mcp").lower()
-    
+
     if mode == "mcp":
         # Run only MCP server (for Claude Desktop)
         logger.info("Running in MCP-only mode (stdio)")
@@ -81,13 +81,13 @@ def main():
     elif mode == "dual":
         # Run both servers in separate processes
         logger.info("Running in dual mode (MCP + Web)")
-        
+
         mcp_process = multiprocessing.Process(target=run_mcp_server, name="MCP-Server")
         web_process = multiprocessing.Process(target=run_web_server, name="Web-Server")
-        
+
         mcp_process.start()
         web_process.start()
-        
+
         try:
             # Wait for both processes
             mcp_process.join()
@@ -105,6 +105,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

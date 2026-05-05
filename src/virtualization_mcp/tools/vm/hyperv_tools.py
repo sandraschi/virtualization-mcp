@@ -197,9 +197,7 @@ class HyperVManager:
         """
         return await self._execute_vm_action("start", vm_name, wait)
 
-    async def stop_vm(
-        self, vm_name: str, force: bool = False, wait: bool = False
-    ) -> dict[str, Any]:
+    async def stop_vm(self, vm_name: str, force: bool = False, wait: bool = False) -> dict[str, Any]:
         """Stop a virtual machine.
 
         Args:
@@ -213,9 +211,7 @@ class HyperVManager:
         action = "stop" if not force else "force_stop"
         return await self._execute_vm_action(action, vm_name, wait)
 
-    async def _execute_vm_action(
-        self, action: str, vm_name: str, wait: bool = False, **kwargs
-    ) -> dict[str, Any]:
+    async def _execute_vm_action(self, action: str, vm_name: str, wait: bool = False, **kwargs) -> dict[str, Any]:
         """Execute a VM action and return the result.
 
         Args:

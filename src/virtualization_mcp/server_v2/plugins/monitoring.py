@@ -23,28 +23,32 @@ class MonitoringPlugin(BasePlugin):
 
     def setup_metrics(self) -> None:
         """Set up Prometheus metrics."""
-        # VM metrics
-        self.metrics["vm_count"] = Gauge("virtualization-mcp_vm_count", "Number of VMs")
 
-        self.metrics["vm_cpu_usage"] = Gauge(
+        def _gauge(name, desc, *labels):
+            try:
+                return Gauge(name, desc, *labels)
+            except ValueError:
+                return None
+
+        def _counter(name, desc, *labels):
+            try:
+                return Counter(name, desc, *labels)
+            except ValueError:
+                return None
+
+        self.metrics["vm_count"] = _gauge("virtualization-mcp_vm_count", "Number of VMs")
+        self.metrics["vm_cpu_usage"] = _gauge(
             "virtualization-mcp_vm_cpu_usage_percent", "CPU usage percentage per VM", ["vm_name"]
         )
-
-        self.metrics["vm_memory_usage"] = Gauge(
+        self.metrics["vm_memory_usage"] = _gauge(
             "virtualization-mcp_vm_memory_usage_bytes", "Memory usage in bytes per VM", ["vm_name"]
         )
-
-        # API metrics
-        self.metrics["api_requests_total"] = Counter(
+        self.metrics["api_requests_total"] = _counter(
             "virtualization-mcp_api_requests_total",
             "Total number of API requests",
             ["endpoint", "method", "status"],
         )
-
-        # Error metrics
-        self.metrics["errors_total"] = Counter(
-            "virtualization-mcp_errors_total", "Total number of errors", ["type"]
-        )
+        self.metrics["errors_total"] = _counter("virtualization-mcp_errors_total", "Total number of errors", ["type"])
 
     def setup_routes(self) -> None:
         """Set up API routes for monitoring."""
@@ -101,7 +105,7 @@ class MonitoringPlugin(BasePlugin):
                 self.metrics["errors_total"].labels(type="metrics_update").inc()
                 import logging
 
-                logging.error(f"Error updating metrics: {str(e)}")
+                logging.error(f"Error updating metrics: {e!s}")
                 await asyncio.sleep(60)  # Wait longer on error
 
     async def update_metrics(self) -> None:
@@ -118,9 +122,7 @@ class MonitoringPlugin(BasePlugin):
                 # In a real implementation, we would get these from the VM manager
                 vm_name = vm.get("name", "unknown")
                 self.metrics["vm_cpu_usage"].labels(vm_name=vm_name).set(vm.get("cpu_usage", 0))
-                self.metrics["vm_memory_usage"].labels(vm_name=vm_name).set(
-                    vm.get("memory_usage", 0)
-                )
+                self.metrics["vm_memory_usage"].labels(vm_name=vm_name).set(vm.get("memory_usage", 0))
 
         except Exception:
             self.metrics["errors_total"].labels(type="metrics_update").inc()

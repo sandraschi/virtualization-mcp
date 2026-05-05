@@ -148,8 +148,8 @@ class TestExceptionHierarchy:
             NetworkError,
             SnapshotError,
             StorageError,
-            VBoxError,
             ValidationError,
+            VBoxError,
             VirtualizationMCPError,
             VMNotFoundError,
         )
@@ -184,5 +184,3 @@ class TestExceptionHierarchy:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-
-

@@ -50,9 +50,7 @@ async def list_vms(
         if state_filter:
             cmd.extend(["--state", state_filter])
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         vms = []
         current_vm = {}
@@ -107,7 +105,7 @@ async def list_vms(
             ],
         }
     except Exception as e:
-        error_msg = f"Unexpected error listing VMs: {str(e)}"
+        error_msg = f"Unexpected error listing VMs: {e!s}"
         logger.exception(error_msg)
         return {
             "status": "error",
@@ -141,9 +139,7 @@ async def get_vm_info(vm_name: str) -> dict[str, Any]:
 
     try:
         cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         info = {}
         for line in result.stdout.splitlines():
@@ -166,7 +162,7 @@ async def get_vm_info(vm_name: str) -> dict[str, Any]:
             ],
         }
     except Exception as e:
-        error_msg = f"Unexpected error getting VM info: {str(e)}"
+        error_msg = f"Unexpected error getting VM info: {e!s}"
         logger.exception(error_msg)
         return {
             "status": "error",
@@ -224,9 +220,7 @@ async def create_vm(
         # Create VM
         create_cmd = ["VBoxManage", "createvm", "--name", name, "--ostype", ostype, "--register"]
 
-        await asyncio.to_thread(
-            subprocess.run, create_cmd, capture_output=True, text=True, check=True
-        )
+        await asyncio.to_thread(subprocess.run, create_cmd, capture_output=True, text=True, check=True)
 
         # Configure basic settings
         modify_cmds = [
@@ -257,9 +251,7 @@ async def create_vm(
                 "VDI",
             ]
 
-            await asyncio.to_thread(
-                subprocess.run, create_disk_cmd, capture_output=True, text=True, check=True
-            )
+            await asyncio.to_thread(subprocess.run, create_disk_cmd, capture_output=True, text=True, check=True)
 
             # Attach storage controller and disk
             storage_cmds = [
@@ -282,9 +274,7 @@ async def create_vm(
             ]
 
             for cmd in storage_cmds:
-                await asyncio.to_thread(
-                    subprocess.run, cmd, capture_output=True, text=True, check=True
-                )
+                await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         # Start VM if requested
         if start_after_create and disk_size_gb > 0:
@@ -304,7 +294,7 @@ async def create_vm(
         logger.error(error_msg)
         return {"status": "error", "message": error_msg}
     except Exception as e:
-        error_msg = f"Unexpected error creating VM: {str(e)}"
+        error_msg = f"Unexpected error creating VM: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
@@ -345,7 +335,7 @@ async def start_vm(vm_name: str, start_type: VMStartType = "headless") -> dict[s
         logger.error(error_msg)
         return {"status": "error", "message": error_msg}
     except Exception as e:
-        error_msg = f"Unexpected error starting VM {vm_name}: {str(e)}"
+        error_msg = f"Unexpected error starting VM {vm_name}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
@@ -382,9 +372,7 @@ async def stop_vm(vm_name: str, force: bool = False, timeout: int = 30) -> dict[
                 # If graceful shutdown fails or times out, force power off
                 cmd = ["VBoxManage", "controlvm", vm_name, "poweroff"]
 
-                await asyncio.to_thread(
-                    subprocess.run, cmd, capture_output=True, text=True, check=True
-                )
+                await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
                 return {"status": "success", "message": f"VM '{vm_name}' was force stopped"}
 
@@ -404,7 +392,7 @@ async def stop_vm(vm_name: str, force: bool = False, timeout: int = 30) -> dict[
         logger.error(error_msg)
         return {"status": "error", "message": error_msg}
     except Exception as e:
-        error_msg = f"Unexpected error stopping VM {vm_name}: {str(e)}"
+        error_msg = f"Unexpected error stopping VM {vm_name}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
@@ -432,7 +420,7 @@ async def delete_vm(vm_name: str, delete_files: bool = True) -> dict[str, Any]:
         try:
             await stop_vm(vm_name, force=True)
         except Exception as e:
-            logger.warning(f"Could not stop VM {vm_name} before deletion: {str(e)}")
+            logger.warning(f"Could not stop VM {vm_name} before deletion: {e!s}")
 
         # Build the unregister command
         cmd = ["VBoxManage", "unregistervm", vm_name]
@@ -440,9 +428,7 @@ async def delete_vm(vm_name: str, delete_files: bool = True) -> dict[str, Any]:
         if delete_files:
             cmd.append("--delete")
 
-        await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         return {
             "status": "success",
@@ -455,7 +441,7 @@ async def delete_vm(vm_name: str, delete_files: bool = True) -> dict[str, Any]:
         logger.error(error_msg)
         return {"status": "error", "message": error_msg}
     except Exception as e:
-        error_msg = f"Unexpected error deleting VM {vm_name}: {str(e)}"
+        error_msg = f"Unexpected error deleting VM {vm_name}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
@@ -523,9 +509,7 @@ async def clone_vm(
                 elif value is not None:
                     cmd.extend([f"--{key}", str(value)])
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         return {
             "status": "success",
@@ -538,7 +522,7 @@ async def clone_vm(
         logger.error(error_msg)
         return {"status": "error", "message": f"Failed to clone VM: {error_msg}"}
     except Exception as e:
-        error_msg = f"Unexpected error cloning VM {source_vm}: {str(e)}"
+        error_msg = f"Unexpected error cloning VM {source_vm}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
@@ -750,9 +734,7 @@ async def modify_vm(
 
         # Only run the command if there are changes to make
         if len(cmd) > 3:  # More than just ["VBoxManage", "modifyvm", vm_name]
-            result = await asyncio.to_thread(
-                subprocess.run, cmd, capture_output=True, text=True, check=True
-            )
+            result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
             return {
                 "status": "success",
@@ -772,7 +754,7 @@ async def modify_vm(
         logger.error(error_msg)
         return {"status": "error", "message": error_msg, "changes": changes}
     except Exception as e:
-        error_msg = f"Unexpected error modifying VM {vm_name}: {str(e)}"
+        error_msg = f"Unexpected error modifying VM {vm_name}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg, "changes": changes}
 
@@ -803,7 +785,7 @@ async def pause_vm(vm_name: str) -> dict[str, Any]:
         logger.error(error_msg)
         return {"status": "error", "message": error_msg}
     except Exception as e:
-        error_msg = f"Unexpected error pausing VM {vm_name}: {str(e)}"
+        error_msg = f"Unexpected error pausing VM {vm_name}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
@@ -833,7 +815,7 @@ async def resume_vm(vm_name: str) -> dict[str, Any]:
         logger.error(error_msg)
         return {"status": "error", "message": error_msg}
     except Exception as e:
-        error_msg = f"Unexpected error resuming VM {vm_name}: {str(e)}"
+        error_msg = f"Unexpected error resuming VM {vm_name}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
@@ -872,22 +854,22 @@ async def reset_vm(vm_name: str, reset_type: str = "hard") -> dict[str, Any]:
         logger.error(error_msg)
         return {"status": "error", "message": error_msg}
     except Exception as e:
-        error_msg = f"Unexpected error resetting VM {vm_name}: {str(e)}"
+        error_msg = f"Unexpected error resetting VM {vm_name}: {e!s}"
         logger.exception(error_msg)
         return {"status": "error", "message": error_msg}
 
 
 # Export the public API
 __all__ = [
-    "list_vms",
-    "get_vm_info",
+    "clone_vm",
     "create_vm",
+    "delete_vm",
+    "get_vm_info",
+    "list_vms",
+    "modify_vm",
+    "pause_vm",
+    "reset_vm",
+    "resume_vm",
     "start_vm",
     "stop_vm",
-    "delete_vm",
-    "clone_vm",
-    "modify_vm",
-    "reset_vm",
-    "pause_vm",
-    "resume_vm",
 ]

@@ -222,9 +222,7 @@ class VMMetricsMixin:
                                 disk_write_ops += getattr(disk, "write_operations", 0)
 
                                 # Calculate average latency if available
-                                if hasattr(disk, "total_read_time") and hasattr(
-                                    disk, "total_write_time"
-                                ):
+                                if hasattr(disk, "total_read_time") and hasattr(disk, "total_write_time"):
                                     total_time = getattr(disk, "total_read_time", 0) + getattr(
                                         disk, "total_write_time", 0
                                     )
@@ -232,9 +230,7 @@ class VMMetricsMixin:
                                         disk, "write_operations", 0
                                     )
                                     if total_ops > 0:
-                                        disk_latency_total += (
-                                            total_time / total_ops
-                                        ) * 1000  # Convert to ms
+                                        disk_latency_total += (total_time / total_ops) * 1000  # Convert to ms
                                         disk_count += 1
                         except Exception as e:
                             logger.debug(f"Error getting disk metrics: {e}")

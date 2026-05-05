@@ -34,18 +34,14 @@ class ExamplePlugin(BasePlugin):
         @mcp.tool(
             name="example_hello",
             description="A simple example tool that says hello",
-            parameters={
-                "name": {"type": "string", "description": "Name to say hello to", "required": True}
-            },
+            parameters={"name": {"type": "string", "description": "Name to say hello to", "required": True}},
             returns={"type": "string"},
         )
         async def hello(name: str) -> str:
             """Say hello to someone."""
             return f"Hello, {name}! This is the ExamplePlugin saying hi!"
 
-        @mcp.tool(
-            name="example_counter", description="A simple counter that increments on each call"
-        )
+        @mcp.tool(name="example_counter", description="A simple counter that increments on each call")
         async def counter() -> dict[str, int]:
             """Get the current counter value and increment it."""
             self.counter += 1

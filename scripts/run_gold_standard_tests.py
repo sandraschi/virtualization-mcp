@@ -18,9 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 def run_command(cmd, cwd=None):
     """Run a command and return the result."""
     try:
-        result = subprocess.run(
-            cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
-        )
+        result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False)
         return {
             "success": result.returncode == 0,
             "stdout": result.stdout,
@@ -36,9 +34,7 @@ def check_coverage():
     print("🔍 Checking current test coverage...")
 
     # Run coverage analysis
-    result = run_command(
-        "python -m pytest --cov=src/virtualization_mcp --cov-report=json --cov-report=term-missing -q"
-    )
+    result = run_command("python -m pytest --cov=src/virtualization_mcp --cov-report=json --cov-report=term-missing -q")
 
     if result["success"]:
         print("✅ Coverage analysis completed")

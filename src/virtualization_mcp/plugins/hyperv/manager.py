@@ -58,9 +58,7 @@ class VirtualMachine(BaseModel):
     size: VMSize = Field(..., description="VM resource allocation")
     disks: list[VMDisk] = Field(default_factory=list, description="Attached disks")
     snapshots: list[VMSnapshot] = Field(default_factory=list, description="VM snapshots")
-    network_adapters: list[VMNetworkAdapter] = Field(
-        default_factory=list, description="Network adapters"
-    )
+    network_adapters: list[VMNetworkAdapter] = Field(default_factory=list, description="Network adapters")
 
 
 class HyperVManagerPlugin:
@@ -129,7 +127,7 @@ class HyperVManagerPlugin:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            _stdout, stderr = await proc.communicate()
 
             if proc.returncode != 0:
                 raise RuntimeError(f"Failed to list VMs: {stderr.decode()}")

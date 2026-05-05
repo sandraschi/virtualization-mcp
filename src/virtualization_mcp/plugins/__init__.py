@@ -41,13 +41,13 @@ except ImportError as e:
 
 
 __all__ = [
+    "PLUGINS_AVAILABLE",
     "HyperVManagerPlugin",
     "WindowsSandboxHelper",
-    "initialize_plugins",
     "get_hyperv_manager",
     "get_windows_sandbox",
+    "initialize_plugins",
     "register_plugin",
-    "PLUGINS_AVAILABLE",
 ]
 
 # Plugin instances

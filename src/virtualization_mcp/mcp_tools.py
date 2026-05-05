@@ -40,9 +40,7 @@ class MCPToolDiscovery:
 
         return self._describe_tool(tool_name, tool)
 
-    def list_tools(
-        self, category: str | None = None, search: str | None = None
-    ) -> list[dict[str, Any]]:
+    def list_tools(self, category: str | None = None, search: str | None = None) -> list[dict[str, Any]]:
         """List all available tools with optional filtering.
 
         Args:
@@ -219,10 +217,7 @@ class MCPToolDiscovery:
 
         # Search in parameter names and descriptions
         for param_name, param_info in tool_info.get("parameters", {}).items():
-            if (
-                search_lower in param_name.lower()
-                or search_lower in param_info.get("description", "").lower()
-            ):
+            if search_lower in param_name.lower() or search_lower in param_info.get("description", "").lower():
                 return True
 
         return False
@@ -250,9 +245,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
     vm_service = service_manager.get_service("vm_service")
 
     @mcp.tool()
-    async def list_tools(
-        category: str | None = None, search: str | None = None
-    ) -> list[dict[str, Any]]:
+    async def list_tools(category: str | None = None, search: str | None = None) -> list[dict[str, Any]]:
         """List all available MCP tools with optional filtering.
 
         Args:
@@ -331,9 +324,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         Returns:
             A dictionary containing the list of VMs and their status.
         """
-        return await asyncio.to_thread(
-            vm_service.list_vms, details=details, state_filter=state_filter
-        )
+        return await asyncio.to_thread(vm_service.list_vms, details=details, state_filter=state_filter)
 
     @mcp.tool()
     async def get_vm_state(vm_name: str) -> dict[str, Any]:
@@ -375,9 +366,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         return await asyncio.to_thread(vm_service.delete_vm, name=name, delete_disk=delete_disk)
 
     @mcp.tool()
-    async def create_snapshot(
-        vm_name: str, snapshot_name: str, description: str = ""
-    ) -> dict[str, Any]:
+    async def create_snapshot(vm_name: str, snapshot_name: str, description: str = "") -> dict[str, Any]:
         return await asyncio.to_thread(
             vm_service.create_snapshot,
             vm_name=vm_name,
@@ -393,9 +382,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         name="RestoreSnapshot",
         description="Restore a virtual machine to a previous snapshot.",
     )
-    async def restore_snapshot(
-        vm_name: str, snapshot_name: str, start_vm: bool = False
-    ) -> dict[str, Any]:
+    async def restore_snapshot(vm_name: str, snapshot_name: str, start_vm: bool = False) -> dict[str, Any]:
         return await asyncio.to_thread(
             vm_service.restore_snapshot,
             vm_name=vm_name,
@@ -405,9 +392,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def delete_snapshot(vm_name: str, snapshot_name: str) -> dict[str, Any]:
-        return await asyncio.to_thread(
-            vm_service.delete_snapshot, vm_name=vm_name, snapshot_name=snapshot_name
-        )
+        return await asyncio.to_thread(vm_service.delete_snapshot, vm_name=vm_name, snapshot_name=snapshot_name)
 
     # --- ISO and Media Management ---
     @mcp.tool(

@@ -31,6 +31,7 @@ class TestRegisterToolsComplete:
             def decorator(f):
                 registered_tools.append((kwargs.get("name", f.__name__), f))
                 return f
+
             return decorator
 
         mock_mcp.tool = mock_tool_decorator

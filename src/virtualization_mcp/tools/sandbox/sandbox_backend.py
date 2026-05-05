@@ -7,7 +7,6 @@ No FastMCP dependencies — pure Docker SDK logic.
 
 import logging
 import os
-import tempfile
 import uuid
 from typing import Any, Literal
 
@@ -49,6 +48,7 @@ def _get_client():
     """Get Docker client. Raises RuntimeError if Docker not available."""
     try:
         import docker
+
         return docker.from_env()
     except ImportError:
         raise RuntimeError("docker package not installed. Run: uv add docker")
@@ -65,6 +65,7 @@ def _decode(raw: bytes | None) -> str:
 # ---------------------------------------------------------------------------
 # Ephemeral execution
 # ---------------------------------------------------------------------------
+
 
 def execute_code(
     code: str,
@@ -105,6 +106,7 @@ def execute_code(
     except Exception as e:
         try:
             import docker.errors
+
             if isinstance(e, docker.errors.ContainerError):
                 return {
                     "success": False,
@@ -154,7 +156,9 @@ def execute_file(
     container_path = f"/sandbox/code{cfg['file_ext']}"
 
     try:
-        import io, tarfile
+        import io
+        import tarfile
+
         container = client.containers.create(
             image=cfg["image"],
             command=cfg["file_command"](container_path),
@@ -197,6 +201,7 @@ def execute_file(
 # ---------------------------------------------------------------------------
 # Stateful sessions
 # ---------------------------------------------------------------------------
+
 
 def session_create(
     image: str = "python:3.13-slim",
@@ -260,7 +265,9 @@ def session_write_file(sandbox_id: str, container_path: str, content: str) -> di
         return {"success": False, "error": f"Sandbox '{sandbox_id}' not found."}
 
     try:
-        import io, tarfile
+        import io
+        import tarfile
+
         data = content.encode("utf-8")
         filename = os.path.basename(container_path)
         dirpath = os.path.dirname(container_path) or "/"
@@ -283,7 +290,9 @@ def session_read_file(sandbox_id: str, container_path: str) -> dict[str, Any]:
         return {"success": False, "error": f"Sandbox '{sandbox_id}' not found."}
 
     try:
-        import io, tarfile
+        import io
+        import tarfile
+
         stream, _ = container.get_archive(container_path)
         tar_buf = io.BytesIO(b"".join(stream))
         with tarfile.open(fileobj=tar_buf) as tar:
@@ -301,12 +310,14 @@ def session_list() -> dict[str, Any]:
     for sid, container in _sessions.items():
         try:
             container.reload()
-            items.append({
-                "sandbox_id": sid,
-                "container_name": container.name,
-                "status": container.status,
-                "image": container.image.tags[0] if container.image.tags else "unknown",
-            })
+            items.append(
+                {
+                    "sandbox_id": sid,
+                    "container_name": container.name,
+                    "status": container.status,
+                    "image": container.image.tags[0] if container.image.tags else "unknown",
+                }
+            )
         except Exception:
             dead.append(sid)
     for sid in dead:

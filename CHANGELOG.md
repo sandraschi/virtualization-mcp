@@ -9,6 +9,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added: ISO download pipeline + horizontal category tabs
+
+- **ISO download pipeline** — `POST /api/v1/iso/download` downloads ISOs to `assets/vbox/` in a background thread with progress tracking. `GET /api/v1/iso/download/{task_id}` for polling. `GET /api/v1/iso/candidates` returns categorized ISOs.
+- **5 ISO categories** with 17 ISOs: Ubuntu (5), Debian (2), Windows evaluation (3), Utilities (4 — GParted, SystemRescue, Hiren's Boot, Clonezilla), Safety Tools (3 — Kali, Security Onion).
+- **Horizontal tab bar** in the Download ISOs modal for navigating categories.
+- **Progress display** with states: Queued → Connecting → Downloading (progress bar %) → Done/Failed with error tooltip.
+
+### Added: Dashboard with live host stats
+
+- **`GET /api/v1/dashboard`** aggregation endpoint returning CPU %, RAM, disk, VM counts, VBox version.
+- **Dashboard cards** showing CPU, RAM, VMs (running/total), disk free.
+- **VM status breakdown** — Running/Stopped/Paused counts with color-coded badges.
+- **Recent VM list** with colored status dots and provider badges.
+- **Quick nav buttons** to jump to VirtualBox or Sandbox.
+- **Live psutil data** — replaced hardcoded mock in `get_system_info()`.
+
+### Added: Settings — API Key management UI
+
+- **`GET/POST /api/v1/settings/keys`** — read/write API keys stored in `%LOCALAPPDATA%\virtualization-mcp\keys.json`. Returns masked keys for safe display. Sets `os.environ` on save for live updates.
+- **Settings sidebar** — sectioned navigation (Local Intelligence, API Keys, etc.) with active state.
+- **API Keys UI** — password inputs with show/hide toggle, per-provider "Get key" links, Save Keys button.
+- **Supported keys**: DeepSeek, Anthropic (Claude), Google (Gemini), OpenAI.
+- **Fleet standard documented** in `mcp-central-docs/standards/patterns/api_key_management.md`.
+
+### Added: Settings — LLM provider discovery
+
+- **`GET /api/v1/settings/llm/providers`** — probes Ollama (`:11434`) and LM Studio (`:1234`) concurrently, returns availability + model lists.
+- **Provider cards** — green WiFi icon when connected, grey when offline, model count shown.
+- **Custom endpoint input** with "Test" button.
+- **Model dropdown** populated from live provider.
+
+### Added: Chat page uses local LLM (no Google API key required)
+
+- **Chat backend** (`POST /api/v1/chat`) now tries Ollama first, then LM Studio, then Gemini fallback. Returns `provider` field indicating which backend answered.
+- **Chat header** shows green dot + provider name (Ollama/LM Studio) or red dot + "No LLM available".
+- **Provider auto-detection** on page load via `/api/v1/settings/llm/providers`.
+
+### Added: Hyper-V dedicated page
+
+- **Sidebar nav item** with Cpu icon, route `/hyperv`.
+- **Hyper-V VM list** filtered from shared `/api/v1/vms` endpoint.
+- **Placeholder** for future Hyper-V lifecycle features.
+
+### Added: OpenCode skills (12 lightweight tools)
+
+- Created skills: session-snapshot, commit-craft, todo-sync, log-digest, env-doctor, scratch-pad, pr-body, shell-history-query, dependency-radar, codebase-map, meeting-notes, diff-explain.
+- Each has `SKILL.md` instruction file, 5 have Python shims under 50 lines.
+- Plus `virtualization-expert` skill covering all virtualization methods and the full stack.
+
+### Added: Preselectable CPUs, RAM, disk parameters in VM creation
+
+- **Added `cpus` parameter** across the entire stack: template defaults (ubuntu-dev=2, minimal-linux=1, win11-pro=4), `vm_operations.py:create_vm`, `VMService.create_vm`, `VMCreateRequest` API model, and frontend form.
+- **Added CPU override** via `--cpus` in `_apply_vm_settings` — previously VMs always got 1 CPU regardless of template.
+- **Added CPUs, RAM, Disk inputs** to the frontend "Create New VM" modal — 3-column grid with number inputs for `cpus`, `memory_mb`, `disk_gb`.
+- **Fixed `_apply_vm_settings`**: 3D acceleration split into separate try/except call with `--graphicscontroller vmsvga` set first. If unsupported, logs warning and continues.
+- **Fixed `_parse_numeric`** in `compat_adapter.py`: memory values from `--long` output like `"4096MB"` are now parsed correctly via regex instead of crashing on `int()`.
+
+### Fixed: VM name corruption in _parse_vm_list causing dashboard failures
+
+- **Fixed `vbox_compat.py:_parse_vm_list`**: Blank lines in `VBoxManage list vms --long` output were skipped instead of VM separation — causing all VMs to merge into one dict. Also, `line.split(" ", 1)` was fragile for VM names with spaces. Now uses regex `r'"([^"]+)"\s+\{([^}]+)\}'` and strips snapshot annotations like `(UUID: xxx) *` from names.
+- **Fixed `compat_adapter.py:list_vms`**: Respected `verbose` kwarg instead of hardcoding `verbose=True`. Fixed key name mapping for `--long` output (`guest_os` → `ostype`, `memory_size` → `memory`, `number_of_cpus` → `cpus`).
+- **Added `tests/test_vbox_compat_parser.py`** — 4 tests covering annotation stripping, blank line separation, short format, and regex edge cases.
+
+### Fixed: compat_adapter.VBoxManager missing methods (validate_vm_name, run_command, log_path)
+
+- **Added `validate_vm_name()`** to `compat_adapter.VBoxManager` (`vbox/compat_adapter.py:78`). The method was present in `manager.VBoxManager` but missing from the compat adapter, causing `create_vm` to crash with `AttributeError`.
+- **Added `run_command()`** to `compat_adapter.VBoxManager` (`vbox/compat_adapter.py:110`). This is the generic VBoxManage command executor used extensively in `vm_operations.py`, `networking.py`, and `snapshots.py`. Wraps `_execute()` and returns the same `{"success": bool, "output": ..., "command": [...]}` dict as `manager.VBoxManager`.
+- **Added `log_path` property** to both `manager.VBoxManager` and `compat_adapter.VBoxManager` — resolves VirtualBox logs directory from common candidate paths.
+- **Improved logging in `vm_operations.py:create_vm`**: Added `debug` logs at each validation step, `warning` logs before each validation failure, and full VM config in success messages. Error handlers now log the resolved `log_path` for diagnostics.
+- **Added `tests/test_compat_adapter.py`** — 23 tests covering `validate_vm_name` (16 cases), `log_path` (3 cases), `run_command` (3 cases), and `__init__` (1 case). All passing.
+
 ### Windows Sandbox full dev setup & assets reuse
 
 #### Assets (reuse folders)

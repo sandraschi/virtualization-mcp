@@ -103,9 +103,7 @@ def is_process_running(process_name: str) -> bool:
     return any(process_name.lower() in p.name().lower() for p in psutil.process_iter())
 
 
-def async_retry(
-    max_attempts: int = 3, delay: float = 1.0, exceptions: tuple = (Exception,)
-) -> Callable:
+def async_retry(max_attempts: int = 3, delay: float = 1.0, exceptions: tuple = (Exception,)) -> Callable:
     """Decorator for retrying async functions with exponential backoff.
 
     Args:
@@ -133,9 +131,7 @@ def async_retry(
                     if attempt == max_attempts:
                         break
 
-                    logger.warning(
-                        f"Attempt {attempt} failed: {e}. Retrying in {current_delay:.1f}s..."
-                    )
+                    logger.warning(f"Attempt {attempt} failed: {e}. Retrying in {current_delay:.1f}s...")
                     await asyncio.sleep(current_delay)
                     current_delay *= 2  # Exponential backoff
 

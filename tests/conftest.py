@@ -55,6 +55,7 @@ def mock_vbox_manager():
 def mock_vbox():
     """Synchronous mock VBox manager for tests that don't use async."""
     from unittest.mock import MagicMock
+
     mock = MagicMock()
     mock.list_vms.return_value = []
     mock.vm_exists.return_value = True
@@ -286,9 +287,7 @@ def coverage_helpers():
 
     class CoverageHelpers:
         @staticmethod
-        def assert_coverage_improvement(
-            old_coverage: float, new_coverage: float, min_improvement: float = 0.1
-        ):
+        def assert_coverage_improvement(old_coverage: float, new_coverage: float, min_improvement: float = 0.1):
             """Assert that coverage has improved by at least min_improvement."""
             improvement = new_coverage - old_coverage
             assert improvement >= min_improvement, (
@@ -298,9 +297,7 @@ def coverage_helpers():
         @staticmethod
         def assert_minimum_coverage(coverage: float, minimum: float = 0.8):
             """Assert that coverage meets minimum requirement."""
-            assert coverage >= minimum, (
-                f"Coverage {coverage:.2%} is below minimum requirement {minimum:.2%}"
-            )
+            assert coverage >= minimum, f"Coverage {coverage:.2%} is below minimum requirement {minimum:.2%}"
 
     return CoverageHelpers()
 
@@ -325,9 +322,7 @@ def performance_helpers():
         @staticmethod
         def assert_response_time(execution_time: float, max_time: float = 1.0):
             """Assert that response time is within acceptable limits."""
-            assert execution_time <= max_time, (
-                f"Execution time {execution_time:.3f}s exceeds maximum {max_time}s"
-            )
+            assert execution_time <= max_time, f"Execution time {execution_time:.3f}s exceeds maximum {max_time}s"
 
     return PerformanceHelpers()
 
@@ -336,4 +331,5 @@ def performance_helpers():
 def vbox_manager():
     """Provide VBoxManager instance (real or mock based on availability)."""
     from tests.vbox_testing import get_vbox_manager_or_mock
+
     return get_vbox_manager_or_mock()

@@ -69,8 +69,7 @@ class PortForwardingService:
 
         except (ValueError, VBoxManagerError) as e:
             logger.error(
-                f"Failed to add port forwarding rule '{rule.name}' to adapter {adapter_number} "
-                f"for VM {vm_name}: {e}"
+                f"Failed to add port forwarding rule '{rule.name}' to adapter {adapter_number} for VM {vm_name}: {e}"
             )
             return {
                 "status": "error",
@@ -85,9 +84,7 @@ class PortForwardingService:
                 ],
             }
 
-    def remove_port_forwarding_rule(
-        self, vm_name: str, adapter_number: int, rule_name: str
-    ) -> NetworkOperationResult:
+    def remove_port_forwarding_rule(self, vm_name: str, adapter_number: int, rule_name: str) -> NetworkOperationResult:
         """
         Remove a port forwarding rule from a NAT adapter.
 

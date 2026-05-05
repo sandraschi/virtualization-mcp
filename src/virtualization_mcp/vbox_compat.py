@@ -30,7 +30,7 @@ class VirtualBoxError(Exception):
 class VBoxManage:
     """Wrapper around VBoxManage command-line tool."""
 
-    def __init__(self, vbox_manage_path: str = None):
+    def __init__(self, vbox_manage_path: str | None = None):
         """Initialize the VBoxManage wrapper.
 
         Args:
@@ -158,32 +158,41 @@ class VBoxManage:
 
     def _parse_vm_list(self, output: str, verbose: bool = False) -> list[dict[str, Any]]:
         """Parse the output of 'VBoxManage list vms'."""
+        import re
+
         vms = []
         current_vm = {}
 
         for line in output.splitlines():
             line = line.strip()
             if not line:
+                # Blank line separates VM blocks
+                if current_vm:
+                    vms.append(current_vm)
+                    current_vm = {}
                 continue
 
             if line.startswith('"'):
-                # New VM entry
+                # New VM entry (short format)
                 if current_vm:
                     vms.append(current_vm)
 
-                # Parse VM name and UUID
-                name, uuid = line.split(" ", 1)
-                name = name.strip('"')
-                uuid = uuid.strip("{}")
-
-                current_vm = {"name": name, "uuid": uuid, "state": "unknown"}
+                match = re.match(r'"([^"]+)"\s+\{([^}]+)\}', line)
+                if match:
+                    name = match.group(1)
+                    uuid = match.group(2)
+                    # Strip snapshot annotation like "(UUID: xxxx) *"
+                    name = re.sub(r"\s*\(UUID:\s*[0-9a-f\-]+\)\s*\*?\s*$", "", name)
+                    current_vm = {"name": name, "uuid": uuid, "state": "unknown"}
+                else:
+                    # Fallback for malformed lines
+                    current_vm = {"name": line, "uuid": "", "state": "unknown"}
             elif verbose and ":" in line:
-                # Parse VM property
+                # Parse VM property from --long output
                 key, value = line.split(":", 1)
                 key = key.strip().lower().replace(" ", "_")
                 current_vm[key] = value.strip()
 
-        # Add the last VM
         if current_vm:
             vms.append(current_vm)
 
