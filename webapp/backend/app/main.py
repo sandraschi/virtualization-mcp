@@ -1104,6 +1104,22 @@ async def sandbox_wsb_preview(
     raise HTTPException(status_code=400, detail="Unknown preset (use dev-infra or full-dev).")
 
 
+@app.get("/api/v1/sandbox/status")
+async def sandbox_status():
+    """Check if Windows Sandbox is currently running."""
+    running = False
+    import subprocess as _sub
+    try:
+        r = _sub.run(
+            ["tasklist", "/FI", "IMAGENAME eq WindowsSandbox.exe", "/NH", "/FO", "CSV"],
+            capture_output=True, text=True, timeout=5,
+        )
+        running = "WindowsSandbox.exe" in r.stdout
+    except Exception:
+        pass
+    return {"running": running}
+
+
 @app.post("/api/v1/sandbox/launch")
 async def launch_sandbox(request: SandboxLaunchRequest):
     """Launch Windows Sandbox. Use config_xml for manual XML, or full_dev_setup + assets_folder for auto dev stack."""
