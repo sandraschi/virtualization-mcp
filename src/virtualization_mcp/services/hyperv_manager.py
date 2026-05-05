@@ -35,9 +35,7 @@ class HyperVManager:
 
         try:
             # Try a simple Get-VM command
-            await self._run_ps(
-                "Get-VM -ErrorAction SilentlyContinue | Select-Object Name | ConvertTo-Json"
-            )
+            await self._run_ps("Get-VM -ErrorAction SilentlyContinue | Select-Object Name | ConvertTo-Json")
             self._check_available = True
             return True
         except Exception as e:

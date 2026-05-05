@@ -15,7 +15,7 @@ from .storage import *  # noqa: F403
 from .templates import *  # noqa: F403
 
 __all__ = [
-    "VMService",
     "VMNetworkingService",
+    "VMService",
     # Add other exported symbols as needed
 ]

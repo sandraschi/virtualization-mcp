@@ -14,8 +14,8 @@ from fastmcp import FastMCP
 from virtualization_mcp.tools.network.network_tools import (
     configure_network_adapter,
     create_hostonly_network,
-    list_network_adapters,
     list_hostonly_networks,
+    list_network_adapters,
     remove_hostonly_network,
 )
 
@@ -48,7 +48,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
     ) -> dict[str, Any]:
         """
         Comprehensive network management portmanteau tool.
-        
+
         This tool consolidates all network operations into a single interface. Use the 'action' parameter
         to specify which operation to perform. Different actions require different parameters.
 
@@ -125,9 +125,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
                 return await _handle_list_networks(limit=limit, offset=offset)
 
             elif action == "create_network":
-                return await _handle_create_network(
-                    network_name=network_name, ip_address=ip_address, netmask=netmask
-                )
+                return await _handle_create_network(network_name=network_name, ip_address=ip_address, netmask=netmask)
 
             elif action == "remove_network":
                 return await _handle_remove_network(network_name=network_name)
@@ -154,7 +152,7 @@ def register_network_management_tool(mcp: FastMCP) -> None:
             logger.error(f"Error in network management action '{action}': {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"Failed to execute action '{action}': {str(e)}",
+                "error": f"Failed to execute action '{action}': {e!s}",
                 "action": action,
                 "available_actions": NETWORK_ACTIONS,
             }
@@ -196,7 +194,7 @@ async def _handle_list_networks(limit: int = 100, offset: int = 0) -> dict[str, 
         return {
             "success": False,
             "action": "list_networks",
-            "error": f"Failed to list networks: {str(e)}",
+            "error": f"Failed to list networks: {e!s}",
         }
 
 
@@ -234,7 +232,7 @@ async def _handle_create_network(
             "success": False,
             "action": "create_network",
             "network_name": network_name,
-            "error": f"Failed to create network: {str(e)}",
+            "error": f"Failed to create network: {e!s}",
         }
 
 
@@ -260,13 +258,11 @@ async def _handle_remove_network(network_name: str | None = None) -> dict[str, A
             "success": False,
             "action": "remove_network",
             "network_name": network_name,
-            "error": f"Failed to remove network: {str(e)}",
+            "error": f"Failed to remove network: {e!s}",
         }
 
 
-async def _handle_list_adapters(
-    vm_name: str | None = None, limit: int = 100, offset: int = 0
-) -> dict[str, Any]:
+async def _handle_list_adapters(vm_name: str | None = None, limit: int = 100, offset: int = 0) -> dict[str, Any]:
     """Handle list adapters action."""
     if not vm_name:
         return {
@@ -297,7 +293,7 @@ async def _handle_list_adapters(
             "success": False,
             "action": "list_adapters",
             "vm_name": vm_name,
-            "error": f"Failed to list adapters: {str(e)}",
+            "error": f"Failed to list adapters: {e!s}",
         }
 
 
@@ -338,9 +334,7 @@ async def _handle_configure_adapter(
     try:
         # network_tools uses adapter_id in range 1..4, while this tool accepts slot 0..3.
         adapter_id = adapter_slot + 1
-        result = await configure_network_adapter(
-            vm_name=vm_name, adapter_id=adapter_id, network_type=network_type
-        )
+        result = await configure_network_adapter(vm_name=vm_name, adapter_id=adapter_id, network_type=network_type)
         return {
             "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "configure_adapter",
@@ -352,5 +346,5 @@ async def _handle_configure_adapter(
             "success": False,
             "action": "configure_adapter",
             "vm_name": vm_name,
-            "error": f"Failed to configure adapter: {str(e)}",
+            "error": f"Failed to configure adapter: {e!s}",
         }

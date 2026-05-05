@@ -93,9 +93,7 @@ $devices | ConvertTo-Json -Depth 10
 """
 
             # Execute the PowerShell script
-            result = subprocess.run(
-                ["powershell", "-Command", ps_script], capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["powershell", "-Command", ps_script], capture_output=True, text=True, check=True)
 
             if result.returncode != 0:
                 logger.error(f"Failed to list devices for VM {vm_name}: {result.stderr}")

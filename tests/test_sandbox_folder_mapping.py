@@ -74,9 +74,7 @@ def test_wsx_xml_generation_basic():
     """Test basic WSX XML generation."""
     helper = WindowsSandboxHelper()
 
-    config = SandboxConfig(
-        name="test-sandbox", memory_mb=2048, vgpu=True, networking=True
-    )
+    config = SandboxConfig(name="test-sandbox", memory_mb=2048, vgpu=True, networking=True)
 
     xml = helper._generate_wsx_config(config)
 
@@ -187,7 +185,9 @@ def test_wsx_xml_generation_complete():
         assert "<MemoryInMB>4096</MemoryInMB>" in xml
         assert "<MappedFolders>" in xml
         assert "<MappedFolder>" in xml
-        assert f"<HostFolder>{tmpdir}</HostFolder>" in xml or f"<HostFolder>{Path(tmpdir).resolve()}</HostFolder>" in xml
+        assert (
+            f"<HostFolder>{tmpdir}</HostFolder>" in xml or f"<HostFolder>{Path(tmpdir).resolve()}</HostFolder>" in xml
+        )
         assert "<ReadOnly>true</ReadOnly>" in xml
         assert "<LogonCommand>" in xml
         assert "<Command>echo Setup complete</Command>" in xml
@@ -245,4 +245,3 @@ def test_empty_folders_and_commands():
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-

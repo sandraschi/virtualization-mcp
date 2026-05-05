@@ -47,9 +47,7 @@ class SecurityTestResult:
     error: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
-    def add_finding(
-        self, title: str, description: str, severity: TestSeverity, details: dict | None = None
-    ) -> None:
+    def add_finding(self, title: str, description: str, severity: TestSeverity, details: dict | None = None) -> None:
         """Add a finding to the test results."""
         finding = {
             "title": title,
@@ -122,10 +120,7 @@ class SecurityTester:
         test = self.tests[test_id]
 
         try:
-            test.fail(
-                "Security testing engine is under construction. "
-                "No findings are produced by this engine yet."
-            )
+            test.fail("Security testing engine is under construction. No findings are produced by this engine yet.")
         except Exception as e:
             test.fail(str(e))
 

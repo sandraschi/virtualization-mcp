@@ -48,9 +48,7 @@ class TestNetworkTypes:
     def test_network_adapter_config_validation(self):
         """Test NetworkAdapterConfig creation and properties."""
         # Test valid config
-        config = NetworkAdapterConfig(
-            enabled=True, attachment_type=NetworkAttachmentType.NAT, adapter_type="82540EM"
-        )
+        config = NetworkAdapterConfig(enabled=True, attachment_type=NetworkAttachmentType.NAT, adapter_type="82540EM")
         assert config.enabled is True
         assert config.attachment_type == NetworkAttachmentType.NAT
         assert config.adapter_type == "82540EM"

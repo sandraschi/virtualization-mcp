@@ -35,7 +35,7 @@ class NetworkManager:
         host_port: int,
         guest_port: int,
         protocol: str = "tcp",
-        rule_name: str = None,
+        rule_name: str | None = None,
     ) -> dict[str, Any]:
         """
         Configure port forwarding for VM access
@@ -76,9 +76,7 @@ class NetworkManager:
             # Check VM state - some operations require VM to be stopped
             vm_state = self.manager.get_vm_state(vm_name)
 
-            logger.info(
-                f"Configuring port forwarding for VM '{vm_name}': {host_port} -> {guest_port} ({protocol})"
-            )
+            logger.info(f"Configuring port forwarding for VM '{vm_name}': {host_port} -> {guest_port} ({protocol})")
 
             # Configure port forwarding
             self.manager.run_command(
@@ -109,7 +107,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error configuring port forwarding: {e}")
-            raise VBoxManagerError(f"Failed to configure port forwarding: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to configure port forwarding: {e!s}") from e
 
     def remove_port_forwarding(self, vm_name: str, rule_name: str) -> dict[str, Any]:
         """
@@ -138,19 +136,15 @@ class NetworkManager:
                 "message": f"Port forwarding rule '{rule_name}' removed",
             }
 
-            logger.info(
-                f"Successfully removed port forwarding rule '{rule_name}' for VM '{vm_name}'"
-            )
+            logger.info(f"Successfully removed port forwarding rule '{rule_name}' for VM '{vm_name}'")
             return result
 
         except VBoxManagerError as e:
-            logger.error(
-                f"Failed to remove port forwarding rule '{rule_name}' for VM '{vm_name}': {e}"
-            )
+            logger.error(f"Failed to remove port forwarding rule '{rule_name}' for VM '{vm_name}': {e}")
             raise
         except Exception as e:
             logger.error(f"Unexpected error removing port forwarding: {e}")
-            raise VBoxManagerError(f"Failed to remove port forwarding: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to remove port forwarding: {e!s}") from e
 
     def list_port_forwarding(self, vm_name: str) -> list[dict[str, Any]]:
         """
@@ -184,7 +178,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error listing port forwarding: {e}")
-            raise VBoxManagerError(f"Failed to list port forwarding: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to list port forwarding: {e!s}") from e
 
     def _parse_forwarding_rule(self, key: str, value: str) -> dict[str, Any] | None:
         """Parse VBoxManage port forwarding rule output"""
@@ -204,9 +198,7 @@ class NetworkManager:
             logger.warning(f"Failed to parse forwarding rule: {key}={value}, error: {e}")
         return None
 
-    def configure_network_type(
-        self, vm_name: str, adapter_num: int = 1, network_type: str = "NAT"
-    ) -> dict[str, Any]:
+    def configure_network_type(self, vm_name: str, adapter_num: int = 1, network_type: str = "NAT") -> dict[str, Any]:
         """
         Configure VM network adapter type
 
@@ -229,13 +221,9 @@ class NetworkManager:
             # Validate network type
             valid_types = ["NAT", "Bridged", "Internal", "Host-only", "NAT Network", "None"]
             if network_type not in valid_types:
-                raise VBoxManagerError(
-                    f"Invalid network type: {network_type}. Valid: {valid_types}"
-                )
+                raise VBoxManagerError(f"Invalid network type: {network_type}. Valid: {valid_types}")
 
-            logger.info(
-                f"Configuring network adapter {adapter_num} for VM '{vm_name}' as {network_type}"
-            )
+            logger.info(f"Configuring network adapter {adapter_num} for VM '{vm_name}' as {network_type}")
 
             # Configure network adapter
             nic_type = network_type.lower().replace(" ", "").replace("-", "")
@@ -262,7 +250,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error configuring network: {e}")
-            raise VBoxManagerError(f"Failed to configure network: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to configure network: {e!s}") from e
 
     def get_vm_ip_address(self, vm_name: str) -> dict[str, Any]:
         """
@@ -313,7 +301,7 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error getting IP address: {e}")
-            raise VBoxManagerError(f"Failed to get IP address: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to get IP address: {e!s}") from e
 
     def _get_ip_fallback(self, vm_name: str) -> dict[str, Any]:
         """Fallback method to get IP address"""
@@ -398,11 +386,11 @@ class NetworkManager:
                 "vm_name": vm_name,
                 "host_port": host_port,
                 "error": str(e),
-                "message": f"Failed to test connectivity: {str(e)}",
+                "message": f"Failed to test connectivity: {e!s}",
             }
 
     def execute_command(
-        self, vm_name: str, command: str, username: str, password: str = None, timeout: int = 30
+        self, vm_name: str, command: str, username: str, password: str | None = None, timeout: int = 30
     ) -> dict[str, Any]:
         """
         Execute command in VM (requires Guest Additions)
@@ -458,4 +446,4 @@ class NetworkManager:
             raise
         except Exception as e:
             logger.error(f"Unexpected error executing command: {e}")
-            raise VBoxManagerError(f"Failed to execute command: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to execute command: {e!s}") from e

@@ -34,6 +34,7 @@ class TestNetworkManagementPortmanteau:
             def decorator(f):
                 self._tool_func = f
                 return f
+
             return decorator
 
         mcp.tool = mock_tool_decorator
@@ -149,9 +150,7 @@ class TestNetworkManagementPortmanteau:
         ) as mock_remove_network:
             mock_remove_network.return_value = mock_result
 
-            result = await network_management_tool(
-                action="remove_network", network_name="TestNetwork"
-            )
+            result = await network_management_tool(action="remove_network", network_name="TestNetwork")
 
             assert result["success"] is True
             assert result["action"] == "remove_network"
@@ -225,16 +224,12 @@ class TestNetworkManagementPortmanteau:
             assert result["action"] == "configure_adapter"
             assert result["vm_name"] == "TestVM"
             assert result["data"] == mock_result
-            mock_configure.assert_called_once_with(
-                vm_name="TestVM", adapter_id=1, network_type="hostonly"
-            )
+            mock_configure.assert_called_once_with(vm_name="TestVM", adapter_id=1, network_type="hostonly")
 
     @pytest.mark.asyncio
     async def test_configure_adapter_action_missing_vm_name(self, network_management_tool):
         """Test configure adapter action without vm_name."""
-        result = await network_management_tool(
-            action="configure_adapter", adapter_slot=0, network_type="hostonly"
-        )
+        result = await network_management_tool(action="configure_adapter", adapter_slot=0, network_type="hostonly")
 
         assert result["success"] is False
         assert result["action"] == "configure_adapter"
@@ -243,9 +238,7 @@ class TestNetworkManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_configure_adapter_action_missing_adapter_slot(self, network_management_tool):
         """Test configure adapter action without adapter_slot."""
-        result = await network_management_tool(
-            action="configure_adapter", vm_name="TestVM", network_type="hostonly"
-        )
+        result = await network_management_tool(action="configure_adapter", vm_name="TestVM", network_type="hostonly")
 
         assert result["success"] is False
         assert result["action"] == "configure_adapter"
@@ -254,9 +247,7 @@ class TestNetworkManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_configure_adapter_action_missing_network_type(self, network_management_tool):
         """Test configure adapter action without network_type."""
-        result = await network_management_tool(
-            action="configure_adapter", vm_name="TestVM", adapter_slot=0
-        )
+        result = await network_management_tool(action="configure_adapter", vm_name="TestVM", adapter_slot=0)
 
         assert result["success"] is False
         assert result["action"] == "configure_adapter"

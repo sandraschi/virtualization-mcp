@@ -6,7 +6,7 @@ following the FastMCP 2.11 standard.
 """
 
 import inspect
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel
@@ -64,7 +64,7 @@ class APIDocumentation(BaseModel):
     description: str = "virtualization-mcp API Documentation"
     base_path: str = "/"
     tools: dict[str, ToolDocumentation] = {}
-    generated_at: str = datetime.now(timezone.utc).isoformat()
+    generated_at: str = datetime.now(UTC).isoformat()
 
 
 class DocumentationManager:
@@ -195,7 +195,7 @@ class DocumentationManager:
             Dict[str, Any]: The API documentation as a dictionary
         """
         # Update generated timestamp
-        self.documentation.generated_at = datetime.now(timezone.utc).isoformat()
+        self.documentation.generated_at = datetime.now(UTC).isoformat()
         return self.documentation.dict()
 
     def generate_openapi_schema(self) -> dict[str, Any]:
@@ -236,11 +236,7 @@ class DocumentationManager:
             if tool_doc.parameters:
                 operation["requestBody"] = {
                     "required": True,
-                    "content": {
-                        "application/json": {
-                            "schema": {"type": "object", "properties": {}, "required": []}
-                        }
-                    },
+                    "content": {"application/json": {"schema": {"type": "object", "properties": {}, "required": []}}},
                 }
 
                 for param in tool_doc.parameters:
@@ -252,14 +248,12 @@ class DocumentationManager:
                     if param.default is not None:
                         param_schema["default"] = param.default
 
-                    operation["requestBody"]["content"]["application/json"]["schema"]["properties"][
-                        param.name
-                    ] = param_schema
+                    operation["requestBody"]["content"]["application/json"]["schema"]["properties"][param.name] = (
+                        param_schema
+                    )
 
                     if param.required:
-                        operation["requestBody"]["content"]["application/json"]["schema"][
-                            "required"
-                        ].append(param.name)
+                        operation["requestBody"]["content"]["application/json"]["schema"]["required"].append(param.name)
 
             # Add the operation to the path
             openapi_schema["paths"][path] = {"post": operation}

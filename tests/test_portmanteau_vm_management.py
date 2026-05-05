@@ -34,6 +34,7 @@ class TestVMManagementPortmanteau:
             def decorator(f):
                 self._tool_func = f
                 return f
+
             return decorator
 
         mcp.tool = mock_tool_decorator
@@ -53,7 +54,7 @@ class TestVMManagementPortmanteau:
         # Verify tool registration - the function should be captured
         assert self._tool_func is not None
         assert self._tool_func.__name__ == "vm_management"
-        assert "Comprehensive virtual machine management" in self._tool_func.__doc__
+        assert "Virtual machine lifecycle management" in self._tool_func.__doc__
 
     @pytest.mark.asyncio
     async def test_invalid_action(self, vm_management_tool):
@@ -161,9 +162,7 @@ class TestVMManagementPortmanteau:
         ) as mock_create_vm:
             mock_create_vm.side_effect = Exception("Creation failed")
 
-            result = await vm_management_tool(
-                action="create", vm_name="TestVM", os_type="Windows10_64"
-            )
+            result = await vm_management_tool(action="create", vm_name="TestVM", os_type="Windows10_64")
 
             assert result["success"] is False
             assert result["action"] == "create"
@@ -242,9 +241,7 @@ class TestVMManagementPortmanteau:
         ) as mock_clone_vm:
             mock_clone_vm.return_value = mock_result
 
-            result = await vm_management_tool(
-                action="clone", source_vm="SourceVM", new_vm_name="ClonedVM"
-            )
+            result = await vm_management_tool(action="clone", source_vm="SourceVM", new_vm_name="ClonedVM")
 
             assert result["success"] is True
             assert result["action"] == "clone"
@@ -399,7 +396,6 @@ class TestVMManagementPortmanteau:
             "pause",
             "resume",
             "info",
-            "suggest_config",
         }
 
         assert set(VM_ACTIONS.keys()) == expected_actions

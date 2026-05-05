@@ -326,6 +326,7 @@ class VMTemplateMixin:
             return {"status": "error", "error": f"Template '{template_name}' not found"}
 
         import shutil
+
         shutil.rmtree(template_path)
         return {"status": "success", "template": template_name}
 

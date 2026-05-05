@@ -170,9 +170,7 @@ class SecurityTester:
 
         return result
 
-    async def _run_scan_async(
-        self, test_id: str, target: str, scan_type: str, options: dict[str, Any]
-    ) -> None:
+    async def _run_scan_async(self, test_id: str, target: str, scan_type: str, options: dict[str, Any]) -> None:
         """Run a security scan asynchronously."""
         result = self.test_results[test_id]
 
@@ -283,15 +281,15 @@ generate_report = security_tester.generate_report
 
 # Export the security tester for advanced usage
 __all__ = [
-    "TestStatus",
-    "TestSeverity",
     "SecurityFinding",
     "SecurityTestResult",
     "SecurityTester",
-    "security_tester",
-    "run_security_scan",
-    "get_test_status",
+    "TestSeverity",
+    "TestStatus",
     "cancel_test",
-    "list_available_tools",
     "generate_report",
+    "get_test_status",
+    "list_available_tools",
+    "run_security_scan",
+    "security_tester",
 ]

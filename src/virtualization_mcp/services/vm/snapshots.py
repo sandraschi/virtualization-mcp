@@ -21,9 +21,7 @@ class VMSnapshotMixin:
         self.vbox_manager = vm_service.vbox_manager
         self.vm_operations = vm_service.vm_operations
 
-    def create_snapshot(
-        self, vm_name: str, snapshot_name: str, description: str = ""
-    ) -> dict[str, Any]:
+    def create_snapshot(self, vm_name: str, snapshot_name: str, description: str = "") -> dict[str, Any]:
         """
         Create a snapshot of a virtual machine.
 
@@ -114,9 +112,7 @@ class VMSnapshotMixin:
                 ],
             }
 
-    def restore_snapshot(
-        self, vm_name: str, snapshot_name: str, start_vm: bool = False
-    ) -> dict[str, Any]:
+    def restore_snapshot(self, vm_name: str, snapshot_name: str, start_vm: bool = False) -> dict[str, Any]:
         """
         Restore a virtual machine to a previous snapshot.
 
@@ -164,9 +160,7 @@ class VMSnapshotMixin:
             vm_info.get("VMState", "").lower()
 
             # Restore the snapshot using VMOperations
-            result = self.vm_operations.restore_snapshot(
-                vm_name=vm_name, snapshot_name=snapshot_name
-            )
+            result = self.vm_operations.restore_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
 
             if not result.get("success", False):
                 error_msg = result.get("error", "Unknown error restoring snapshot")
@@ -188,11 +182,10 @@ class VMSnapshotMixin:
                 "snapshot_name": snapshot_name,
                 "started": started,
                 "message": (
-                    f"✓ VM '{vm_name}' restored to snapshot '{snapshot_name}'"
-                    + (" and started" if started else "")
+                    f"✓ VM '{vm_name}' restored to snapshot '{snapshot_name}'" + (" and started" if started else "")
                 ),
                 "troubleshooting": [
-                    f"The VM is now in a {started and 'running' or 'powered-off'} state",
+                    f"The VM is now in a {(started and 'running') or 'powered-off'} state",
                     "Check the VM's state with list_vms()" if not started else "",
                 ],
             }
@@ -259,9 +252,7 @@ class VMSnapshotMixin:
                 raise VBoxManagerError(f"VM '{vm_name}' does not exist")
 
             # Delete the snapshot using VMOperations
-            result = self.vm_operations.delete_snapshot(
-                vm_name=vm_name, snapshot_name=snapshot_name
-            )
+            result = self.vm_operations.delete_snapshot(vm_name=vm_name, snapshot_name=snapshot_name)
 
             if not result.get("success", False):
                 error_msg = result.get("error", "Unknown error deleting snapshot")

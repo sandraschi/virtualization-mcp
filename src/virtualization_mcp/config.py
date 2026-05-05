@@ -55,9 +55,7 @@ class Settings(BaseSettings):
 
     # Server configuration (MCP HTTP/SSE: use 10700-10800 per SOTA; 10702 avoids webapp 10700/10701)
     HOST: str = "0.0.0.0"
-    PORT: int = Field(
-        default=10702, validation_alias="VIRTUALIZATION_MCP_PORT", description="MCP HTTP/SSE port"
-    )
+    PORT: int = Field(default=10702, validation_alias="VIRTUALIZATION_MCP_PORT", description="MCP HTTP/SSE port")
     WEB_PORT: int = 3080  # FastAPI web server port
     WORKERS: int = 1
     RELOAD: bool = False
@@ -197,9 +195,7 @@ def setup_file_handlers(logger_name: str, log_level: int) -> list[logging.Handle
     error_handler.setLevel(logging.ERROR)
 
     # Set formatters
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
     file_handler.setFormatter(formatter)
     error_handler.setFormatter(formatter)
@@ -295,10 +291,7 @@ def get_vbox_manage_path() -> Path:
     if vbox_path:
         return Path(vbox_path)
 
-    raise RuntimeError(
-        "VBoxManage not found. Please install VirtualBox "
-        "or set VBOX_MANAGE_PATH in your environment."
-    )
+    raise RuntimeError("VBoxManage not found. Please install VirtualBox or set VBOX_MANAGE_PATH in your environment.")
 
 
 # Initialize logging when module is imported

@@ -58,10 +58,10 @@ class WindowsSandboxPlugin(BasePlugin):
         @self.router.post("/sandboxes/create")
         async def create_sandbox(
             name: str,
-            memory_mb: int = None,
-            vcpu_count: int = None,
+            memory_mb: int | None = None,
+            vcpu_count: int | None = None,
             template: str = "default",
-            shared_folders: list[dict[str, str]] = None,
+            shared_folders: list[dict[str, str]] | None = None,
         ) -> dict[str, Any]:
             """Create a new Windows Sandbox instance."""
             if name in self.active_sandboxes:
@@ -113,14 +113,10 @@ class WindowsSandboxPlugin(BasePlugin):
             return result
 
         @self.router.post("/sandboxes/{name}/execute")
-        async def execute_in_sandbox(
-            name: str, command: str, wait: bool = True, timeout: int = 60
-        ) -> dict[str, Any]:
+        async def execute_in_sandbox(name: str, command: str, wait: bool = True, timeout: int = 60) -> dict[str, Any]:
             """Execute a command in the sandbox."""
             if name not in self.active_sandboxes:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=f"Sandbox '{name}' not found"
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Sandbox '{name}' not found")
 
             try:
                 # In a real implementation, this would use Windows Sandbox's API
@@ -130,7 +126,7 @@ class WindowsSandboxPlugin(BasePlugin):
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Error executing command: {str(e)}",
+                    detail=f"Error executing command: {e!s}",
                 ) from e
 
         @self.router.post("/sandboxes/{name}/upload")
@@ -141,9 +137,7 @@ class WindowsSandboxPlugin(BasePlugin):
         ) -> dict[str, Any]:
             """Upload a file to the sandbox."""
             if name not in self.active_sandboxes:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=f"Sandbox '{name}' not found"
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Sandbox '{name}' not found")
 
             try:
                 # In a real implementation, this would copy the file to the sandbox
@@ -159,16 +153,14 @@ class WindowsSandboxPlugin(BasePlugin):
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Error uploading file: {str(e)}",
+                    detail=f"Error uploading file: {e!s}",
                 ) from e
 
         @self.router.post("/sandboxes/{name}/terminate")
         async def terminate_sandbox(name: str, force: bool = False) -> dict[str, Any]:
             """Terminate a running sandbox."""
             if name not in self.active_sandboxes:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=f"Sandbox '{name}' not found"
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Sandbox '{name}' not found")
 
             try:
                 await self._terminate_sandbox(name, force)
@@ -180,7 +172,7 @@ class WindowsSandboxPlugin(BasePlugin):
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Error terminating sandbox: {str(e)}",
+                    detail=f"Error terminating sandbox: {e!s}",
                 ) from e
 
     async def _create_sandbox(
@@ -229,13 +221,13 @@ class WindowsSandboxPlugin(BasePlugin):
             logger.error(f"Windows Sandbox error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to create sandbox: {str(e)}",
+                detail=f"Failed to create sandbox: {e!s}",
             ) from e
         except Exception as e:
             logger.error(f"Unexpected error creating sandbox: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error creating sandbox: {str(e)}",
+                detail=f"Unexpected error creating sandbox: {e!s}",
             ) from e
 
     async def _execute_in_sandbox(
@@ -257,9 +249,9 @@ class WindowsSandboxPlugin(BasePlugin):
             logger.error(f"Error executing command in sandbox: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to execute command in sandbox: {str(e)}",
+                detail=f"Failed to execute command in sandbox: {e!s}",
             ) from e
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
                 detail=f"Command timed out after {timeout} seconds",
@@ -268,7 +260,7 @@ class WindowsSandboxPlugin(BasePlugin):
             logger.error(f"Unexpected error executing command: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error executing command: {str(e)}",
+                detail=f"Unexpected error executing command: {e!s}",
             ) from e
 
     async def _upload_to_sandbox(self, name: str, file: UploadFile, destination: str) -> str:
@@ -305,13 +297,13 @@ class WindowsSandboxPlugin(BasePlugin):
             logger.error(f"Error uploading file to sandbox: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to upload file to sandbox: {str(e)}",
+                detail=f"Failed to upload file to sandbox: {e!s}",
             ) from e
         except Exception as e:
             logger.error(f"Unexpected error uploading file: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error uploading file: {str(e)}",
+                detail=f"Unexpected error uploading file: {e!s}",
             ) from e
 
     async def _terminate_sandbox(self, name: str, force: bool = False) -> None:
@@ -333,13 +325,13 @@ class WindowsSandboxPlugin(BasePlugin):
             logger.error(f"Error terminating sandbox: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to terminate sandbox: {str(e)}",
+                detail=f"Failed to terminate sandbox: {e!s}",
             ) from e
         except Exception as e:
             logger.error(f"Unexpected error terminating sandbox: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error terminating sandbox: {str(e)}",
+                detail=f"Unexpected error terminating sandbox: {e!s}",
             ) from e
 
     async def _cleanup_sandbox(self, name: str) -> None:

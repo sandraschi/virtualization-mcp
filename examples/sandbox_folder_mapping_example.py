@@ -20,12 +20,7 @@ async def example_basic_mapping():
     config = SandboxConfig(
         name="basic-sandbox",
         memory_mb=2048,
-        mapped_folders=[
-            MappedFolder(
-                host_path=str(Path.home() / "Documents"),
-                readonly=False
-            )
-        ]
+        mapped_folders=[MappedFolder(host_path=str(Path.home() / "Documents"), readonly=False)],
     )
 
     helper = WindowsSandboxHelper()
@@ -50,15 +45,15 @@ async def example_multiple_folders():
             MappedFolder(
                 host_path=str(Path.home() / "Documents"),
                 sandbox_path="C:\\Users\\WDAGUtilityAccount\\Desktop\\Documents",
-                readonly=False
+                readonly=False,
             ),
             # Map Downloads as read-only
             MappedFolder(
                 host_path=str(Path.home() / "Downloads"),
                 sandbox_path="C:\\Users\\WDAGUtilityAccount\\Desktop\\Downloads",
-                readonly=True
-            )
-        ]
+                readonly=True,
+            ),
+        ],
     )
 
     helper = WindowsSandboxHelper()
@@ -82,15 +77,15 @@ async def example_with_commands():
             MappedFolder(
                 host_path=str(Path.home() / "Documents"),
                 sandbox_path="C:\\Users\\WDAGUtilityAccount\\Desktop\\Documents",
-                readonly=False
+                readonly=False,
             )
         ],
         logon_commands=[
             "echo Welcome to Development Sandbox!",
-            'cd C:\\Users\\WDAGUtilityAccount\\Desktop\\Documents',
+            "cd C:\\Users\\WDAGUtilityAccount\\Desktop\\Documents",
             "dir",
-            'powershell -Command "Write-Host \'Setup complete!\' -ForegroundColor Green"'
-        ]
+            "powershell -Command \"Write-Host 'Setup complete!' -ForegroundColor Green\"",
+        ],
     )
 
     helper = WindowsSandboxHelper()
@@ -148,8 +143,8 @@ async def example_xml_escaping():
         logon_commands=[
             'echo "Hello & Goodbye"',
             'dir "C:\\Program Files" > output.txt',
-            'type output.txt | findstr /i "important"'
-        ]
+            'type output.txt | findstr /i "important"',
+        ],
     )
 
     helper = WindowsSandboxHelper()
@@ -186,4 +181,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

@@ -36,9 +36,7 @@ async def create_snapshot(
         if live:
             cmd.append("--live")
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         # Extract the snapshot UUID from the output
         snapshot_uuid = None
@@ -65,9 +63,7 @@ async def create_snapshot(
         return {"status": "error", "message": f"Failed to create snapshot: {e.stderr}"}
 
 
-async def restore_snapshot(
-    vm_name: str, snapshot_name: str, start_vm: bool = False
-) -> dict[str, Any]:
+async def restore_snapshot(vm_name: str, snapshot_name: str, start_vm: bool = False) -> dict[str, Any]:
     """
     Restore a virtual machine to a previous snapshot.
 
@@ -135,9 +131,7 @@ async def list_snapshots(vm_name: str) -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "snapshot", vm_name, "list", "--machinereadable"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         snapshots = []
         current_snapshot = {}
@@ -206,9 +200,7 @@ async def get_snapshot_info(vm_name: str, snapshot_name: str) -> dict[str, Any]:
         # Get detailed information about the snapshot
         cmd = ["VBoxManage", "snapshot", vm_name, "showvminfo", target_snapshot["uuid"]]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         # Parse the detailed information
         details = {}

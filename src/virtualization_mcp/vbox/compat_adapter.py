@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class VBoxManagerError(Exception):
     """Custom exception for VirtualBox operations"""
 
-    def __init__(self, message: str, command: list[str] = None, return_code: int = None):
+    def __init__(self, message: str, command: list[str] | None = None, return_code: int | None = None):
         super().__init__(message)
         self.command = command
         self.return_code = return_code
@@ -30,7 +30,7 @@ class VBoxManager:
     but uses our new vbox_compat module under the hood.
     """
 
-    def __init__(self, vboxmanage_path: str = None):
+    def __init__(self, vboxmanage_path: str | None = None):
         """
         Initialize the VBoxManager adapter.
 
@@ -52,6 +52,30 @@ class VBoxManager:
         except VirtualBoxError as e:
             raise VBoxManagerError(f"Failed to access VBoxManage: {e}") from e
 
+    @property
+    def log_path(self) -> str:
+        """Get VirtualBox logs directory path."""
+        import os
+
+        home = os.path.expanduser("~")
+        candidates = [
+            os.path.join(home, ".config", "VirtualBox", "Logs"),
+            os.path.join(home, ".VirtualBox"),
+            os.path.join(home, "VirtualBox VMs"),
+        ]
+        for p in candidates:
+            if os.path.isdir(p):
+                return p
+        return candidates[0]
+
+    @staticmethod
+    def _parse_numeric(value: str) -> int:
+        """Extract leading integer from a string like '4096MB' or '4.00 GB'."""
+        import re
+
+        match = re.match(r"(\d+)", str(value).strip())
+        return int(match.group(1)) if match else 0
+
     def vm_exists(self, vm_name: str) -> bool:
         """Check if a VM with the given name exists."""
         try:
@@ -59,6 +83,13 @@ class VBoxManager:
             return any(vm["name"] == vm_name for vm in vms)
         except VirtualBoxError as e:
             raise VBoxManagerError(f"Failed to check if VM exists: {e}") from e
+
+    def validate_vm_name(self, name: str) -> bool:
+        """Validate VM name meets VirtualBox requirements."""
+        if not name or len(name.strip()) == 0:
+            return False
+        invalid_chars = ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]
+        return not any(char in name for char in invalid_chars)
 
     def _execute(self, command: list[str], parse_json: bool = False) -> Any:
         """
@@ -76,14 +107,40 @@ class VBoxManager:
         """
         try:
             # Convert the command to our new format
-            cmd_str = (
-                " ".join(command[1:])
-                if command and command[0] == "VBoxManage"
-                else " ".join(command)
-            )
+            cmd_str = " ".join(command[1:]) if command and command[0] == "VBoxManage" else " ".join(command)
             return self.vbox._run_command(cmd_str, parse_json=parse_json)
         except VirtualBoxError as e:
             raise VBoxManagerError(str(e), command=command) from e
+
+    def run_command(self, args: list[str], capture_json: bool = False) -> dict:
+        """
+        Execute a VBoxManage command, returning a dict with output metadata.
+        Matches the interface of manager.VBoxManager.run_command.
+
+        Args:
+            args: Command arguments as a list (without 'VBoxManage' prefix).
+            capture_json: If True, attempt to parse the output as JSON.
+
+        Returns:
+            Dict with keys: success, output, raw_output, command.
+
+        Raises:
+            VBoxManagerError: On command failure.
+        """
+        full_cmd = ["VBoxManage", *args]
+        try:
+            output = self._execute(args, parse_json=capture_json)
+            raw = str(output) if not isinstance(output, str) else output
+            return {
+                "success": True,
+                "output": output,
+                "raw_output": raw,
+                "command": full_cmd,
+            }
+        except VBoxManagerError:
+            raise
+        except Exception as e:
+            raise VBoxManagerError(str(e), command=full_cmd) from e
 
     def get_vm_state(self, vm_name: str) -> str:
         """
@@ -97,17 +154,23 @@ class VBoxManager:
         """
         try:
             vm_info = self.get_vm_info(vm_name)
-            return self._normalize_vm_state(vm_info.get("VMState", "poweroff"))
+            state = vm_info.get("vmstate") or vm_info.get("VMState", "poweroff")
+            return self._normalize_vm_state(state)
         except VirtualBoxError as e:
             raise VBoxManagerError(f"Failed to get VM state: {e}") from e
 
     def _normalize_vm_state(self, state: str) -> str:
         """Normalize VM state to match the expected format."""
-        state = str(state).lower()
+        import re as _re
+
+        state = str(state).lower().strip()
+        # Strip parenthetical suffix from --long output: "powered off (since 2024...)" → "powered off"
+        state = _re.sub(r"\s*\(.*\)\s*$", "", state).strip()
 
         # Map common states to standard values
         state_map = {
             "poweroff": "poweroff",
+            "powered off": "poweroff",
             "poweredoff": "poweroff",
             "running": "running",
             "paused": "paused",
@@ -137,27 +200,39 @@ class VBoxManager:
         List all registered VMs.
 
         Args:
-            **kwargs: Additional filters (e.g., running_only=True)
+            **kwargs: Additional filters (e.g., running_only=True, verbose=False)
 
         Returns:
             List of VM information dictionaries
         """
         try:
-            vms = self.vbox.list_vms(verbose=True)
+            verbose = kwargs.get("verbose", False)
+            vms = self.vbox.list_vms(verbose=verbose)
 
-            # Convert to the expected format
             result = []
             for vm in vms:
+                state_raw = str(vm.get("state", "poweroff"))
+                # Strip parenthetical suffix like " (since 2024-01-01...)"
+                import re as _re
+
+                state_clean = _re.sub(r"\s*\(.*\)\s*$", "", state_raw).strip()
+                raw_cpus = vm.get("cpus") or vm.get("number_of_cpus")
+                try:
+                    cpus_val = int(raw_cpus) if raw_cpus else 1
+                except (ValueError, TypeError):
+                    cpus_val = 1
                 vm_info = {
                     "name": vm.get("name", ""),
                     "uuid": vm.get("uuid", ""),
-                    "state": self._normalize_vm_state(vm.get("state", "poweroff")),
-                    "ostype": vm.get("ostype", "Other"),
-                    "memory": int(vm.get("memory", 0)) // 1024,  # Convert to MB
-                    "cpus": int(vm.get("cpus", 1)),
+                    "state": self._normalize_vm_state(state_clean),
+                    "os_type": vm.get("os_type") or vm.get("ostype") or vm.get("guest_os", "Other"),
+                    "memory_mb": int(
+                        vm.get("memory_mb") or vm.get("memory") or self._parse_numeric(vm.get("memory_size", "0"))
+                    )
+                    // 1,
+                    "cpus": cpus_val,
                 }
 
-                # Apply filters if provided
                 if kwargs.get("running_only") and vm_info["state"] != "running":
                     continue
 
@@ -188,7 +263,12 @@ class VBoxManager:
             for line in result.splitlines():
                 if "=" in line:
                     key, value = line.split("=", 1)
-                    info[key.lower()] = value.strip('"')
+                    parsed_key = key.strip()
+                    parsed_value = value.strip('"')
+                    info[parsed_key.lower()] = parsed_value
+                    # Keep original-case keys for legacy consumers
+                    if parsed_key.lower() != parsed_key:
+                        info[parsed_key] = parsed_value
 
             return info
         except VirtualBoxError as e:
@@ -283,7 +363,12 @@ class VBoxManager:
             raise VBoxManagerError(f"Failed to stop VM: {e}") from e
 
     def create_vm(
-        self, name: str = None, ostype: str = None, memory: int = None, cpus: int = None, **kwargs
+        self,
+        name: str | None = None,
+        ostype: str | None = None,
+        memory: int | None = None,
+        cpus: int | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """
         Create a new VM.
@@ -319,9 +404,7 @@ class VBoxManager:
 
         # Validate required parameters
         if not all([name, ostype, memory is not None, cpus is not None]):
-            raise VBoxManagerError(
-                "Missing required parameters. Name, ostype, memory, and cpus are required."
-            )
+            raise VBoxManagerError("Missing required parameters. Name, ostype, memory, and cpus are required.")
 
         try:
             # Default VM settings
@@ -332,12 +415,8 @@ class VBoxManager:
             self.vbox._run_command(f'createvm --name "{name}" --ostype {ostype} --register')
 
             # Set basic system properties
-            self.vbox._run_command(
-                f'storagectl "{name}" --name "SATA Controller" --add sata --controller IntelAHCI'
-            )
-            self.vbox._run_command(
-                f'modifyvm "{name}" --memory {memory} --vram {vram_mb} --cpus {cpus}'
-            )
+            self.vbox._run_command(f'storagectl "{name}" --name "SATA Controller" --add sata --controller IntelAHCI')
+            self.vbox._run_command(f'modifyvm "{name}" --memory {memory} --vram {vram_mb} --cpus {cpus}')
 
             # Set firmware and chipset
             firmware = kwargs.get("firmware", "bios").lower()
@@ -521,9 +600,7 @@ class VBoxManager:
         except VirtualBoxError as e:
             raise VBoxManagerError(f"Failed to execute command in VM: {e}") from e
 
-    def take_snapshot(
-        self, vm_name: str, snapshot_name: str, description: str = "", **kwargs
-    ) -> dict[str, Any]:
+    def take_snapshot(self, vm_name: str, snapshot_name: str, description: str = "", **kwargs) -> dict[str, Any]:
         """
         Take a snapshot of a VM.
 
@@ -673,9 +750,7 @@ class VBoxManager:
         except VirtualBoxError as e:
             raise VBoxManagerError(f"Failed to list snapshots: {e}") from e
 
-    def delete_snapshot(
-        self, vm_name: str, snapshot_name: str | None = None, snapshot_uuid: str | None = None
-    ) -> bool:
+    def delete_snapshot(self, vm_name: str, snapshot_name: str | None = None, snapshot_uuid: str | None = None) -> bool:
         """
         Delete a snapshot.
 

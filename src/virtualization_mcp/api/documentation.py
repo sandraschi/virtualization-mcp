@@ -194,9 +194,7 @@ class APIDocumentation:
         responses = {
             "200": {
                 "description": "Successful operation",
-                "content": {
-                    "application/json": {"schema": self._get_success_response_schema(tool)}
-                },
+                "content": {"application/json": {"schema": self._get_success_response_schema(tool)}},
             },
             "400": {
                 "description": "Invalid input",
@@ -490,9 +488,7 @@ def register_documentation_routes(mcp: FastMCP) -> None:
         description="Get detailed information about all available API endpoints and tools",
         endpoint="/api-endpoints",
     )
-    async def get_api_endpoints(
-        details: bool = False, category: str = None, search: str = None
-    ) -> dict:
+    async def get_api_endpoints(details: bool = False, category: str | None = None, search: str | None = None) -> dict:
         """Return detailed information about all available API endpoints and tools.
 
         This endpoint provides comprehensive information about all available tools,
@@ -521,9 +517,7 @@ def register_documentation_routes(mcp: FastMCP) -> None:
         endpoints = {}
 
         # Helper function to determine if a tool matches the search criteria
-        def matches_criteria(
-            tool_name: str, tool, endpoint: str, tool_summary: str, tool_description: str
-        ) -> bool:
+        def matches_criteria(tool_name: str, tool, endpoint: str, tool_summary: str, tool_description: str) -> bool:
             # Filter by category if specified
             if category:
                 category_lower = category.lower()
@@ -542,10 +536,7 @@ def register_documentation_routes(mcp: FastMCP) -> None:
                     search_lower in tool_name.lower()
                     or (tool_summary and search_lower in tool_summary.lower())
                     or (tool_description and search_lower in tool_description.lower())
-                    or (
-                        hasattr(tool, "tags")
-                        and any(search_lower in tag.lower() for tag in tool.tags)
-                    )
+                    or (hasattr(tool, "tags") and any(search_lower in tag.lower() for tag in tool.tags))
                 ):
                     return False
 

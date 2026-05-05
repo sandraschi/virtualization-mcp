@@ -135,7 +135,9 @@ def register_sandbox_management_tool(mcp: FastMCP) -> None:
                 if not host_path:
                     return {"success": False, "error": "host_path is required for execute_file"}
                 lang = language if language != "python" else None  # allow auto-detect unless explicitly set
-                return execute_file(host_path=host_path, language=lang, timeout=timeout, network_enabled=network_enabled)
+                return execute_file(
+                    host_path=host_path, language=lang, timeout=timeout, network_enabled=network_enabled
+                )
 
             # --- Sessions ---
             if action == "session_create":

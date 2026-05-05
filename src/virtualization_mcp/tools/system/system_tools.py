@@ -47,7 +47,7 @@ async def get_system_info() -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting system info: {e}")
-        return {"status": "error", "message": f"Failed to get system information: {str(e)}"}
+        return {"status": "error", "message": f"Failed to get system information: {e!s}"}
 
 
 async def get_vbox_info() -> dict[str, Any]:
@@ -85,7 +85,7 @@ async def get_vbox_info() -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting VirtualBox info: {e}")
-        return {"status": "error", "message": f"Failed to get VirtualBox information: {str(e)}"}
+        return {"status": "error", "message": f"Failed to get VirtualBox information: {e!s}"}
 
 
 async def check_vbox_installation() -> dict[str, Any]:
@@ -129,7 +129,7 @@ async def check_vbox_installation() -> dict[str, Any]:
         return {
             "status": "error",
             "installed": False,
-            "message": f"Error checking VirtualBox installation: {str(e)}",
+            "message": f"Error checking VirtualBox installation: {e!s}",
         }
 
 
@@ -143,9 +143,7 @@ async def list_ostypes() -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "list", "ostypes", "--long"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         ostypes = []
         current_os = {}
@@ -184,9 +182,7 @@ async def list_extpacks() -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "list", "extpacks", "--long"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         extpacks = []
         current_pack = {}
@@ -249,7 +245,7 @@ async def get_host_info() -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting host info: {e}")
-        return {"status": "error", "message": f"Failed to get host information: {str(e)}"}
+        return {"status": "error", "message": f"Failed to get host information: {e!s}"}
 
 
 # Public functions
@@ -276,13 +272,21 @@ async def get_vm_metrics(vm_name: str) -> dict[str, Any]:
         Dictionary with parsed metric samples where available.
     """
     try:
-        setup_cmd = ["VBoxManage", "metrics", "setup", vm_name, "CPU/Load,*,RAM/Usage,Net/*", "--period", "1", "--samples", "1"]
+        setup_cmd = [
+            "VBoxManage",
+            "metrics",
+            "setup",
+            vm_name,
+            "CPU/Load,*,RAM/Usage,Net/*",
+            "--period",
+            "1",
+            "--samples",
+            "1",
+        ]
         await asyncio.to_thread(subprocess.run, setup_cmd, capture_output=True, text=True, check=True)
 
         query_cmd = ["VBoxManage", "metrics", "query", vm_name]
-        result = await asyncio.to_thread(
-            subprocess.run, query_cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, query_cmd, capture_output=True, text=True, check=True)
 
         metrics: list[dict[str, Any]] = []
         for line in result.stdout.splitlines():
@@ -319,7 +323,11 @@ async def take_vm_screenshot(
         Dictionary with screenshot file path.
     """
     try:
-        target = Path(output_file) if output_file else Path.cwd() / f"{vm_name}_screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        target = (
+            Path(output_file)
+            if output_file
+            else Path.cwd() / f"{vm_name}_screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        )
         target.parent.mkdir(parents=True, exist_ok=True)
 
         cmd = ["VBoxManage", "controlvm", vm_name, "screenshotpng", str(target)]
@@ -342,9 +350,7 @@ async def _get_vbox_version() -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "--version"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         version_output = result.stdout.strip()
         version_parts = version_output.split("r")
@@ -368,9 +374,7 @@ async def _get_system_properties() -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "list", "systemproperties"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         props = {}
         for line in result.stdout.splitlines():
@@ -391,9 +395,7 @@ async def _get_host_info() -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "list", "hostinfo"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         info = {}
         for line in result.stdout.splitlines():
@@ -417,7 +419,7 @@ async def _list_vms() -> dict[str, Any]:
         return await list_vms()
     except Exception as e:
         logger.error(f"Error listing VMs: {e}")
-        return {"vms": [], "error": f"Failed to list VMs: {str(e)}"}
+        return {"vms": [], "error": f"Failed to list VMs: {e!s}"}
 
 
 async def _get_cpu_info() -> dict[str, Any]:
@@ -433,7 +435,7 @@ async def _get_cpu_info() -> dict[str, Any]:
             return {"cpu_info": "Unsupported platform"}
     except Exception as e:
         logger.error(f"Error getting CPU info: {e}")
-        return {"cpu_info": f"Error: {str(e)}"}
+        return {"cpu_info": f"Error: {e!s}"}
 
 
 def _get_windows_cpu_info() -> dict[str, Any]:
@@ -458,7 +460,7 @@ def _get_windows_cpu_info() -> dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error getting Windows CPU info: {e}")
-        return {"cpu_info": f"Error: {str(e)}"}
+        return {"cpu_info": f"Error: {e!s}"}
 
 
 async def _get_linux_cpu_info() -> dict[str, Any]:
@@ -489,7 +491,7 @@ async def _get_linux_cpu_info() -> dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error getting Linux CPU info: {e}")
-        return {"cpu_info": f"Error: {str(e)}"}
+        return {"cpu_info": f"Error: {e!s}"}
 
 
 async def _get_macos_cpu_info() -> dict[str, Any]:
@@ -520,7 +522,7 @@ async def _get_macos_cpu_info() -> dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error getting macOS CPU info: {e}")
-        return {"cpu_info": f"Error: {str(e)}"}
+        return {"cpu_info": f"Error: {e!s}"}
 
 
 async def _get_memory_info() -> dict[str, Any]:
@@ -534,7 +536,7 @@ async def _get_memory_info() -> dict[str, Any]:
             return {"memory_info": "Unsupported platform"}
     except Exception as e:
         logger.error(f"Error getting memory info: {e}")
-        return {"memory_info": f"Error: {str(e)}"}
+        return {"memory_info": f"Error: {e!s}"}
 
 
 def _get_windows_memory_info() -> dict[str, Any]:
@@ -632,7 +634,7 @@ async def _get_unix_memory_info() -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting Unix memory info: {e}")
-        return {"memory_info": f"Error: {str(e)}"}
+        return {"memory_info": f"Error: {e!s}"}
 
 
 def _get_architecture(bits: int) -> str:

@@ -170,9 +170,7 @@ class TestPortmanteauExecution:
 
         register_vm_management_tool(mock_mcp)
 
-        with patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.list_vms", new_callable=AsyncMock
-        ) as mock_list:
+        with patch("virtualization_mcp.tools.portmanteau.vm_management.list_vms", new_callable=AsyncMock) as mock_list:
             mock_list.return_value = {"vms": []}
             result = await self._tool_func(action="list")
             assert result is not None

@@ -22,9 +22,7 @@ class TemplateManager:
         Args:
             templates_path: Path to the templates configuration file
         """
-        self.templates_path = (
-            templates_path or Path(__file__).parent.parent / "config" / "vm_templates.yaml"
-        )
+        self.templates_path = templates_path or Path(__file__).parent.parent / "config" / "vm_templates.yaml"
         self._templates_cache: list[dict[str, Any]] | None = None
 
     def load_templates(self) -> list[dict[str, Any]]:

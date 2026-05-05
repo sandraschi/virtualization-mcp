@@ -54,10 +54,7 @@ class PortfolioManager:
 
         if not portfolio_file.exists():
             available = self.list_available_portfolios()
-            raise ValueError(
-                f"Portfolio '{portfolio_name}' not found. "
-                f"Available portfolios: {', '.join(available)}"
-            )
+            raise ValueError(f"Portfolio '{portfolio_name}' not found. Available portfolios: {', '.join(available)}")
 
         try:
             with open(portfolio_file, encoding="utf-8") as f:
@@ -117,4 +114,3 @@ class PortfolioManager:
     def clear_cache(self):
         """Clear the portfolios cache."""
         self._portfolios_cache.clear()
-

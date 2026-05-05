@@ -8,11 +8,11 @@ from .manager import WindowsSandboxHelper
 from .portfolio_manager import PortfolioManager
 
 __all__ = [
-    "WindowsSandboxHelper",
-    "PortfolioManager",
-    "SandboxState",
-    "SandboxConfig",
-    "MappedFolder",
     "FileCopyOperation",
-    "SandboxPortfolio"
+    "MappedFolder",
+    "PortfolioManager",
+    "SandboxConfig",
+    "SandboxPortfolio",
+    "SandboxState",
+    "WindowsSandboxHelper",
 ]

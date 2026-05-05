@@ -181,7 +181,7 @@ def create_backup_legacy(vm_name: str, description: str = "") -> dict:
 
     except Exception as e:
         logger.exception("Error creating backup")
-        return {"status": "error", "message": f"Failed to create backup: {str(e)}"}
+        return {"status": "error", "message": f"Failed to create backup: {e!s}"}
 
 
 def list_backups(vm_name: str | None = None) -> list[dict]:
@@ -252,7 +252,7 @@ def delete_backup(backup_id: str) -> dict:
 
     except Exception as e:
         logger.exception(f"Error deleting backup {backup_id}")
-        return {"status": "error", "message": f"Failed to delete backup: {str(e)}"}
+        return {"status": "error", "message": f"Failed to delete backup: {e!s}"}
 
 
 class BackupManager:
@@ -321,9 +321,7 @@ class BackupManager:
         """
         return delete_backup(backup_id)
 
-    def restore_backup(
-        self, backup_id: str, vm_name: str | None = None, overwrite: bool = False
-    ) -> dict:
+    def restore_backup(self, backup_id: str, vm_name: str | None = None, overwrite: bool = False) -> dict:
         """
         Restore a VM from a backup.
 
@@ -390,7 +388,7 @@ class BackupManager:
             logger.exception(f"Error restoring backup {backup_id}")
             return {
                 "status": "error",
-                "message": f"Failed to restore backup: {str(e)}",
+                "message": f"Failed to restore backup: {e!s}",
                 "backup_id": backup_id,
             }
         finally:
@@ -427,9 +425,7 @@ class BackupManager:
                     if result.get("status") == "success":
                         deleted += 1
                     else:
-                        errors.append(
-                            f"Failed to delete backup {backup['backup_id']}: {result.get('message')}"
-                        )
+                        errors.append(f"Failed to delete backup {backup['backup_id']}: {result.get('message')}")
 
             # Delete by count if needed
             if max_backups is not None:
@@ -439,17 +435,13 @@ class BackupManager:
                     for backup in backups_sorted:
                         if to_delete <= 0:
                             break
-                        if backup["backup_id"] not in [
-                            b["backup_id"] for b in backups_sorted[-max_backups:]
-                        ]:
+                        if backup["backup_id"] not in [b["backup_id"] for b in backups_sorted[-max_backups:]]:
                             result = self.delete_backup(backup["backup_id"])
                             if result.get("status") == "success":
                                 deleted += 1
                                 to_delete -= 1
                             else:
-                                errors.append(
-                                    f"Failed to delete backup {backup['backup_id']}: {result.get('message')}"
-                                )
+                                errors.append(f"Failed to delete backup {backup['backup_id']}: {result.get('message')}")
 
             return {"status": "success", "deleted_count": deleted, "errors": errors}
 
@@ -457,7 +449,7 @@ class BackupManager:
             logger.exception("Error during backup cleanup")
             return {
                 "status": "error",
-                "message": f"Backup cleanup failed: {str(e)}",
+                "message": f"Backup cleanup failed: {e!s}",
                 "deleted_count": deleted,
                 "errors": errors,
             }

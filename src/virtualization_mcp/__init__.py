@@ -16,9 +16,9 @@ if src_dir not in sys.path:
 # Core exports
 __all__ = [
     "__version__",
-    "get_version",
     "create_mcp_instance",
     "get_mcp_instance",
+    "get_version",
     "main",
     "main_async",
 ]
@@ -62,9 +62,7 @@ def get_version() -> str:
 # Initialize logging when the package is imported
 import logging  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 logger = logging.getLogger("virtualization_mcp")
 logger.debug(f"virtualization_mcp {__version__} initialized")

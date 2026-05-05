@@ -90,14 +90,10 @@ class VideoSettings(BaseModel):
     accelerate_3d: bool = True
     graphics_controller: GraphicsControllerType = GraphicsControllerType.VBOX_SVGA
     video_mode: VideoModeType = VideoModeType.ENABLED
-    scale_factor: float = Field(
-        1.0, ge=0.1, le=4.0, description="Display scaling factor (1.0 = 100%)"
-    )
+    scale_factor: float = Field(1.0, ge=0.1, le=4.0, description="Display scaling factor (1.0 = 100%)")
 
     # Advanced settings
-    frame_rate_limit: int | None = Field(
-        None, ge=30, le=240, description="Maximum frame rate (None for unlimited)"
-    )
+    frame_rate_limit: int | None = Field(None, ge=30, le=240, description="Maximum frame rate (None for unlimited)")
     vsync: bool = True
     triple_buffering: bool = True
     properties: dict[str, Any] = Field(default_factory=dict)
@@ -123,9 +119,7 @@ class VideoSettingsManager(BasePlugin):
 
     def setup_routes(self):
         """Set up API routes for video settings."""
-        self.router.add_api_route(
-            "/{vm_name}", self.get_video_settings, methods=["GET"], response_model=VideoSettings
-        )
+        self.router.add_api_route("/{vm_name}", self.get_video_settings, methods=["GET"], response_model=VideoSettings)
         self.router.add_api_route(
             "/{vm_name}", self.update_video_settings, methods=["PUT"], response_model=VideoSettings
         )

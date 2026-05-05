@@ -11,9 +11,8 @@ Targeting:
 
 import os
 import signal
-import time
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -202,7 +201,7 @@ class TestSignalHandlers:
         """Test graceful_shutdown_handler."""
         from virtualization_mcp.utils.signal_handlers import graceful_shutdown_handler
 
-        with patch("sys.exit") as mock_exit:
+        with patch("sys.exit"):
             try:
                 graceful_shutdown_handler(signal.SIGTERM, None)
             except SystemExit:
@@ -292,9 +291,7 @@ class TestVMStatus:
 class TestWindowsSandboxHelper:
     """Test Windows Sandbox helper utilities."""
 
-    @pytest.mark.skipif(
-        os.name != "nt", reason="Windows Sandbox only available on Windows"
-    )
+    @pytest.mark.skipif(os.name != "nt", reason="Windows Sandbox only available on Windows")
     def test_sandbox_helper_import(self):
         """Test WindowsSandboxHelper can be imported."""
         from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
@@ -302,9 +299,7 @@ class TestWindowsSandboxHelper:
         helper = WindowsSandboxHelper()
         assert helper is not None
 
-    @pytest.mark.skipif(
-        os.name != "nt", reason="Windows Sandbox only available on Windows"
-    )
+    @pytest.mark.skipif(os.name != "nt", reason="Windows Sandbox only available on Windows")
     def test_sandbox_helper_check_prerequisites(self):
         """Test check_prerequisites method."""
         from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
@@ -330,5 +325,3 @@ class TestWindowsSandboxHelper:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-
-

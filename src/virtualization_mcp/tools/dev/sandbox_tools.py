@@ -61,9 +61,7 @@ class NetworkConfig(BaseModel):
     allow_inbound: bool = False
     hostname: str | None = None
     dns_servers: list[str] = ["8.8.8.8", "1.1.1.1"]
-    ports: dict[int, int] = Field(
-        default_factory=dict, description="Port mappings (host_port: container_port)"
-    )
+    ports: dict[int, int] = Field(default_factory=dict, description="Port mappings (host_port: container_port)")
 
 
 class ResourceLimits(BaseModel):
@@ -206,17 +204,13 @@ class SandboxTester:
                         directory=entry,
                         state=SandboxState(data.get("state", "stopped")),
                         created_at=datetime.fromisoformat(data["created_at"]),
-                        last_used=datetime.fromisoformat(data["last_used"])
-                        if data.get("last_used")
-                        else None,
+                        last_used=datetime.fromisoformat(data["last_used"]) if data.get("last_used") else None,
                         resource_limits=ResourceLimits(**data.get("resource_limits", {})),
                         network_config=NetworkConfig(**data.get("network_config", {})),
                         environment=data.get("environment", {}),
                         metadata=data.get("metadata", {}),
                         persistent_storage=data.get("persistent_storage", False),
-                        persistent_path=Path(data["persistent_path"])
-                        if data.get("persistent_path")
-                        else None,
+                        persistent_path=Path(data["persistent_path"]) if data.get("persistent_path") else None,
                     )
 
                     self._active_sandboxes[sandbox.name] = sandbox
@@ -282,9 +276,7 @@ class SandboxTester:
             RuntimeError: If sandbox creation fails
         """
         if not name.replace("_", "").isalnum():
-            raise ValueError(
-                "Sandbox name must contain only alphanumeric characters and underscores"
-            )
+            raise ValueError("Sandbox name must contain only alphanumeric characters and underscores")
 
         if name in self._active_sandboxes:
             raise ValueError(f"Sandbox '{name}' already exists")
@@ -452,10 +444,7 @@ class SandboxTester:
                         environment=env,
                         **kwargs,
                     )
-                elif (
-                    sandbox.sandbox_type == SandboxType.WINDOWS_SANDBOX
-                    and self.platform == "windows"
-                ):
+                elif sandbox.sandbox_type == SandboxType.WINDOWS_SANDBOX and self.platform == "windows":
                     cmd_result = await self._run_in_windows_sandbox(
                         sandbox,
                         command,
@@ -477,13 +466,11 @@ class SandboxTester:
 
                 # Check for resource overages
                 if await self._check_resource_overages(sandbox):
-                    result.warnings.append(
-                        "Resource limits approached or exceeded during execution"
-                    )
+                    result.warnings.append("Resource limits approached or exceeded during execution")
 
                 return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 result.error = f"Command timed out after {timeout} seconds"
                 result.execution_time = timeout
                 return result
@@ -521,18 +508,14 @@ class SandboxTester:
             ValueError: If sandbox doesn't exist
             RuntimeError: If sandbox is running and force=False
         """
-        if name not in self._active_sandboxes and name not in [
-            d.name for d in self.base_dir.iterdir() if d.is_dir()
-        ]:
+        if name not in self._active_sandboxes and name not in [d.name for d in self.base_dir.iterdir() if d.is_dir()]:
             raise ValueError(f"Sandbox '{name}' not found")
 
         sandbox = self._active_sandboxes.get(name)
 
         # If sandbox is running and force=False, raise an error
         if sandbox and sandbox.state == SandboxState.RUNNING and not force:
-            raise RuntimeError(
-                f"Cannot clean up running sandbox '{name}'. Stop it first or use force=True"
-            )
+            raise RuntimeError(f"Cannot clean up running sandbox '{name}'. Stop it first or use force=True")
 
         async with self._sandbox_locks.get(name, asyncio.Lock()):
             try:
@@ -544,9 +527,7 @@ class SandboxTester:
                 sandbox_dir = self.base_dir / name
                 if sandbox_dir.exists():
                     if sandbox and sandbox.persistent_storage and not force:
-                        logger.info(
-                            f"Skipping removal of persistent sandbox '{name}'. Use force=True to remove."
-                        )
+                        logger.info(f"Skipping removal of persistent sandbox '{name}'. Use force=True to remove.")
                         return False
 
                     shutil.rmtree(sandbox_dir, ignore_errors=True)
@@ -582,7 +563,7 @@ class SandboxTester:
             try:
                 await asyncio.wait_for(sandbox.process.wait(), timeout=5)
                 return True
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Force kill if it doesn't terminate
                 sandbox.process.kill()
                 await sandbox.process.wait()
@@ -607,15 +588,11 @@ class SandboxTester:
         limits = sandbox.resource_limits
 
         if limits.max_cpu_percent and usage.cpu_percent > limits.max_cpu_percent:
-            logger.warning(
-                f"CPU usage {usage.cpu_percent}% exceeds limit of {limits.max_cpu_percent}%"
-            )
+            logger.warning(f"CPU usage {usage.cpu_percent}% exceeds limit of {limits.max_cpu_percent}%")
             return False
 
         if limits.max_memory_mb and usage.memory_mb > limits.max_memory_mb:
-            logger.warning(
-                f"Memory usage {usage.memory_mb}MB exceeds limit of {limits.max_memory_mb}MB"
-            )
+            logger.warning(f"Memory usage {usage.memory_mb}MB exceeds limit of {limits.max_memory_mb}MB")
             return False
 
         if limits.max_disk_mb and (usage.disk_read_mb + usage.disk_write_mb) > limits.max_disk_mb:
@@ -646,13 +623,9 @@ class SandboxTester:
             warnings.append(f"CPU usage at {usage.cpu_percent}% (limit: {limits.max_cpu_percent}%)")
 
         if limits.max_memory_mb and usage.memory_mb > (limits.max_memory_mb * 0.8):
-            warnings.append(
-                f"Memory usage at {usage.memory_mb:.1f}MB (limit: {limits.max_memory_mb}MB)"
-            )
+            warnings.append(f"Memory usage at {usage.memory_mb:.1f}MB (limit: {limits.max_memory_mb}MB)")
 
-        if limits.max_disk_mb and (usage.disk_read_mb + usage.disk_write_mb) > (
-            limits.max_disk_mb * 0.8
-        ):
+        if limits.max_disk_mb and (usage.disk_read_mb + usage.disk_write_mb) > (limits.max_disk_mb * 0.8):
             total = usage.disk_read_mb + usage.disk_write_mb
             warnings.append(f"Disk I/O at {total:.1f}MB (limit: {limits.max_disk_mb}MB)")
 
@@ -664,36 +637,24 @@ class SandboxTester:
 
     # Implementation methods for different sandbox types
 
-    async def _create_venv(
-        self, venv_dir: Path, requirements: list[str] | None, timeout: int
-    ) -> None:
+    async def _create_venv(self, venv_dir: Path, requirements: list[str] | None, timeout: int) -> None:
         """Create a Python virtual environment."""
         # Create the virtual environment
         await self._run_command(["python", "-m", "venv", str(venv_dir)], timeout=timeout)
 
         # Install requirements if specified
         if requirements:
-            pip_path = (
-                venv_dir / "Scripts" / "pip"
-                if self.platform == "windows"
-                else venv_dir / "bin" / "pip"
-            )
-            await self._run_command([str(pip_path), "install"] + requirements, timeout=timeout)
+            pip_path = venv_dir / "Scripts" / "pip" if self.platform == "windows" else venv_dir / "bin" / "pip"
+            await self._run_command([str(pip_path), "install", *requirements], timeout=timeout)
 
     async def _run_in_venv(
         self, venv_dir: Path, command: str, capture_output: bool, timeout: int
     ) -> subprocess.CompletedProcess:
         """Run a command in a virtual environment."""
-        python_path = (
-            venv_dir / "Scripts" / "python"
-            if self.platform == "windows"
-            else venv_dir / "bin" / "python"
-        )
+        python_path = venv_dir / "Scripts" / "python" if self.platform == "windows" else venv_dir / "bin" / "python"
         return await self._run_command([str(python_path), "-c", command], capture_output, timeout)
 
-    async def _create_docker_container(
-        self, container_dir: Path, requirements: list[str] | None, timeout: int
-    ) -> None:
+    async def _create_docker_container(self, container_dir: Path, requirements: list[str] | None, timeout: int) -> None:
         """Create a Docker container for testing."""
         # This is a simplified example - in a real implementation, you would:
         # 1. Create a Dockerfile with the required setup
@@ -713,9 +674,7 @@ class SandboxTester:
         # This would stop and remove a container
         pass
 
-    async def _create_windows_sandbox(
-        self, sandbox_dir: Path, requirements: list[str] | None, timeout: int
-    ) -> None:
+    async def _create_windows_sandbox(self, sandbox_dir: Path, requirements: list[str] | None, timeout: int) -> None:
         """Set up a Windows Sandbox environment."""
         if self.platform != "windows":
             raise RuntimeError("Windows Sandbox is only available on Windows")
@@ -728,9 +687,7 @@ class SandboxTester:
         ]
 
         if requirements:
-            setup_content.extend(
-                ["# Install Python packages", f"pip install {' '.join(requirements)}"]
-            )
+            setup_content.extend(["# Install Python packages", f"pip install {' '.join(requirements)}"])
 
         setup_script.write_text("\n".join(setup_content), encoding="utf-8")
 
@@ -741,9 +698,7 @@ class SandboxTester:
         if self.platform != "windows":
             raise RuntimeError("Windows Sandbox is only available on Windows")
 
-        raise RuntimeError(
-            "Windows Sandbox command execution is under construction; local fallback is disabled."
-        )
+        raise RuntimeError("Windows Sandbox command execution is under construction; local fallback is disabled.")
 
     async def _run_command(
         self, command: list[str], capture_output: bool = True, timeout: int = 300
@@ -761,7 +716,7 @@ class SandboxTester:
             return subprocess.CompletedProcess(
                 args=command, returncode=process.returncode, stdout=stdout, stderr=stderr
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             process.kill()
             await process.wait()
             raise TimeoutError(f"Command timed out after {timeout} seconds") from None

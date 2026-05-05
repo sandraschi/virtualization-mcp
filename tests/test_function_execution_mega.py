@@ -7,7 +7,7 @@ This will dramatically increase coverage by running function bodies.
 
 import argparse
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -19,54 +19,28 @@ import pytest
 class TestAllToolsServerFunctionExecution:
     """Execute every function in all_tools_server.py."""
 
+    @pytest.mark.skip(reason="all_tools_server no longer defines handle_shutdown")
     def test_handle_shutdown_execution(self):
         """Execute handle_shutdown function."""
-        from virtualization_mcp.all_tools_server import handle_shutdown
-
-        # Call the function (it's a signal handler)
-        try:
-            handle_shutdown(15, None)  # SIGTERM
-        except SystemExit:
-            pass  # Expected
-        except Exception:
-            pass  # Also acceptable
+        raise AssertionError("skipped")
 
     def test_register_all_tools_execution(self):
         """Execute register_all_tools function."""
         pytest.skip("register_all_tools decorator mocking complex")
 
-    @pytest.mark.asyncio
-    async def test_start_mcp_server_execution(self):
+    def test_start_mcp_server_execution(self):
         """Execute start_mcp_server function."""
         from virtualization_mcp.all_tools_server import start_mcp_server
 
-        with patch("virtualization_mcp.all_tools_server.FastMCP") as mock_fastmcp:
-            with patch(
-                "virtualization_mcp.all_tools_server.register_all_tools", new_callable=AsyncMock
-            ):
-                mock_instance = MagicMock()
-                mock_instance.run = AsyncMock()
-                mock_fastmcp.return_value = mock_instance
+        result = start_mcp_server(host="localhost", port=8000)
+        assert result is not None
+        assert getattr(result, "name", None) is not None
 
-                # Actually CALL the function
-                result = await start_mcp_server(host="localhost", port=8000)
-                assert result is not None
-
+    @pytest.mark.skip(reason="all_tools_server no longer exports main_async (stdio entry is main())")
     @pytest.mark.asyncio
     async def test_main_async_execution(self):
         """Execute main_async function."""
-        from virtualization_mcp.all_tools_server import main_async
-
-        with patch(
-            "virtualization_mcp.all_tools_server.start_mcp_server", new_callable=AsyncMock
-        ) as mock_start:
-            mock_start.return_value = MagicMock()
-
-            # Actually CALL main_async
-            try:
-                await main_async()
-            except Exception:
-                pass  # Expected - server tries to run forever
+        raise AssertionError("skipped")
 
 
 # =============================================================================
@@ -242,7 +216,7 @@ class TestServiceManagerFunctionExecution:
         MagicMock()
 
         # Actually CALL register_service
-        pytest.skip("ServiceManager.register_service not implemented") #"test", mock_service)
+        pytest.skip("ServiceManager.register_service not implemented")  # "test", mock_service)
         assert "test" in manager.services
 
     def test_service_manager_get_execution(self):
@@ -251,10 +225,10 @@ class TestServiceManagerFunctionExecution:
 
         ServiceManager()
         mock_service = MagicMock()
-        pytest.skip("ServiceManager.register_service not implemented") #"test", mock_service)
+        pytest.skip("ServiceManager.register_service not implemented")  # "test", mock_service)
 
         # Actually CALL get_service
-        result = pytest.skip("ServiceManager.get_service not implemented") #"test")
+        result = pytest.skip("ServiceManager.get_service not implemented")  # "test")
         assert result is mock_service
 
     def test_service_manager_list_execution(self):
@@ -264,7 +238,7 @@ class TestServiceManagerFunctionExecution:
         ServiceManager()
 
         # Actually CALL list_services
-        result = pytest.skip("ServiceManager.list_services not implemented") #)
+        result = pytest.skip("ServiceManager.list_services not implemented")  # )
         assert result is not None
         assert isinstance(result, list) or isinstance(result, dict)
 

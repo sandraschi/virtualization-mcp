@@ -24,9 +24,7 @@ async def list_network_adapters(vm_name: str) -> dict[str, Any]:
     """
     try:
         cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         parsed: dict[str, str] = {}
         for line in result.stdout.splitlines():
@@ -140,9 +138,7 @@ async def list_host_network_interfaces() -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "list", "bridgedifs"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         interfaces = []
         current_iface = {}
@@ -224,9 +220,7 @@ async def create_nat_network(
             dhcp_cmd.extend(["--dhcp-lower-ip", dhcp_lower])
             dhcp_cmd.extend(["--dhcp-upper-ip", dhcp_upper])
 
-            await asyncio.to_thread(
-                subprocess.run, dhcp_cmd, capture_output=True, text=True, check=True
-            )
+            await asyncio.to_thread(subprocess.run, dhcp_cmd, capture_output=True, text=True, check=True)
 
         return {
             "status": "success",
@@ -281,9 +275,7 @@ async def list_nat_networks() -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "list", "natnetworks"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         networks = []
         current_net = {}
@@ -375,9 +367,7 @@ async def add_port_forwarding(
         return {"status": "error", "message": f"Failed to add port forwarding rule: {e.stderr}"}
 
 
-async def remove_port_forwarding(
-    vm_name: str, rule_name: str, adapter_id: int = 1
-) -> dict[str, Any]:
+async def remove_port_forwarding(vm_name: str, rule_name: str, adapter_id: int = 1) -> dict[str, Any]:
     """
     Remove a port forwarding rule from a VM's NAT adapter.
 
@@ -424,9 +414,7 @@ async def list_port_forwarding_rules(vm_name: str, adapter_id: int = 1) -> dict[
         # Get VM info
         cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         rules = []
 
@@ -501,9 +489,7 @@ async def list_hostonly_networks() -> dict[str, Any]:
         return {"status": "error", "message": str(e)}
 
 
-async def create_hostonly_network(
-    network_name: str, ip: str, netmask: str = "255.255.255.0"
-) -> dict[str, Any]:
+async def create_hostonly_network(network_name: str, ip: str, netmask: str = "255.255.255.0") -> dict[str, Any]:
     """
     Create a new host-only network.
 

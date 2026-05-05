@@ -192,14 +192,11 @@ class VMLifecycleMixin:
                     "state": "running",
                     "headless": headless,
                     "message": f"✓ VM '{name}' is already running",
-                    "troubleshooting": [
-                        "If you want to restart the VM, stop it first and then start it again"
-                    ],
+                    "troubleshooting": ["If you want to restart the VM, stop it first and then start it again"],
                 }
             elif current_state not in ["poweroff", "saved", "aborted"]:
                 raise VBoxManagerError(
-                    f"Cannot start VM '{name}' from state '{current_state}'. "
-                    "VM must be powered off, saved, or aborted."
+                    f"Cannot start VM '{name}' from state '{current_state}'. VM must be powered off, saved, or aborted."
                 )
 
             # Start the VM
@@ -327,8 +324,7 @@ class VMLifecycleMixin:
 
             if current_state not in ["running", "paused"]:
                 raise VBoxManagerError(
-                    f"Cannot stop VM '{name}' from state '{current_state}'. "
-                    "VM must be running or paused."
+                    f"Cannot stop VM '{name}' from state '{current_state}'. VM must be running or paused."
                 )
 
             # Stop the VM using VMOperations
@@ -344,9 +340,7 @@ class VMLifecycleMixin:
                 "vm_name": name,
                 "force": force,
                 "previous_state": current_state,
-                "message": (
-                    f"✓ VM '{name}' was {'forcefully powered off' if force else 'gracefully shut down'}"
-                ),
+                "message": (f"✓ VM '{name}' was {'forcefully powered off' if force else 'gracefully shut down'}"),
                 "troubleshooting": [
                     f"VM was previously in state: {current_state}",
                     "Use 'list_vms()' to verify the current state",
@@ -600,9 +594,7 @@ class VMLifecycleMixin:
             # Apply state filter if specified
             filtered_vms = vms
             if state_filter.lower() != "all":
-                filtered_vms = [
-                    vm for vm in vms if vm.get("state", "").lower() == state_filter.lower()
-                ]
+                filtered_vms = [vm for vm in vms if vm.get("state", "").lower() == state_filter.lower()]
 
             # Prepare response
             response = {

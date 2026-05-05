@@ -14,9 +14,9 @@ from .snapshot_tools import (
 
 __all__ = [
     "create_snapshot",
-    "restore_snapshot",
-    "list_snapshots",
-    "get_snapshot_info",
     "delete_snapshot",
+    "get_snapshot_info",
+    "list_snapshots",
     "restore_current_snapshot",
+    "restore_snapshot",
 ]

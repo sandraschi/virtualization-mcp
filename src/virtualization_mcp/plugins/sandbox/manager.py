@@ -105,13 +105,15 @@ class SandboxConfig(BaseModel):
     vgpu: bool = Field(True, description="Enable virtual GPU")
     networking: bool = Field(True, description="Enable networking")
     portfolio: str | None = Field(
-        None, description="Preconfigured portfolio name (e.g., 'vscode', 'python_dev'). "
-        "If specified, portfolio files and commands will be added to the sandbox."
+        None,
+        description="Preconfigured portfolio name (e.g., 'vscode', 'python_dev'). "
+        "If specified, portfolio files and commands will be added to the sandbox.",
     )
     common_programs: list[str] | None = Field(
-        None, description="List of common programs to install. Available: "
+        None,
+        description="List of common programs to install. Available: "
         "'vscode', 'python', 'nodejs', 'chrome', 'firefox', 'git', 'powershell', 'notepad++'. "
-        "Can be used instead of or in addition to portfolio."
+        "Can be used instead of or in addition to portfolio.",
     )
     mapped_folders: list[MappedFolder] = Field(
         default_factory=list, description="List of folders to map into the sandbox"
@@ -123,8 +125,9 @@ class SandboxConfig(BaseModel):
         default_factory=list, description="Commands to run on sandbox startup (before file copies)"
     )
     startup_scripts: list[str] = Field(
-        default_factory=list, description="Scripts or executables to run after sandbox starts. "
-        "Can be full paths or commands. Files will be executed in order."
+        default_factory=list,
+        description="Scripts or executables to run after sandbox starts. "
+        "Can be full paths or commands. Files will be executed in order.",
     )
 
     @field_validator("name")
@@ -196,8 +199,9 @@ class WindowsSandboxHelper:
                 errors.append(f"  - {field}: {msg}")
 
             raise ValueError(
-                "Invalid sandbox configuration. Validation errors:\n" + "\n".join(errors) +
-                "\n\nRequired fields: name (string)"
+                "Invalid sandbox configuration. Validation errors:\n"
+                + "\n".join(errors)
+                + "\n\nRequired fields: name (string)"
                 "\nOptional fields: memory_mb (int, 1024-32768), vgpu (bool), "
                 "networking (bool), mapped_folders (list), logon_commands (list)"
             ) from e
@@ -208,9 +212,7 @@ class WindowsSandboxHelper:
             raise RuntimeError("Helper not initialized. Call initialize() first.")
 
         @mcp.tool("create_windows_sandbox")
-        async def create_sandbox(
-            config: Any, wait_for_completion: bool = False
-        ) -> dict[str, Any]:
+        async def create_sandbox(config: Any, wait_for_completion: bool = False) -> dict[str, Any]:
             """Create and start a new Windows Sandbox instance.
 
             Note: Windows 11 only allows one sandbox instance to run at a time.
@@ -254,7 +256,7 @@ class WindowsSandboxHelper:
                 raise
             except Exception as e:
                 logger.error(f"Unexpected error creating sandbox: {e}")
-                raise ValueError(f"Failed to create sandbox: {str(e)}") from e
+                raise ValueError(f"Failed to create sandbox: {e!s}") from e
 
         @mcp.tool("list_running_sandboxes")
         async def list_sandboxes() -> list[dict[str, Any]]:
@@ -277,16 +279,13 @@ class WindowsSandboxHelper:
                         "name": info["name"],
                         "description": info["description"],
                         "targets": info["targets"],
-                        "version": info["version"]
+                        "version": info["version"],
                     }
                 except Exception as e:
                     logger.warning(f"Failed to get info for portfolio {portfolio_name}: {e}")
                     portfolio_info[portfolio_name] = {"error": str(e)}
 
-            return {
-                "portfolios": portfolio_info,
-                "count": len(portfolios)
-            }
+            return {"portfolios": portfolio_info, "count": len(portfolios)}
 
         @mcp.tool("list_common_programs")
         async def list_common_programs() -> dict[str, Any]:
@@ -303,7 +302,7 @@ class WindowsSandboxHelper:
                 "firefox": "Mozilla Firefox",
                 "git": "Git for Windows",
                 "powershell": "PowerShell",
-                "notepad++": "Notepad++"
+                "notepad++": "Notepad++",
             }
 
             ascii_form = self._get_common_programs_list()
@@ -311,7 +310,7 @@ class WindowsSandboxHelper:
             return {
                 "ascii_form": ascii_form,
                 "programs": programs,
-                "usage": "Use common_programs parameter: ['vscode', 'python', ...]"
+                "usage": "Use common_programs parameter: ['vscode', 'python', ...]",
             }
 
         @mcp.tool("stop_sandbox")
@@ -339,7 +338,7 @@ class WindowsSandboxHelper:
             "firefox": "Mozilla Firefox",
             "git": "Git for Windows",
             "powershell": "PowerShell",
-            "notepad++": "Notepad++"
+            "notepad++": "Notepad++",
         }
 
         lines = ["Common Programs Available:"]
@@ -367,96 +366,91 @@ class WindowsSandboxHelper:
 
         programs = {
             "vscode": {
-                "downloads": [{
-                    "url": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-archive",
-                    "filename": "vscode.zip",
-                    "destination": f"{base_path}\\VSCode"
-                }],
+                "downloads": [
+                    {
+                        "url": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-archive",
+                        "filename": "vscode.zip",
+                        "destination": f"{base_path}\\VSCode",
+                    }
+                ],
                 "setup_commands": [
                     f"powershell -Command \"Expand-Archive -Path '{base_path}\\VSCode\\vscode.zip' -DestinationPath '{base_path}\\VSCode' -Force\"",
-                    f"powershell -Command \"Remove-Item '{base_path}\\VSCode\\vscode.zip' -ErrorAction SilentlyContinue\""
+                    f"powershell -Command \"Remove-Item '{base_path}\\VSCode\\vscode.zip' -ErrorAction SilentlyContinue\"",
                 ],
-                "startup_scripts": [f"{base_path}\\VSCode\\Code.exe"]
+                "startup_scripts": [f"{base_path}\\VSCode\\Code.exe"],
             },
             "python": {
-                "downloads": [{
-                    "url": "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe",
-                    "filename": "python-installer.exe",
-                    "destination": base_path
-                }],
-                "setup_commands": [
-                    f"{base_path}\\python-installer.exe /quiet InstallAllUsers=1 PrependPath=1"
+                "downloads": [
+                    {
+                        "url": "https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe",
+                        "filename": "python-installer.exe",
+                        "destination": base_path,
+                    }
                 ],
-                "startup_scripts": ["cmd /k python --version && pip --version"]
+                "setup_commands": [f"{base_path}\\python-installer.exe /quiet InstallAllUsers=1 PrependPath=1"],
+                "startup_scripts": ["cmd /k python --version && pip --version"],
             },
             "nodejs": {
-                "downloads": [{
-                    "url": "https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi",
-                    "filename": "nodejs.msi",
-                    "destination": base_path
-                }],
-                "setup_commands": [
-                    f"msiexec /i {base_path}\\nodejs.msi /quiet /norestart"
+                "downloads": [
+                    {
+                        "url": "https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi",
+                        "filename": "nodejs.msi",
+                        "destination": base_path,
+                    }
                 ],
-                "startup_scripts": ["cmd /k node --version && npm --version"]
+                "setup_commands": [f"msiexec /i {base_path}\\nodejs.msi /quiet /norestart"],
+                "startup_scripts": ["cmd /k node --version && npm --version"],
             },
             "chrome": {
-                "downloads": [{
-                    "url": "https://dl.google.com/chrome/install/ChromeStandaloneSetup64.exe",
-                    "filename": "chrome-installer.exe",
-                    "destination": base_path
-                }],
-                "setup_commands": [
-                    f"{base_path}\\chrome-installer.exe /silent /install"
+                "downloads": [
+                    {
+                        "url": "https://dl.google.com/chrome/install/ChromeStandaloneSetup64.exe",
+                        "filename": "chrome-installer.exe",
+                        "destination": base_path,
+                    }
                 ],
-                "startup_scripts": ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"]
+                "setup_commands": [f"{base_path}\\chrome-installer.exe /silent /install"],
+                "startup_scripts": ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"],
             },
             "firefox": {
-                "downloads": [{
-                    "url": "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=en-US",
-                    "filename": "firefox-installer.exe",
-                    "destination": base_path
-                }],
-                "setup_commands": [
-                    f"{base_path}\\firefox-installer.exe /S"
+                "downloads": [
+                    {
+                        "url": "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=en-US",
+                        "filename": "firefox-installer.exe",
+                        "destination": base_path,
+                    }
                 ],
-                "startup_scripts": ["C:\\Program Files\\Mozilla Firefox\\firefox.exe"]
+                "setup_commands": [f"{base_path}\\firefox-installer.exe /S"],
+                "startup_scripts": ["C:\\Program Files\\Mozilla Firefox\\firefox.exe"],
             },
             "git": {
-                "downloads": [{
-                    "url": "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe",
-                    "filename": "git-installer.exe",
-                    "destination": base_path
-                }],
-                "setup_commands": [
-                    f"{base_path}\\git-installer.exe /VERYSILENT /NORESTART"
+                "downloads": [
+                    {
+                        "url": "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe",
+                        "filename": "git-installer.exe",
+                        "destination": base_path,
+                    }
                 ],
-                "startup_scripts": ["cmd /k git --version"]
+                "setup_commands": [f"{base_path}\\git-installer.exe /VERYSILENT /NORESTART"],
+                "startup_scripts": ["cmd /k git --version"],
             },
-            "powershell": {
-                "downloads": [],
-                "setup_commands": [],
-                "startup_scripts": ["powershell.exe"]
-            },
+            "powershell": {"downloads": [], "setup_commands": [], "startup_scripts": ["powershell.exe"]},
             "notepad++": {
-                "downloads": [{
-                    "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.3/npp.8.6.3.Installer.x64.exe",
-                    "filename": "notepadpp-installer.exe",
-                    "destination": base_path
-                }],
-                "setup_commands": [
-                    f"{base_path}\\notepadpp-installer.exe /S"
+                "downloads": [
+                    {
+                        "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.3/npp.8.6.3.Installer.x64.exe",
+                        "filename": "notepadpp-installer.exe",
+                        "destination": base_path,
+                    }
                 ],
-                "startup_scripts": ["C:\\Program Files\\Notepad++\\notepad++.exe"]
-            }
+                "setup_commands": [f"{base_path}\\notepadpp-installer.exe /S"],
+                "startup_scripts": ["C:\\Program Files\\Notepad++\\notepad++.exe"],
+            },
         }
 
         if program_name not in programs:
             available = ", ".join(programs.keys())
-            raise ValueError(
-                f"Unknown common program '{program_name}'. "
-                f"Available: {available}"
-            )
+            raise ValueError(f"Unknown common program '{program_name}'. Available: {available}")
 
         return programs[program_name]
 
@@ -493,9 +487,7 @@ class WindowsSandboxHelper:
                 # Add to copy_files
                 config.copy_files.append(
                     FileCopyOperation(
-                        source_path=temp_file,
-                        destination_path=os.path.join(dest_dir, filename),
-                        overwrite=True
+                        source_path=temp_file, destination_path=os.path.join(dest_dir, filename), overwrite=True
                     )
                 )
 
@@ -583,9 +575,7 @@ class WindowsSandboxHelper:
             # Add to copy_files to copy into sandbox/VM
             config.copy_files.append(
                 FileCopyOperation(
-                    source_path=temp_file,
-                    destination_path=os.path.join(dest_dir, filename),
-                    overwrite=True
+                    source_path=temp_file, destination_path=os.path.join(dest_dir, filename), overwrite=True
                 )
             )
             downloaded_files.append(temp_file)
@@ -629,17 +619,18 @@ class WindowsSandboxHelper:
             process = await asyncio.create_subprocess_exec(
                 "powershell.exe",
                 "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
+                "-ExecutionPolicy",
+                "Bypass",
                 "-Command",
                 'Get-Process -Name "WindowsSandbox" -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
 
-            stdout, stderr = await process.communicate()
+            stdout, _stderr = await process.communicate()
 
             if process.returncode == 0:
-                count_str = stdout.decode('utf-8', errors='ignore').strip()
+                count_str = stdout.decode("utf-8", errors="ignore").strip()
                 try:
                     count = int(count_str)
                     return count > 0
@@ -653,9 +644,7 @@ class WindowsSandboxHelper:
             # On error, assume no sandbox is running to avoid blocking
             return False
 
-    async def _create_sandbox(
-        self, config: SandboxConfig, wait_for_completion: bool = False
-    ) -> dict[str, Any]:
+    async def _create_sandbox(self, config: SandboxConfig, wait_for_completion: bool = False) -> dict[str, Any]:
         """Create and start a new Windows Sandbox instance."""
         wsx_path = None
         try:
@@ -691,6 +680,7 @@ class WindowsSandboxHelper:
 
                 # Copy files to staging folder
                 import shutil
+
                 for file_copy in config.copy_files:
                     source = file_copy.source_path
                     # Copy to staging folder with original filename
@@ -704,16 +694,14 @@ class WindowsSandboxHelper:
                     MappedFolder(
                         host_path=staging_folder,
                         sandbox_path="C:\\Users\\WDAGUtilityAccount\\Desktop\\SandboxFiles",
-                        read_only=False
+                        read_only=False,
                     )
                 )
 
             # Create temporary WSX configuration file
             wsx_content = self._generate_wsx_config(config, staging_folder)
 
-            with tempfile.NamedTemporaryFile(
-                suffix=".wsx", mode="w", delete=False, encoding="utf-8"
-            ) as f:
+            with tempfile.NamedTemporaryFile(suffix=".wsx", mode="w", delete=False, encoding="utf-8") as f:
                 f.write(wsx_content)
                 wsx_path = f.name
 
@@ -721,8 +709,7 @@ class WindowsSandboxHelper:
             sandbox_exe = r"C:\Windows\System32\WindowsSandbox.exe"
             if not os.path.exists(sandbox_exe):
                 raise RuntimeError(
-                    "Windows Sandbox is not available. "
-                    "Please enable Windows Sandbox feature in Windows Features."
+                    "Windows Sandbox is not available. Please enable Windows Sandbox feature in Windows Features."
                 )
 
             # Use Start-Process in PowerShell to launch with proper elevation if needed
@@ -730,7 +717,8 @@ class WindowsSandboxHelper:
             launch_process = await asyncio.create_subprocess_exec(
                 "powershell.exe",
                 "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
+                "-ExecutionPolicy",
+                "Bypass",
                 "-Command",
                 f'Start-Process -FilePath "{sandbox_exe}" -ArgumentList "{wsx_path}" -Wait:$false',
                 stdout=asyncio.subprocess.PIPE,
@@ -742,8 +730,8 @@ class WindowsSandboxHelper:
 
             # Check if PowerShell command failed
             if launch_process.returncode != 0:
-                error_msg = stderr.decode('utf-8', errors='ignore') if stderr else "Unknown error"
-                stdout_msg = stdout.decode('utf-8', errors='ignore') if stdout else ""
+                error_msg = stderr.decode("utf-8", errors="ignore") if stderr else "Unknown error"
+                stdout_msg = stdout.decode("utf-8", errors="ignore") if stdout else ""
                 raise RuntimeError(
                     f"Failed to launch Windows Sandbox. PowerShell return code: {launch_process.returncode}. "
                     f"Error: {error_msg}. Output: {stdout_msg}"
@@ -841,7 +829,7 @@ class WindowsSandboxHelper:
         # Add startup scripts/executables
         for script in config.startup_scripts:
             # If it's a path, execute it directly; otherwise treat as command
-            if os.path.sep in script or script.endswith(('.exe', '.bat', '.cmd', '.ps1')):
+            if os.path.sep in script or script.endswith((".exe", ".bat", ".cmd", ".ps1")):
                 # It's a file path - execute it
                 all_commands.append(f'start "" "{script}"')
             else:

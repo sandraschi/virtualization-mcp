@@ -109,12 +109,10 @@ class BackupPlugin(BasePlugin):
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to delete backup: {str(e)}",
+                    detail=f"Failed to delete backup: {e!s}",
                 ) from e
 
-    async def _create_backup(
-        self, vm_name: str, backup_name: str, description: str = ""
-    ) -> dict[str, Any]:
+    async def _create_backup(self, vm_name: str, backup_name: str, description: str = "") -> dict[str, Any]:
         """Internal method to create a backup."""
         backup_path = self.backup_dir / backup_name
 
@@ -134,10 +132,7 @@ class BackupPlugin(BasePlugin):
 
             raise HTTPException(
                 status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                detail=(
-                    "server_v2 backup plugin is under construction. "
-                    "No backup is performed yet."
-                ),
+                detail=("server_v2 backup plugin is under construction. No backup is performed yet."),
             )
 
             # Update metadata
@@ -154,13 +149,11 @@ class BackupPlugin(BasePlugin):
             return metadata
 
         except Exception as e:
-            error_msg = f"Backup failed: {str(e)}"
+            error_msg = f"Backup failed: {e!s}"
             logger.error(error_msg, exc_info=True)
 
             # Update metadata with error
-            metadata.update(
-                {"status": "failed", "error": str(e), "completed_at": datetime.utcnow().isoformat()}
-            )
+            metadata.update({"status": "failed", "error": str(e), "completed_at": datetime.utcnow().isoformat()})
             self._write_metadata(backup_path, metadata)
 
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg) from e
@@ -184,7 +177,7 @@ class BackupPlugin(BasePlugin):
             with open(metadata_file) as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Failed to read metadata from {metadata_file}: {str(e)}")
+            logger.error(f"Failed to read metadata from {metadata_file}: {e!s}")
             return {}
 
     def _get_dir_size(self, path: Path) -> int:
@@ -229,12 +222,12 @@ class BackupPlugin(BasePlugin):
                         logger.info(f"Removed old backup: {backup_dir.name}")
                         removed += 1
                     except Exception as e:
-                        logger.error(f"Failed to remove backup {backup_dir.name}: {str(e)}")
+                        logger.error(f"Failed to remove backup {backup_dir.name}: {e!s}")
 
             return {"status": "completed", "removed": removed}
 
         except Exception as e:
-            logger.error(f"Error cleaning up old backups: {str(e)}", exc_info=True)
+            logger.error(f"Error cleaning up old backups: {e!s}", exc_info=True)
             raise
 
     async def startup(self) -> None:
@@ -266,6 +259,6 @@ class BackupPlugin(BasePlugin):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in cleanup loop: {str(e)}", exc_info=True)
+                logger.error(f"Error in cleanup loop: {e!s}", exc_info=True)
                 # Wait longer on error
                 await asyncio.sleep(60 * 60)  # 1 hour

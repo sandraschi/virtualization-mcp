@@ -26,9 +26,7 @@ async def list_storage_controllers(vm_name: str) -> dict[str, Any]:
     """
     try:
         cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         controllers = []
         current_controller = {}
@@ -211,9 +209,7 @@ async def attach_disk(
         return {"status": "error", "message": f"Failed to attach disk: {e.stderr}"}
 
 
-async def detach_disk(
-    vm_name: str, controller_name: str, port: int, device: int = 0
-) -> dict[str, Any]:
+async def detach_disk(vm_name: str, controller_name: str, port: int, device: int = 0) -> dict[str, Any]:
     """
     Detach a disk from a virtual machine.
 
@@ -226,9 +222,7 @@ async def detach_disk(
     Returns:
         Dictionary with disk detachment status
     """
-    return await attach_disk(
-        vm_name=vm_name, controller_name=controller_name, port=port, device=device, medium="none"
-    )
+    return await attach_disk(vm_name=vm_name, controller_name=controller_name, port=port, device=device, medium="none")
 
 
 async def mount_iso(
@@ -257,9 +251,7 @@ async def mount_iso(
         # First, check if there's already a disk in the specified location
         check_cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
 
-        result = await asyncio.to_thread(
-            subprocess.run, check_cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, check_cmd, capture_output=True, text=True, check=True)
 
         # Check if there's already a disk at the specified location
         target_key = f"ide-{port}-{device}"
@@ -294,9 +286,7 @@ async def mount_iso(
         if temp:
             mount_cmd.append("--tempeject")
 
-        await asyncio.to_thread(
-            subprocess.run, mount_cmd, capture_output=True, text=True, check=True
-        )
+        await asyncio.to_thread(subprocess.run, mount_cmd, capture_output=True, text=True, check=True)
 
         return {
             "status": "success",
@@ -384,9 +374,7 @@ async def list_disks(vm_name: str) -> dict[str, Any]:
 
             # Get storage controller details
             cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
-            result = await asyncio.to_thread(
-                subprocess.run, cmd, capture_output=True, text=True, check=True
-            )
+            result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
             # Parse the output to find attached disks
             for line in result.stdout.splitlines():
@@ -467,9 +455,7 @@ async def create_disk(
             variant,
         ]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         # Parse the output to get the UUID
         disk_uuid = None
@@ -508,9 +494,7 @@ async def get_disk_info(disk_identifier: str) -> dict[str, Any]:
     try:
         cmd = ["VBoxManage", "showmediuminfo", disk_identifier]
 
-        result = await asyncio.to_thread(
-            subprocess.run, cmd, capture_output=True, text=True, check=True
-        )
+        result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         disk_info = {}
         for line in result.stdout.splitlines():
@@ -582,9 +566,7 @@ async def resize_disk(disk_identifier: str, new_size_mb: int) -> dict[str, Any]:
         return {"status": "error", "message": f"Failed to resize disk: {e.stderr}"}
 
 
-async def clone_disk(
-    source_disk: str, target_disk: str, disk_format: str = "", variant: str = ""
-) -> dict[str, Any]:
+async def clone_disk(source_disk: str, target_disk: str, disk_format: str = "", variant: str = "") -> dict[str, Any]:
     """
     Clone a virtual disk.
 
@@ -630,9 +612,7 @@ async def clone_disk(
         return {
             "status": "success",
             "message": f"Disk cloned to {target_disk}",
-            "disk_info": new_disk_info["disk_info"]
-            if new_disk_info["status"] == "success"
-            else None,
+            "disk_info": new_disk_info["disk_info"] if new_disk_info["status"] == "success" else None,
         }
 
     except subprocess.CalledProcessError as e:

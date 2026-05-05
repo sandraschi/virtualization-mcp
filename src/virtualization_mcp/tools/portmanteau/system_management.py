@@ -13,10 +13,10 @@ from fastmcp import FastMCP
 # Import existing system tools
 from virtualization_mcp.tools.system.system_tools import (
     get_system_info,
-    get_vm_metrics,
-    take_vm_screenshot,
     get_vbox_version,
+    get_vm_metrics,
     list_ostypes,
+    take_vm_screenshot,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def register_system_management_tool(mcp: FastMCP) -> None:
     ) -> dict[str, Any]:
         """
         Comprehensive system management portmanteau tool.
-        
+
         This tool consolidates system information and diagnostics operations into a single interface.
         Use the 'action' parameter to specify which operation to perform. Most actions don't require vm_name.
 
@@ -116,9 +116,7 @@ def register_system_management_tool(mcp: FastMCP) -> None:
                 return await _handle_metrics(vm_name=vm_name)
 
             elif action == "screenshot":
-                return await _handle_screenshot(
-                    vm_name=vm_name, output_file=output_file, width=width, height=height
-                )
+                return await _handle_screenshot(vm_name=vm_name, output_file=output_file, width=width, height=height)
 
             else:
                 return {
@@ -131,7 +129,7 @@ def register_system_management_tool(mcp: FastMCP) -> None:
             logger.error(f"Error in system management action '{action}': {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"Failed to execute action '{action}': {str(e)}",
+                "error": f"Failed to execute action '{action}': {e!s}",
                 "action": action,
                 "available_actions": SYSTEM_ACTIONS,
             }
@@ -146,7 +144,7 @@ async def _handle_host_info() -> dict[str, Any]:
         return {
             "success": False,
             "action": "host_info",
-            "error": f"Failed to get host info: {str(e)}",
+            "error": f"Failed to get host info: {e!s}",
         }
 
 
@@ -159,7 +157,7 @@ async def _handle_vbox_version() -> dict[str, Any]:
         return {
             "success": False,
             "action": "vbox_version",
-            "error": f"Failed to get VirtualBox version: {str(e)}",
+            "error": f"Failed to get VirtualBox version: {e!s}",
         }
 
 
@@ -177,7 +175,7 @@ async def _handle_ostypes() -> dict[str, Any]:
         return {
             "success": False,
             "action": "ostypes",
-            "error": f"Failed to list OS types: {str(e)}",
+            "error": f"Failed to list OS types: {e!s}",
         }
 
 
@@ -203,7 +201,7 @@ async def _handle_metrics(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "action": "metrics",
             "vm_name": vm_name,
-            "error": f"Failed to get metrics: {str(e)}",
+            "error": f"Failed to get metrics: {e!s}",
         }
 
 
@@ -222,9 +220,7 @@ async def _handle_screenshot(
         }
 
     try:
-        result = await take_vm_screenshot(
-            vm_name=vm_name, output_file=output_file, width=width, height=height
-        )
+        result = await take_vm_screenshot(vm_name=vm_name, output_file=output_file, width=width, height=height)
         return {
             "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "screenshot",
@@ -236,5 +232,5 @@ async def _handle_screenshot(
             "success": False,
             "action": "screenshot",
             "vm_name": vm_name,
-            "error": f"Failed to take screenshot: {str(e)}",
+            "error": f"Failed to take screenshot: {e!s}",
         }

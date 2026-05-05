@@ -88,7 +88,7 @@ class NetworkAnalyzerPlugin(BasePlugin):
                 while True:
                     await websocket.receive_text()
             except Exception as e:
-                logger.error(f"WebSocket error: {str(e)}")
+                logger.error(f"WebSocket error: {e!s}")
             finally:
                 self.websockets.remove(websocket)
 
@@ -96,9 +96,7 @@ class NetworkAnalyzerPlugin(BasePlugin):
         async def start_analysis():
             """Start network traffic analysis."""
             if self.is_analyzing:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Analysis is already running"
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Analysis is already running")
 
             self.is_analyzing = True
             self.analysis_task = asyncio.create_task(self._analyze_network())
@@ -130,14 +128,13 @@ class NetworkAnalyzerPlugin(BasePlugin):
         try:
             self.is_analyzing = False
             logger.warning(
-                "network_analyzer plugin is under construction; "
-                "no synthetic traffic or alerts will be generated."
+                "network_analyzer plugin is under construction; no synthetic traffic or alerts will be generated."
             )
 
         except asyncio.CancelledError:
             logger.info("Network analysis stopped")
         except Exception as e:
-            logger.error(f"Error in network analysis: {str(e)}", exc_info=True)
+            logger.error(f"Error in network analysis: {e!s}", exc_info=True)
             self.is_analyzing = False
 
     async def _generate_sample_alert(self) -> None:
@@ -161,7 +158,7 @@ class NetworkAnalyzerPlugin(BasePlugin):
             try:
                 await websocket.send_json(update)
             except Exception as e:
-                logger.error(f"Error sending WebSocket update: {str(e)}")
+                logger.error(f"Error sending WebSocket update: {e!s}")
                 if websocket in self.websockets:
                     self.websockets.remove(websocket)
 

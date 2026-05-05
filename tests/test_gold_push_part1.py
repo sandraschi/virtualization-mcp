@@ -193,6 +193,7 @@ class TestPortmanteauCompleteExecution:
                 nonlocal captured_func
                 captured_func = f
                 return f
+
             return decorator
 
         mock_mcp.tool = mock_tool_decorator

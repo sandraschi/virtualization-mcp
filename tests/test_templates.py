@@ -80,7 +80,7 @@ class TestVMTemplateMixin:
             vm_name="test-vm",  # Source VM name
             template_name="ubuntu-2204",  # Template name to create
             description="Ubuntu 22.04 LTS",
-            include_disks=True
+            include_disks=True,
         )
 
         # Assertions - may fail if VM doesn't exist, that's OK

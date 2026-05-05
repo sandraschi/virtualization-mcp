@@ -36,7 +36,7 @@ async def list_api_endpoints(server_url: str = "http://localhost:8000") -> None:
                     else:
                         print(f"  - Status: {response.status}")
             except Exception as e:
-                print(f"  - Error: {str(e)}")
+                print(f"  - Error: {e!s}")
 
             # Add a small delay between requests
             await asyncio.sleep(0.5)
@@ -45,9 +45,7 @@ async def list_api_endpoints(server_url: str = "http://localhost:8000") -> None:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="List available API endpoints in the virtualization_mcp server"
-    )
+    parser = argparse.ArgumentParser(description="List available API endpoints in the virtualization_mcp server")
     parser.add_argument(
         "--server",
         type=str,

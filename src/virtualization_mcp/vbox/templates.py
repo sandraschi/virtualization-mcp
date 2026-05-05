@@ -53,9 +53,7 @@ class TemplateManager:
                         else:
                             logger.warning(f"Invalid template '{name}' - skipping")
 
-                    logger.info(
-                        f"Loaded {len(validated_templates)} templates from {self.templates_path}"
-                    )
+                    logger.info(f"Loaded {len(validated_templates)} templates from {self.templates_path}")
                     return validated_templates
             else:
                 logger.info(f"Templates file not found: {self.templates_path} - using defaults")

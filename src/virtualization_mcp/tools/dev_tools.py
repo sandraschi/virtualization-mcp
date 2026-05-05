@@ -106,9 +106,7 @@ def document_tool(func: Callable) -> Callable:
         if param_name == "self":
             continue
 
-        param_type = type_hints.get(
-            param_name, str(param.annotation) if param.annotation != param.empty else "Any"
-        )
+        param_type = type_hints.get(param_name, str(param.annotation) if param.annotation != param.empty else "Any")
         if hasattr(param_type, "__name__"):
             param_type = param_type.__name__
 
@@ -235,9 +233,7 @@ def get_openapi_schema(title: str = "virtualization-mcp API", version: str = "1.
             path = f"/api/{module_name}/{tool['name']}"
             paths[path] = {
                 "post": {
-                    "summary": tool["description"].split("\n")[0]
-                    if tool["description"]
-                    else tool["name"],
+                    "summary": tool["description"].split("\n")[0] if tool["description"] else tool["name"],
                     "description": tool["description"],
                     "requestBody": {
                         "required": True,
@@ -255,11 +251,7 @@ def get_openapi_schema(title: str = "virtualization-mcp API", version: str = "1.
                                         }
                                         for param in tool["parameters"]
                                     },
-                                    "required": [
-                                        param["name"]
-                                        for param in tool["parameters"]
-                                        if param["required"]
-                                    ],
+                                    "required": [param["name"] for param in tool["parameters"] if param["required"]],
                                 }
                             }
                         },

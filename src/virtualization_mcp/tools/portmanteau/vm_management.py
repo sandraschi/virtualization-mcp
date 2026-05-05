@@ -39,7 +39,6 @@ VM_ACTIONS = {
     "pause": "Pause a virtual machine",
     "resume": "Resume a paused virtual machine",
     "info": "Get detailed information about a virtual machine",
-    "suggest_config": "Suggest VM configuration using LLM (FastMCP 3.1 sampling)",
 }
 
 
@@ -59,7 +58,6 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
             "pause",
             "resume",
             "info",
-            "suggest_config",
         ],
         vm_name: str | None = None,
         source_vm: str | None = None,
@@ -67,72 +65,21 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
         os_type: VBoxGuestOSType | None = None,
         memory_mb: int | None = None,
         disk_size_gb: int | None = None,
-        use_case: str | None = None,
+        use_case: str | None = None,  # removed — use vm_agentic_workflow(action='suggest_config') instead
         limit: int = 100,
         offset: int = 0,
         ctx: Context | None = None,
     ) -> dict[str, Any]:
         """
-        Comprehensive virtual machine management portmanteau tool.
+        Virtual machine lifecycle management.
 
-        This tool consolidates all VM operations into a single interface. Use the 'action' parameter
-        to specify which operation to perform. Different actions require different parameters.
+        Actions: list, create, start, stop, delete, clone, reset, pause, resume, info.
+        For LLM config suggestions or sandbox workflow planning use vm_agentic_workflow.
 
-        Args:
-            action (required): The operation to perform. Must be one of:
-                - "list": List all virtual machines (no other parameters required)
-                - "create": Create a new virtual machine (requires: vm_name, os_type, memory_mb, disk_size_gb)
-                - "start": Start a virtual machine (requires: vm_name)
-                - "stop": Stop a running virtual machine (requires: vm_name)
-                - "delete": Delete a virtual machine (requires: vm_name)
-                - "clone": Clone an existing virtual machine (requires: source_vm, new_vm_name)
-                - "reset": Reset a virtual machine (requires: vm_name)
-                - "pause": Pause a running virtual machine (requires: vm_name)
-                - "resume": Resume a paused virtual machine (requires: vm_name)
-                - "info": Get detailed information about a virtual machine (requires: vm_name)
-            - "suggest_config": Suggest VM configuration for a use case (optional: use_case). Uses LLM when available (FastMCP 3.1).
-
-            vm_name: Registered VM name or UUID (VBoxManage name). Required for most actions except list/suggest_config.
-            use_case: Short description for suggest_config (e.g. "development", "gaming", "CI runner")
-            source_vm: Source VM name or UUID for clone (required for "clone"); must exist on host.
-            new_vm_name: New unique VM name for clone (required for "clone").
-            os_type: VirtualBox guest OS id for create (VBoxManage --ostype). Use system_management(action="ostypes") for the full list.
-            memory_mb: RAM for create (128–host max MB; typical 1024–65536)
-            disk_size_gb: Primary disk size for create (>=1 GB)
-            limit: For action=list only: max VMs per page (1–500, default 100)
-            offset: For action=list only: skip N VMs before returning a page
-
-        Returns:
-            success (bool), action (str), and one of:
-            - list: data (dict from list_vms: total, count, vms[], has_more, limit, offset), count (page size)
-            - create/start/stop/...: data (underlying tool dict with status/message/vm_info/…)
-            - On failure: error (str), recovery_options (list[str]) when applicable
-
-        Examples:
-            # List all VMs - simplest usage, no other parameters needed
-            result = await vm_management(action="list")
-
-            # Create a new VM - requires vm_name, os_type, memory_mb, disk_size_gb
-            result = await vm_management(
-                action="create",
-                vm_name="MyVM",
-                os_type="Windows10_64",
-                memory_mb=4096,
-                disk_size_gb=50
-            )
-
-            # Start a VM - requires vm_name
-            result = await vm_management(action="start", vm_name="MyVM")
-
-            # Get VM information - requires vm_name
-            result = await vm_management(action="info", vm_name="MyVM")
-
-            # Clone a VM - requires source_vm and new_vm_name
-            result = await vm_management(
-                action="clone",
-                source_vm="MyVM",
-                new_vm_name="MyVM_Clone"
-            )
+        vm_name: required for all actions except list and clone.
+        source_vm + new_vm_name: required for clone.
+        os_type, memory_mb, disk_size_gb: required for create.
+        Use system_management(action='ostypes') for valid os_type values.
         """
         try:
             # Validate action
@@ -145,16 +92,6 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
 
             logger.info("Executing VM management action: %s", action)
 
-            if action == "suggest_config":
-                return await _handle_suggest_config(use_case=use_case, ctx=ctx)
-
-            if ctx:
-                try:
-                    await ctx.report_progress(progress=0, total=100)
-                except Exception:
-                    pass
-
-            # Route to appropriate function based on action
             if action == "list":
                 return await _handle_list_vms(ctx=ctx, limit=limit, offset=offset)
 
@@ -202,15 +139,13 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
             logger.error(f"Error in VM management action '{action}': {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"Failed to execute action '{action}': {str(e)}",
+                "error": f"Failed to execute action '{action}': {e!s}",
                 "action": action,
                 "available_actions": VM_ACTIONS,
             }
 
 
-async def _handle_list_vms(
-    ctx: Context | None = None, limit: int = 100, offset: int = 0
-) -> dict[str, Any]:
+async def _handle_list_vms(ctx: Context | None = None, limit: int = 100, offset: int = 0) -> dict[str, Any]:
     """Handle list VMs action."""
     try:
         if ctx:
@@ -238,7 +173,7 @@ async def _handle_list_vms(
         return {
             "success": False,
             "action": "list",
-            "error": f"Failed to list VMs: {str(e)}",
+            "error": f"Failed to list VMs: {e!s}",
             "recovery_options": ["Verify VBoxManage works on the host", "Retry with a smaller limit"],
         }
 
@@ -340,7 +275,7 @@ async def _handle_create_vm(
         }
         if not ok and isinstance(result, dict):
             out["recovery_options"] = [
-                "Run system_management(action=\"ostypes\") and pick a valid os_type",
+                'Run system_management(action="ostypes") and pick a valid os_type',
                 "Ensure vm_name is unique (list_vms)",
             ]
         return out
@@ -349,7 +284,7 @@ async def _handle_create_vm(
             "success": False,
             "action": "create",
             "vm_name": vm_name,
-            "error": f"Failed to create VM: {str(e)}",
+            "error": f"Failed to create VM: {e!s}",
             "recovery_options": ["Check VBoxManage stderr in logs", "Validate disk path and free space"],
         }
 
@@ -371,16 +306,14 @@ async def _handle_start_vm(vm_name: str | None = None) -> dict[str, Any]:
             "action": "start",
             "vm_name": vm_name,
             "data": result,
-            "recovery_options": None
-            if ok
-            else (result.get("recovery_options") if isinstance(result, dict) else None),
+            "recovery_options": None if ok else (result.get("recovery_options") if isinstance(result, dict) else None),
         }
     except Exception as e:
         return {
             "success": False,
             "action": "start",
             "vm_name": vm_name,
-            "error": f"Failed to start VM: {str(e)}",
+            "error": f"Failed to start VM: {e!s}",
             "recovery_options": ["Verify the VM exists (list_vms)", "Check that another VM does not hold locks"],
         }
 
@@ -398,7 +331,7 @@ async def _handle_stop_vm(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "action": "stop",
             "vm_name": vm_name,
-            "error": f"Failed to stop VM: {str(e)}",
+            "error": f"Failed to stop VM: {e!s}",
         }
 
 
@@ -428,7 +361,7 @@ async def _handle_delete_vm(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "action": "delete",
             "vm_name": vm_name,
-            "error": f"Failed to delete VM: {str(e)}",
+            "error": f"Failed to delete VM: {e!s}",
             "recovery_options": ["Power off the VM and retry", "Verify name/UUID with list_vms"],
         }
 
@@ -482,7 +415,7 @@ async def _handle_clone_vm(
             "action": "clone",
             "source_vm": source_vm,
             "new_vm_name": new_vm_name,
-            "error": f"Failed to clone VM: {str(e)}",
+            "error": f"Failed to clone VM: {e!s}",
             "recovery_options": ["Confirm source_vm exists", "Use a unique new_vm_name"],
         }
 
@@ -510,7 +443,7 @@ async def _handle_reset_vm(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "action": "reset",
             "vm_name": vm_name,
-            "error": f"Failed to reset VM: {str(e)}",
+            "error": f"Failed to reset VM: {e!s}",
         }
 
 
@@ -532,7 +465,7 @@ async def _handle_pause_vm(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "action": "pause",
             "vm_name": vm_name,
-            "error": f"Failed to pause VM: {str(e)}",
+            "error": f"Failed to pause VM: {e!s}",
         }
 
 
@@ -554,7 +487,7 @@ async def _handle_resume_vm(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "action": "resume",
             "vm_name": vm_name,
-            "error": f"Failed to resume VM: {str(e)}",
+            "error": f"Failed to resume VM: {e!s}",
         }
 
 
@@ -580,5 +513,5 @@ async def _handle_get_vm_info(vm_name: str | None = None) -> dict[str, Any]:
             "success": False,
             "action": "info",
             "vm_name": vm_name,
-            "error": f"Failed to get VM info: {str(e)}",
+            "error": f"Failed to get VM info: {e!s}",
         }

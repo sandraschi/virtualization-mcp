@@ -58,9 +58,7 @@ class VMNetworkingService:
         """
         return self.adapters.configure_adapter(vm_name, adapter_number, config)
 
-    def enable_adapter(
-        self, vm_name: str, adapter_number: int, adapter_type: str = "nat"
-    ) -> NetworkOperationResult:
+    def enable_adapter(self, vm_name: str, adapter_number: int, adapter_type: str = "nat") -> NetworkOperationResult:
         """
         Enable a network adapter.
 
@@ -107,9 +105,7 @@ class VMNetworkingService:
         """
         return self.forwarding.add_port_forwarding_rule(vm_name, adapter_number, rule)
 
-    def remove_port_forwarding_rule(
-        self, vm_name: str, adapter_number: int, rule_name: str
-    ) -> NetworkOperationResult:
+    def remove_port_forwarding_rule(self, vm_name: str, adapter_number: int, rule_name: str) -> NetworkOperationResult:
         """
         Remove a port forwarding rule.
 

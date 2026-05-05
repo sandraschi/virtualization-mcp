@@ -48,9 +48,7 @@ class TestVBoxManagerEveryMethod:
         from virtualization_mcp.vbox.compat_adapter import VBoxManager
 
         manager = VBoxManager()
-        result = manager.create_vm(
-            name="new-vm", ostype="Ubuntu_64", memory=4096, cpus=4, disk_size=51200
-        )
+        result = manager.create_vm(name="new-vm", ostype="Ubuntu_64", memory=4096, cpus=4, disk_size=51200)
         assert result is not None
         # Verify subprocess was called multiple times (create + configure)
         assert mock_subprocess.call_count >= 1

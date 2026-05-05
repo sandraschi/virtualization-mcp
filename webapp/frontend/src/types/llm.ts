@@ -1,6 +1,6 @@
 // LLM Provider types and configuration
 
-export type LLMProviderType = 'ollama' | 'lmstudio' | 'openai' | 'anthropic';
+export type LLMProviderType = "ollama" | "lmstudio" | "openai" | "anthropic";
 
 export interface LLMProviderConfig {
   id: string;
@@ -22,33 +22,33 @@ export interface LLMModel {
 
 export const DEFAULT_PROVIDERS: LLMProviderConfig[] = [
   {
-    id: 'ollama-local',
-    name: 'Ollama (Local)',
-    type: 'ollama',
-    baseUrl: 'http://localhost:11434',
+    id: "ollama-local",
+    name: "Ollama (Local)",
+    type: "ollama",
+    baseUrl: "http://localhost:11434",
     enabled: true,
   },
   {
-    id: 'lmstudio-local',
-    name: 'LM Studio (Local)',
-    type: 'lmstudio',
-    baseUrl: 'http://localhost:1234',
+    id: "lmstudio-local",
+    name: "LM Studio (Local)",
+    type: "lmstudio",
+    baseUrl: "http://localhost:1234",
     enabled: false,
   },
   {
-    id: 'openai',
-    name: 'OpenAI',
-    type: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    apiKey: '',
+    id: "openai",
+    name: "OpenAI",
+    type: "openai",
+    baseUrl: "https://api.openai.com/v1",
+    apiKey: "",
     enabled: false,
   },
   {
-    id: 'anthropic',
-    name: 'Anthropic',
-    type: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    apiKey: '',
+    id: "anthropic",
+    name: "Anthropic",
+    type: "anthropic",
+    baseUrl: "https://api.anthropic.com",
+    apiKey: "",
     enabled: false,
   },
 ];

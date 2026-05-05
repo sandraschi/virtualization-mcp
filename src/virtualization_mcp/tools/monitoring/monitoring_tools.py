@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 class MetricsManager:
     """Manages metrics collection and exposure for the virtualization-mcp system."""
 
+    _initialized = False
+
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the MetricsManager.
 
@@ -27,54 +29,79 @@ class MetricsManager:
         self.metrics_port = config.get("metrics_port", 8001)
         self.metrics_path = config.get("metrics_path", "/metrics")
         self.metrics: dict[str, Any] = {}
-        self._setup_metrics()
+        if not MetricsManager._initialized:
+            self._setup_metrics()
+            MetricsManager._initialized = True
 
     def _setup_metrics(self) -> None:
         """Set up Prometheus metrics."""
-        # VM metrics
-        self.metrics["vm_count"] = Gauge("virtualization-mcp_vm_count", "Number of VMs")
 
-        self.metrics["vm_cpu_usage"] = Gauge(
-            "virtualization-mcp_vm_cpu_usage_percent", "CPU usage percentage per VM", ["vm_name"]
-        )
+        try:
+            self.metrics["vm_count"] = Gauge("virtualization-mcp_vm_count", "Number of VMs")
+        except ValueError:
+            pass
 
-        self.metrics["vm_memory_usage"] = Gauge(
-            "virtualization-mcp_vm_memory_usage_bytes", "Memory usage in bytes per VM", ["vm_name"]
-        )
+        try:
+            self.metrics["vm_cpu_usage"] = Gauge(
+                "virtualization-mcp_vm_cpu_usage_percent", "CPU usage percentage per VM", ["vm_name"]
+            )
+        except ValueError:
+            pass
 
-        # API metrics
-        self.metrics["api_requests_total"] = Counter(
-            "virtualization-mcp_api_requests_total",
-            "Total number of API requests",
-            ["endpoint", "method", "status"],
-        )
+        try:
+            self.metrics["vm_memory_usage"] = Gauge(
+                "virtualization-mcp_vm_memory_usage_bytes", "Memory usage in bytes per VM", ["vm_name"]
+            )
+        except ValueError:
+            pass
 
-        # Error metrics
-        self.metrics["errors_total"] = Counter(
-            "virtualization-mcp_errors_total", "Total number of errors", ["type"]
-        )
+        try:
+            self.metrics["api_requests_total"] = Counter(
+                "virtualization-mcp_api_requests_total",
+                "Total number of API requests",
+                ["endpoint", "method", "status"],
+            )
+        except ValueError:
+            pass
 
-        # Performance metrics
-        self.metrics["request_duration_seconds"] = Gauge(
-            "virtualization-mcp_request_duration_seconds",
-            "Request duration in seconds",
-            ["endpoint", "method"],
-        )
+        try:
+            self.metrics["errors_total"] = Counter(
+                "virtualization-mcp_errors_total", "Total number of errors", ["type"]
+            )
+        except ValueError:
+            pass
 
-        # Resource usage metrics
-        self.metrics["system_cpu_usage"] = Gauge(
-            "virtualization-mcp_system_cpu_usage_percent", "System CPU usage percentage"
-        )
+        try:
+            self.metrics["request_duration_seconds"] = Gauge(
+                "virtualization-mcp_request_duration_seconds",
+                "Request duration in seconds",
+                ["endpoint", "method"],
+            )
+        except ValueError:
+            pass
 
-        self.metrics["system_memory_usage"] = Gauge(
-            "virtualization-mcp_system_memory_usage_bytes", "System memory usage in bytes"
-        )
+        try:
+            self.metrics["system_cpu_usage"] = Gauge(
+                "virtualization-mcp_system_cpu_usage_percent", "System CPU usage percentage"
+            )
+        except ValueError:
+            pass
 
-        self.metrics["system_disk_usage"] = Gauge(
-            "virtualization-mcp_system_disk_usage_bytes",
-            "System disk usage in bytes",
-            ["mount_point"],
-        )
+        try:
+            self.metrics["system_memory_usage"] = Gauge(
+                "virtualization-mcp_system_memory_usage_bytes", "System memory usage in bytes"
+            )
+        except ValueError:
+            pass
+
+        try:
+            self.metrics["system_disk_usage"] = Gauge(
+                "virtualization-mcp_system_disk_usage_bytes",
+                "System disk usage in bytes",
+                ["mount_point"],
+            )
+        except ValueError:
+            pass
 
     def start_metrics_server(self) -> None:
         """Start the Prometheus metrics server."""
@@ -92,9 +119,7 @@ class MetricsManager:
             method: The HTTP method used (GET, POST, etc.)
             status_code: The HTTP status code returned
         """
-        self.metrics["api_requests_total"].labels(
-            endpoint=endpoint, method=method.upper(), status=status_code
-        ).inc()
+        self.metrics["api_requests_total"].labels(endpoint=endpoint, method=method.upper(), status=status_code).inc()
 
     def record_error(self, error_type: str) -> None:
         """Record an error.
@@ -115,9 +140,7 @@ class MetricsManager:
         self.metrics["vm_cpu_usage"].labels(vm_name=vm_name).set(cpu_usage)
         self.metrics["vm_memory_usage"].labels(vm_name=vm_name).set(memory_usage)
 
-    def update_system_metrics(
-        self, cpu_usage: float, memory_usage: int, disk_usage: dict[str, int]
-    ) -> None:
+    def update_system_metrics(self, cpu_usage: float, memory_usage: int, disk_usage: dict[str, int]) -> None:
         """Update system-wide metrics.
 
         Args:
@@ -155,11 +178,11 @@ get_metrics = metrics_manager.get_metrics
 # Export the metrics manager for advanced usage
 __all__ = [
     "MetricsManager",
+    "get_metrics",
     "metrics_manager",
-    "start_metrics_server",
     "record_api_request",
     "record_error",
-    "update_vm_metrics",
+    "start_metrics_server",
     "update_system_metrics",
-    "get_metrics",
+    "update_vm_metrics",
 ]

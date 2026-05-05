@@ -44,34 +44,34 @@ from virtualization_mcp.tools.security.security_testing_tools import (
 )
 
 __all__ = [
-    # AI Security Tools
-    "SecurityThreatLevel",  # Alias for backward compatibility
-    "TestSeverity",
+    "AnalysisResult",
+    # Malware Analysis Tools
+    "AnalysisStatus",
+    "Detection",
     "SecurityFinding",
     "SecurityReport",  # Alias for backward compatibility
     "SecurityTestResult",
-    "start_security_scan",  # Alias for backward compatibility
-    "run_security_scan",
-    "get_security_scan_status",
-    # Malware Analysis Tools
-    "AnalysisStatus",
-    "ThreatLevel",
-    "Detection",
-    "AnalysisResult",
-    "analyze_file",
-    "get_analysis",
-    "list_analyses",
-    "delete_analysis",
-    "list_quarantine",
-    # Security Testing Tools
-    "TestStatus",
-    "TestSeverity",
     "SecurityTestResult",
     "SecurityTester",
-    "security_tester",
-    "run_security_scan",
-    "get_test_status",
+    # AI Security Tools
+    "SecurityThreatLevel",  # Alias for backward compatibility
+    "TestSeverity",
+    "TestSeverity",
+    # Security Testing Tools
+    "TestStatus",
+    "ThreatLevel",
+    "analyze_file",
     "cancel_test",
-    "list_available_tools",
+    "delete_analysis",
     "generate_report",
+    "get_analysis",
+    "get_security_scan_status",
+    "get_test_status",
+    "list_analyses",
+    "list_available_tools",
+    "list_quarantine",
+    "run_security_scan",
+    "run_security_scan",
+    "security_tester",
+    "start_security_scan",  # Alias for backward compatibility
 ]

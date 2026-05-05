@@ -38,9 +38,7 @@ class VMOperations:
         # Handle templates path resolution
         if templates_path is None:
             # Default to config directory in the package
-            self.templates_path = (
-                Path(__file__).parent.parent.parent / "config" / "vm_templates.yaml"
-            )
+            self.templates_path = Path(__file__).parent.parent.parent / "config" / "vm_templates.yaml"
         else:
             self.templates_path = Path(templates_path)
 
@@ -75,6 +73,7 @@ class VMOperations:
                 "os_type": "Ubuntu_64",
                 "memory_mb": 4096,
                 "disk_gb": 25,
+                "cpus": 2,
                 "network": "NAT",
                 "description": "Ubuntu development environment",
             },
@@ -82,6 +81,7 @@ class VMOperations:
                 "os_type": "Ubuntu_64",
                 "memory_mb": 1024,
                 "disk_gb": 10,
+                "cpus": 1,
                 "network": "NAT",
                 "description": "Minimal Linux for quick tests",
             },
@@ -89,6 +89,7 @@ class VMOperations:
                 "os_type": "Windows11_64",
                 "memory_mb": 8192,
                 "disk_gb": 80,
+                "cpus": 4,
                 "network": "NAT",
                 "description": "Windows 11 Pro – attach ISO, install once, export to OVA in assets/vbox for reuse",
             },
@@ -100,6 +101,7 @@ class VMOperations:
         template: str = "ubuntu-dev",
         memory_mb: int | None = None,
         disk_gb: int | None = None,
+        cpus: int | None = None,
         custom_settings: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
@@ -116,41 +118,58 @@ class VMOperations:
             Dict with creation result and VM info
         """
         try:
+            logger.debug("Starting VM creation: name='%s', template='%s'", name, template)
+
             # Validate VM name
             if not self.manager.validate_vm_name(name):
+                logger.warning("Rejected invalid VM name: '%s'", name)
                 raise VBoxManagerError(f"Invalid VM name: '{name}'")
+
+            logger.debug("Name validation passed for '%s'", name)
 
             # Check if VM already exists
             if self.manager.vm_exists(name):
+                logger.warning("VM '%s' already exists, aborting creation", name)
                 raise VBoxManagerError(f"VM '{name}' already exists")
 
             # Get template configuration
             if template not in self.templates:
-                raise VBoxManagerError(
-                    f"Template '{template}' not found. Available: {list(self.templates.keys())}"
-                )
+                logger.warning("Template '%s' not found, available: %s", template, list(self.templates.keys()))
+                raise VBoxManagerError(f"Template '{template}' not found. Available: {list(self.templates.keys())}")
 
             template_config = self.templates[template].copy()
 
             # Apply overrides
             if memory_mb:
+                logger.debug("Overriding template memory: %d -> %d MB", template_config.get("memory_mb"), memory_mb)
                 template_config["memory_mb"] = memory_mb
             if disk_gb:
+                logger.debug("Overriding template disk: %d -> %d GB", template_config.get("disk_gb"), disk_gb)
                 template_config["disk_gb"] = disk_gb
+            if cpus:
+                logger.debug("Overriding template cpus: %d -> %d", template_config.get("cpus", 1), cpus)
+                template_config["cpus"] = cpus
             if custom_settings:
+                logger.debug("Applying custom settings: %s", custom_settings)
                 template_config.update(custom_settings)
 
-            logger.info(f"Creating VM '{name}' from template '{template}'")
+            logger.info(
+                "Creating VM '%s' from template '%s': os=%s, mem=%dMB, disk=%dGB, cpus=%d, net=%s",
+                name,
+                template,
+                template_config["os_type"],
+                template_config["memory_mb"],
+                template_config.get("disk_gb", 0),
+                template_config.get("cpus", 1),
+                template_config.get("network", "NAT"),
+            )
 
             # Create VM
-            self.manager.run_command(
-                ["createvm", "--name", name, "--ostype", template_config["os_type"], "--register"]
-            )
+            self.manager.run_command(["createvm", "--name", name, "--ostype", template_config["os_type"], "--register"])
+            logger.debug("VM '%s' registered with VBox", name)
 
             # Configure memory
-            self.manager.run_command(
-                ["modifyvm", name, "--memory", str(template_config["memory_mb"])]
-            )
+            self.manager.run_command(["modifyvm", name, "--memory", str(template_config["memory_mb"])])
 
             # Configure network
             network_type = template_config.get("network", "NAT")
@@ -158,6 +177,7 @@ class VMOperations:
 
             # Create and attach disk if specified
             if template_config.get("disk_gb"):
+                logger.debug("Creating disk for '%s': %d GB", name, template_config["disk_gb"])
                 disk_path = self._create_disk(name, template_config["disk_gb"])
                 self._attach_disk(name, disk_path)
 
@@ -166,6 +186,7 @@ class VMOperations:
 
             # Get final VM info
             vm_info = self.manager.get_vm_info(name)
+            logger.debug("VM '%s' info retrieved: state=%s", name, vm_info.get("VMState", "unknown"))
 
             result = {
                 "success": True,
@@ -176,27 +197,32 @@ class VMOperations:
                 "message": f"VM '{name}' created successfully from template '{template}'",
             }
 
-            logger.info(f"Successfully created VM '{name}'")
+            logger.info(
+                "Successfully created VM '%s' (os=%s, mem=%dMB, disk=%dGB)",
+                name,
+                template_config["os_type"],
+                template_config["memory_mb"],
+                template_config.get("disk_gb", 0),
+            )
             return result
 
         except VBoxManagerError as e:
-            logger.error(f"Failed to create VM '{name}': {e}")
-            # Cleanup on failure
+            logger.error("Failed to create VM '%s' from template '%s': %s", name, template, e)
+            logger.debug("Log path for diagnostics: %s", getattr(self.manager, "log_path", "N/A"))
             self._cleanup_failed_vm(name)
             raise
         except Exception as e:
-            logger.error(f"Unexpected error creating VM '{name}': {e}")
+            logger.error("Unexpected error creating VM '%s' from template '%s': %s", name, template, e)
+            logger.debug("Log path for diagnostics: %s", getattr(self.manager, "log_path", "N/A"))
             self._cleanup_failed_vm(name)
-            raise VBoxManagerError(f"Failed to create VM: {str(e)}") from e
+            raise VBoxManagerError(f"Failed to create VM: {e!s}") from e
 
     def _create_disk(self, vm_name: str, size_gb: int) -> str:
         """Create virtual disk for VM"""
         disk_name = f"{vm_name}.vdi"
         size_mb = size_gb * 1024
 
-        self.manager.run_command(
-            ["createhd", "--filename", disk_name, "--size", str(size_mb), "--format", "VDI"]
-        )
+        self.manager.run_command(["createhd", "--filename", disk_name, "--size", str(size_mb), "--format", "VDI"])
 
         return disk_name
 
@@ -235,18 +261,28 @@ class VMOperations:
         # Enable VT-x/AMD-V if available
         settings.extend(["--hwvirtex", "on"])
 
+        # CPU count from template
+        cpus = config.get("cpus", 1)
+        settings.extend(["--cpus", str(cpus)])
+
+        # Use VMSVGA graphics controller (supports 3D acceleration)
+        settings.extend(["--graphicscontroller", "vmsvga"])
+
         # Configure video memory
         settings.extend(["--vram", "128"])
-
-        # Enable 3D acceleration if supported
-        settings.extend(["--accelerate3d", "on"])
 
         # Apply clipboard and drag-n-drop
         settings.extend(["--clipboard", "bidirectional"])
         settings.extend(["--draganddrop", "bidirectional"])
 
-        if settings:
-            self.manager.run_command(["modifyvm", vm_name] + settings)
+        # Apply base settings first
+        self.manager.run_command(["modifyvm", vm_name, *settings])
+
+        # Enable 3D acceleration separately (may fail on some systems)
+        try:
+            self.manager.run_command(["modifyvm", vm_name, "--accelerate3d", "on"])
+        except VBoxManagerError:
+            logger.warning("3D acceleration not supported for VM '%s', continuing without it", vm_name)
 
     def start_vm(self, name: str, headless: bool = True) -> dict[str, Any]:
         """

@@ -93,8 +93,7 @@ class NetworkAnalyzer:
         """Background task that performs periodic network analysis."""
         self.is_analyzing = False
         logger.warning(
-            "Network analyzer passive capture loop is under construction; "
-            "analysis loop will not run until implemented."
+            "Network analyzer passive capture loop is under construction; analysis loop will not run until implemented."
         )
 
     def _check_traffic_patterns(self) -> None:
@@ -234,15 +233,15 @@ unregister_websocket = network_analyzer.unregister_websocket
 
 # Export the network analyzer for advanced usage
 __all__ = [
-    "TrafficAlertLevel",
-    "TrafficAlert",
     "NetworkAnalyzer",
+    "TrafficAlert",
+    "TrafficAlertLevel",
+    "add_alert",
+    "get_alert_stats",
+    "get_alerts",
     "network_analyzer",
+    "register_websocket",
     "start_analysis",
     "stop_analysis",
-    "add_alert",
-    "get_alerts",
-    "get_alert_stats",
-    "register_websocket",
     "unregister_websocket",
 ]

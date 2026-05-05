@@ -98,7 +98,7 @@ class TestNetworkManagerMethods:
     def test_network_manager_init(self):
         """Test NetworkManager initialization."""
 
-        pytest.skip("NetworkManager requires manager arg") # manager = NetworkManager()
+        pytest.skip("NetworkManager requires manager arg")  # manager = NetworkManager()
 
     def test_network_manager_list_networks(self):
         """Test list host-only networks."""

@@ -20,13 +20,7 @@ logger = logging.getLogger(__name__)
 def check_vbox_available() -> bool:
     """Check if VirtualBox is installed and accessible."""
     try:
-        result = subprocess.run(
-            ["VBoxManage", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False
-        )
+        result = subprocess.run(["VBoxManage", "--version"], capture_output=True, text=True, timeout=5, check=False)
         available = result.returncode == 0
         if available:
             version = result.stdout.strip()
@@ -48,11 +42,13 @@ def requires_vbox(test_func):
 
     Use this for tests that MUST use real VirtualBox.
     """
+
     @wraps(test_func)
     def wrapper(*args, **kwargs):
         if not VBOX_AVAILABLE:
             pytest.skip("VirtualBox not available - test requires real VBox")
         return test_func(*args, **kwargs)
+
     return wrapper
 
 
@@ -60,6 +56,7 @@ def get_vbox_manager_or_mock():
     """Get real VBoxManager if available, otherwise return mock."""
     if VBOX_AVAILABLE:
         from virtualization_mcp.vbox.compat_adapter import get_vbox_manager
+
         return get_vbox_manager()
     else:
         # Return mock for CI/CD
@@ -87,25 +84,22 @@ class VBoxTestHelper:
         """
         if VBOX_AVAILABLE:
             from virtualization_mcp.vbox.compat_adapter import get_vbox_manager
+
             manager = get_vbox_manager()
             result = manager.create_vm(
                 name=name,
                 ostype="Ubuntu_64",
                 memory=1024,  # Minimal for testing
-                cpus=1
+                cpus=1,
             )
             if cleanup:
                 # Register for cleanup
-                pytest.test_vms_to_cleanup = getattr(pytest, 'test_vms_to_cleanup', [])
+                pytest.test_vms_to_cleanup = getattr(pytest, "test_vms_to_cleanup", [])
                 pytest.test_vms_to_cleanup.append(name)
             return result
         else:
             # Return mocked result
-            return {
-                "uuid": "mock-uuid",
-                "name": name,
-                "status": "created"
-            }
+            return {"uuid": "mock-uuid", "name": name, "status": "created"}
 
     @staticmethod
     def cleanup_test_vms():
@@ -113,11 +107,12 @@ class VBoxTestHelper:
         if not VBOX_AVAILABLE:
             return
 
-        test_vms = getattr(pytest, 'test_vms_to_cleanup', [])
+        test_vms = getattr(pytest, "test_vms_to_cleanup", [])
         if not test_vms:
             return
 
         from virtualization_mcp.vbox.compat_adapter import get_vbox_manager
+
         manager = get_vbox_manager()
 
         for vm_name in test_vms:
@@ -140,10 +135,8 @@ class VBoxTestHelper:
 # Export
 __all__ = [
     "VBOX_AVAILABLE",
-    "requires_vbox",
-    "get_vbox_manager_or_mock",
     "VBoxTestHelper",
     "check_vbox_available",
+    "get_vbox_manager_or_mock",
+    "requires_vbox",
 ]
-
-

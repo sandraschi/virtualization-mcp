@@ -33,7 +33,7 @@ def register_hyperv_management_tool(mcp: FastMCP) -> None:
     ) -> dict[str, Any]:
         """
         Comprehensive Hyper-V management portmanteau tool (Windows only).
-        
+
         This tool consolidates all Hyper-V virtual machine operations into a single interface.
         Use the 'action' parameter to specify which operation to perform. This tool only works
         on Windows systems with Hyper-V enabled.
@@ -123,7 +123,7 @@ def register_hyperv_management_tool(mcp: FastMCP) -> None:
             logger.error(f"Hyper-V management error for action '{action}': {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"Hyper-V operation failed: {str(e)}",
+                "error": f"Hyper-V operation failed: {e!s}",
                 "action": action,
             }
 
@@ -239,4 +239,3 @@ async def _handle_stop_vm(vm_name: str | None = None, force: bool = False, wait:
             "error": str(e),
             "vm_name": vm_name,
         }
-

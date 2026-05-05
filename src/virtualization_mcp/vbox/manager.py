@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class VBoxManagerError(Exception):
     """Custom exception for VirtualBox operations"""
 
-    def __init__(self, message: str, command: list[str] = None, return_code: int = None):
+    def __init__(self, message: str, command: list[str] | None = None, return_code: int | None = None):
         super().__init__(message)
         self.command = command
         self.return_code = return_code
@@ -29,7 +29,7 @@ class VBoxManager:
     error reporting, and Austrian dev efficiency standards.
     """
 
-    def __init__(self, vboxmanage_path: str = None):
+    def __init__(self, vboxmanage_path: str | None = None):
         """
         Initialize VBoxManager
 
@@ -94,9 +94,24 @@ class VBoxManager:
             logger.info(f"VBoxManage available: {result.get('output', 'Unknown version')}")
         except VBoxManagerError:
             raise VBoxManagerError(
-                f"VBoxManage not found at '{self.vboxmanage_path}'. "
-                "Ensure VirtualBox is installed and in PATH."
+                f"VBoxManage not found at '{self.vboxmanage_path}'. Ensure VirtualBox is installed and in PATH."
             ) from None
+
+    @property
+    def log_path(self) -> str:
+        """Get VirtualBox logs directory path."""
+        import os
+
+        home = os.path.expanduser("~")
+        candidates = [
+            os.path.join(home, ".config", "VirtualBox", "Logs"),
+            os.path.join(home, ".VirtualBox"),
+            os.path.join(home, "VirtualBox VMs"),
+        ]
+        for p in candidates:
+            if os.path.isdir(p):
+                return p
+        return candidates[0]
 
     def run_command(self, args: list[str], capture_json: bool = False) -> dict[str, Any]:
         """
@@ -112,7 +127,7 @@ class VBoxManager:
         Raises:
             VBoxManagerError: On command failure
         """
-        cmd = [self.vboxmanage_path] + args
+        cmd = [self.vboxmanage_path, *args]
 
         try:
             logger.debug(f"Executing: {' '.join(cmd)}")
@@ -127,9 +142,7 @@ class VBoxManager:
 
             if result.returncode != 0:
                 error_msg = result.stderr.strip() or "Unknown VBoxManage error"
-                raise VBoxManagerError(
-                    f"VBoxManage failed: {error_msg}", command=cmd, return_code=result.returncode
-                )
+                raise VBoxManagerError(f"VBoxManage failed: {error_msg}", command=cmd, return_code=result.returncode)
 
             output = result.stdout.strip()
 
@@ -146,11 +159,9 @@ class VBoxManager:
         except subprocess.TimeoutExpired:
             raise VBoxManagerError("VBoxManage command timed out after 60 seconds", command=cmd) from None
         except FileNotFoundError:
-            raise VBoxManagerError(
-                f"VBoxManage executable not found: {self.vboxmanage_path}", command=cmd
-            ) from None
+            raise VBoxManagerError(f"VBoxManage executable not found: {self.vboxmanage_path}", command=cmd) from None
         except Exception as e:
-            raise VBoxManagerError(f"Unexpected error running VBoxManage: {str(e)}", command=cmd) from e
+            raise VBoxManagerError(f"Unexpected error running VBoxManage: {e!s}", command=cmd) from e
 
     def list_vms(self, state_filter: str = "all") -> list[dict[str, str]]:
         """

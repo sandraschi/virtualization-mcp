@@ -20,24 +20,24 @@ from virtualization_mcp.tools.monitoring.metrics_tools import (
 # For backward compatibility
 __all__ = [
     "MetricsManager",
+    "MetricsMiddleware",
+    "get_metrics",
     "metrics_manager",
     "prometheus_metrics",
-    "start_metrics_server",
     "record_api_request",
     "record_error",
-    "update_vm_metrics",
+    "start_metrics_server",
     "update_system_metrics",
-    "get_metrics",
-    "MetricsMiddleware",
+    "update_vm_metrics",
 ]
 
 __all__ = [
     "MetricsManager",
+    "get_metrics",
     "metrics_manager",
-    "start_metrics_server",
     "record_api_request",
     "record_error",
-    "update_vm_metrics",
+    "start_metrics_server",
     "update_system_metrics",
-    "get_metrics",
+    "update_vm_metrics",
 ]

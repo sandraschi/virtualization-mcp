@@ -19,9 +19,9 @@ from .types import (
 )
 
 __all__ = [
-    "VMNetworkingService",
     "NetworkAdapterConfig",
     "NetworkAdapterState",
-    "PortForwardingRule",
     "NetworkOperationResult",
+    "PortForwardingRule",
+    "VMNetworkingService",
 ]

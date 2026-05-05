@@ -21,25 +21,25 @@ from .hyperv_tools import (
 from .vm_tools import *  # noqa: F403
 
 __all__ = [  # noqa: F405
-    # Base VM tools
-    "list_vms",
-    "get_vm_info",
-    "start_vm",
-    "stop_vm",
-    "create_vm",
-    "delete_vm",
-    "clone_vm",
-    "modify_vm",
-    "reset_vm",
-    "pause_vm",
-    "resume_vm",
+    "VMDisk",
+    "VMNetworkAdapter",
+    "VMSize",
+    "VMSnapshot",
     # Hyper-V tools (individual tools disabled - using portmanteau)
     "VMState",
-    "VMSize",
-    "VMDisk",
-    "VMSnapshot",
-    "VMNetworkAdapter",
     "VirtualMachine",
+    "clone_vm",
+    "create_vm",
+    "delete_vm",
+    "get_vm_info",
+    # Base VM tools
+    "list_vms",
+    "modify_vm",
+    "pause_vm",
+    "reset_vm",
+    "resume_vm",
+    "start_vm",
+    "stop_vm",
     # "list_hyperv_vms",  # Disabled - use hyperv_management portmanteau tool
     # "get_hyperv_vm",  # Disabled - use hyperv_management portmanteau tool
     # "start_hyperv_vm",  # Disabled - use hyperv_management portmanteau tool

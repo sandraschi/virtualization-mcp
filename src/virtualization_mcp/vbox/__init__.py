@@ -27,12 +27,12 @@ __author__ = "VirtualBox MCP Team"
 
 # Package-level exports
 __all__ = [
-    "VBoxManager",
-    "VBoxManagerError",
-    "get_vbox_manager",
-    "VMOperations",
     "SnapshotManager",
     "TemplateManager",
+    "VBoxManager",
+    "VBoxManagerError",
+    "VMOperations",
+    "get_vbox_manager",
 ]
 
 # Package metadata

@@ -45,9 +45,7 @@ async def query_mcp_tools(server_url: str = "http://localhost:8000") -> None:
                                 param_desc = param_info.get("description", "No description")
                                 required = param_info.get("required", False)
 
-                                print(
-                                    f"    - {param_name} ({param_type}{', required' if required else ''})"
-                                )
+                                print(f"    - {param_name} ({param_type}{', required' if required else ''})")
                                 print(f"      {param_desc}")
 
                         print("\n" + "=" * 50)
@@ -63,9 +61,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Query MCP server for available tools")
-    parser.add_argument(
-        "--server", type=str, default="http://localhost:8000", help="Base URL of the MCP server"
-    )
+    parser.add_argument("--server", type=str, default="http://localhost:8000", help="Base URL of the MCP server")
 
     args = parser.parse_args()
 

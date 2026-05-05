@@ -13,6 +13,8 @@ import sys
 
 from fastmcp import FastMCP
 
+from virtualization_mcp.tools.agentic_tools import register_agentic_tools
+
 from .discovery_management import register_info_tools_tool
 from .network_management import register_network_management_tool
 from .sandbox_management import register_sandbox_management_tool
@@ -41,6 +43,10 @@ def register_all_portmanteau_tools(mcp: FastMCP) -> None:
     register_sandbox_management_tool(mcp)
     logger.info("Sandbox management tool registered")
 
+    # Agentic / sampling-backed tools (suggest_config, sandbox_workflow, workflow)
+    register_agentic_tools(mcp)
+    logger.info("Agentic tools registered")
+
     # Help/Status/Discovery portmanteau (consolidates app-specific help tools)
     register_info_tools_tool(mcp)
 
@@ -48,6 +54,7 @@ def register_all_portmanteau_tools(mcp: FastMCP) -> None:
     if sys.platform == "win32":
         try:
             from .hyperv_management import register_hyperv_management_tool
+
             register_hyperv_management_tool(mcp)
             logger.info("Hyper-V management tool registered (Windows platform)")
         except ImportError as e:

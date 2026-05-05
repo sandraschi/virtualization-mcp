@@ -93,9 +93,7 @@ class AudioSettingsManager(BasePlugin):
 
     def setup_routes(self):
         """Set up API routes for audio settings."""
-        self.router.add_api_route(
-            "/{vm_name}", self.get_audio_settings, methods=["GET"], response_model=AudioSettings
-        )
+        self.router.add_api_route("/{vm_name}", self.get_audio_settings, methods=["GET"], response_model=AudioSettings)
         self.router.add_api_route(
             "/{vm_name}", self.update_audio_settings, methods=["PUT"], response_model=AudioSettings
         )

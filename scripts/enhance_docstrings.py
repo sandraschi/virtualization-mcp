@@ -65,7 +65,6 @@ VM_TOOLS_ENHANCEMENTS = {
         - stop_vm(): Shutdown the VM
         - start_vm(): Start a powered-off VM
     """''',
-
     "resume_vm": '''"""Resume a paused virtual machine.
 
     Continues execution of a paused VM from exactly where it was frozen,
@@ -116,7 +115,6 @@ VM_TOOLS_ENHANCEMENTS = {
         - start_vm(): Start a powered-off VM
         - get_vm_info(): Check VM state
     """''',
-
     "reset_vm": '''"""Reset a virtual machine (hard or soft reboot).
 
     Performs a hard or soft reset of a running VM, equivalent to pressing the
@@ -221,6 +219,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
