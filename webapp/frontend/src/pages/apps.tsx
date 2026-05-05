@@ -1,18 +1,5 @@
-import {
-  Activity,
-  Book,
-  Cpu,
-  Download,
-  ExternalLink,
-  Globe,
-  Home,
-  Loader2,
-  MessageSquare,
-  Share2,
-  Terminal,
-  Zap,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { Cpu, Download, ExternalLink, Loader2, Play, Share2, Square, Zap } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../api/config";
 
 interface FleetApp {
@@ -21,155 +8,163 @@ interface FleetApp {
   port: number;
   tags: string[];
   description?: string;
-  status?: string;
+  repo_path?: string;
+  start_command?: string;
 }
 
-const getIconForApp = (app: FleetApp) => {
-  const tags = app.tags || [];
-  if (tags.includes("ai") || tags.includes("llm")) return MessageSquare;
-  if (tags.includes("smart-home")) return Home;
-  if (tags.includes("books")) return Book;
-  if (tags.includes("media") || tags.includes("vj")) return Activity;
-  if (tags.includes("infra") || tags.includes("development")) return Cpu;
-  if (tags.includes("transit")) return Globe;
-  if (tags.includes("terminal")) return Terminal;
-  return Zap;
-};
+const CATEGORIES: { key: string; label: string; match: (t: string[]) => boolean }[] = [
+  { key: "ai", label: "AI & LLM", match: (t) => t.some((x) => ["ai", "llm", "agent", "local-llm"].includes(x)) },
+  { key: "media", label: "Media & VJ", match: (t) => t.some((x) => ["media", "vj", "vr", "3d", "creative"].includes(x)) },
+  { key: "dev", label: "Dev & Infra", match: (t) => t.some((x) => ["development", "infra", "cli", "toolbench", "factory"].includes(x)) },
+  { key: "smarthome", label: "Smart Home & IoT", match: (t) => t.some((x) => ["smart-home", "control", "voice"].includes(x)) },
+  { key: "research", label: "Knowledge & Research", match: (t) => t.some((x) => ["books", "knowledge", "research", "arxiv", "rss", "rag"].includes(x)) },
+  { key: "comm", label: "Communication", match: (t) => t.some((x) => ["discord", "command"].includes(x)) },
+  { key: "other", label: "Other", match: () => true },
+];
+
+function categorize(app: FleetApp): string {
+  for (const cat of CATEGORIES) {
+    if (cat.match(app.tags || [])) return cat.key;
+  }
+  return "other";
+}
 
 export default function Apps() {
   const [apps, setApps] = useState<FleetApp[]>([]);
   const [loading, setLoading] = useState(true);
-  const [backendError, setBackendError] = useState<string | null>(null);
+  const [statuses, setStatuses] = useState<Record<string, string>>({});
+  const [starting, setStarting] = useState<string | null>(null);
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const fetchApps = async () => {
-      setBackendError(null);
-      try {
-        const res = await fetch(`${API_BASE}/api/v1/apps`);
-        const data = await res.json().catch(() => ({}));
-        if (res.ok && data.webapps) {
-          setApps(
-            data.webapps.map((app: any) => ({
-              ...app,
-              description:
-                app.description ||
-                `${app.label} service running on port ${app.port}`,
-              status: "Active",
-            })),
-          );
-        } else if (!res.ok) {
-          setBackendError(
-            data.detail ||
-              `Backend returned ${res.status}. Run webapp\\start.ps1 to start backend.`,
-          );
-        }
-      } catch (error) {
-        setBackendError(
-          `Cannot reach backend at ${API_BASE}. Run webapp\\start.ps1 to start backend.`,
-        );
-        console.error("Failed to fetch fleet apps:", error);
-      } finally {
-        setLoading(false);
+  const fetchApps = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/apps`);
+      if (res.ok) {
+        const data = await res.json();
+        setApps((data.webapps || []).sort((a: FleetApp, b: FleetApp) => a.label.localeCompare(b.label)));
       }
-    };
-    fetchApps();
+    } catch { /* ignore */ }
+    setLoading(false);
   }, []);
 
+  const checkHealth = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/apps/check`);
+      if (res.ok) {
+        const data = await res.json();
+        setStatuses(data.statuses || {});
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchApps().then(checkHealth); }, [fetchApps, checkHealth]);
+
+  const grouped = useMemo(() => {
+    const groups: Record<string, FleetApp[]> = {};
+    for (const app of apps) {
+      const cat = categorize(app);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(app);
+    }
+    return groups;
+  }, [apps]);
+
+  const startApp = async (appId: string) => {
+    setStarting(appId);
+    try {
+      await fetch(`${API_BASE}/api/v1/apps/${appId}/start`, { method: "POST" });
+      setTimeout(checkHealth, 3000);
+    } catch { /* ignore */ }
+    setStarting(null);
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {backendError && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {backendError}
-        </div>
-      )}
+    <div className="space-y-8 pb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-            Apps Hub
-          </h2>
-          <p className="text-muted-foreground mt-1 text-lg">
-            Real-time Fleet Discovery & Navigation ({apps.length} Apps)
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight">Apps Hub</h2>
+          <p className="text-muted-foreground mt-1">Fleet app discovery, health monitoring, and launch ({apps.length} apps)</p>
         </div>
-        <div className="p-3 bg-white/5 border border-white/10 rounded-full">
-          <Share2 className="w-5 h-5 text-muted-foreground" />
-        </div>
+        <button onClick={checkHealth} className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 text-muted-foreground">
+          <Loader2 className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-64 rounded-2xl border border-border bg-card/20 animate-pulse"
-            />
+            <div key={i} className="h-48 rounded-2xl border border-border bg-card/20 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {apps.map((app) => {
-            const Icon = getIconForApp(app);
+        <div className="space-y-10">
+          {CATEGORIES.map((cat) => {
+            const items = grouped[cat.key];
+            if (!items || items.length === 0) return null;
             return (
-              <a
-                key={app.id || app.label}
-                href={`http://localhost:${app.port}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative p-8 rounded-2xl border border-border bg-card/40 backdrop-blur-md hover:border-primary/40 hover:bg-white/5 transition-all duration-500 overflow-hidden"
-              >
-                <div className="absolute top-6 right-6 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 border border-white/5">
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse`}
-                  />
-                  <span className="text-xs font-bold uppercase tracking-wider text-white/70">
-                    Active
-                  </span>
+              <div key={cat.key}>
+                <h3 className="text-lg font-semibold text-muted-foreground mb-4 flex items-center gap-2">
+                  {cat.label}
+                  <span className="text-xs font-mono text-muted-foreground/50">{items.length}</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {items.map((app) => {
+                    const status = statuses[app.id] || "unknown";
+                    const isRunning = status === "running";
+                    return (
+                      <div
+                        key={app.id}
+                        className="group p-4 rounded-xl border border-border bg-card/30 backdrop-blur-sm hover:border-primary/30 transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-sm truncate">{app.label}</h4>
+                            <p className="text-[11px] text-muted-foreground/60 mt-0.5 truncate">{app.id}</p>
+                          </div>
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ml-2 ${
+                            isRunning ? "bg-green-500/20 text-green-500" : "bg-muted/30 text-muted-foreground"
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-green-500" : "bg-muted-foreground"}`} />
+                            {status}
+                          </div>
+                        </div>
+                        {app.description && (
+                          <p className="text-xs text-muted-foreground/70 line-clamp-2 mb-3">{app.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-auto">
+                          {isRunning ? (
+                            <a
+                              href={`http://localhost:${app.port}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors font-medium"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Open :{app.port}
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => startApp(app.id)}
+                              disabled={starting === app.id}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg bg-white/10 text-muted-foreground hover:bg-white/20 transition-colors font-medium disabled:opacity-50"
+                            >
+                              {starting === app.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                              Start
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                <div
-                  className={`w-14 h-14 rounded-2xl mb-6 flex items-center justify-center bg-blue-500/10 border border-blue-500/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500`}
-                >
-                  <Icon className={`w-7 h-7 text-blue-500`} />
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold flex items-center gap-2 group-hover:text-primary transition-colors">
-                    {app.label}
-                    <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-y-1 translate-x-1 transition-all" />
-                  </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
-                    {app.description}
-                  </p>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-xs font-mono text-muted-foreground tracking-widest uppercase">
-                    Port {app.port}
-                  </span>
-                  <span className="text-xs font-medium text-primary uppercase tracking-tighter group-hover:tracking-widest transition-all">
-                    Launch &rarr;
-                  </span>
-                </div>
-
-                <div
-                  className={`absolute -bottom-12 -right-12 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700`}
-                />
-              </a>
+              </div>
             );
           })}
         </div>
       )}
 
-      {/* Fleet Install Section */}
-      <div className="rounded-2xl border border-border bg-card/40 backdrop-blur-sm p-6 space-y-4">
+      {/* Fleet Installer */}
+      <div className="rounded-xl border border-border bg-card/40 backdrop-blur-sm p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-lg">Fleet Installer</h3>
-            <p className="text-sm text-muted-foreground">
-              Select repos to install into a VM or Sandbox. Generates a PowerShell script.
-            </p>
-          </div>
+          <h3 className="font-semibold">Fleet Installer</h3>
           <button
             onClick={async () => {
               const selected = apps.filter((a) => selectedApps.has(a.id));
@@ -191,13 +186,12 @@ export default function Apps() {
               }
             }}
             disabled={selectedApps.size === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 text-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50"
           >
-            <Download className="w-4 h-4" />
-            Download Script ({selectedApps.size})
+            <Download className="w-3.5 h-3.5" /> Script ({selectedApps.size})
           </button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {apps.map((app) => (
             <button
               key={app.id}
@@ -207,32 +201,14 @@ export default function Apps() {
                 else next.add(app.id);
                 setSelectedApps(next);
               }}
-              className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                selectedApps.has(app.id)
-                  ? "bg-primary/20 text-primary border-primary/30"
-                  : "bg-white/5 text-muted-foreground border-border hover:border-primary/30"
+              className={`px-2.5 py-1 text-[11px] rounded-lg border transition-colors ${
+                selectedApps.has(app.id) ? "bg-primary/20 text-primary border-primary/30" : "bg-white/5 text-muted-foreground border-border hover:border-primary/30"
               }`}
             >
               {app.label}
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="p-8 rounded-3xl border border-dashed border-border bg-black/20 flex flex-col items-center justify-center text-center space-y-4">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-          <Share2 className="w-6 h-6 text-muted-foreground" />
-        </div>
-        <div>
-          <h4 className="font-bold text-lg">Add New Webapp</h4>
-          <p className="text-sm text-muted-foreground max-w-sm mt-1">
-            Register a new MCP server webapp to the central fleet discovery
-            registry.
-          </p>
-        </div>
-        <button className="px-6 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors font-medium">
-          Configure Registry
-        </button>
       </div>
     </div>
   );
