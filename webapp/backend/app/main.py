@@ -185,12 +185,12 @@ if (Get-Command python -ErrorAction SilentlyContinue) {
         url, name = SANDBOX_DEV_SETUP_DOWNLOAD["claude_desktop"]
         claude_block = f"""
 # 6) Claude Desktop (download and run installer; no winget)
-Write-Host "Downloading Claude Desktop..." -ForegroundColor Yellow
+    Write-Host "Downloading Claude Desktop..." -ForegroundColor Yellow
 $claudeExe = Join-Path $env:TEMP "{name}"
 try {{
     Invoke-WebRequest -Uri "{url}" -OutFile $claudeExe -UseBasicParsing
-    Write-Host "Installing Claude Desktop..." -ForegroundColor Yellow
-    Start-Process -FilePath $claudeExe -Wait
+    Write-Host "Installing Claude Desktop (may show installer UI)..." -ForegroundColor Yellow
+    Start-Process -FilePath $claudeExe -Wait -ArgumentList '/S'
 }} catch {{ Write-Host "Claude Desktop: $($_.Exception.Message)" -ForegroundColor Yellow }}
 """
     openclaw_block = ""
