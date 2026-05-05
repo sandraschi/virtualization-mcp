@@ -55,80 +55,50 @@ function Sync-PathFromRegistry {
 function Install-WingetViaMsix {
   Write-Step 'Installing winget (Desktop App Installer) from GitHub release'
 
-  $arch = $env:PROCESSOR_ARCHITECTURE
-  if ($arch -eq 'ARM64') {
-    $vcUri = 'https://aka.ms/Microsoft.VCLibs.arm64.14.00.Desktop.appx'
-  } else {
-    $vcUri = 'https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx'
-  }
-
   $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
   $null = New-Item -ItemType Directory -Path $work -Force
 
-  # 1) VC++ libs
-  $vcPath = Join-Path $work 'Microsoft.VCLibs.Desktop.appx'
-  Invoke-WebRequest -Uri $vcUri -OutFile $vcPath -UseBasicParsing
-  Add-AppxPackage -Path $vcPath
-
   $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing
+
+  # 1) Download all dependencies zip (contains VCLibs, UI.Xaml, WindowsAppRuntime, etc.)
+  Write-Step 'Downloading dependencies bundle'
+  $depsAsset = $null
+  foreach ($a in $release.assets) {
+    if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') { $depsAsset = $a; break }
+  }
+  if ($null -eq $depsAsset) { throw 'Could not find DesktopAppInstaller_Dependencies.zip in release.' }
+  $depsPath = Join-Path $work $depsAsset.name
+  Invoke-WebRequest -Uri $depsAsset.browser_download_url -OutFile $depsPath -UseBasicParsing
+  $depsDir = Join-Path $work 'deps'
+  Expand-Archive -Path $depsPath -DestinationPath $depsDir -Force
+  Write-Host "Extracted $($depsAsset.name)" -ForegroundColor Green
+
+  # 2) Install all dependencies (VCLibs, UI.Xaml, WindowsAppRuntime)
+  Write-Step 'Installing dependencies (VCLibs, UI.Xaml, WindowsAppRuntime)'
+  Get-ChildItem -Path $depsDir -Filter '*.msix' -Recurse | Sort-Object Name | ForEach-Object {
+    try {
+      Add-AppxPackage -Path $_.FullName -ErrorAction Stop
+      Write-Host "  Installed: $($_.Name)" -ForegroundColor Green
+    } catch {
+      Write-Host "  Skipped: $($_.Name) - $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+  }
+
+  # 3) Find and install the App Installer bundle
+  Write-Step 'Installing App Installer bundle'
   $bundleName = $null
   foreach ($a in $release.assets) {
-    if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') {
-      $bundleName = $a.name
-      break
-    }
+    if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') { $bundleName = $a.name; break }
   }
-
   if ([string]::IsNullOrWhiteSpace($bundleName)) {
-    throw 'Could not find Microsoft.DesktopAppInstaller msixbundle in latest winget-cli release.'
+    throw 'Could not find Microsoft.DesktopAppInstaller msixbundle in release.'
   }
-
-  # 2) UI.Xaml (dependency for AppInstaller)
-  $xamlAsset = $null
-  foreach ($a in $release.assets) {
-    if ($a.name -notlike 'Microsoft.UI.Xaml*') { continue }
-    if ($a.name -notlike '*.appx') { continue }
-    if ($arch -eq 'ARM64') {
-      if ($a.name -match '\.arm64\.appx$') { $xamlAsset = $a; break }
-    } else {
-      if ($a.name -match '\.x64\.appx$') { $xamlAsset = $a; break }
-    }
-  }
-  if ($null -ne $xamlAsset) {
-    $xamlPath = Join-Path $work $xamlAsset.name
-    Invoke-WebRequest -Uri $xamlAsset.browser_download_url -OutFile $xamlPath -UseBasicParsing
-    Add-AppxPackage -Path $xamlPath
-  }
-
-  # 3) WindowsAppRuntime (required for AppInstaller on fresh images)
-  Write-Step 'Installing WindowsAppRuntime framework'
-  $runtimeOk = $false
-  $runtimeUrls = @(
-    'https://aka.ms/windowsappsdk/1.8/latest/Microsoft.WindowsAppRuntime.1.8_x64__8wekyb3d8bbwe.msix'
-    'https://aka.ms/windowsappsdk/1.7/latest/Microsoft.WindowsAppRuntime.1.7_x64__8wekyb3d8bbwe.msix'
-  )
-  foreach ($url in $runtimeUrls) {
-    try {
-      $rtPath = Join-Path $work 'WindowsAppRuntime.msix'
-      Invoke-WebRequest -Uri $url -OutFile $rtPath -UseBasicParsing -ErrorAction Stop
-      Add-AppxPackage -Path $rtPath -ErrorAction Stop
-      Write-Host "Installed: $url" -ForegroundColor Green
-      $runtimeOk = $true
-      break
-    } catch {
-      Write-Host "Failed: $url - $($_.Exception.Message)" -ForegroundColor Yellow
-    }
-  }
-  if (-not $runtimeOk) {
-    throw 'Could not install WindowsAppRuntime. Winget install will fail.'
-  }
-
-  # 4) App Installer bundle
   foreach ($a in $release.assets) {
     if ($a.name -eq $bundleName) {
       $bundlePath = Join-Path $work $a.name
       Invoke-WebRequest -Uri $a.browser_download_url -OutFile $bundlePath -UseBasicParsing
       Add-AppxPackage -Path $bundlePath
+      Write-Host "  Installed: $(Split-Path $a.name -Leaf)" -ForegroundColor Green
       break
     }
   }
