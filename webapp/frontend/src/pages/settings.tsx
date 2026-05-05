@@ -240,7 +240,7 @@ export default function Settings() {
                   type="text"
                   value={customEndpoint || (selectedProvider === "ollama" ? "http://localhost:11434" : "http://localhost:1234")}
                   onChange={(e) => setCustomEndpoint(e.target.value)}
-                  className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary transition-colors font-mono"
+                  className="flex-1 bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-primary transition-colors font-mono"
                 />
                 <button
                   onClick={async () => {
@@ -280,7 +280,7 @@ export default function Settings() {
                 <select
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary transition-colors"
+                  className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-primary transition-colors"
                 >
                   {models.map((m) => (
                     <option key={m.name} value={m.name}>
@@ -344,7 +344,7 @@ export default function Settings() {
                             value={hasEdit ? editVal : masked}
                             onChange={(e) => setEditKeys((prev) => ({ ...prev, [kd.id]: e.target.value }))}
                             placeholder={masked ? "Leave empty to keep current" : "Paste API key..."}
-                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 pr-10 text-sm font-mono outline-none focus:border-primary transition-colors"
+                            className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 pr-10 text-sm text-white font-mono outline-none focus:border-primary transition-colors"
                           />
                           <button
                             type="button"

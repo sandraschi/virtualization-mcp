@@ -1383,10 +1383,10 @@ async def chat_interaction(request: ChatRequest):
         _models = [m["name"] for m in _avail_data.get("models", [])]
     except Exception:
         _models = []
-    _preferred = request.model or "llama3.2:3b"
+    _preferred = request.model or "gemma4:e4b"
     if _preferred not in _models and _models:
         # Fallback to any chat-capable small model
-        for _fallback in ("llama3.2:3b", "llama3.2:1b", "llama3.1:latest", "qwen2.5-coder:latest", "llama3.1:8b"):
+        for _fallback in ("gemma4:e4b", "gemma4:e2b", "llama3.2:3b", "llama3.2:1b", "llama3.1:latest", "qwen2.5-coder:latest"):
             if _fallback in _models:
                 _preferred = _fallback
                 break
