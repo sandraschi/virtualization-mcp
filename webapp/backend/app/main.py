@@ -402,6 +402,7 @@ class VMCreateRequest(BaseModel):
     disk_gb: int | None = None
     cpus: int | None = None
     iso_path: str | None = None  # optional ISO from assets/vbox for first-boot install
+    provider: str = "virtualbox"  # "virtualbox" or "hyperv"
 
 
 class AttachIsoRequest(BaseModel):
@@ -1441,22 +1442,33 @@ async def create_vm(request: VMCreateRequest):
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
     try:
-        result = await asyncio.to_thread(
-            service_manager.vm_service.create_vm,
-            name=request.name,
-            template=request.template,
-            memory_mb=request.memory_mb,
-            disk_gb=request.disk_gb,
-            cpus=request.cpus,
-        )
-        if request.iso_path and os.path.isfile(request.iso_path.strip()):
-            await asyncio.to_thread(
-                service_manager.vm_service.attach_iso,
-                vm_name=request.name,
-                iso_path=os.path.abspath(request.iso_path.strip()),
+        if request.provider == "hyperv":
+            if not hasattr(service_manager.vm_service, "hyperv_manager"):
+                raise HTTPException(status_code=503, detail="Hyper-V not available")
+            result = await service_manager.vm_service.hyperv_manager.create_vm(
+                name=request.name,
+                memory_mb=request.memory_mb or 2048,
+                disk_gb=request.disk_gb or 25,
             )
-            result["iso_attached"] = request.iso_path.strip()
+        else:
+            result = await asyncio.to_thread(
+                service_manager.vm_service.create_vm,
+                name=request.name,
+                template=request.template,
+                memory_mb=request.memory_mb,
+                disk_gb=request.disk_gb,
+                cpus=request.cpus,
+            )
+            if request.iso_path and os.path.isfile(request.iso_path.strip()):
+                await asyncio.to_thread(
+                    service_manager.vm_service.attach_iso,
+                    vm_name=request.name,
+                    iso_path=os.path.abspath(request.iso_path.strip()),
+                )
+                result["iso_attached"] = request.iso_path.strip()
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating VM {request.name}: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
