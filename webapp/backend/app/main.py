@@ -1454,6 +1454,38 @@ async def chat_interaction(request: ChatRequest):
     }
 
 
+@app.post("/api/v1/vms")
+async def create_vm(request: VMCreateRequest):
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        if request.provider == "hyperv":
+            if not hasattr(service_manager.vm_service, "hyperv_manager"):
+                raise HTTPException(status_code=503, detail="Hyper-V not available")
+            result = await service_manager.vm_service.hyperv_manager.create_vm(
+                name=request.name, memory_mb=request.memory_mb or 2048, disk_gb=request.disk_gb or 25,
+            )
+        else:
+            result = await asyncio.to_thread(
+                service_manager.vm_service.create_vm, name=request.name,
+                template=request.template, memory_mb=request.memory_mb,
+                disk_gb=request.disk_gb, cpus=request.cpus,
+            )
+            if request.iso_path and os.path.isfile(request.iso_path.strip()):
+                await asyncio.to_thread(
+                    service_manager.vm_service.attach_iso,
+                    vm_name=request.name,
+                    iso_path=os.path.abspath(request.iso_path.strip()),
+                )
+                result["iso_attached"] = request.iso_path.strip()
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating VM {request.name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 @app.post("/api/v1/vms/{name}/start")
 async def start_vm(name: str, request: Request):
     if not service_manager:
