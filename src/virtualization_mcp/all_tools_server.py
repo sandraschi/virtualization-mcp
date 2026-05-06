@@ -84,7 +84,7 @@ def main() -> int:
     parser.add_argument(
         "--http", action="store_const", const="http", dest="transport", help="Alias for --transport http"
     )
-    parser.add_argument("--host", default="0.0.0.0", help="HTTP host")
+    parser.add_argument("--host", default="0.0.0.0", help="HTTP host")  # noqa: S104
     parser.add_argument("--port", type=int, default=10702, help="HTTP port")
     args = parser.parse_args()
 

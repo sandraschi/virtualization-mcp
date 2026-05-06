@@ -11,7 +11,7 @@ import platform
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -544,7 +544,7 @@ def _get_windows_memory_info() -> dict[str, Any]:
     import ctypes
 
     class MEMORYSTATUSEX(ctypes.Structure):
-        _fields_ = [
+        _fields_: ClassVar[list[tuple[str, type]]] = [
             ("dwLength", ctypes.c_ulong),
             ("dwMemoryLoad", ctypes.c_ulong),
             ("ullTotalPhys", ctypes.c_ulonglong),

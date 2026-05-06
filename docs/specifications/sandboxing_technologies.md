@@ -173,19 +173,87 @@ docker run -p 4000:80 myapp
 - CI/CD pipelines
 - Multi-service applications
 
+## Docker Sandbox (docker sandbox + docker agent)
+
+*Added 2026-05-06 for future reference.*
+
+Docker Desktop v0.12+ ships two AI-agent-oriented commands:
+
+### docker sandbox
+Creates VM-based isolated sandbox environments for AI agents. Built-in agent templates:
+
+| Subcommand | Template |
+|---|---|
+| `opencode` | Pre-configured for our fleet CLI tool |
+| `claude` | Claude Code |
+| `codex` | Terminal AI coding agent |
+| `copilot` | GitHub Copilot |
+| `gemini` | Google Gemini CLI |
+| `cagent` | Docker's agent runner (v1.44.0) |
+| `kiro` | Terminal agent |
+| `shell` | Plain shell |
+
+```bash
+# Create a sandbox for opencode
+docker sandbox create opencode --name my-sandbox
+
+# List running sandboxes
+docker sandbox ls
+
+# Exec into a sandbox
+docker sandbox exec my-sandbox -- bash
+
+# Snapshot and restore
+docker sandbox save my-sandbox --template my-template
+docker sandbox create opencode --template my-template
+
+# Clean up
+docker sandbox rm my-sandbox
+```
+
+### docker agent (cagent)
+Docker's AI Agent Runner (internal name: `cagent`, v1.44.0). Runs agents from YAML configs:
+
+```bash
+# Create a new agent config
+docker agent new my-agent --model gemini-2.0-flash
+
+# Run an agent
+docker agent run my-agent
+
+# Run from a YAML file
+docker agent run ./agent.yaml
+
+# Expose as MCP server
+docker agent serve my-agent
+```
+
+### vs. virtualization-mcp sandbox_management
+| Aspect | Docker Sandbox | virtualization-mcp sandbox_management |
+|---|---|---|
+| Isolation | VM-level (full OS) | Container-level (Docker) |
+| Agent support | 8 built-in templates (opencode, claude, etc.) | Custom Python/JS/bash images |
+| Integration | Standalone CLI | MCP tool, fleet-integrated |
+| Snapshot | `docker sandbox save` | `session_destroy` + recreate |
+| Networking | Managed via `docker sandbox network` | `--network` flag |
+
+**Note**: Docker Sandbox overlaps with our existing `sandbox_management` tool but adds VM-level isolation and multi-agent templates. Worth watching for fleet-specific features; not a replacement for our MCP-integrated approach.
+
 ## Comparison Table
 
-| Feature                | venv               | Conda (cenv)       | Docker             |
-|------------------------|-------------------|-------------------|-------------------|
-| Isolation Level       | Python packages   | Python + system   | OS-level          |
-| Package Management    | pip               | conda             | apt/yum/apk/etc.  |
-| Dependencies         | Python only       | Multi-language    | System-wide       |
-| Performance          | Very fast         | Fast              | Slight overhead   |
-| Size                 | Small             | Medium            | Larger            |
-| Startup Time         | Instant           | Fast              | Slower            |
-| Cross-platform       | Yes               | Yes               | Yes (with Docker) |
-| System Requirements  | Python only       | Conda installed   | Docker installed  |
-| Use Case            | Python projects   | Data science      | Deployment        |
+| Feature                | venv               | Conda (cenv)       | Docker Containers  | Docker Sandbox*     |
+|------------------------|-------------------|-------------------|-------------------|-------------------|
+| Isolation Level       | Python packages   | Python + system   | Container-level   | VM-level (full OS) |
+| Package Management    | pip               | conda             | apt/yum/apk/etc.  | Template images     |
+| Dependencies         | Python only       | Multi-language    | System-wide       | Full OS stack       |
+| Performance          | Very fast         | Fast              | Slight overhead   | VM overhead         |
+| Size                 | Small             | Medium            | Larger            | Largest             |
+| Startup Time         | Instant           | Fast              | Slower            | Slowest             |
+| Cross-platform       | Yes               | Yes               | Yes (with Docker) | Yes (Docker Desktop)|
+| System Requirements  | Python only       | Conda installed   | Docker installed  | Docker Desktop v0.12+|
+| Use Case            | Python projects   | Data science      | Deployment        | AI agent sandboxing  |
+
+*\*Docker Sandbox (`docker sandbox` + `docker agent`) added in Docker Desktop v0.12. See section below.*
 
 ## Integration with virtualization-mcp
 

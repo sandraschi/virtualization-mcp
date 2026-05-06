@@ -91,7 +91,7 @@ class VMOperations:
                 "disk_gb": 80,
                 "cpus": 4,
                 "network": "NAT",
-                "description": "Windows 11 Pro – attach ISO, install once, export to OVA in assets/vbox for reuse",
+                "description": "Windows 11 Pro - attach ISO, install once, export to OVA in assets/vbox for reuse",
             },
         }
 
@@ -180,7 +180,7 @@ class VMOperations:
             # Configure memory + network + boot order in one modifyvm call
             boot_opts = ["--boot1", "dvd", "--boot2", "disk"]
             _sub.run(
-                [vbox, "modifyvm", name, "--memory", str(template_config["memory_mb"])] + boot_opts,
+                [vbox, "modifyvm", name, "--memory", str(template_config["memory_mb"]), *boot_opts],
                 capture_output=True,
                 text=True,
                 timeout=30,

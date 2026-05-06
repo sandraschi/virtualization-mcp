@@ -51,9 +51,9 @@ def _get_client():
 
         return docker.from_env()
     except ImportError:
-        raise RuntimeError("docker package not installed. Run: uv add docker")
+        raise RuntimeError("docker package not installed. Run: uv add docker") from None
     except Exception as e:
-        raise RuntimeError(f"Docker not available: {e}. Is Docker Desktop running?")
+        raise RuntimeError(f"Docker not available: {e}. Is Docker Desktop running?") from None
 
 
 def _decode(raw: bytes | None) -> str:
@@ -193,7 +193,7 @@ def execute_file(
             try:
                 container.remove(force=True)
             except Exception:
-                pass
+                logger.debug("Container remove failed during cleanup")
     except Exception as e:
         return {"success": False, "error": str(e), "host_path": host_path}
 

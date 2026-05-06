@@ -432,7 +432,7 @@ class HyperVManagerPlugin(BasePlugin):
             try:
                 await websocket.close()
             except Exception:
-                pass
+                logger.debug("Websocket close failed during shutdown")
 
         await super().shutdown()
         logger.info("Hyper-V Manager plugin stopped")

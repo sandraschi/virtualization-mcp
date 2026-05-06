@@ -232,7 +232,7 @@ except Exception:
     prometheus_metrics = None
 
 
-def start_metrics_server(host: str = "0.0.0.0", port: int = 8000, prometheus_port: int = 9090) -> FastAPI:
+def start_metrics_server(host: str = "0.0.0.0", port: int = 8000, prometheus_port: int = 9090) -> FastAPI:  # noqa: S104
     """
     Start a FastAPI server to expose metrics via HTTP.
 

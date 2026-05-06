@@ -7,7 +7,7 @@ class BaseSettings(BaseModel):
     log_level: str = "INFO"
 
     # Server settings
-    host: str = "0.0.0.0"
+    host: str = "0.0.0.0"  # noqa: S104
     port: int = 8000
 
     # VirtualBox settings

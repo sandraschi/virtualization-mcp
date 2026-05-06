@@ -194,7 +194,7 @@ class VMMetricsMixin:
                 try:
                     memory_free = console.get_memory_usage()
                 except Exception:
-                    pass
+                    logger.debug("Failed to get memory usage from console")
 
             memory_used = memory_total - memory_free - memory_cached - memory_buffer
             if memory_used < 0:

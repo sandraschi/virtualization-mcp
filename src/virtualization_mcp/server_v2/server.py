@@ -168,7 +168,7 @@ class VirtualizationMCPServer:
         async def shutdown_server() -> str:
             """Shut down the virtualization-mcp server."""
             logger.info("Received shutdown request via API")
-            asyncio.create_task(self._graceful_shutdown())
+            _shutdown_task = asyncio.create_task(self._graceful_shutdown())  # noqa: RUF006
             return "Shutting down virtualization-mcp server..."
 
         @self.mcp.tool(
@@ -215,7 +215,7 @@ class VirtualizationMCPServer:
         """Handle shutdown signals."""
         signame = signal.Signals(signum).name
         logger.info(f"Received signal {signame}, shutting down...")
-        asyncio.create_task(self._graceful_shutdown())
+        _shutdown_task = asyncio.create_task(self._graceful_shutdown())  # noqa: RUF006
 
     async def _graceful_shutdown(self) -> None:
         """Perform a graceful shutdown of the server."""

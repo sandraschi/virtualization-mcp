@@ -10,7 +10,7 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import psutil
 
@@ -30,7 +30,7 @@ class WindowsSandboxHelper:
     WSX_EXECUTABLE = r"C:\Windows\System32\WindowsSandbox.exe"
 
     # Default sandbox configuration
-    DEFAULT_CONFIG = {
+    DEFAULT_CONFIG: ClassVar[dict[str, Any]] = {
         "memory_in_mb": 4096,
         "vcpu_count": 2,
         "networking": True,
@@ -546,6 +546,6 @@ class WindowsSandboxHelper:
         """Clean up resources on object destruction."""
         for name in list(self._sandbox_processes.keys()):
             try:
-                asyncio.create_task(self._cleanup_sandbox(name))
+                _cleanup_task = asyncio.create_task(self._cleanup_sandbox(name))  # noqa: RUF006
             except Exception as e:
                 logger.error(f"Error cleaning up sandbox {name}: {e}")

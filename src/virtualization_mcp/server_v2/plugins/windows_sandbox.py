@@ -399,7 +399,7 @@ class WindowsSandboxPlugin(BasePlugin):
         from xml.dom import minidom
 
         xml_str = ET.tostring(root, encoding="unicode")
-        dom = minidom.parseString(xml_str)
+        dom = minidom.parseString(xml_str)  # noqa: S318
         return dom.toprettyxml(indent="  ")
 
     def _now_iso(self) -> str:

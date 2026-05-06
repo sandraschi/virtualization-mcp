@@ -472,7 +472,7 @@ class VBoxManager:
                 if self.vm_exists(name):
                     self.vbox._run_command(f'unregistervm "{name}" --delete')
             except Exception:
-                pass
+                logger.debug("Failed to cleanup partially created VM")
 
             raise VBoxManagerError(f"Failed to create VM: {e}") from e
 

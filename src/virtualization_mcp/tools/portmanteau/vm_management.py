@@ -152,13 +152,13 @@ async def _handle_list_vms(ctx: Context | None = None, limit: int = 100, offset:
             try:
                 await ctx.report_progress(progress=10, total=100)
             except Exception:
-                pass
+                logger.debug("ctx.report_progress failed (non-critical)")
         result = await list_vms(details=True, limit=limit, offset=offset)
         if ctx:
             try:
                 await ctx.report_progress(progress=100, total=100)
             except Exception:
-                pass
+                logger.debug("ctx.report_progress failed (non-critical)")
         count = result.get("count", 0) if isinstance(result, dict) else 0
         return {
             "success": isinstance(result, dict) and result.get("status") == "success",
@@ -254,7 +254,7 @@ async def _handle_create_vm(
             try:
                 await ctx.report_progress(progress=20, total=100)
             except Exception:
-                pass
+                logger.debug("ctx.report_progress failed (non-critical)")
         result = await create_vm(
             name=vm_name,
             ostype=os_type,
@@ -265,7 +265,7 @@ async def _handle_create_vm(
             try:
                 await ctx.report_progress(progress=100, total=100)
             except Exception:
-                pass
+                logger.debug("ctx.report_progress failed (non-critical)")
         ok = isinstance(result, dict) and result.get("status") == "success"
         out: dict[str, Any] = {
             "success": ok,
@@ -391,13 +391,13 @@ async def _handle_clone_vm(
             try:
                 await ctx.report_progress(progress=25, total=100)
             except Exception:
-                pass
+                logger.debug("ctx.report_progress failed (non-critical)")
         result = await clone_vm(source_vm=source_vm, new_name=new_vm_name)
         if ctx:
             try:
                 await ctx.report_progress(progress=100, total=100)
             except Exception:
-                pass
+                logger.debug("ctx.report_progress failed (non-critical)")
         ok = isinstance(result, dict) and result.get("status") == "success"
         out: dict[str, Any] = {
             "success": ok,

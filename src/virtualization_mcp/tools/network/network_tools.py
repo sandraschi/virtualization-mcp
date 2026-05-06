@@ -436,7 +436,7 @@ async def list_port_forwarding_rules(vm_name: str, adapter_id: int = 1) -> dict[
                         {
                             "name": parts[0],
                             "protocol": parts[1],
-                            "host_ip": parts[2] if parts[2] else "0.0.0.0",
+                            "host_ip": parts[2] if parts[2] else "0.0.0.0",  # noqa: S104
                             "host_port": int(parts[3]) if parts[3] else 0,
                             "guest_ip": parts[4] if parts[4] else "",
                             "guest_port": int(parts[5]) if parts[5] else 0,
