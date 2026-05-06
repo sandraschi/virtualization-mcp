@@ -165,15 +165,21 @@ class VMOperations:
             )
 
             # Create VM
-            self.manager.run_command(["createvm", "--name", name, "--ostype", template_config["os_type"], "--register"])
+            import subprocess as _sub
+            vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+            _sub.run([vbox, "createvm", "--name", name, "--ostype", template_config["os_type"], "--register"],
+                     capture_output=True, text=True, timeout=30, check=True)
             logger.debug("VM '%s' registered with VBox", name)
 
-            # Configure memory
-            self.manager.run_command(["modifyvm", name, "--memory", str(template_config["memory_mb"])])
+            # Configure memory + network + boot order in one modifyvm call
+            boot_opts = ["--boot1", "dvd", "--boot2", "disk"]
+            _sub.run([vbox, "modifyvm", name, "--memory", str(template_config["memory_mb"])] + boot_opts,
+                     capture_output=True, text=True, timeout=30, check=True)
 
             # Configure network
             network_type = template_config.get("network", "NAT")
-            self.manager.run_command(["modifyvm", name, "--nic1", network_type.lower()])
+            _sub.run([vbox, "modifyvm", name, "--nic1", network_type.lower()],
+                     capture_output=True, text=True, timeout=30, check=True)
 
             # Create and attach disk if specified
             if template_config.get("disk_gb"):
@@ -184,9 +190,10 @@ class VMOperations:
             # Apply additional settings
             self._apply_vm_settings(name, template_config)
 
-            # Get final VM info
+            # Get final VM info (vbox_compat lowercases keys, so check both)
             vm_info = self.manager.get_vm_info(name)
-            logger.debug("VM '%s' info retrieved: state=%s", name, vm_info.get("VMState", "unknown"))
+            vm_state = vm_info.get("vmstate") or vm_info.get("VMState", "unknown")
+            logger.debug("VM '%s' info retrieved: state=%s", name, vm_state)
 
             result = {
                 "success": True,
@@ -218,74 +225,50 @@ class VMOperations:
             raise VBoxManagerError(f"Failed to create VM: {e!s}") from e
 
     def _create_disk(self, vm_name: str, size_gb: int) -> str:
-        """Create virtual disk for VM"""
-        disk_name = f"{vm_name}.vdi"
+        """Create virtual disk in the VM's folder."""
+        import os as _os
+        home = _os.path.expanduser("~")
+        vbox_folder = _os.path.join(home, "VirtualBox VMs", vm_name)
+        _os.makedirs(vbox_folder, exist_ok=True)
+        disk_path = _os.path.join(vbox_folder, f"{vm_name}.vdi")
         size_mb = size_gb * 1024
 
-        self.manager.run_command(["createhd", "--filename", disk_name, "--size", str(size_mb), "--format", "VDI"])
-
-        return disk_name
+        import subprocess as _sub
+        vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+        _sub.run([vbox, "createhd", "--filename", disk_path, "--size", str(size_mb), "--format", "VDI"],
+                 capture_output=True, text=True, timeout=30, check=True)
+        return disk_path
 
     def _attach_disk(self, vm_name: str, disk_path: str) -> None:
-        """Attach disk to VM"""
-        # Add SATA controller
-        self.manager.run_command(
-            ["storagectl", vm_name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI"]
-        )
-
+        """Attach disk to VM via SATA controller."""
+        import subprocess as _sub
+        vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+        # Add SATA controller (ignore error if exists)
+        _sub.run([vbox, "storagectl", vm_name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI"],
+                 capture_output=True, text=True, timeout=15)
         # Attach disk
-        self.manager.run_command(
-            [
-                "storageattach",
-                vm_name,
-                "--storagectl",
-                "SATA",
-                "--port",
-                "0",
-                "--device",
-                "0",
-                "--type",
-                "hdd",
-                "--medium",
-                disk_path,
-            ]
-        )
+        _sub.run([vbox, "storageattach", vm_name, "--storagectl", "SATA", "--port", "0", "--device", "0",
+                  "--type", "hdd", "--medium", disk_path],
+                 capture_output=True, text=True, timeout=30, check=True)
 
     def _apply_vm_settings(self, vm_name: str, config: dict[str, Any]) -> None:
-        """Apply additional VM settings from template"""
-        settings = []
+        """Apply additional VM settings from template."""
+        import subprocess as _sub
+        vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
 
-        # Enable ACPI and IOAPIC for better compatibility
-        settings.extend(["--acpi", "on", "--ioapic", "on"])
-
-        # Enable VT-x/AMD-V if available
-        settings.extend(["--hwvirtex", "on"])
-
-        # CPU count from template
+        # Enable ACPI, IOAPIC, VT-x, CPU count, VMSVGA, VRAM, clipboard
         cpus = config.get("cpus", 1)
-        settings.extend(["--cpus", str(cpus)])
+        _sub.run([vbox, "modifyvm", vm_name,
+                  "--acpi", "on", "--ioapic", "on", "--hwvirtex", "on",
+                  "--cpus", str(cpus),
+                  "--graphicscontroller", "vmsvga",
+                  "--vram", "128",
+                  "--clipboard", "bidirectional", "--draganddrop", "bidirectional"],
+                 capture_output=True, text=True, timeout=30)
 
-        # Use VMSVGA graphics controller (supports 3D acceleration)
-        settings.extend(["--graphicscontroller", "vmsvga"])
-
-        # Configure video memory
-        settings.extend(["--vram", "128"])
-
-        # Boot order: DVD first, then disk
-        settings.extend(["--boot1", "dvd", "--boot2", "disk"])
-
-        # Apply clipboard and drag-n-drop
-        settings.extend(["--clipboard", "bidirectional"])
-        settings.extend(["--draganddrop", "bidirectional"])
-
-        # Apply base settings first
-        self.manager.run_command(["modifyvm", vm_name, *settings])
-
-        # Enable 3D acceleration separately (may fail on some systems)
-        try:
-            self.manager.run_command(["modifyvm", vm_name, "--accelerate3d", "on"])
-        except VBoxManagerError:
-            logger.warning("3D acceleration not supported for VM '%s', continuing without it", vm_name)
+        # Enable 3D acceleration separately (may fail)
+        _sub.run([vbox, "modifyvm", vm_name, "--accelerate3d", "on"],
+                 capture_output=True, text=True, timeout=15)
 
     def start_vm(self, name: str, headless: bool = True) -> dict[str, Any]:
         """
