@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="windowsPE">
+        <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35">
+            <SetupUILanguage><UILanguage>en-US</UILanguage></SetupUILanguage>
+            <InputLocale>en-US</InputLocale>
+            <SystemLocale>en-US</SystemLocale>
+            <UILanguage>en-US</UILanguage>
+            <UserLocale>en-US</UserLocale>
+        </component>
+        <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35">
+            <UserData>
+                <ProductKey><Key>VK7JG-NPHTM-C97JM-9MPGT-3V66T</Key></ProductKey>
+                <AcceptEula>true</AcceptEula>
+                <FullName>user</FullName>
+                <Organization>Dev</Organization>
+            </UserData>
+            <DiskConfiguration>
+                <WillShowUI>Never</WillShowUI>
+                <Disk wcm:action="add">
+                    <CreatePartitions>
+                        <CreatePartition wcm:action="add">
+                            <Order>1</Order>
+                            <Type>Primary</Type>
+                            <Size>81920</Size>
+                        </CreatePartition>
+                    </CreatePartitions>
+                    <ModifyPartitions>
+                        <ModifyPartition wcm:action="add">
+                            <Order>1</Order>
+                            <PartitionID>1</PartitionID>
+                            <Format>NTFS</Format>
+                            <Label>Windows</Label>
+                        </ModifyPartition>
+                    </ModifyPartitions>
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>true</WillWipeDisk>
+                </Disk>
+                <ImageInstall>
+                    <OSImage>
+                        <InstallTo>
+                            <DiskID>0</DiskID>
+                            <PartitionID>1</PartitionID>
+                        </InstallTo>
+                    </OSImage>
+                </ImageInstall>
+            </DiskConfiguration>
+        </component>
+    </settings>
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35">
+            <UserAccounts>
+                <LocalAccounts>
+                    <LocalAccount wcm:action="add">
+                        <Password><Value>password</Value><PlainText>true</PlainText></Password>
+                        <DisplayName>user</DisplayName>
+                        <Name>user</Name>
+                        <Group>Administrators</Group>
+                    </LocalAccount>
+                </LocalAccounts>
+            </UserAccounts>
+            <AutoLogon>
+                <Password><Value>password</Value><PlainText>true</PlainText></Password>
+                <Enabled>true</Enabled>
+                <LogonCount>1</LogonCount>
+                <Username>user</Username>
+            </AutoLogon>
+            <OEMInformation>
+                <Manufacturer>Sandra's Virtualization MCP</Manufacturer>
+                <Model>Automated VM</Model>
+            </OEMInformation>
+            <TimeZone>Europe/Vienna</TimeZone>
+        </component>
+    </settings>
+</unattend>
