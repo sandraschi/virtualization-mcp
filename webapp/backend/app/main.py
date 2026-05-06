@@ -1906,13 +1906,21 @@ async def create_vm(request: VMCreateRequest):
                 if ops and hasattr(ops, "configure_network"):
                     await asyncio.to_thread(ops.configure_network, request.name, mode=request.network_mode)
                     result["network_mode"] = request.network_mode
-            if request.iso_path and os.path.isfile(request.iso_path.strip()):
-                await asyncio.to_thread(
-                    service_manager.vm_service.attach_iso,
-                    vm_name=request.name,
-                    iso_path=os.path.abspath(request.iso_path.strip()),
-                )
-                result["iso_attached"] = request.iso_path.strip()
+            if request.iso_path:
+                raw = request.iso_path.strip()
+                logger.debug("ISO path raw: %r", raw)
+                norm = os.path.normpath(os.path.abspath(raw))
+                logger.debug("ISO path norm: %r", norm)
+                logger.debug("ISO exists: isfile=%s exists=%s", os.path.isfile(norm), os.path.exists(norm))
+                if os.path.isfile(norm):
+                    await asyncio.to_thread(
+                        service_manager.vm_service.attach_iso,
+                        vm_name=request.name,
+                        iso_path=norm,
+                    )
+                    result["iso_attached"] = norm
+                else:
+                    logger.warning("ISO path not found, skipping: %r", norm)
         return result
     except HTTPException:
         raise
@@ -2164,13 +2172,17 @@ async def attach_iso_to_vm(vm_name: str, request: AttachIsoRequest):
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
     iso_path = (request.iso_path or "").strip()
-    if not iso_path or not os.path.isfile(iso_path):
-        raise HTTPException(status_code=400, detail="iso_path must be an existing file")
+    logger.debug("Attach ISO raw path: %r", iso_path)
+    norm = os.path.normpath(os.path.abspath(iso_path))
+    logger.debug("Attach ISO norm path: %r", norm)
+    logger.debug("Attach ISO exists: isfile=%s exists=%s", os.path.isfile(norm), os.path.exists(norm))
+    if not norm or not os.path.isfile(norm):
+        raise HTTPException(status_code=400, detail=f"iso_path must be an existing file: {norm}")
     try:
         result = await asyncio.to_thread(
             service_manager.vm_service.attach_iso,
             vm_name=vm_name,
-            iso_path=os.path.abspath(iso_path),
+            iso_path=norm,
         )
         return result
     except Exception as e:

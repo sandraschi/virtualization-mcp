@@ -60,6 +60,9 @@ class VBoxManage:
     def _run_command(self, command: str | list[str], parse_json: bool = False) -> Any:
         """Run a VBoxManage command and return the output.
 
+        Uses direct subprocess with argument list (no shell=True on Windows)
+        to avoid path corruption from backslash interpretation.
+
         Args:
             command: The VBoxManage command to run (without the 'VBoxManage' prefix)
             parse_json: If True, parse the output as JSON
@@ -74,32 +77,20 @@ class VBoxManage:
         if isinstance(command, str):
             command = shlex.split(command)
 
-        # On Windows, we need to handle the command as a single string
-        if isinstance(command, list):
-            # Quote arguments that contain spaces
-            quoted_command = []
-            for arg in command:
-                if " " in str(arg) and not (str(arg).startswith('"') and str(arg).endswith('"')):
-                    quoted_command.append(f'"{arg}"')
-                else:
-                    quoted_command.append(str(arg))
+        # Build the full argument list (no shell=True, no string joining)
+        full_args = [self.vbox_manage, *command]
 
-            # Join the command parts with spaces
-            full_command = f"{self.vbox_manage} {' '.join(quoted_command)}"
-        else:
-            full_command = f"{self.vbox_manage} {command}"
-
-        logger.debug("Running command: %s", full_command)
+        logger.debug("Running command: %s", " ".join(str(a) for a in full_args))
 
         try:
-            # Use shell=True on Windows to handle the command properly
-            result = subprocess.run(
-                full_command,
-                check=True,
-                capture_output=True,
-                text=True,
-                shell=True,
-            )
+            kwargs: dict[str, Any] = {
+                "check": True,
+                "capture_output": True,
+                "text": True,
+            }
+            if sys.platform == "win32":
+                kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW  # type: ignore[attr-defined]
+            result = subprocess.run(full_args, **kwargs)
 
             output = result.stdout.strip()
 
