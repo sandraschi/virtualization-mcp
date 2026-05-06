@@ -92,7 +92,7 @@ def format_mac_address(mac: str) -> str:
     return ":".join(clean_mac[i : i + 2] for i in range(0, 12, 2))
 
 
-def is_port_available(port: int, host: str = "0.0.0.0") -> bool:
+def is_port_available(port: int, host: str = "0.0.0.0") -> bool:  # noqa: S104
     """
     Check if a network port is available.
 

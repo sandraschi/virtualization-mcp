@@ -32,7 +32,7 @@ async def list_vms(
     Args:
         details: If True, include detailed information about each VM
         state_filter: Optional filter to show only VMs in specific state
-        limit: Max VMs to return after offset (1–500, default 100). Prevents huge tool outputs.
+        limit: Max VMs to return after offset (1-500, default 100). Prevents huge tool outputs.
         offset: Skip this many VMs from the start of the parsed list (default 0)
 
     Returns:

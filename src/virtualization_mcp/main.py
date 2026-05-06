@@ -23,7 +23,7 @@ def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="VirtualBox MCP Server")
     parser.add_argument("--debug", action="store_true", default=DEBUG, help="Enable debug logging")
-    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server to")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server to")  # noqa: S104
     parser.add_argument(
         "--port",
         type=int,

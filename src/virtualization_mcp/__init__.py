@@ -24,7 +24,6 @@ __all__ = [
 ]
 
 # Lazy imports to avoid circular imports
-import importlib  # noqa: E402
 
 
 def _lazy_import():

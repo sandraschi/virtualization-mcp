@@ -109,7 +109,7 @@ class VMDeviceMixin:
                 if "Enabled" in result.stdout:
                     return "hyperv"
             except Exception:
-                pass
+                logger.debug("Failed to detect Hyper-V, assuming VirtualBox")
 
         # Default to VirtualBox
         return "virtualbox"

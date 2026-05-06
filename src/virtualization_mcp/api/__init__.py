@@ -6,10 +6,9 @@ input validation, and rate limiting.
 """
 
 import logging
-import time
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Optional, TypeVar, cast
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -19,7 +18,6 @@ from ..services.service_manager import get_service_manager
 from ..utils.rate_limiter import RateLimiter
 
 # Import API modules
-from . import documentation
 from .documentation import register_documentation_routes
 
 logger = logging.getLogger(__name__)

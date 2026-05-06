@@ -9,7 +9,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
-from typing import Any, TypeVar
+from typing import Any, ClassVar, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class VBoxJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that handles VirtualBox objects and other non-serializable types."""
 
     # Cache for type handlers to improve performance
-    _type_handlers: dict[type, Callable[[Any], Any]] = {}
+    _type_handlers: ClassVar[dict[type, Callable[[Any], Any]]] = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

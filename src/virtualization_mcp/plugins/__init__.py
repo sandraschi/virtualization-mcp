@@ -5,7 +5,6 @@ This package contains all plugin modules for virtualization-mcp.
 """
 
 import logging
-from typing import Optional
 
 from fastmcp import FastMCP
 

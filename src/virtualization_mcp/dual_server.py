@@ -45,7 +45,7 @@ def run_web_server():
     configure_logging()
 
     port = int(os.getenv("WEB_PORT", getattr(settings, "WEB_PORT", 3080)))
-    host = os.getenv("WEB_HOST", "0.0.0.0")
+    host = os.getenv("WEB_HOST", "0.0.0.0")  # noqa: S104
 
     logger.info(f"Starting FastAPI web server on http://{host}:{port}")
     logger.info(f"Web interface: http://localhost:{port}")

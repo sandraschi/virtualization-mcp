@@ -9,6 +9,7 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -22,7 +23,7 @@ except ImportError:
     class BaseSettings(BaseModel):
         debug: bool = False
         log_level: str = "INFO"
-        host: str = "0.0.0.0"
+        host: str = "0.0.0.0"  # noqa: S104
         port: int = 10702
 
 
@@ -54,7 +55,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Server configuration (MCP HTTP/SSE: use 10700-10800 per SOTA; 10702 avoids webapp 10700/10701)
-    HOST: str = "0.0.0.0"
+    HOST: str = "0.0.0.0"  # noqa: S104
     PORT: int = Field(default=10702, validation_alias="VIRTUALIZATION_MCP_PORT", description="MCP HTTP/SSE port")
     WEB_PORT: int = 3080  # FastAPI web server port
     WORKERS: int = 1
@@ -210,7 +211,7 @@ def setup_console_handler() -> logging.Handler:
 
     # Color formatter for console
     class ColorFormatter(logging.Formatter):
-        COLORS = {
+        COLORS: ClassVar[dict[str, str]] = {
             "WARNING": "\033[93m",  # Yellow
             "INFO": "\033[92m",  # Green
             "DEBUG": "\033[96m",  # Cyan
