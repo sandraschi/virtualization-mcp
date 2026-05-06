@@ -52,7 +52,7 @@ class VBoxManage:
 
         for path in common_paths:
             if Path(path).exists():
-                return f'"{path}"'
+                return path
 
         # Fall back to just 'VBoxManage' and hope it's in PATH
         return "VBoxManage"
@@ -80,7 +80,10 @@ class VBoxManage:
         # Build the full argument list (no shell=True, no string joining)
         full_args = [self.vbox_manage, *command]
 
-        logger.debug("Running command: %s", " ".join(str(a) for a in full_args))
+        # Debug log: quote the executable path if it has spaces (display only)
+        display = f'"{self.vbox_manage}"' if " " in self.vbox_manage else self.vbox_manage
+        display += " " + " ".join(str(a) for a in command)
+        logger.debug("Running command: %s", display)
 
         try:
             kwargs: dict[str, Any] = {
