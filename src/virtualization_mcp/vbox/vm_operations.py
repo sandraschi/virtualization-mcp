@@ -271,6 +271,9 @@ class VMOperations:
         # Configure video memory
         settings.extend(["--vram", "128"])
 
+        # Boot order: DVD first, then disk
+        settings.extend(["--boot1", "dvd", "--boot2", "disk"])
+
         # Apply clipboard and drag-n-drop
         settings.extend(["--clipboard", "bidirectional"])
         settings.extend(["--draganddrop", "bidirectional"])
@@ -431,6 +434,24 @@ class VMOperations:
         except VBoxManagerError as e:
             logger.debug(f"list_vms failed: {e}")
             return {"success": False, "error": str(e), "vms": []}
+
+    def attach_iso(self, vm_name: str, iso_path: str, port: int = 1, device: int = 0) -> dict[str, Any]:
+        """Attach an ISO to the VM's optical drive."""
+        try:
+            # Add IDE controller if not present (needed for DVD drive)
+            import subprocess as _sub
+            vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+            _sub.run([vbox, "storagectl", vm_name, "--name", "IDE", "--add", "ide"], capture_output=True, text=True, timeout=15)
+            # Attach the ISO
+            self.manager.run_command([
+                "storageattach", vm_name, "--storagectl", "IDE",
+                "--port", str(port), "--device", str(device),
+                "--type", "dvddrive", "--medium", iso_path,
+            ])
+            return {"success": True, "message": f"ISO attached: {iso_path}"}
+        except Exception as e:
+            logger.error("Failed to attach ISO to %s: %s", vm_name, e)
+            return {"success": False, "error": str(e)}
 
     def list_templates(self) -> list[dict[str, Any]]:
         """Get list of available VM templates"""
