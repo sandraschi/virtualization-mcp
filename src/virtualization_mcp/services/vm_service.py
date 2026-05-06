@@ -1810,12 +1810,6 @@ class VMService:
             if not iso_path.lower().endswith((".iso", ".iso.gz")):
                 logger.warning(f"File '{iso_path}' may not be a valid ISO file")
 
-            # Check if there's already an ISO attached at the specified port/device
-            attached_media = self.vbox_manager.get_attached_media(vm_name)
-            for media in attached_media:
-                if media["port"] == port and media["device"] == device and media["type"] == "dvd":
-                    raise VBoxManagerError(f"Port {port} and device {device} already in use by {media['path']}")
-
             # Attach the ISO
             result = self.vm_operations.attach_iso(
                 vm_name=vm_name,
