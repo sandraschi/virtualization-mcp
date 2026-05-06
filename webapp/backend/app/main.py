@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -242,7 +242,7 @@ if ($gw) {
     Write-Host "OLLAMA_HOST set to $env:OLLAMA_HOST (host Ollama)" -ForegroundColor Cyan
 }
 """
-    return f"""# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
+    return """# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
 # Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenFang, RoboFang. Optional: host Ollama.
 # Downloads winget from GitHub if not present, then installs dev tools via winget.
 
@@ -255,12 +255,12 @@ Start-Transcript -Path $logPath -Append
 
 # 1) Check if winget already available
 $haveWinget = $false
-try {{
+try {
     $null = (Get-Command winget -ErrorAction Stop)
     $haveWinget = $true
-}} catch {{}}
+} catch {}
 
-if (-not $haveWinget) {{
+if (-not $haveWinget) {
     Write-Host "winget not found. Installing App Installer from GitHub..." -ForegroundColor Yellow
 
     $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
@@ -270,51 +270,51 @@ if (-not $haveWinget) {{
 
     # Download deps zip
     $depsAsset = $null
-    foreach ($a in $release.assets) {{ if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') {{ $depsAsset = $a; break }} }}
-    if ($depsAsset) {{
+    foreach ($a in $release.assets) { if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') { $depsAsset = $a; break } }
+    if ($depsAsset) {
         Write-Host "Downloading dependencies (93 MB)..." -ForegroundColor Yellow
         $depsPath = Join-Path $work $depsAsset.name
         Invoke-WebRequest -Uri $depsAsset.browser_download_url -OutFile $depsPath -UseBasicParsing
         $depsDir = Join-Path $work 'deps'
         Expand-Archive -Path $depsPath -DestinationPath $depsDir -Force
-        Get-ChildItem -Path $depsDir -Include '*.appx','*.msix','*.msixbundle' -Recurse | Sort-Object Name | ForEach-Object {{
-            try {{ Add-AppxPackage -Path $_.FullName -ErrorAction Stop }} catch {{ Write-Host "  Skip: $($_.Name)" -ForegroundColor Yellow }}
-        }}
-    }}
+        Get-ChildItem -Path $depsDir -Include '*.appx','*.msix','*.msixbundle' -Recurse | Sort-Object Name | ForEach-Object {
+            try { Add-AppxPackage -Path $_.FullName -ErrorAction Stop } catch { Write-Host "  Skip: $($_.Name)" -ForegroundColor Yellow }
+        }
+    }
 
     # Download and install App Installer bundle
-    foreach ($a in $release.assets) {{
-        if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') {{
+    foreach ($a in $release.assets) {
+        if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') {
             Write-Host "Downloading App Installer..." -ForegroundColor Yellow
             $bundlePath = Join-Path $work $a.name
             Invoke-WebRequest -Uri $a.browser_download_url -OutFile $bundlePath -UseBasicParsing
             Add-AppxPackage -Path $bundlePath
             break
-        }}
-    }}
+        }
+    }
 
     # Refresh PATH
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     $wingetDirs = @("$env:LOCALAPPDATA\\Microsoft\\WindowsApps", "$env:ProgramFiles\\winget")
-    foreach ($dir in $wingetDirs) {{
-        if (Test-Path $dir -and $env:Path -notlike "*$dir*") {{ $env:Path = "$dir;$env:Path" }}
-    }}
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {{
+    foreach ($dir in $wingetDirs) {
+        if (Test-Path $dir -and $env:Path -notlike "*$dir*") { $env:Path = "$dir;$env:Path" }
+    }
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         Write-Host "winget still not found after install." -ForegroundColor Red
         exit 1
-    }}
+    }
     Write-Host "winget installed successfully." -ForegroundColor Green
-}}
+}
 
 # 2) Dev stack via winget
 Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
-{{winget_blocks}}
-{{pip_block}}
-{{claude_block}}
-{{openclaw_block}}
-{{openfang_block}}
-{{robofang_block}}
-{{ollama_block}}
+{winget_blocks}
+{pip_block}
+{claude_block}
+{openclaw_block}
+{openfang_block}
+{robofang_block}
+{ollama_block}
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 Write-Host "Full dev setup complete." -ForegroundColor Green
 Stop-Transcript
@@ -403,6 +403,8 @@ class VMCreateRequest(BaseModel):
     cpus: int | None = None
     iso_path: str | None = None  # optional ISO from assets/vbox for first-boot install
     provider: str = "virtualbox"  # "virtualbox" or "hyperv"
+    network_mode: str | None = None  # nat, bridged, hostonly, intnet (default from template)
+    unattended: bool | None = None  # if True, inject autoinstall/autounattend
 
 
 class AttachIsoRequest(BaseModel):
@@ -428,6 +430,62 @@ class VrdeRequest(BaseModel):
 class ToolCallRequest(BaseModel):
     name: str
     arguments: dict[str, Any] = {}
+
+
+# ── Template / Network / Unattended Models ─────────────────────────────────
+
+
+class TemplateUpdateRequest(BaseModel):
+    name: str  # new template name (rename key)
+    config: dict[str, Any]  # full template config
+
+
+class VmNetworkRequest(BaseModel):
+    adapter: int = 1
+    mode: str = "nat"  # nat, bridged, hostonly, intnet, natnetwork, none
+    host_only_if: str | None = None
+    bridged_if: str | None = None
+    intnet_name: str | None = None
+    port_forwarding: list[dict[str, Any]] | None = None
+
+
+class VmPortForwardRequest(BaseModel):
+    name: str = "rule1"
+    protocol: str = "tcp"  # tcp or udp
+    host_port: int
+    guest_port: int
+
+
+class UnattendedRequest(BaseModel):
+    os_type: str = "ubuntu"  # ubuntu or windows
+    hostname: str = "vm"
+    username: str = "user"
+    password: str = "password"
+    timezone: str = "Europe/Vienna"
+
+
+# ── Template Storage ─────────────────────────────────────────────────────
+
+
+TEMPLATES_FILE = os.path.join(os.path.dirname(KEYS_FILE), "templates.json")
+
+
+def _load_templates() -> dict[str, Any]:
+    """Load user-created VM templates from JSON."""
+    try:
+        if os.path.isfile(TEMPLATES_FILE):
+            with open(TEMPLATES_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def _save_templates(data: dict[str, Any]) -> None:
+    """Save user-created VM templates to JSON."""
+    os.makedirs(os.path.dirname(TEMPLATES_FILE), exist_ok=True)
+    with open(TEMPLATES_FILE, "w") as f:
+        json.dump(data, f, indent=2)
 
 
 # API Endpoints
@@ -882,6 +940,357 @@ async def iso_downloads_list():
     return {"tasks": tasks}
 
 
+# ── Template CRUD ─────────────────────────────────────────────────────────
+
+
+@app.get("/api/v1/templates")
+async def get_templates():
+    """List all VM templates (built-in + user-defined)."""
+    user_templates = _load_templates()
+    # Get built-in templates from VM operations
+    builtin = []
+    if service_manager and hasattr(service_manager.vm_service, "vbox_operations"):
+        try:
+            builtin_raw = await asyncio.to_thread(service_manager.vm_service.vbox_operations.list_templates)
+            if builtin_raw:
+                builtin = [
+                    {
+                        "name": t["name"],
+                        "config": t["config"],
+                        "builtin": True,
+                        **{k: v for k, v in t.items() if k != "config"},
+                    }
+                    for t in builtin_raw
+                ]
+        except Exception as e:
+            logger.warning("Could not load built-in templates: %s", e)
+    user_list = [
+        {
+            "name": name,
+            "config": cfg,
+            "builtin": False,
+            "description": cfg.get("description", ""),
+            "os_type": cfg.get("os_type", ""),
+            "memory_mb": cfg.get("memory_mb", 0),
+            "disk_gb": cfg.get("disk_gb", 0),
+        }
+        for name, cfg in user_templates.items()
+    ]
+    return {"templates": builtin + user_list}
+
+
+@app.post("/api/v1/templates")
+async def create_template(request: TemplateUpdateRequest):
+    """Create or overwrite a user-defined VM template."""
+    data = _load_templates()
+    data[request.name] = request.config
+    _save_templates(data)
+    return {"success": True, "name": request.name, "template": request.config}
+
+
+@app.put("/api/v1/templates/{template_name}")
+async def update_template(template_name: str, request: TemplateUpdateRequest):
+    """Update an existing user-defined template."""
+    data = _load_templates()
+    if template_name not in data:
+        raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
+    del data[template_name]
+    data[request.name] = request.config
+    _save_templates(data)
+    return {"success": True, "name": request.name, "template": request.config}
+
+
+@app.delete("/api/v1/templates/{template_name}")
+async def delete_template(template_name: str):
+    """Delete a user-defined template."""
+    data = _load_templates()
+    if template_name in data:
+        del data[template_name]
+        _save_templates(data)
+    return {"success": True, "deleted": template_name}
+
+
+# ── VM Network Configuration ──────────────────────────────────────────────
+
+
+@app.get("/api/v1/vms/{name}/network")
+async def get_vm_network(name: str):
+    """Get network adapter configuration for a VM."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    ops = getattr(service_manager.vm_service, "vbox_operations", None)
+    if not ops or not hasattr(ops, "get_network_config"):
+        raise HTTPException(status_code=501, detail="Network config not available")
+    try:
+        result = await asyncio.to_thread(ops.get_network_config, name)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/vms/{name}/network")
+async def set_vm_network(name: str, request: VmNetworkRequest):
+    """Configure a VM network adapter."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    ops = getattr(service_manager.vm_service, "vbox_operations", None)
+    if not ops or not hasattr(ops, "configure_network"):
+        raise HTTPException(status_code=501, detail="Network config not available")
+    try:
+        result = await asyncio.to_thread(
+            ops.configure_network,
+            name,
+            adapter=request.adapter,
+            mode=request.mode,
+            host_only_if=request.host_only_if,
+            bridged_if=request.bridged_if,
+            intnet_name=request.intnet_name,
+            port_forwarding=request.port_forwarding,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/vms/{name}/network/port-forwarding")
+async def add_port_forwarding(name: str, request: VmPortForwardRequest):
+    """Add a NAT port forwarding rule to a VM."""
+    import subprocess as _sub
+
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    try:
+        r = _sub.run(
+            [
+                vbox,
+                "controlvm",
+                name,
+                "natpf1",
+                request.name,
+                f"{request.protocol},,{request.host_port},,{request.guest_port}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if r.returncode != 0:
+            raise HTTPException(status_code=400, detail=r.stderr.strip())
+        return {"success": True, "rule": request.name, "host_port": request.host_port, "guest_port": request.guest_port}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.delete("/api/v1/vms/{name}/network/port-forwarding/{rule_name}")
+async def remove_port_forwarding(name: str, rule_name: str):
+    """Remove a NAT port forwarding rule."""
+    import subprocess as _sub
+
+    vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    try:
+        r = _sub.run(
+            [vbox, "controlvm", name, "natpf1", "delete", rule_name],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if r.returncode != 0:
+            raise HTTPException(status_code=400, detail=r.stderr.strip())
+        return {"success": True, "deleted": rule_name}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# ── VM Unattended Install ─────────────────────────────────────────────────
+
+
+def _generate_ubuntu_autoinstall(hostname: str, username: str, password: str, timezone: str) -> str:
+    """Generate Ubuntu autoinstall.yaml content."""
+    return f"""#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: {hostname}
+    username: {username}
+    password: "$6$rounds=4096$placeholder$0"
+  ssh:
+    install-server: true
+    allow-pw: true
+    authorized-keys: []
+  storage:
+    layout:
+      name: lvm
+  packages:
+    - curl
+    - git
+    - htop
+    - net-tools
+    - openssh-server
+    - python3
+    - python3-pip
+    - vim
+  late-commands:
+    - echo 'ubuntu-server-setup' | sudo tee /etc/motd
+  user-data:
+    timezone: {timezone}
+  network:
+    version: 2
+    ethernets:
+      enp0s3:
+        dhcp4: true
+"""
+
+
+def _generate_autounattend(hostname: str, username: str, password: str, timezone: str) -> str:
+    """Generate Windows autounattend.xml content."""
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="windowsPE">
+        <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35">
+            <SetupUILanguage>
+                <UILanguage>en-US</UILanguage>
+            </SetupUILanguage>
+            <InputLocale>en-US</InputLocale>
+            <SystemLocale>en-US</SystemLocale>
+            <UILanguage>en-US</UILanguage>
+            <UserLocale>en-US</UserLocale>
+        </component>
+        <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35">
+            <UserData>
+                <ProductKey>
+                    <Key>VK7JG-NPHTM-C97JM-9MPGT-3V66T</Key>
+                </ProductKey>
+                <AcceptEula>true</AcceptEula>
+                <FullName>{username}</FullName>
+                <Organization>Dev</Organization>
+            </UserData>
+        </component>
+    </settings>
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35">
+            <UserAccounts>
+                <LocalAccounts>
+                    <LocalAccount wcm:action="add">
+                        <Password>
+                            <Value>{password}</Value>
+                            <PlainText>true</PlainText>
+                        </Password>
+                        <DisplayName>{username}</DisplayName>
+                        <Name>{username}</Name>
+                        <Group>Administrators</Group>
+                    </LocalAccount>
+                </LocalAccounts>
+            </UserAccounts>
+            <AutoLogon>
+                <Password>
+                    <Value>{password}</Value>
+                    <PlainText>true</PlainText>
+                </Password>
+                <Enabled>true</Enabled>
+                <LogonCount>1</LogonCount>
+                <Username>{username}</Username>
+            </AutoLogon>
+            <OEMInformation>
+                <Manufacturer>Sandra's Virtualization MCP</Manufacturer>
+                <Model>Automated VM</Model>
+            </OEMInformation>
+            <TimeZone>{timezone}</TimeZone>
+        </component>
+    </settings>
+</unattend>
+"""
+
+
+UNATTENDED_DIR = os.path.join(_repo_root, "assets", "unattended")
+
+
+@app.post("/api/v1/vms/{name}/unattended")
+async def setup_unattended_install(name: str, request: UnattendedRequest):
+    """Generate unattended install answer file for a VM.
+
+    For Ubuntu: generates autoinstall.yaml and creates a cloud-init ISO
+    (secondary attach, boot order maintains dvd first).
+    For Windows: generates autounattend.xml and injects into a response ISO.
+    """
+    os.makedirs(UNATTENDED_DIR, exist_ok=True)
+    os_type = (request.os_type or "ubuntu").lower()
+
+    try:
+        if os_type == "ubuntu":
+            content = _generate_ubuntu_autoinstall(
+                request.hostname, request.username, request.password, request.timezone
+            )
+            dest = os.path.join(UNATTENDED_DIR, f"{name}-autoinstall.yaml")
+            with open(dest, "w") as f:
+                f.write(content)
+            _make_cloudinit_iso(name, dest)
+            return {
+                "success": True,
+                "os_type": "ubuntu",
+                "file": dest,
+                "message": "Cloud-init ISO generated. Attach it as the secondary drive after the main ISO.",
+            }
+        elif os_type == "windows":
+            content = _generate_autounattend(request.hostname, request.username, request.password, request.timezone)
+            dest = os.path.join(UNATTENDED_DIR, f"{name}-autounattend.xml")
+            with open(dest, "w") as f:
+                f.write(content)
+            return {
+                "success": True,
+                "os_type": "windows",
+                "file": dest,
+                "message": "autounattend.xml generated. Attach it via VBoxManage storageattach.",
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported OS type: {os_type}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+def _make_cloudinit_iso(vm_name: str, userdata_path: str) -> str:
+    """Create a cloud-init ISO with meta-data and user-data for VBox attachment."""
+    import subprocess as _sub
+
+    iso_dir = os.path.join(UNATTENDED_DIR, f"{vm_name}-cidata")
+    os.makedirs(iso_dir, exist_ok=True)
+    meta_path = os.path.join(iso_dir, "meta-data")
+    with open(meta_path, "w") as f:
+        f.write(f"instance-id: {vm_name}-autoinstall\nlocal-hostname: {vm_name}\n")
+    userdata_dest = os.path.join(iso_dir, "user-data")
+    import shutil
+
+    shutil.copy2(userdata_path, userdata_dest)
+    iso_out = os.path.join(UNATTENDED_DIR, f"{vm_name}-cidata.iso")
+    mkisofs = shutil.which("mkisofs") or shutil.which("genisoimage") or shutil.which("xorrisofs")
+    if mkisofs:
+        _sub.run(
+            [mkisofs, "-output", iso_out, "-volid", "cidata", "-joliet", "-rock", iso_dir],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    else:
+        # Fallback: write script for manual ISO creation
+        logger.warning("No mkisofs found; user-data written to %s for manual ISO creation", userdata_dest)
+        return userdata_dest
+    return iso_out
+
+
+@app.get("/api/v1/vms/{name}/unattended")
+async def get_unattended_config(name: str):
+    """Get the unattended install config for a VM (if generated)."""
+    for fname in (f"{name}-autoinstall.yaml", f"{name}-autounattend.xml"):
+        path = os.path.join(UNATTENDED_DIR, fname)
+        if os.path.isfile(path):
+            with open(path) as f:
+                return {"exists": True, "file": fname, "content": f.read()}
+    return {"exists": False, "message": "No unattended config found for this VM"}
+
+
 # FastMCP 3.1 prompts and skills (for webapp page)
 PROMPTS_META = [
     {
@@ -1101,10 +1510,13 @@ async def sandbox_status():
     """Check if Windows Sandbox is currently running."""
     running = False
     import subprocess as _sub
+
     try:
         r = _sub.run(
             ["tasklist", "/FI", "IMAGENAME eq WindowsSandbox.exe", "/NH", "/FO", "CSV"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         running = "WindowsSandbox.exe" in r.stdout
     except Exception:
@@ -1140,20 +1552,20 @@ async def launch_sandbox(request: SandboxLaunchRequest):
             cmd_path = os.path.join(assets_folder, "Run-DevSetup.cmd")
             with open(cmd_path, "w", encoding="utf-8") as f:
                 f.write(
-                    '@echo off\r\n'
+                    "@echo off\r\n"
                     'set "LOG=%USERPROFILE%\\Desktop\\dev-setup.log"\r\n'
                     'echo [%DATE% %TIME%] Run-DevSetup.cmd starting > "%LOG%"\r\n'
                     'if exist "C:\\Assets\\Run-DevSetup.cmd" ( echo [%DATE% %TIME%] C:\\Assets mapped OK >> "%LOG%" ) else ( echo [%DATE% %TIME%] C:\\Assets NOT MAPPED >> "%LOG%" )\r\n'
                     'dir "C:\\Assets" >> "%LOG%" 2>&1\r\n'
                     'echo [%DATE% %TIME%] Waiting 5s... >> "%LOG%"\r\n'
-                    'ping -n 6 127.0.0.1 > nul\r\n'
+                    "ping -n 6 127.0.0.1 > nul\r\n"
                     'if exist "C:\\Assets\\Setup-DevSandbox.ps1" (\r\n'
                     '    echo [%DATE% %TIME%] Starting Setup-DevSandbox.ps1 >> "%LOG%"\r\n'
                     '    powershell -ExecutionPolicy Bypass -File "C:\\Assets\\Setup-DevSandbox.ps1" >> "%LOG%" 2>&1\r\n'
                     '    echo [%DATE% %TIME%] Exit code %ERRORLEVEL% >> "%LOG%"\r\n'
-                    ') else (\r\n'
+                    ") else (\r\n"
                     '    echo [%DATE% %TIME%] ERROR: Setup-DevSandbox.ps1 NOT FOUND >> "%LOG%"\r\n'
-                    ')\r\n'
+                    ")\r\n"
                     'echo @echo off > "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
                     'echo type "%LOG%" >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
                     'echo echo. >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
@@ -1240,6 +1652,7 @@ async def get_apps():
 async def check_apps_health():
     """Check which registered apps are actually running by pinging their ports."""
     import socket as _socket
+
     if not os.path.exists(REGISTRY_PATH):
         return {"statuses": {}}
     with open(REGISTRY_PATH, encoding="utf-8") as f:
@@ -1265,6 +1678,7 @@ async def check_apps_health():
 async def start_fleet_app(app_id: str):
     """Start a fleet app by running its start command."""
     import subprocess as _sub
+
     if not os.path.exists(REGISTRY_PATH):
         raise HTTPException(status_code=500, detail="Registry not found")
     with open(REGISTRY_PATH, encoding="utf-8") as f:
@@ -1278,8 +1692,10 @@ async def start_fleet_app(app_id: str):
             try:
                 # Run in background
                 _sub.Popen(
-                    cmd, cwd=repo if os.path.isdir(repo) else None,
-                    shell=True, creationflags=_sub.CREATE_NEW_CONSOLE,
+                    cmd,
+                    cwd=repo if os.path.isdir(repo) else None,
+                    shell=True,
+                    creationflags=_sub.CREATE_NEW_CONSOLE,
                 )
                 return {"status": "started", "app_id": app_id}
             except Exception as e:
@@ -1288,6 +1704,7 @@ async def start_fleet_app(app_id: str):
 
 
 # ── Fleet Installer ────────────────────────────────────────────────────────────
+
 
 class FleetInstallRequest(BaseModel):
     repos: list[str]  # repo IDs from the registry
@@ -1331,35 +1748,35 @@ async def fleet_install_script(request: FleetInstallRequest):
         gh_url = f"https://github.com/sandraschi/{repo_id}.git"
 
         lines += [
-            f"",
+            "",
             f"# === {label} ===",
             f"Write-Host 'Cloning {label}...' -ForegroundColor Yellow",
             f"if (-not (Test-Path '{repo_id}')) {{",
             f"    git clone {gh_url}",
-            f"}} else {{",
-            f"    Write-Host '  Already exists, pulling...' -ForegroundColor Gray",
+            "} else {",
+            "    Write-Host '  Already exists, pulling...' -ForegroundColor Gray",
             f"    Set-Location '{repo_id}' && git pull && Set-Location $fleetDir",
-            f"}}",
+            "}",
             f"Set-Location '{repo_id}'",
         ]
 
         # Detect and setup
         lines += [
-            f"# Python venv setup",
-            f"if (Test-Path 'requirements.txt') {{",
-            f"    Write-Host '  Installing Python deps...' -ForegroundColor Yellow",
-            f"    pip install -r requirements.txt 2>&1 | Out-Null",
-            f"}}",
-            f"if (Test-Path 'pyproject.toml') {{",
-            f"    Write-Host '  Installing Python package...' -ForegroundColor Yellow",
-            f"    pip install -e . 2>&1 | Out-Null",
-            f"}}",
-            f"# npm setup",
-            f"if (Test-Path 'package.json') {{",
-            f"    Write-Host '  Installing npm deps...' -ForegroundColor Yellow",
-            f"    npm install 2>&1 | Out-Null",
-            f"}}",
-            f"Set-Location $fleetDir",
+            "# Python venv setup",
+            "if (Test-Path 'requirements.txt') {",
+            "    Write-Host '  Installing Python deps...' -ForegroundColor Yellow",
+            "    pip install -r requirements.txt 2>&1 | Out-Null",
+            "}",
+            "if (Test-Path 'pyproject.toml') {",
+            "    Write-Host '  Installing Python package...' -ForegroundColor Yellow",
+            "    pip install -e . 2>&1 | Out-Null",
+            "}",
+            "# npm setup",
+            "if (Test-Path 'package.json') {",
+            "    Write-Host '  Installing npm deps...' -ForegroundColor Yellow",
+            "    npm install 2>&1 | Out-Null",
+            "}",
+            "Set-Location $fleetDir",
         ]
 
     lines += [
@@ -1391,7 +1808,14 @@ async def chat_interaction(request: ChatRequest):
     _preferred = request.model or "gemma4:e4b"
     if _preferred not in _models and _models:
         # Fallback to any chat-capable small model
-        for _fallback in ("gemma4:e4b", "gemma4:e2b", "llama3.2:3b", "llama3.2:1b", "llama3.1:latest", "qwen2.5-coder:latest"):
+        for _fallback in (
+            "gemma4:e4b",
+            "gemma4:e2b",
+            "llama3.2:3b",
+            "llama3.2:1b",
+            "llama3.1:latest",
+            "qwen2.5-coder:latest",
+        ):
             if _fallback in _models:
                 _preferred = _fallback
                 break
@@ -1463,14 +1887,25 @@ async def create_vm(request: VMCreateRequest):
             if not hasattr(service_manager.vm_service, "hyperv_manager"):
                 raise HTTPException(status_code=503, detail="Hyper-V not available")
             result = await service_manager.vm_service.hyperv_manager.create_vm(
-                name=request.name, memory_mb=request.memory_mb or 2048, disk_gb=request.disk_gb or 25,
+                name=request.name,
+                memory_mb=request.memory_mb or 2048,
+                disk_gb=request.disk_gb or 25,
             )
         else:
             result = await asyncio.to_thread(
-                service_manager.vm_service.create_vm, name=request.name,
-                template=request.template, memory_mb=request.memory_mb,
-                disk_gb=request.disk_gb, cpus=request.cpus,
+                service_manager.vm_service.create_vm,
+                name=request.name,
+                template=request.template,
+                memory_mb=request.memory_mb,
+                disk_gb=request.disk_gb,
+                cpus=request.cpus,
             )
+            # Apply network override if specified
+            if request.network_mode and result.get("success", True):
+                ops = getattr(service_manager.vm_service, "vbox_operations", None)
+                if ops and hasattr(ops, "configure_network"):
+                    await asyncio.to_thread(ops.configure_network, request.name, mode=request.network_mode)
+                    result["network_mode"] = request.network_mode
             if request.iso_path and os.path.isfile(request.iso_path.strip()):
                 await asyncio.to_thread(
                     service_manager.vm_service.attach_iso,
@@ -1652,6 +2087,7 @@ async def delete_vm(name: str):
 async def move_vm_to_desktop(name: str, desktop: int = 2):
     """Move a running VM's window to a specific Windows virtual desktop."""
     import subprocess as _sub
+
     ps_script = f'''
 Add-Type -TypeDefinition @"
 using System;
@@ -1748,6 +2184,7 @@ async def get_vm_screenshot(name: str):
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
     import subprocess as _sub
+
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
         tmp_path = tmp.name
@@ -1756,6 +2193,7 @@ async def get_vm_screenshot(name: str):
         if r.returncode != 0:
             raise Exception(r.stderr.strip())
         from fastapi.responses import FileResponse
+
         return FileResponse(tmp_path, media_type="image/png")
     except Exception as e:
         if os.path.exists(tmp_path):
@@ -1767,9 +2205,10 @@ async def get_vm_screenshot(name: str):
 async def set_vm_vrde(name: str, request: VrdeRequest):
     """Enable or disable VRDE (remote desktop) for a VM."""
     import subprocess as _sub
+
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     enable = "on" if request.enabled else "off"
-    port_arg = [f"--vrdeport", str(request.port)] if request.port else []
+    port_arg = ["--vrdeport", str(request.port)] if request.port else []
     try:
         cmd = [vbox, "modifyvm", name, "--vrde", enable] + port_arg
         r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
@@ -1793,6 +2232,7 @@ async def set_vm_vrde(name: str, request: VrdeRequest):
 async def get_vm_vrde(name: str):
     """Get VRDE status and port for a VM."""
     import subprocess as _sub
+
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     try:
         cmd = [vbox, "showvminfo", name, "--machinereadable"]
@@ -1817,6 +2257,7 @@ async def get_vm_vrde(name: str):
 async def download_vm_rdp(name: str):
     """Download an .rdp file for connecting to the VM via Remote Desktop."""
     import subprocess as _sub
+
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     try:
         cmd = [vbox, "showvminfo", name, "--machinereadable"]
@@ -1828,7 +2269,12 @@ async def download_vm_rdp(name: str):
                 break
         rdp = f"full address:s:127.0.0.1:{port}\nprompt for credentials:i:1\nusername:s:user\nscreen mode id:i:2\nsession bpp:i:32\nconnection type:i:2\nnetworkautodetect:i:1\n"
         from fastapi.responses import PlainTextResponse
-        return PlainTextResponse(content=rdp, media_type="application/octet-stream", headers={"Content-Disposition": f'attachment; filename="{name}.rdp"'})
+
+        return PlainTextResponse(
+            content=rdp,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{name}.rdp"'},
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1837,6 +2283,7 @@ async def download_vm_rdp(name: str):
 async def vm_vnc_websocket(websocket: WebSocket, name: str):
     """WebSocket proxy: browser (noVNC) -> VM VRDP server."""
     import subprocess as _sub
+
     await websocket.accept()
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     port = 3389

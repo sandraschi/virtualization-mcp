@@ -22,6 +22,9 @@ class VMService:
         self.vm_operations = VMOperations(self.vbox_manager)
         self.hyperv_manager = hyperv_manager
 
+        # Alias for main.py endpoint access
+        self.vbox_operations = self.vm_operations
+
         # Log the backend being used
         backend = "Python API" if hasattr(self.vbox_manager, "api") else "VBoxManage CLI"
         logger.info(f"Initialized VMService with {backend} and Hyper-V support")
