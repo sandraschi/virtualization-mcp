@@ -58,11 +58,19 @@
     "label": "Windows",
     "items": [
       {
-        "version": "Windows 11 24H2 (eval)",
-        "url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-11-pro",
-        "description": "Windows 11 Enterprise Evaluation — manual: open link, fill form, download ISO",
+        "version": "Windows 11 24H2 (eval — Microsoft)",
+        "url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-11-enterprise",
+        "description": "Windows 11 Enterprise Evaluation — fill form, get ISO (includes Pro features, 90-day trial)",
         "size": "~6.4 GB",
         "filename": "Win11_24H2_Eval.iso",
+        "manual_download": true
+      },
+      {
+        "version": "Windows 11 24H2 Pro (Archive.org)",
+        "url": "https://archive.org/details/windows-11-24h2-26100.1742",
+        "description": "Windows 11 Pro — download from Internet Archive (direct ISO, no form needed)",
+        "size": "~6.4 GB",
+        "filename": "Win11_24H2_Pro_IA.iso",
         "manual_download": true
       },
       {
