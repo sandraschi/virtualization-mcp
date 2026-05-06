@@ -774,18 +774,20 @@ ISO_CATEGORIES = [
         "id": "windows",
         "label": "Windows",
         "items": [
-            {
-                "version": "Windows 11 24H2 (eval)",
-                "url": "https://go.microsoft.com/fwlink/?linkid=2294090",
-                "description": "Windows 11 Enterprise Evaluation — 90-day trial (redirects to latest)",
-                "size": "~6.4 GB",
-            },
-            {
-                "version": "Windows Server 2025 (eval)",
-                "url": "https://go.microsoft.com/fwlink/?linkid=2294501",
-                "description": "Windows Server 2025 Evaluation — 180-day trial",
-                "size": "~6.0 GB",
-            },
+                {
+                    "version": "Windows 11 24H2 (eval)",
+                    "url": "https://go.microsoft.com/fwlink/?linkid=2294090",
+                    "description": "Windows 11 Enterprise Evaluation — 90-day trial (redirects to latest)",
+                    "size": "~6.4 GB",
+                    "filename": "Win11_24H2_Eval.iso",
+                },
+                {
+                    "version": "Windows Server 2025 (eval)",
+                    "url": "https://go.microsoft.com/fwlink/?linkid=2294501",
+                    "description": "Windows Server 2025 Evaluation — 180-day trial",
+                    "size": "~6.0 GB",
+                    "filename": "WinServer2025_Eval.iso",
+                },
         ],
     },
     {
@@ -881,6 +883,28 @@ class IsoDownloadRequest(BaseModel):
     filename: str | None = None  # optional override, else derived from URL
 
 
+def _derive_filename(url: str, fallback: str = "download.iso") -> str:
+    """Extract a reasonable filename from a download URL.
+
+    Handles fwlink-style redirect URLs that produce empty basenames.
+    """
+    # Try to get basename from the path portion of the URL
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    base = os.path.basename(parsed.path)
+    if base and base.lower().endswith(".iso"):
+        return base
+    # Try the query-param-stripped URL
+    base = os.path.basename(url.split("?")[0])
+    if base and len(base) > 4:  # at least ".iso" length
+        return base
+    # Extract from Content-Disposition hint in the URL
+    for segment in url.split("/"):
+        if segment.lower().endswith(".iso"):
+            return segment
+    return fallback
+
+
 @app.get("/api/v1/iso/candidates")
 async def iso_candidates():
     """List downloadable Ubuntu ISO candidates."""
@@ -894,7 +918,7 @@ async def iso_download(request: IsoDownloadRequest):
     if not url:
         raise HTTPException(status_code=400, detail="url is required")
 
-    filename = request.filename or os.path.basename(url.split("?")[0])
+    filename = request.filename or _derive_filename(url)
     if not filename.lower().endswith(".iso"):
         filename += ".iso"
 
