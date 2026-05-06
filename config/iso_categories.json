@@ -59,10 +59,11 @@
     "items": [
       {
         "version": "Windows 11 24H2 (eval)",
-        "url": "https://go.microsoft.com/fwlink/?linkid=2294090",
-        "description": "Windows 11 Enterprise Evaluation — 90-day trial (redirects to latest)",
+        "url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-11-pro",
+        "description": "Windows 11 Enterprise Evaluation — manual: open link, fill form, download ISO",
         "size": "~6.4 GB",
-        "filename": "Win11_24H2_Eval.iso"
+        "filename": "Win11_24H2_Eval.iso",
+        "manual_download": true
       },
       {
         "version": "Windows Server 2025 (eval)",

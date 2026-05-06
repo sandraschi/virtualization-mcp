@@ -629,6 +629,12 @@ export default function VirtualBox() {
                                 </div>
                               )}
                             </div>
+                          ) : (iso as any).manual_download ? (
+                            <a href={iso.url} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex px-3 py-1.5 text-xs rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+                            >
+                              Manual
+                            </a>
                           ) : (
                             <button
                               onClick={() => startIsoDownload(iso.url, (iso as any).filename)}
