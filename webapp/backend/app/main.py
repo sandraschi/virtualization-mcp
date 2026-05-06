@@ -714,113 +714,26 @@ async def list_vbox_assets():
 _download_tasks: dict[str, dict[str, Any]] = {}
 _download_lock = threading.Lock()
 
-# Common Ubuntu releases (amd64 live-server)
-ISO_CATEGORIES = [
-    {
-        "id": "ubuntu",
-        "label": "Ubuntu",
-        "items": [
-            {
-                "version": "24.04 LTS Server",
-                "url": "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-live-server-amd64.iso",
-                "description": "Ubuntu Server 24.04 LTS — recommended for VMs",
-                "size": "~2.6 GB",
-            },
-            {
-                "version": "24.04 LTS Desktop",
-                "url": "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-desktop-amd64.iso",
-                "description": "Ubuntu Desktop 24.04 LTS — full GUI",
-                "size": "~5.7 GB",
-            },
-            {
-                "version": "22.04 LTS Server",
-                "url": "https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso",
-                "description": "Ubuntu Server 22.04 LTS — stable, long support",
-                "size": "~2.6 GB",
-            },
-            {
-                "version": "22.04 LTS Desktop",
-                "url": "https://releases.ubuntu.com/22.04/ubuntu-22.04.5-desktop-amd64.iso",
-                "description": "Ubuntu Desktop 22.04 LTS",
-                "size": "~4.6 GB",
-            },
-            {
-                "version": "25.04 Server",
-                "url": "https://releases.ubuntu.com/25.04/ubuntu-25.04-live-server-amd64.iso",
-                "description": "Ubuntu Server 25.04 — latest release",
-                "size": "~2.8 GB",
-            },
-        ],
-    },
-    {
-        "id": "debian",
-        "label": "Debian",
-        "items": [
-            {
-                "version": "Debian 12 Bookworm",
-                "url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.10.0-amd64-netinst.iso",
-                "description": "Debian 12 netinstall — minimal, rock-solid",
-                "size": "~700 MB",
-            },
-            {
-                "version": "Debian 12 Live XFCE",
-                "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-12.10.0-amd64-xfce.iso",
-                "description": "Debian 12 with XFCE desktop",
-                "size": "~3.1 GB",
-            },
-        ],
-    },
-    {
-        "id": "windows",
-        "label": "Windows",
-        "items": [
-                {
-                    "version": "Windows 11 24H2 (eval)",
-                    "url": "https://go.microsoft.com/fwlink/?linkid=2294090",
-                    "description": "Windows 11 Enterprise Evaluation — 90-day trial (redirects to latest)",
-                    "size": "~6.4 GB",
-                    "filename": "Win11_24H2_Eval.iso",
-                },
-                {
-                    "version": "Windows Server 2025 (eval)",
-                    "url": "https://go.microsoft.com/fwlink/?linkid=2294501",
-                    "description": "Windows Server 2025 Evaluation — 180-day trial",
-                    "size": "~6.0 GB",
-                    "filename": "WinServer2025_Eval.iso",
-                },
-        ],
-    },
-    {
-        "id": "utilities",
-        "label": "Utilities",
-        "items": [
-            {
-                "version": "GParted Live",
-                "url": "https://downloads.sourceforge.net/gparted/gparted-live-1.6.0-1-amd64.iso",
-                "description": "Partition manager — resize, repair, recover disks",
-                "size": "~550 MB",
-            },
-        ],
-    },
-    {
-        "id": "safety",
-        "label": "Safety Tools",
-        "items": [
-            {
-                "version": "Kali Linux 2025",
-                "url": "https://cdimage.kali.org/kali-2025.1/kali-linux-2025.1-installer-amd64.iso",
-                "description": "Penetration testing and security auditing distro",
-                "size": "~4.6 GB",
-            },
-            {
-                "version": "Kali Linux Live (2025)",
-                "url": "https://cdimage.kali.org/kali-2025.1/kali-linux-2025.1-live-amd64.iso",
-                "description": "Kali live environment — no install needed",
-                "size": "~4.2 GB",
-            },
-        ],
-    },
-]
+# ISO categories loaded from external JSON (editable, extensible), fallback to empty list
+ISO_CATEGORIES_FILE = os.path.join(_repo_root, "config", "iso_categories.json")
+ISO_CATEGORIES: list[dict[str, Any]] = []
+
+
+def _load_iso_categories() -> list[dict[str, Any]]:
+    """Load ISO categories from config/iso_categories.json, with cache."""
+    try:
+        if os.path.isfile(ISO_CATEGORIES_FILE):
+            with open(ISO_CATEGORIES_FILE, encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning("Failed to load %s: %s", ISO_CATEGORIES_FILE, e)
+    return []
+
+
+def _get_iso_categories() -> list[dict[str, Any]]:
+    """Return ISO categories, reloaded on each call so edits take effect without restart."""
+    # Reload from JSON on every call
+    return _load_iso_categories()
 
 
 def _download_iso_worker(task_id: str, url: str, dest: str) -> None:
@@ -907,8 +820,12 @@ def _derive_filename(url: str, fallback: str = "download.iso") -> str:
 
 @app.get("/api/v1/iso/candidates")
 async def iso_candidates():
-    """List downloadable Ubuntu ISO candidates."""
-    return {"categories": ISO_CATEGORIES, "assets_vbox": ASSETS_VBOX}
+    """List downloadable ISO candidates from config/iso_categories.json (reloaded on each call).
+
+    Edit config/iso_categories.json and refresh to see changes immediately.
+    """
+    cats = _get_iso_categories()
+    return {"categories": cats, "assets_vbox": ASSETS_VBOX, "config_file": ISO_CATEGORIES_FILE}
 
 
 @app.post("/api/v1/iso/download")
