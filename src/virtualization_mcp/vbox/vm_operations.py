@@ -436,18 +436,21 @@ class VMOperations:
             return {"success": False, "error": str(e), "vms": []}
 
     def attach_iso(self, vm_name: str, iso_path: str, port: int = 1, device: int = 0) -> dict[str, Any]:
-        """Attach an ISO to the VM's optical drive."""
+        """Attach an ISO to the VM's optical drive via VBoxManage."""
+        import subprocess as _sub
+        vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
         try:
-            # Add IDE controller if not present (needed for DVD drive)
-            import subprocess as _sub
-            vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
-            _sub.run([vbox, "storagectl", vm_name, "--name", "IDE", "--add", "ide"], capture_output=True, text=True, timeout=15)
+            # Add IDE controller (ignore error if already exists)
+            _sub.run([vbox, "storagectl", vm_name, "--name", "IDE", "--add", "ide"],
+                     capture_output=True, text=True, timeout=15)
             # Attach the ISO
-            self.manager.run_command([
-                "storageattach", vm_name, "--storagectl", "IDE",
+            r = _sub.run([
+                vbox, "storageattach", vm_name, "--storagectl", "IDE",
                 "--port", str(port), "--device", str(device),
                 "--type", "dvddrive", "--medium", iso_path,
-            ])
+            ], capture_output=True, text=True, timeout=30)
+            if r.returncode != 0:
+                raise VBoxManagerError(r.stderr.strip() or f"VBoxManage exit code {r.returncode}")
             return {"success": True, "message": f"ISO attached: {iso_path}"}
         except Exception as e:
             logger.error("Failed to attach ISO to %s: %s", vm_name, e)
