@@ -105,6 +105,8 @@ export default function VirtualBox() {
   const [showUnattended, setShowUnattended] = useState<string | null>(null);
   const [unattendedUsername, setUnattendedUsername] = useState("user");
   const [unattendedPassword, setUnattendedPassword] = useState("password");
+  const [unattendedDevTools, setUnattendedDevTools] = useState<Record<string, boolean>>({});
+  const [unattendedUseOllama, setUnattendedUseOllama] = useState(false);
 
   const fetchVMs = async () => {
     setLoading(true);
@@ -271,10 +273,20 @@ export default function VirtualBox() {
 
   const submitUnattended = async (vmName: string) => {
     try {
+      const devTools = Object.entries(unattendedDevTools)
+        .filter(([, v]) => v)
+        .map(([k]) => k);
       await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vmName)}/unattended`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ os_type: "ubuntu", hostname: vmName, username: unattendedUsername, password: unattendedPassword }),
+        body: JSON.stringify({
+          os_type: "windows",
+          hostname: vmName,
+          username: unattendedUsername,
+          password: unattendedPassword,
+          dev_tools: devTools.length > 0 ? devTools : undefined,
+          use_host_ollama: unattendedUseOllama,
+        }),
       });
       setShowUnattended(null);
     } catch (e: any) { console.error(e); }
@@ -768,7 +780,7 @@ export default function VirtualBox() {
                     VRDP
                   </button>
                 )}
-                <button onClick={() => setShowUnattended(vm.name)}
+                <button onClick={() => { setShowUnattended(vm.name); setUnattendedDevTools({python: true, git: true, node: true, vscode: true, uv: true}); }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
                   Autoinstall
                 </button>
@@ -1121,10 +1133,10 @@ export default function VirtualBox() {
       {showUnattended && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={() => setShowUnattended(null)}>
-          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6 space-y-4"
+          <div className="bg-card border border-border rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}>
             <h3 className="font-semibold text-lg">Autoinstall: {showUnattended}</h3>
-            <p className="text-sm text-muted-foreground">Generates answer file (autoinstall.yaml or autounattend.xml). For Ubuntu, creates a cloud-init ISO.</p>
+            <p className="text-sm text-muted-foreground">For Windows VMs, selected dev tools install via winget on first login.</p>
             <div>
               <label className="block text-sm font-medium mb-1">Username</label>
               <input value={unattendedUsername} onChange={(e) => setUnattendedUsername(e.target.value)}
@@ -1134,6 +1146,36 @@ export default function VirtualBox() {
               <label className="block text-sm font-medium mb-1">Password</label>
               <input type="password" value={unattendedPassword} onChange={(e) => setUnattendedPassword(e.target.value)}
                 className="w-full bg-background/50 border border-input rounded px-3 py-2" />
+            </div>
+            <div className="border-t border-border pt-3">
+              <p className="text-sm font-medium mb-2">Dev Tools (Windows only)</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ["python", "Python 3.12"],
+                  ["git", "Git"],
+                  ["node", "Node.js LTS"],
+                  ["vscode", "VS Code"],
+                  ["uv", "uv (pip+venv)"],
+                  ["just", "Just"],
+                  ["notepad++", "Notepad++"],
+                  ["windsurf", "Windsurf"],
+                  ["cursor", "Cursor"],
+                  ["antigravity", "Antigravity"],
+                  ["claude_desktop", "Claude Desktop"],
+                ].map(([id, label]) => (
+                  <label key={id} className="flex items-center gap-2 text-sm py-1 px-2 rounded hover:bg-white/5 cursor-pointer">
+                    <input type="checkbox" checked={unattendedDevTools[id] ?? false}
+                      onChange={(e) => setUnattendedDevTools(prev => ({ ...prev, [id]: e.target.checked }))}
+                      className="rounded border-white/20 bg-white/5" />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              <label className="flex items-center gap-2 text-sm mt-2 py-1 px-2 rounded hover:bg-white/5 cursor-pointer">
+                <input type="checkbox" checked={unattendedUseOllama} onChange={() => setUnattendedUseOllama(!unattendedUseOllama)}
+                  className="rounded border-white/20 bg-white/5" />
+                Use host Ollama (set OLLAMA_HOST)
+              </label>
             </div>
             <div className="flex gap-2 pt-2">
               <button onClick={() => setShowUnattended(null)}
