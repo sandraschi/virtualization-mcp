@@ -619,7 +619,7 @@ export default function VirtualBox() {
                             </div>
                           ) : (
                             <button
-                              onClick={() => startIsoDownload(iso.url)}
+                              onClick={() => startIsoDownload(iso.url, (iso as any).filename)}
                               className="px-3 py-1.5 text-xs rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
                             >
                               Download
