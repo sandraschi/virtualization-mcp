@@ -1,7 +1,18 @@
-import { Loader2, Monitor, Play, Power, RefreshCw, Download, Wifi, WifiOff } from "lucide-react";
+import { Loader2, Monitor, Play, Power, Download, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../api/config";
+
+declare global {
+  interface Window {
+    RFB?: new (target: HTMLElement, url: string) => {
+      scaleViewport: boolean;
+      resizeSession: boolean;
+      addEventListener: (event: string, handler: (e?: any) => void) => void;
+      disconnect: () => void;
+    };
+  }
+}
 
 export default function VmConsole() {
   const { name } = useParams<{ name: string }>();
@@ -11,11 +22,10 @@ export default function VmConsole() {
   const [vrdePort, setVrdePort] = useState(3389);
   const [enabling, setEnabling] = useState(false);
   const [vncConnected, setVncConnected] = useState(false);
-  const [useScreenshot, setUseScreenshot] = useState(false);
-  const [screenshotTs, setScreenshotTs] = useState(Date.now());
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const scrInterval = useRef<ReturnType<typeof setInterval>>();
+  const [novncLoaded, setNovncLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rfbRef = useRef<any>(null);
 
   const fetchVmInfo = useCallback(async () => {
     if (!name) return;
@@ -47,6 +57,61 @@ export default function VmConsole() {
     fetchVrde();
   }, [fetchVmInfo, fetchVrde]);
 
+  // Load noVNC from CDN
+  useEffect(() => {
+    if (document.querySelector('script[src*="novnc"]')) return;
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/@novnc/novnc@1.5.0/dist/rfb.min.js";
+    script.async = true;
+    script.onload = () => setNovncLoaded(true);
+    script.onerror = () => setError("Failed to load noVNC library");
+    document.head.appendChild(script);
+  }, []);
+
+  const disconnectRfb = useCallback(() => {
+    if (rfbRef.current) {
+      try { rfbRef.current.disconnect(); } catch { /* ignore */ }
+      rfbRef.current = null;
+    }
+    setVncConnected(false);
+  }, []);
+
+  const connectRfb = useCallback(() => {
+    if (!name || !novncLoaded || !window.RFB || !containerRef.current) return;
+    disconnectRfb();
+
+    const wsUrl = `${API_BASE.replace("http", "ws")}/api/v1/vms/${encodeURIComponent(name)}/vnc`;
+
+    try {
+      const rfb = new window.RFB(containerRef.current, wsUrl);
+      rfb.scaleViewport = true;
+      rfb.resizeSession = true;
+
+      rfb.addEventListener("connect", () => {
+        setVncConnected(true);
+        setError(null);
+      });
+
+      rfb.addEventListener("disconnect", (e: any) => {
+        setVncConnected(false);
+        setError(e?.detail?.reason ? `Disconnected: ${e.detail.reason}` : null);
+      });
+
+      rfb.addEventListener("credentialsrequired", () => {
+        setError("VNC credentials required but not available");
+      });
+
+      rfbRef.current = rfb;
+    } catch (e: any) {
+      setError(`VNC connection error: ${e.message}`);
+    }
+  }, [name, novncLoaded, disconnectRfb]);
+
+  useEffect(() => {
+    if (novncLoaded && vrde) connectRfb();
+    return () => disconnectRfb();
+  }, [novncLoaded, vrde, connectRfb, disconnectRfb]);
+
   const enableVrde = async () => {
     if (!name) return;
     setEnabling(true);
@@ -64,39 +129,6 @@ export default function VmConsole() {
     } catch { /* ignore */ }
     setEnabling(false);
   };
-
-  const connectVnc = () => {
-    if (!name || !vrde) return;
-    setVncConnected(true);
-    setUseScreenshot(false);
-    // RFB protocol via WebSocket — simple canvas rendering
-    const ws = new WebSocket(`${API_BASE.replace("http", "ws")}/api/v1/vms/${encodeURIComponent(name)}/vnc`);
-    ws.binaryType = "arraybuffer";
-    ws.onopen = () => console.log("VNC WebSocket connected");
-    ws.onerror = () => { setVncConnected(false); setUseScreenshot(true); };
-    ws.onclose = () => { setVncConnected(false); };
-    ws.onmessage = (event) => {
-      if (event.data instanceof ArrayBuffer) {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        // For full RFB we need noVNC lib — fallback to screenshot for now
-        setUseScreenshot(true);
-        ws.close();
-      }
-    };
-    wsRef.current = ws;
-  };
-
-  useEffect(() => {
-    if (useScreenshot) {
-      scrInterval.current = setInterval(() => setScreenshotTs(Date.now()), 3000);
-      return () => { if (scrInterval.current) clearInterval(scrInterval.current); };
-    }
-  }, [useScreenshot]);
-
-  useEffect(() => {
-    if (vrde && !vncConnected) connectVnc();
-  }, [vrde]);
 
   const isRunning = vmState === "running";
   const vmAction = async (action: string) => {
@@ -125,6 +157,9 @@ export default function VmConsole() {
               {vrde ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
               VRDP:{vrdePort}
             </span>
+          )}
+          {vncConnected && (
+            <span className="text-xs text-green-400">VNC connected</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -155,37 +190,31 @@ export default function VmConsole() {
         </div>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="px-4 py-2 bg-red-900/40 text-red-300 text-sm border-b border-red-900/50">
+          {error}
+        </div>
+      )}
+
       {/* Screen */}
       <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-black">
-        <canvas ref={canvasRef} className="hidden" />
-        {useScreenshot && isRunning ? (
-          <img
-            key={screenshotTs}
-            src={`${API_BASE}/api/v1/vms/${encodeURIComponent(name!)}/screenshot?t=${screenshotTs}`}
-            alt={`${name} screen`}
-            className="max-w-full max-h-full object-contain"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-        ) : isRunning ? (
-          <div className="flex flex-col items-center justify-center text-white/40">
-            <Monitor className="w-16 h-16 mb-4" />
-            <p className="text-lg">Connecting to VM...</p>
-            <p className="text-sm mt-2 text-white/20">
-              {!vrde ? "Enable Remote Desktop above" : "Use RDP File or screenshot view"}
-            </p>
-          </div>
-        ) : (
+        {!isRunning ? (
           <div className="flex flex-col items-center justify-center text-white/40">
             <Monitor className="w-20 h-20 mb-4" />
             <p className="text-xl font-medium">VM is not running</p>
             <p className="text-sm mt-2">Click <strong className="text-white/60">Start</strong> to boot.</p>
           </div>
-        )}
-        {useScreenshot && (
-          <div className="absolute bottom-4 right-4 px-2 py-1 rounded bg-black/60 text-[10px] text-white/30">
-            Screenshot mode — use RDP for full interaction
+        ) : !vncConnected ? (
+          <div className="flex flex-col items-center justify-center text-white/40">
+            <Monitor className="w-16 h-16 mb-4" />
+            <p className="text-lg">Connecting to VM...</p>
+            <p className="text-sm mt-2 text-white/20">
+              {!vrde ? "Enable Remote Desktop above" : "Establishing VNC session via noVNC"}
+            </p>
           </div>
-        )}
+        ) : null}
+        <div ref={containerRef} className={vncConnected ? "w-full h-full" : "hidden"} />
       </div>
     </div>
   );

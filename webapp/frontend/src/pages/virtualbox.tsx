@@ -16,11 +16,12 @@ import { useEffect, useState } from "react";
 import { API_BASE } from "../api/config";
 
 const VBOX_DOWNLOAD_URL = "https://www.virtualbox.org/wiki/Downloads";
-const VM_TEMPLATES = [
-  { id: "ubuntu-dev", label: "Ubuntu (dev)" },
-  { id: "win11-pro", label: "Win 11 Pro" },
-  { id: "windows-test", label: "Windows (test)" },
-  { id: "test-template", label: "Test template (Linux 64)" },
+const NETWORK_MODES = [
+  { id: "", label: "Default (from template)" },
+  { id: "nat", label: "NAT" },
+  { id: "bridged", label: "Bridged" },
+  { id: "hostonly", label: "Host-Only" },
+  { id: "intnet", label: "Internal" },
 ];
 
 interface VM {
@@ -93,6 +94,17 @@ export default function VirtualBox() {
   const [downloadTasks, setDownloadTasks] = useState<Record<string, DownloadTask>>({});
   const [customIsoUrl, setCustomIsoUrl] = useState("");
   const [customIsoName, setCustomIsoName] = useState("");
+  const [networkMode, setNetworkMode] = useState("");
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [editTemplateName, setEditTemplateName] = useState("");
+  const [editTemplateConfig, setEditTemplateConfig] = useState("{}");
+  const [creatingTemplate, setCreatingTemplate] = useState(false);
+  const [vmNetworks, setVmNetworks] = useState<Record<string, any>>({});
+  const [showNetworkConfig, setShowNetworkConfig] = useState<string | null>(null);
+  const [showUnattended, setShowUnattended] = useState<string | null>(null);
+  const [unattendedUsername, setUnattendedUsername] = useState("user");
+  const [unattendedPassword, setUnattendedPassword] = useState("password");
 
   const fetchVMs = async () => {
     setLoading(true);
@@ -138,6 +150,7 @@ export default function VirtualBox() {
   useEffect(() => {
     fetchVMs();
     fetchVboxStatus();
+    fetchTemplates();
     const interval = setInterval(fetchVMs, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -209,6 +222,62 @@ export default function VirtualBox() {
       .then((r) => (r.ok ? r.json() : { files: [] }))
       .then((d) => setVboxAssets(d.files || []))
       .catch(() => setVboxAssets([]));
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/templates`);
+      if (res.ok) {
+        const d = await res.json();
+        setTemplates(d.templates || []);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const submitTemplate = async () => {
+    if (!editTemplateName.trim()) return;
+    setCreatingTemplate(true);
+    try {
+      let config;
+      try { config = JSON.parse(editTemplateConfig); } catch { config = { os_type: "Linux_64", memory_mb: 2048, disk_gb: 20, cpus: 2 }; }
+      await fetch(`${API_BASE}/api/v1/templates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editTemplateName.trim(), config }),
+      });
+      setEditTemplateName("");
+      setEditTemplateConfig("{}");
+      fetchTemplates();
+    } catch (e: any) { console.error(e); }
+    finally { setCreatingTemplate(false); }
+  };
+
+  const deleteTemplate = async (name: string) => {
+    try {
+      await fetch(`${API_BASE}/api/v1/templates/${encodeURIComponent(name)}`, { method: "DELETE" });
+      fetchTemplates();
+    } catch { /* ignore */ }
+  };
+
+  const fetchNetworkConfig = async (vmName: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vmName)}/network`);
+      if (res.ok) {
+        const d = await res.json();
+        setVmNetworks(prev => ({ ...prev, [vmName]: d }));
+      }
+    } catch { /* ignore */ }
+  };
+
+  const submitUnattended = async (vmName: string) => {
+    try {
+      await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vmName)}/unattended`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ os_type: "ubuntu", hostname: vmName, username: unattendedUsername, password: unattendedPassword }),
+      });
+      setShowUnattended(null);
+    } catch (e: any) { console.error(e); }
   };
 
   const fetchIsoCandidates = async () => {
@@ -294,6 +363,7 @@ export default function VirtualBox() {
           memory_mb: createMemoryMb,
           disk_gb: createDiskGb,
           iso_path: createIsoPath || undefined,
+          network_mode: networkMode || undefined,
         }),
       });
       if (!res.ok)
@@ -686,12 +756,22 @@ export default function VirtualBox() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
                   <Monitor className="w-3.5 h-3.5" /> Console
                 </a>
+                {vm.provider === "virtualbox" && (
+                  <button onClick={() => { setShowNetworkConfig(vm.name); fetchNetworkConfig(vm.name); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
+                    Network
+                  </button>
+                )}
                 {vm.state === "running" && (
                   <button onClick={async () => { await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}/vrde`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({enabled: true}) }); }}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
                     VRDP
                   </button>
                 )}
+                <button onClick={() => setShowUnattended(vm.name)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 hover:text-white transition-colors font-medium">
+                  Autoinstall
+                </button>
                 <div className="flex-1" />
                 {vm.state !== "running" && (
                   <button onClick={async () => { if (!window.confirm(`Delete VM "${vm.name}"?`)) return; setActionId(vm.name + "delete"); try { await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(vm.name)}`, { method: "DELETE" }); setTimeout(fetchVMs, 1000); } catch {} setActionId(null); }}
@@ -764,17 +844,26 @@ export default function VirtualBox() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Template</label>
-              <select
-                value={createTemplate}
-                onChange={(e) => setCreateTemplate(e.target.value)}
-                className="w-full bg-background/50 border border-input rounded px-3 py-2"
-              >
-                {VM_TEMPLATES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  value={createTemplate}
+                  onChange={(e) => setCreateTemplate(e.target.value)}
+                  className="flex-1 bg-background/50 border border-input rounded px-3 py-2"
+                >
+                  {(templates.length > 0 ? templates : [
+                    { name: "ubuntu-dev", description: "Ubuntu (dev)" },
+                    { name: "win11-pro", description: "Win 11 Pro" },
+                    { name: "minimal-linux", description: "Minimal Linux" },
+                  ]).map((t: any) => (
+                    <option key={t.name} value={t.name}>
+                      {t.description || t.name}
+                    </option>
+                  ))}
+                </select>
+                <button onClick={() => { setShowTemplateManager(true); fetchTemplates(); }}
+                  className="px-3 py-2 text-xs rounded-lg bg-white/5 text-muted-foreground hover:bg-white/15 border border-border"
+                  title="Manage Templates">+</button>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -834,6 +923,15 @@ export default function VirtualBox() {
                   ISOs, or put .iso files in repo assets/vbox folder.
                 </p>
               )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Network</label>
+              <select value={networkMode} onChange={(e) => setNetworkMode(e.target.value)}
+                className="w-full bg-background/50 border border-input rounded px-3 py-2">
+                {NETWORK_MODES.map((m) => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
+                ))}
+              </select>
             </div>
             <div className="flex gap-2 pt-2">
               <button
@@ -917,6 +1015,131 @@ export default function VirtualBox() {
                 ) : null}{" "}
                 Attach
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Manager Modal */}
+      {showTemplateManager && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowTemplateManager(false)}>
+          <div className="bg-card border border-border rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg">VM Templates</h3>
+              <button onClick={() => setShowTemplateManager(false)} className="p-1 rounded hover:bg-white/10 text-muted-foreground">✕</button>
+            </div>
+            <div className="space-y-2">
+              <input value={editTemplateName} onChange={(e) => setEditTemplateName(e.target.value)}
+                placeholder="Template name (e.g. my-custom-vm)"
+                className="w-full bg-background/50 border border-input rounded px-3 py-2 text-sm" />
+              <textarea value={editTemplateConfig} onChange={(e) => setEditTemplateConfig(e.target.value)}
+                placeholder='{"os_type":"Ubuntu_64","memory_mb":4096,"disk_gb":25,"cpus":2,"network":"NAT"}'
+                rows={4} className="w-full bg-background/50 border border-input rounded px-3 py-2 text-xs font-mono" />
+              <button onClick={submitTemplate} disabled={creatingTemplate || !editTemplateName.trim()}
+                className="w-full py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 text-sm font-medium">
+                {creatingTemplate ? <Loader2 className="w-4 h-4 animate-spin inline" /> : null} Save Template
+              </button>
+            </div>
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-xs text-muted-foreground font-medium">Saved Templates ({templates.length})</p>
+              {templates.map((t: any) => (
+                <div key={t.name} className="flex items-center justify-between py-2 px-3 rounded-lg bg-black/20 border border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.config?.os_type || t.os_type} · {(t.config?.memory_mb || t.memory_mb || "?")}MB</p>
+                  </div>
+                  {!t.builtin && (
+                    <button onClick={() => deleteTemplate(t.name)}
+                      className="px-2 py-1 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors font-medium">
+                      Delete
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Network Config Modal */}
+      {showNetworkConfig && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowNetworkConfig(null)}>
+          <div className="bg-card border border-border rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg">Network: {showNetworkConfig}</h3>
+              <button onClick={() => setShowNetworkConfig(null)} className="p-1 rounded hover:bg-white/10 text-muted-foreground">✕</button>
+            </div>
+            {vmNetworks[showNetworkConfig]?.adapters?.length > 0 ? (
+              <div className="space-y-2">
+                {vmNetworks[showNetworkConfig]?.adapters?.map((a: any) => (
+                  <div key={a.adapter} className="flex items-center justify-between py-2 px-3 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-sm">NIC{a.adapter}</span>
+                    <span className="text-xs font-mono text-muted-foreground">{a.mode}</span>
+                    <select value={a.mode} onChange={async (e) => {
+                      await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(showNetworkConfig)}/network`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ adapter: a.adapter, mode: e.target.value }),
+                      });
+                      fetchNetworkConfig(showNetworkConfig!);
+                    }} className="text-xs bg-background/50 border border-input rounded px-2 py-1">
+                      <option value="nat">NAT</option>
+                      <option value="bridged">Bridged</option>
+                      <option value="hostonly">Host-Only</option>
+                      <option value="intnet">Internal</option>
+                      <option value="none">None</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-sm text-muted-foreground">No adapters found.</p>}
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground font-medium mb-2">Port Forwarding</p>
+              {vmNetworks[showNetworkConfig]?.port_forwarding?.length > 0 ? (
+                <div className="space-y-1 mb-2">
+                  {vmNetworks[showNetworkConfig]?.port_forwarding?.map((r: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between text-xs py-1 px-2 rounded bg-black/20">
+                      <span>{r.name}: {r.protocol}://host:{r.host_port} → guest:{r.guest_port}</span>
+                      <button onClick={async () => {
+                        await fetch(`${API_BASE}/api/v1/vms/${encodeURIComponent(showNetworkConfig)}/network/port-forwarding/${encodeURIComponent(r.name)}`, { method: "DELETE" });
+                        fetchNetworkConfig(showNetworkConfig!);
+                      }} className="text-red-400 hover:text-red-300">✕</button>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-muted-foreground mb-2">No port forwarding rules.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unattended Install Modal */}
+      {showUnattended && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowUnattended(null)}>
+          <div className="bg-card border border-border rounded-xl shadow-xl max-w-md w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-lg">Autoinstall: {showUnattended}</h3>
+            <p className="text-sm text-muted-foreground">Generates answer file (autoinstall.yaml or autounattend.xml). For Ubuntu, creates a cloud-init ISO.</p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Username</label>
+              <input value={unattendedUsername} onChange={(e) => setUnattendedUsername(e.target.value)}
+                className="w-full bg-background/50 border border-input rounded px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Password</label>
+              <input type="password" value={unattendedPassword} onChange={(e) => setUnattendedPassword(e.target.value)}
+                className="w-full bg-background/50 border border-input rounded px-3 py-2" />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowUnattended(null)}
+                className="flex-1 py-2 rounded-lg border border-border hover:bg-white/10">Cancel</button>
+              <button onClick={() => submitUnattended(showUnattended!)}
+                className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">Generate</button>
             </div>
           </div>
         </div>

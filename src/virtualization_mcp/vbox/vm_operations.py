@@ -166,20 +166,36 @@ class VMOperations:
 
             # Create VM
             import subprocess as _sub
+
             vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
-            _sub.run([vbox, "createvm", "--name", name, "--ostype", template_config["os_type"], "--register"],
-                     capture_output=True, text=True, timeout=30, check=True)
+            _sub.run(
+                [vbox, "createvm", "--name", name, "--ostype", template_config["os_type"], "--register"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=True,
+            )
             logger.debug("VM '%s' registered with VBox", name)
 
             # Configure memory + network + boot order in one modifyvm call
             boot_opts = ["--boot1", "dvd", "--boot2", "disk"]
-            _sub.run([vbox, "modifyvm", name, "--memory", str(template_config["memory_mb"])] + boot_opts,
-                     capture_output=True, text=True, timeout=30, check=True)
+            _sub.run(
+                [vbox, "modifyvm", name, "--memory", str(template_config["memory_mb"])] + boot_opts,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=True,
+            )
 
             # Configure network
             network_type = template_config.get("network", "NAT")
-            _sub.run([vbox, "modifyvm", name, "--nic1", network_type.lower()],
-                     capture_output=True, text=True, timeout=30, check=True)
+            _sub.run(
+                [vbox, "modifyvm", name, "--nic1", network_type.lower()],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=True,
+            )
 
             # Create and attach disk if specified
             if template_config.get("disk_gb"):
@@ -227,6 +243,7 @@ class VMOperations:
     def _create_disk(self, vm_name: str, size_gb: int) -> str:
         """Create virtual disk in the VM's folder."""
         import os as _os
+
         home = _os.path.expanduser("~")
         vbox_folder = _os.path.join(home, "VirtualBox VMs", vm_name)
         _os.makedirs(vbox_folder, exist_ok=True)
@@ -234,41 +251,89 @@ class VMOperations:
         size_mb = size_gb * 1024
 
         import subprocess as _sub
+
         vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
-        _sub.run([vbox, "createhd", "--filename", disk_path, "--size", str(size_mb), "--format", "VDI"],
-                 capture_output=True, text=True, timeout=30, check=True)
+        _sub.run(
+            [vbox, "createhd", "--filename", disk_path, "--size", str(size_mb), "--format", "VDI"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
         return disk_path
 
     def _attach_disk(self, vm_name: str, disk_path: str) -> None:
         """Attach disk to VM via SATA controller."""
         import subprocess as _sub
+
         vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
         # Add SATA controller (ignore error if exists)
-        _sub.run([vbox, "storagectl", vm_name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI"],
-                 capture_output=True, text=True, timeout=15)
+        _sub.run(
+            [vbox, "storagectl", vm_name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
         # Attach disk
-        _sub.run([vbox, "storageattach", vm_name, "--storagectl", "SATA", "--port", "0", "--device", "0",
-                  "--type", "hdd", "--medium", disk_path],
-                 capture_output=True, text=True, timeout=30, check=True)
+        _sub.run(
+            [
+                vbox,
+                "storageattach",
+                vm_name,
+                "--storagectl",
+                "SATA",
+                "--port",
+                "0",
+                "--device",
+                "0",
+                "--type",
+                "hdd",
+                "--medium",
+                disk_path,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
 
     def _apply_vm_settings(self, vm_name: str, config: dict[str, Any]) -> None:
         """Apply additional VM settings from template."""
         import subprocess as _sub
+
         vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
 
         # Enable ACPI, IOAPIC, VT-x, CPU count, VMSVGA, VRAM, clipboard
         cpus = config.get("cpus", 1)
-        _sub.run([vbox, "modifyvm", vm_name,
-                  "--acpi", "on", "--ioapic", "on", "--hwvirtex", "on",
-                  "--cpus", str(cpus),
-                  "--graphicscontroller", "vmsvga",
-                  "--vram", "128",
-                  "--clipboard", "bidirectional", "--draganddrop", "bidirectional"],
-                 capture_output=True, text=True, timeout=30)
+        _sub.run(
+            [
+                vbox,
+                "modifyvm",
+                vm_name,
+                "--acpi",
+                "on",
+                "--ioapic",
+                "on",
+                "--hwvirtex",
+                "on",
+                "--cpus",
+                str(cpus),
+                "--graphicscontroller",
+                "vmsvga",
+                "--vram",
+                "128",
+                "--clipboard",
+                "bidirectional",
+                "--draganddrop",
+                "bidirectional",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
 
         # Enable 3D acceleration separately (may fail)
-        _sub.run([vbox, "modifyvm", vm_name, "--accelerate3d", "on"],
-                 capture_output=True, text=True, timeout=15)
+        _sub.run([vbox, "modifyvm", vm_name, "--accelerate3d", "on"], capture_output=True, text=True, timeout=15)
 
     def start_vm(self, name: str, headless: bool = True) -> dict[str, Any]:
         """
@@ -421,22 +486,176 @@ class VMOperations:
     def attach_iso(self, vm_name: str, iso_path: str, port: int = 1, device: int = 0) -> dict[str, Any]:
         """Attach an ISO to the VM's optical drive via VBoxManage."""
         import subprocess as _sub
+
         vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
         try:
             # Add IDE controller (ignore error if already exists)
-            _sub.run([vbox, "storagectl", vm_name, "--name", "IDE", "--add", "ide"],
-                     capture_output=True, text=True, timeout=15)
+            _sub.run(
+                [vbox, "storagectl", vm_name, "--name", "IDE", "--add", "ide"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
             # Attach the ISO
-            r = _sub.run([
-                vbox, "storageattach", vm_name, "--storagectl", "IDE",
-                "--port", str(port), "--device", str(device),
-                "--type", "dvddrive", "--medium", iso_path,
-            ], capture_output=True, text=True, timeout=30)
+            r = _sub.run(
+                [
+                    vbox,
+                    "storageattach",
+                    vm_name,
+                    "--storagectl",
+                    "IDE",
+                    "--port",
+                    str(port),
+                    "--device",
+                    str(device),
+                    "--type",
+                    "dvddrive",
+                    "--medium",
+                    iso_path,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
             if r.returncode != 0:
                 raise VBoxManagerError(r.stderr.strip() or f"VBoxManage exit code {r.returncode}")
             return {"success": True, "message": f"ISO attached: {iso_path}"}
         except Exception as e:
             logger.error("Failed to attach ISO to %s: %s", vm_name, e)
+            return {"success": False, "error": str(e)}
+
+    def configure_network(
+        self,
+        name: str,
+        adapter: int = 1,
+        mode: str = "nat",
+        host_only_if: str | None = None,
+        bridged_if: str | None = None,
+        intnet_name: str | None = None,
+        port_forwarding: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """Configure a VM network adapter.
+
+        Args:
+            name: VM name
+            adapter: NIC number (1-4)
+            mode: nat, bridged, hostonly, intnet, natnetwork, none
+            host_only_if: Host-only interface name (for hostonly mode)
+            bridged_if: Bridged adapter name (for bridged mode)
+            intnet_name: Internal network name (for intnet mode)
+            port_forwarding: List of rules [{name, protocol, host_port, guest_port}]
+
+        Returns:
+            Dict with success/error
+        """
+        try:
+            import subprocess as _sub
+
+            vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+            nic = f"--nic{adapter}"
+            cmd = [vbox, "modifyvm", name, nic, mode.upper()]
+            _sub.run(cmd, capture_output=True, text=True, timeout=30, check=True)
+
+            # Mode-specific settings
+            if mode == "hostonly" and host_only_if:
+                _sub.run(
+                    [vbox, "modifyvm", name, f"--hostonlyadapter{adapter}", host_only_if],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+            elif mode == "bridged" and bridged_if:
+                _sub.run(
+                    [vbox, "modifyvm", name, f"--bridgeadapter{adapter}", bridged_if],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+            elif mode == "intnet" and intnet_name:
+                _sub.run(
+                    [vbox, "modifyvm", name, f"--intnet{adapter}", intnet_name],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+
+            # Port forwarding rules (NAT only)
+            if mode == "nat" and port_forwarding:
+                for rule in port_forwarding:
+                    rname = rule.get("name", f"rule{adapter}")
+                    proto = rule.get("protocol", "tcp")
+                    hport = rule.get("host_port", 8080)
+                    gport = rule.get("guest_port", 80)
+                    _sub.run(
+                        [vbox, "controlvm", name, "natpf1", rname, f"{proto},,{hport},,{gport}"],
+                        capture_output=True,
+                        text=True,
+                        timeout=15,
+                    )
+
+            logger.info("Network configured for %s: nic%d=%s", name, adapter, mode)
+            return {"success": True, "adapter": adapter, "mode": mode}
+        except Exception as e:
+            logger.error("Failed to configure network for %s: %s", name, e)
+            return {"success": False, "error": str(e)}
+
+    def get_network_config(self, name: str) -> dict[str, Any]:
+        """Get all network adapter configurations for a VM.
+
+        Args:
+            name: VM name
+
+        Returns:
+            Dict with adapters list and port forwarding rules
+        """
+        try:
+            import re
+            import subprocess as _sub
+
+            vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+            r = _sub.run(
+                [vbox, "showvminfo", name, "--machinereadable"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if r.returncode != 0:
+                return {"success": False, "error": r.stderr.strip() or "VM not found"}
+
+            adapters = []
+            port_rules = []
+            for line in r.stdout.splitlines():
+                # NIC types: nic1="nat", nic2="bridged", etc.
+                m = re.match(r'^nic(\d+)="([^"]+)"', line)
+                if m:
+                    adapters.append({"adapter": int(m.group(1)), "mode": m.group(2).lower()})
+                # NAT forwarding rules
+                m2 = re.match(r'^Forwarding\(\d+\)="([^"]+)"', line)
+                if m2:
+                    # Format: "rule_name,tcp,,host_port,,guest_port"
+                    parts = m2.group(1).split(",")
+                    if len(parts) >= 5:
+                        port_rules.append(
+                            {
+                                "name": parts[0],
+                                "protocol": parts[1],
+                                "host_port": int(parts[3]) if parts[3].isdigit() else parts[3],
+                                "guest_port": int(parts[5])
+                                if len(parts) > 5 and parts[5].isdigit()
+                                else parts[5]
+                                if len(parts) > 5
+                                else "",
+                            }
+                        )
+
+            return {
+                "success": True,
+                "vm_name": name,
+                "adapters": sorted(adapters, key=lambda a: a["adapter"]),
+                "port_forwarding": port_rules,
+            }
+        except Exception as e:
+            logger.error("Failed to get network config for %s: %s", name, e)
             return {"success": False, "error": str(e)}
 
     def list_templates(self) -> list[dict[str, Any]]:
