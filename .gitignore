@@ -130,3 +130,7 @@ assets/vbox/*.vdi
 assets/vbox/*.vmdk
 # Rust / Zed IDE — rust-analyzer may create target/ at repo root
 target/
+
+# Backup / temp files
+*.bak
+pytest_full_output.txt
