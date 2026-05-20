@@ -2,9 +2,9 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 # ── Default ──────────────────────────────────────────────────────────────────
 
-# Show available recipes
+# Open the interactive recipe dashboard in the browser
 default:
-    @just --list
+    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
 
 # ── Setup ────────────────────────────────────────────────────────────────────
 

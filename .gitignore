@@ -134,3 +134,5 @@ target/
 # Backup / temp files
 *.bak
 pytest_full_output.txt
+
+_dashboard/
