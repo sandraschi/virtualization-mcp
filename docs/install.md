@@ -1,5 +1,11 @@
 # Installation
 
+**Canonical guide:** [INSTALL.md](../INSTALL.md) at the repo root.
+
+Legacy webapp operator detail below.
+
+---
+
 ## Prerequisites
 
 | Tool | Required for | Version |
@@ -19,6 +25,7 @@ just install
 ```
 
 This runs:
+
 - `python -m venv .venv && pip install -e .`
 - `cd webapp/frontend && npm install`
 
@@ -35,9 +42,8 @@ Opens `http://localhost:10700` (frontend) and `http://localhost:10701` (API).
 ### API keys
 
 Managed through the Settings UI, not `.env`. Stored at:
-```
-%LOCALAPPDATA%/virtualization-mcp/keys.json
-```
+
+`%LOCALAPPDATA%/virtualization-mcp/keys.json`
 
 ### ISO sources
 
@@ -46,9 +52,8 @@ Edit `config/iso_categories.json` to add/remove downloadable ISOs. Reloads on ea
 ### VM templates
 
 User-defined templates are stored at:
-```
-%LOCALAPPDATA%/virtualization-mcp/templates.json
-```
+
+`%LOCALAPPDATA%/virtualization-mcp/templates.json`
 
 Manage through the Templates button in the VirtualBox page.
 

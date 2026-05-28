@@ -1,4 +1,4 @@
-  EDITED  D:\Dev\repos\virtualization-mcp\.github\workflows\industrial-launch.yml name: Industrial Launch (virtualization-mcp)
+﻿name: Industrial Launch (virtualization-mcp)
 
 on:
   push:
@@ -54,16 +54,14 @@ jobs:
         with:
           name: "virtualization-mcp ${{ github.ref_name }}"
           body: |
-            ## 🚀 Industrial Launch: ${{ github.ref_name }}
-            
-            This release marks the transition of the **Virtualization MCP Server** to the SOTA PyPI-based "Zero-Install" distribution model.
+            ## Industrial Launch: ${{ github.ref_name }}
 
-            ### ⚡ Quick Start (Zero-Install)
-            ```powershell
-            uvx virtualization-mcp --serve
-            ```
+            This release marks the transition of the **Virtualization MCP Server** to the SOTA PyPI-based distribution model.
 
-            ### 📖 What's New
+            ### Quick Start
+            Download the `.mcpb` from this release and drag into Claude Desktop.
+
+            ### What's New
             ${{ steps.changelog.outputs.CHANGELOG }}
 
             ---
