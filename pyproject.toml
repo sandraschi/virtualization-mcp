@@ -1,9 +1,9 @@
-[build-system]
+  EDITED  D:\Dev\repos\virtualization-mcp\pyproject.toml [build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "schip-mcp-virtualization"
+name = "virtualization-mcp"
 version = "1.2.0"
 description = "VirtualBox & Hyper-V VM management, Docker sandboxing, snapshots, networking and storage via FastMCP 3.2"
 readme = "README.md"
