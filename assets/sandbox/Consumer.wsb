@@ -1,0 +1,16 @@
+<Configuration>
+  <!-- Edit HostFolder if your clone is not at D:\Dev\repos\virtualization-mcp\assets\sandbox -->
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>D:\Dev\repos\virtualization-mcp\assets\sandbox</HostFolder>
+      <SandboxFolder>C:\Assets</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <VGpu>Enable</VGpu>
+  <Networking>Enable</Networking>
+  <MemoryInMB>8192</MemoryInMB>
+  <LogonCommand>
+    <Command>C:\Assets\Run-Consumer.cmd</Command>
+  </LogonCommand>
+</Configuration>

@@ -13,7 +13,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "../api/config";
 
-type WsbPreviewTab = "basic" | "devInfra" | "fullDev";
+type WsbPreviewTab = "basic" | "devInfra" | "consumer" | "fullDev";
 
 const DEV_TOOL_OPTIONS = [
   { id: "python", label: "Python 3.12" },
@@ -53,6 +53,11 @@ export default function Sandbox() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [devInfraError, setDevInfraError] = useState<string | null>(null);
+  const [consumerStatus, setConsumerStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [consumerError, setConsumerError] = useState<string | null>(null);
+  const [consumerInstallClaude, setConsumerInstallClaude] = useState(true);
   const [previewTab, setPreviewTab] = useState<WsbPreviewTab>("devInfra");
   const [previewXml, setPreviewXml] = useState<string | null>(null);
   const [previewFilename, setPreviewFilename] = useState("DevInfra.wsb");
@@ -92,11 +97,18 @@ export default function Sandbox() {
     }
     setPreviewError(null);
     const params = new URLSearchParams();
-    params.set("preset", previewTab === "devInfra" ? "dev-infra" : "full-dev");
+    params.set(
+      "preset",
+      previewTab === "devInfra"
+        ? "dev-infra"
+        : previewTab === "consumer"
+          ? "consumer"
+          : "full-dev",
+    );
     params.set("memory_in_mb", String(config.memoryInMB));
     params.set("vgpu", config.vGPU ? "true" : "false");
     params.set("networking", config.networking ? "true" : "false");
-    if (previewTab === "devInfra") {
+    if (previewTab === "devInfra" || previewTab === "consumer") {
       if (devInfraFolder.trim())
         params.set("assets_folder", devInfraFolder.trim());
     } else if (assetsFolder.trim()) {
@@ -310,6 +322,49 @@ export default function Sandbox() {
     } catch (err: unknown) {
       setDevInfraError(err instanceof Error ? err.message : "Launch failed");
       setDevInfraStatus("error");
+    }
+  };
+
+  const handleLaunchConsumer = async () => {
+    if (!(await checkSandboxRunning())) return;
+    setConsumerStatus("loading");
+    setConsumerError(null);
+    try {
+      const body: Record<string, unknown> = {
+        name: "ConsumerSandbox",
+        config_xml: "",
+        consumer_setup: true,
+        consumer_install_claude: consumerInstallClaude,
+        memory_in_mb: config.memoryInMB,
+        vgpu: config.vGPU,
+        networking: config.networking,
+      };
+      if (devInfraFolder.trim()) body.assets_folder = devInfraFolder.trim();
+      const response = await fetch(`${API_BASE}/api/v1/sandbox/launch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        let msg = text;
+        try {
+          const j = JSON.parse(text);
+          if (j.detail)
+            msg =
+              typeof j.detail === "string"
+                ? j.detail
+                : JSON.stringify(j.detail);
+        } catch {
+          /* keep raw */
+        }
+        throw new Error(msg);
+      }
+      setConsumerStatus("success");
+      setTimeout(() => setConsumerStatus("idle"), 3000);
+    } catch (err: unknown) {
+      setConsumerError(err instanceof Error ? err.message : "Launch failed");
+      setConsumerStatus("error");
     }
   };
 
@@ -552,6 +607,70 @@ export default function Sandbox() {
           </div>
         </div>
 
+        {/* WSB: consumer / nearly-naked install test */}
+        <div className="p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-sm space-y-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            WSB: Consumer (nearly naked)
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Validates fleet <code className="text-foreground/80">INSTALL.md</code>{" "}
+            Options A–C. Bootstraps winget only — does{" "}
+            <strong>not</strong> install git, uv, node, just, ruff, or biome.
+            Optional Claude Desktop MSIX for Option A drag-and-drop tests. Checklist
+            on Desktop:{" "}
+            <code className="text-foreground/80">
+              consumer-install-test-checklist.txt
+            </code>
+            .
+          </p>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consumerInstallClaude}
+              onChange={(e) => setConsumerInstallClaude(e.target.checked)}
+              className="rounded border-input bg-background/50 text-primary"
+            />
+            <span className="text-sm">
+              Install Claude Desktop MSIX at logon (Option A fixture)
+            </span>
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Host script:{" "}
+            <code className="text-foreground/80">
+              scripts/Launch-ConsumerSandbox.ps1
+            </code>{" "}
+            (same assets folder as dev infra below)
+          </p>
+          {consumerError && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {consumerError}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={consumerStatus === "loading"}
+              onClick={handleLaunchConsumer}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${consumerStatus === "success" ? "bg-green-600 text-white" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}
+            >
+              {consumerStatus === "loading" ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : consumerStatus === "success" ? (
+                <CheckCircle2 className="w-5 h-5" />
+              ) : (
+                <Play className="w-5 h-5" />
+              )}
+              {consumerStatus === "loading"
+                ? "Launching…"
+                : consumerStatus === "success"
+                  ? "Launched"
+                  : "Launch consumer sandbox"}
+            </button>
+          </div>
+        </div>
+
         {/* Full dev setup */}
         <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -719,6 +838,7 @@ export default function Sandbox() {
               [
                 { id: "basic" as const, label: "Basic hardware" },
                 { id: "devInfra" as const, label: "Dev infra WSB" },
+                { id: "consumer" as const, label: "Consumer WSB" },
                 { id: "fullDev" as const, label: "Full dev WSB" },
               ] as const
             ).map(({ id, label }) => (

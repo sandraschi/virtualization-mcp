@@ -1,75 +1,150 @@
-# Installation
+# Installing virtualization-mcp
 
-## 🚀 Quick Start (recommended)
+Control VirtualBox, Hyper-V, and Windows Sandbox from Claude Desktop or Cursor.
+
+## Prerequisites
+
+| Tool | Required for | Install |
+|------|--------------|---------|
+| **Claude Desktop** | Options A–C | [claude.ai/download](https://claude.ai/download) |
+| **Windows 11 Pro+** | Sandbox features | Built into eligible SKUs |
+| **VirtualBox 7+** | VM features | [virtualbox.org](https://www.virtualbox.org/) |
+| **Git** | Options C, D | `winget install Git.Git` |
+| **Python + uv** | Options C, D | `winget install astral-sh.uv` |
+| **Node.js** | Option B, webapp | `winget install OpenJS.NodeJS` |
+
+> **Windows:** use [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/).  
+> After winget installs, close and reopen PowerShell so PATH updates apply.
+
+---
+
+## Option A — Drag and Drop (Recommended)
+
+1. Open [Releases](https://github.com/sandraschi/virtualization-mcp/releases/latest)
+2. Download `virtualization-mcp-*.mcpb` (or build with `just mcpb-pack`)
+3. Drag into Claude Desktop (Settings → MCP Servers → Install from file)
+4. Set VirtualBox path in the MCPB user config when prompted
+
+Restart Claude Desktop if prompted.
+
+---
+
+## Option B — mcpb CLI
+
+`mcpb` is **not** on PyPI — `uvx mcpb` will fail.
 
 ```powershell
-# Install just if you don't have it
-winget install Casey.Just    # Windows
-# scoop install just          # Windows (alternative)
-# brew install just           # macOS
-# sudo apt install just       # Debian/Ubuntu
-# cargo install just          # Linux (Rust)
+winget install OpenJS.NodeJS --accept-source-agreements --accept-package-agreements
+# Close and reopen terminal, then:
+npx @anthropic-ai/mcpb install https://github.com/sandraschi/virtualization-mcp
+```
 
+---
+
+## Option C — Manual Configuration
+
+```powershell
+winget install astral-sh.uv --accept-source-agreements --accept-package-agreements
+winget install Git.Git --accept-source-agreements --accept-package-agreements
 git clone https://github.com/sandraschi/virtualization-mcp
 cd virtualization-mcp
+uv sync --all-extras
+```
+
+Edit `%APPDATA%\Claude\claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "virtualization-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:\\path\\to\\virtualization-mcp",
+        "run",
+        "virtualization-mcp"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "VBOX_MANAGE_PATH": "C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe"
+      }
+    }
+  }
+}
+```
+
+macOS config path: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Restart Claude Desktop.
+
+---
+
+## Option D — Developer Mode
+
+Full webapp dashboard, consumer/dev sandbox launchers, tests:
+
+```powershell
+winget install Casey.Just
+git clone https://github.com/sandraschi/virtualization-mcp
+cd virtualization-mcp
+uv sync --all-extras
 just
 ```
 
-The interactive recipe dashboard opens in your browser. From there:
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+### Webapp dashboard
 
 ```powershell
-just bootstrap   # install all dependencies
-just serve       # start the server
-just web         # start the frontend (if applicable)
+.\webapp\start.ps1
 ```
 
-> **Why not `pip install`?** MCP servers bundle webapps, configs, project scaffolding, and tooling that a flat Python package can't deliver. PyPI offers no safety advantage — it doesn't audit packages either. `just` gives you the complete, ready-to-run stack.
+Frontend: http://localhost:10700 — API: http://localhost:10701
+
+### Nearly naked install testing (fleet)
+
+Validate other repos' `INSTALL.md` without pre-installing dev tools:
+
+```powershell
+.\scripts\Launch-ConsumerSandbox.ps1 -InstallClaudeDesktop
+```
+
+Dev stack sandbox (wrong baseline for naked tests):
+
+```powershell
+.\scripts\Launch-DevInfraSandbox.ps1
+```
+
+See [docs/sandbox.md](docs/sandbox.md).
 
 ---
 
-## 🐌 Traditional Setup
+## Verify Installation
 
-If you prefer not to use `just`:
+In Claude Desktop:
 
-1. Install [Python 3.13+](https://python.org) and [uv](https://docs.astral.sh/uv/)
-2. Clone and enter the repo:
-   ```powershell
-   git clone https://github.com/sandraschi/virtualization-mcp
-   cd virtualization-mcp
-   ```
-3. Install dependencies:
-   ```powershell
-   uv sync --all-extras
-   ```
-4. Start the server:
-   ```powershell
-   # stdio mode (for MCP clients like Claude Desktop)
-   uv run python -m virtualization_mcp.server
+> List my VirtualBox VMs.
 
-   # HTTP mode (for web dashboard)
-   uv run uvicorn virtualization_mcp.server:app --port 10700
-   ```
+Or run locally:
 
-4. (optional) Start the frontend:
-   ```powershell
-   cd webapp
-   npm install
-   npm run dev
-   ```
-
-5. Open `http://localhost:10700` or the frontend URL.
+```powershell
+uv run virtualization-mcp --help
+VBoxManage --version
+```
 
 ---
 
-## ❓ Troubleshooting
+## Troubleshooting
 
-| Issue | Fix |
-|---|---|
-| `just` not found | Install via `winget install Casey.Just`, `scoop install just`, or `brew install just` |
-| Port conflict | Run `just kill-all` to clear fleet ports (10700–11000) |
-| Dependencies out of sync | `uv sync --all-extras` |
-| Something else | [Open a GitHub issue](https://github.com/sandraschi/virtualization-mcp/issues) |
+| Symptom | Fix |
+|---------|-----|
+| VBoxManage not found | Install VirtualBox; set `VBOX_MANAGE_PATH` — [CONFIGURATION.md](docs/CONFIGURATION.md) |
+| Sandbox launch fails | Windows 11 Pro+ required; enable Windows Sandbox feature |
+| `uvx mcpb` fails | Use Option A or `npx @anthropic-ai/mcpb` |
+| Port 10700/10701 in use | Stop other fleet webapps or change ports in config |
+
+Full list: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 
-*See the main [README](README.md) for feature overview and documentation.*
+*Overview: [README.md](README.md)*

@@ -1,38 +1,59 @@
 # Sandbox assets (reuse folder)
 
-## Dev infra (winget + git, gh, npm, Python, ruff, just, biome)
+Two bringups share `assets/sandbox` and `lib/Winget-Bootstrap.ps1`:
 
-No large offline bundles required: the script downloads winget from [winget-cli releases](https://github.com/microsoft/winget-cli/releases) and installs tools over the network.
+| Bringup | Script | Installs dev tools? | Use |
+|---------|--------|---------------------|-----|
+| **Consumer (nearly naked)** | `Launch-ConsumerSandbox.ps1` | **No** — winget bootstrap only | Validate fleet `INSTALL.md` Options A–C |
+| **Dev infra** | `Launch-DevInfraSandbox.ps1` | **Yes** — git, gh, node, python, ruff, just, biome | Contributor / Option D smoke tests |
+| **Full dev** | webapp offline bundles | **Yes** — selectable tool list | Airgap-capable full stack |
+
+---
+
+## Consumer (nearly naked install test)
+
+No dev stack. Bootstraps winget if missing, verifies git/uv/node are absent, writes
+`Desktop\consumer-install-test-checklist.txt`. Optional Claude Desktop MSIX fixture.
 
 | File | Purpose |
 |------|---------|
-| `Setup-DevInfraSandbox.ps1` | Run inside Sandbox (mapped as `C:\Assets`): bootstraps winget, then `winget install` for the stack above. |
-| `Run-DevInfra.cmd` | Logon launcher: short delay for `C:\Assets`, runs setup (appends **Desktop\\dev-infra-launch.log**), then opens **Show-DevInfraLog.ps1** in a normal PowerShell window (no Notepad needed in Sandbox). |
-| `Show-DevInfraLog.ps1` | Prints the last lines of the launch log in a **`-NoExit`** PowerShell window. |
-| `DevInfra.wsb` | Sample Windows Sandbox config. **Edit `<HostFolder>`** if your clone is not at `D:\Dev\repos\virtualization-mcp\assets\sandbox`. |
-| `..\scripts\Launch-DevInfraSandbox.ps1` | Host launcher: builds a temp `.wsb` with the correct `HostFolder` for this checkout and starts Sandbox. |
+| `Setup-ConsumerSandbox.ps1` | Winget bootstrap + baseline check + optional Claude MSIX |
+| `Run-Consumer.cmd` | Logon launcher → setup script |
+| `Show-ConsumerLog.ps1` | Tail `Desktop\consumer-sandbox-launch.log` |
+| `Consumer.wsb` | Sample config (edit `HostFolder`) |
+| `..\scripts\Launch-ConsumerSandbox.ps1` | Host launcher (temp `.wsb`) |
 
-From the repo root (host):
+From repo root:
+
+```powershell
+.\scripts\Launch-ConsumerSandbox.ps1
+.\scripts\Launch-ConsumerSandbox.ps1 -InstallClaudeDesktop
+.\scripts\Launch-ConsumerSandbox.ps1 -Plain
+```
+
+`-Plain` skips logon script (stock sandbox session). Webapp: **WSB: Consumer (nearly naked)** on Sandbox page.
+
+---
+
+## Dev infra (winget + git, gh, npm, Python, ruff, just, biome)
+
+| File | Purpose |
+|------|---------|
+| `lib/Winget-Bootstrap.ps1` | Shared winget MSIX bootstrap (consumer + dev infra) |
+| `Setup-DevInfraSandbox.ps1` | Winget bootstrap, then `winget install` dev stack |
+| `Run-DevInfra.cmd` | Logon launcher |
+| `Show-DevInfraLog.ps1` | Tail dev-infra log |
+| `DevInfra.wsb` | Sample config |
+| `..\scripts\Launch-DevInfraSandbox.ps1` | Host launcher |
 
 ```powershell
 .\scripts\Launch-DevInfraSandbox.ps1
 ```
 
-Or double-click `DevInfra.wsb` after fixing `HostFolder`.
-
 ---
 
 ## Full dev setup (offline / webapp)
 
-Store the Windows Sandbox full-dev installer files here so you don’t re-download them every time.
-
-**Place these files in this folder** (from [winget-cli Releases](https://github.com/microsoft/winget-cli/releases) → Assets):
-
-- `DesktopAppInstaller_Dependencies.zip` (~93 MB)
-- `Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle` (~206 MB)
-
-They are gitignored. Then in the webapp **Full dev setup**, set **Assets folder** to this path, e.g.:
-
-- `D:\Dev\repos\virtualization-mcp\assets\sandbox`
+Store winget offline bundles here for full-dev webapp mode. See gitignored assets list in repo `.gitignore`.
 
 The setup script is written here when you click **Launch with full dev setup**; the sandbox maps this folder to `C:\Assets` and runs the script at logon.

@@ -16,13 +16,23 @@ Enable-WindowsOptionalFeature -Online -FeatureName "Containers-DisposableClientV
 ## Launching a sandbox
 
 From the **Sandbox** page:
-1. Pick **Dev Infra** (basic tooling) or **Full Dev** (all tools)
-2. Check the tools you want (Python, Git, Node, VS Code, etc.)
-3. Click **Launch Windows Sandbox**
 
-It generates a `.wsb` file and opens it — sandbox boots with your tools installing automatically.
+| Mode | Purpose |
+|------|---------|
+| **Consumer (nearly naked)** | INSTALL.md validation — winget only, no dev stack; optional Claude MSIX |
+| **Dev Infra** | Online dev stack (git, node, python, ruff, just, biome) |
+| **Full Dev** | Offline/selectable full tool list |
 
-## Dev setup options
+Or from the host:
+
+```powershell
+.\scripts\Launch-ConsumerSandbox.ps1 -InstallClaudeDesktop
+.\scripts\Launch-DevInfraSandbox.ps1
+```
+
+## Dev setup options (Dev Infra / Full Dev only)
+
+Not installed in **Consumer** mode — that mode is for end-user install doc testing.
 
 | Tool | Package |
 |------|---------|

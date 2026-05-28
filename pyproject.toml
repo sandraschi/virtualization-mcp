@@ -1,4 +1,4 @@
-  EDITED  D:\Dev\repos\virtualization-mcp\pyproject.toml [build-system]
+[build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
 build-backend = "hatchling.build"
 

@@ -46,6 +46,12 @@ else:
     project_root = _repo_root
 # Assets folders for reuse (sandbox installers, VBox ISOs/OVA)
 ASSETS_SANDBOX = os.path.join(_repo_root, "assets", "sandbox")
+CONSUMER_SANDBOX_FILES = (
+    "Setup-ConsumerSandbox.ps1",
+    "Run-Consumer.cmd",
+    "Show-ConsumerLog.ps1",
+    os.path.join("lib", "Winget-Bootstrap.ps1"),
+)
 ASSETS_VBOX = os.path.join(_repo_root, "assets", "vbox")
 
 # API key storage (user-set via Settings UI, overrides .env)
@@ -360,15 +366,43 @@ def _build_sandbox_xml_dev_setup(
 def _build_sandbox_xml_dev_infra(
     host_folder: str, memory_mb: int = 8192, vgpu: bool = True, networking: bool = True
 ) -> str:
-    """WSB: map assets/sandbox to C:\\Assets, run Run-DevInfra.cmd at logon (cmd + short delay + powershell setup).
-
-    Microsoft samples put MappedFolders before LogonCommand; LogonCommand is executed by cmd.exe — a small .cmd
-    launcher is more reliable than calling powershell -File on a mapped .ps1 immediately at logon.
-    """
     import xml.sax.saxutils as sax
 
     host_escaped = sax.escape(host_folder)
     cmd_escaped = sax.escape(r"C:\Assets\Run-DevInfra.cmd")
+    return f"""<Configuration>
+<MappedFolders>
+<MappedFolder>
+<HostFolder>{host_escaped}</HostFolder>
+<SandboxFolder>C:\\Assets</SandboxFolder>
+<ReadOnly>false</ReadOnly>
+</MappedFolder>
+</MappedFolders>
+<VGpu>{"Enable" if vgpu else "Disable"}</VGpu>
+<Networking>{"Enable" if networking else "Disable"}</Networking>
+<MemoryInMB>{memory_mb}</MemoryInMB>
+<LogonCommand>
+<Command>{cmd_escaped}</Command>
+</LogonCommand>
+</Configuration>"""
+
+
+def _build_sandbox_xml_consumer(
+    host_folder: str,
+    memory_mb: int = 8192,
+    vgpu: bool = True,
+    networking: bool = True,
+    install_claude_desktop: bool = False,
+) -> str:
+    """WSB: nearly-naked install test — winget bootstrap only, optional Claude MSIX fixture."""
+    import xml.sax.saxutils as sax
+
+    host_escaped = sax.escape(host_folder)
+    if install_claude_desktop:
+        cmd_raw = r'cmd.exe /c "set CONSUMER_INSTALL_CLAUDE=1&& C:\Assets\Run-Consumer.cmd"'
+    else:
+        cmd_raw = r"C:\Assets\Run-Consumer.cmd"
+    cmd_escaped = sax.escape(cmd_raw)
     return f"""<Configuration>
 <MappedFolders>
 <MappedFolder>
@@ -392,6 +426,8 @@ class SandboxLaunchRequest(BaseModel):
     config_xml: str
     full_dev_setup: bool | None = None
     dev_infra_setup: bool | None = None  # maps assets/sandbox, runs Setup-DevInfraSandbox.ps1 (no offline msix zip)
+    consumer_setup: bool | None = None  # nearly naked: winget bootstrap only; optional Claude fixture
+    consumer_install_claude: bool | None = None
     assets_folder: str | None = None
     dev_tools: list[str] | None = None
     memory_in_mb: int | None = 4096
@@ -1533,14 +1569,19 @@ async def sandbox_wsb_preview(
     vgpu: bool = True,
     networking: bool = True,
 ):
-    """Return WSB XML for download or UI preview. preset=dev-infra (default) or full-dev."""
+    """Return WSB XML for download or UI preview. preset=dev-infra, consumer, or full-dev."""
     p = (preset or "dev-infra").lower().strip()
     mem = int(memory_in_mb) if memory_in_mb else 8192
     if p == "dev-infra":
         folder = (assets_folder or "").strip() or ASSETS_SANDBOX
         if not os.path.isdir(folder):
             raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {folder}")
-        for required in ("Setup-DevInfraSandbox.ps1", "Run-DevInfra.cmd", "Show-DevInfraLog.ps1"):
+        for required in (
+            "Setup-DevInfraSandbox.ps1",
+            "Run-DevInfra.cmd",
+            "Show-DevInfraLog.ps1",
+            os.path.join("lib", "Winget-Bootstrap.ps1"),
+        ):
             rp = os.path.join(folder, required)
             if not os.path.isfile(rp):
                 raise HTTPException(
@@ -1549,6 +1590,19 @@ async def sandbox_wsb_preview(
                 )
         xml = _build_sandbox_xml_dev_infra(folder, memory_mb=mem, vgpu=vgpu, networking=networking)
         return {"xml": xml, "preset": p, "assets_folder": folder, "filename": "DevInfra.wsb"}
+    if p == "consumer":
+        folder = (assets_folder or "").strip() or ASSETS_SANDBOX
+        if not os.path.isdir(folder):
+            raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {folder}")
+        for required in CONSUMER_SANDBOX_FILES:
+            rp = os.path.join(folder, required)
+            if not os.path.isfile(rp):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Missing {required} in {folder}. Use virtualization-mcp assets/sandbox.",
+                )
+        xml = _build_sandbox_xml_consumer(folder, memory_mb=mem, vgpu=vgpu, networking=networking)
+        return {"xml": xml, "preset": p, "assets_folder": folder, "filename": "Consumer.wsb"}
     if p == "full-dev":
         folder = (assets_folder or "").strip()
         if not folder or not os.path.isdir(folder):
@@ -1558,7 +1612,7 @@ async def sandbox_wsb_preview(
             )
         xml = _build_sandbox_xml_dev_setup(folder, memory_mb=mem, vgpu=vgpu, networking=networking)
         return {"xml": xml, "preset": p, "assets_folder": folder, "filename": "FullDev.wsb"}
-    raise HTTPException(status_code=400, detail="Unknown preset (use dev-infra or full-dev).")
+    raise HTTPException(status_code=400, detail="Unknown preset (use dev-infra, consumer, or full-dev).")
 
 
 @app.get("/api/v1/sandbox/status")
@@ -1641,7 +1695,12 @@ async def launch_sandbox(request: SandboxLaunchRequest):
                 host_folder = ASSETS_SANDBOX
             if not os.path.isdir(host_folder):
                 raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {host_folder}")
-            for required in ("Setup-DevInfraSandbox.ps1", "Run-DevInfra.cmd", "Show-DevInfraLog.ps1"):
+            for required in (
+                "Setup-DevInfraSandbox.ps1",
+                "Run-DevInfra.cmd",
+                "Show-DevInfraLog.ps1",
+                os.path.join("lib", "Winget-Bootstrap.ps1"),
+            ):
                 rp = os.path.join(host_folder, required)
                 if not os.path.isfile(rp):
                     raise HTTPException(
@@ -1652,6 +1711,31 @@ async def launch_sandbox(request: SandboxLaunchRequest):
             net = request.networking if request.networking is not None else True
             vg = request.vgpu if request.vgpu is not None else True
             config_xml = _build_sandbox_xml_dev_infra(host_folder, memory_mb=mem, vgpu=vg, networking=net)
+        elif getattr(request, "consumer_setup", None):
+            raw = getattr(request, "assets_folder", None) or ""
+            host_folder = raw.strip() if isinstance(raw, str) else ""
+            if not host_folder:
+                host_folder = ASSETS_SANDBOX
+            if not os.path.isdir(host_folder):
+                raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {host_folder}")
+            for required in CONSUMER_SANDBOX_FILES:
+                rp = os.path.join(host_folder, required)
+                if not os.path.isfile(rp):
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Missing {required} in {host_folder}",
+                    )
+            mem = request.memory_in_mb if request.memory_in_mb is not None else 8192
+            net = request.networking if request.networking is not None else True
+            vg = request.vgpu if request.vgpu is not None else True
+            install_claude = bool(getattr(request, "consumer_install_claude", None))
+            config_xml = _build_sandbox_xml_consumer(
+                host_folder,
+                memory_mb=mem,
+                vgpu=vg,
+                networking=net,
+                install_claude_desktop=install_claude,
+            )
         else:
             config_xml = request.config_xml
 

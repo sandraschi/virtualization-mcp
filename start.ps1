@@ -1,4 +1,4 @@
-  EDITED  D:\Dev\repos\virtualization-mcp\start.ps1 Param([switch]$Headless)
+Param([switch]$Headless)
 
 # --- SOTA Headless Standard ---
 if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
