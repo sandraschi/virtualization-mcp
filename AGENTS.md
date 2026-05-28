@@ -30,3 +30,5 @@ uv run pytest tests/ -q
 just serve
 just dev
 ```
+
+Install docs: follow mcp-central-docs/standards/AGENT_INSTALL_REFERENCE.md
