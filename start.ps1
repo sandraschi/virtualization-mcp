@@ -1,4 +1,4 @@
-Param([switch]$Headless)
+  EDITED  D:\Dev\repos\virtualization-mcp\start.ps1 Param([switch]$Headless)
 
 # --- SOTA Headless Standard ---
 if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
@@ -9,7 +9,7 @@ $WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
 # ------------------------------
 
 $env:FASTMCP_LOG_LEVEL = 'WARNING'
-# schip-mcp-virtualization Start - Standards-Compliant SOTA
-Write-Host 'Starting schip-mcp-virtualization...' -ForegroundColor Cyan
+# virtualization-mcp Start - Standards-Compliant SOTA
+Write-Host 'Starting virtualization-mcp...' -ForegroundColor Cyan
 
-uv run -m schip_mcp_virtualization
+uv run virtualization-mcp
