@@ -1,4 +1,4 @@
-name: Industrial Launch (schip-mcp-virtualization)
+  EDITED  D:\Dev\repos\virtualization-mcp\.github\workflows\industrial-launch.yml name: Industrial Launch (virtualization-mcp)
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
           uv build
           # Heritage support for legacy MCPB
           if [ -d "mcpb" ]; then
-            zip -r dist/schip-mcp-virtualization.mcpb mcpb/ -x "*.git*"
+            zip -r dist/virtualization-mcp.mcpb mcpb/ -x "*.git*"
           fi
 
       - name: Generate Changelog
@@ -52,7 +52,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "schip-mcp-virtualization ${{ github.ref_name }}"
+          name: "virtualization-mcp ${{ github.ref_name }}"
           body: |
             ## 🚀 Industrial Launch: ${{ github.ref_name }}
             
@@ -60,7 +60,7 @@ jobs:
 
             ### ⚡ Quick Start (Zero-Install)
             ```powershell
-            uvx schip-mcp-virtualization --serve
+            uvx virtualization-mcp --serve
             ```
 
             ### 📖 What's New
