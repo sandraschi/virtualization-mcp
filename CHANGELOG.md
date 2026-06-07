@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added: Fleet cold-install execution APIs (Phase 2b)
+
+- **`POST /api/v1/fleet/install-mcpb`** — resolve latest `.mcpb` from GitHub releases, emit PS install script to `_sandbox_runs/`
+- **`POST /api/v1/fleet/stdio-smoke`** — host MCP stdio `initialize` smoke via `stdio_mcp_smoke.py` (today: MCD path; target: bundle in virt-mcp or read from `meta_mcp/fleet_probes/`)
+- **`POST /api/v1/fleet/install-run`** — persist generated install scripts for consumer sandbox mapped-folder execution
+- **`POST /api/v1/fleet/install-script`** — removed `&&` in git pull block (PS 5.1 safe)
+
 ### Added: VRDP/VRDE Remote Desktop support + VM Console
 
 - **VRDE management** — `POST/GET /api/v1/vms/{name}/vrde` enables/disables VirtualBox's built-in VRDP server. Returns port for connection.
