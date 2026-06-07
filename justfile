@@ -1,10 +1,10 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 # ── Default ──────────────────────────────────────────────────────────────────
 
 # Open the interactive recipe dashboard in the browser
 default:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
+    @just --list
 
 # ── Setup ────────────────────────────────────────────────────────────────────
 
@@ -97,3 +97,4 @@ clean:
     Remove-Item -Recurse -Force webapp\frontend\node_modules -ErrorAction SilentlyContinue
     Remove-Item -Recurse -Force webapp\frontend\dist -ErrorAction SilentlyContinue
     Remove-Item -Force .pytest_cache -ErrorAction SilentlyContinue
+
