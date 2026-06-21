@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field, field_validator
 logger = logging.getLogger(__name__)
 
 
-class SandboxType(str, Enum):
+class SandboxType(StrEnum):
     """Types of sandbox environments."""
 
     WINDOWS_SANDBOX = "windows_sandbox"
@@ -42,7 +42,7 @@ class ResourceUsage(BaseModel):
     network_recv_mb: float = 0.0
 
 
-class SandboxState(str, Enum):
+class SandboxState(StrEnum):
     """Possible states of a sandbox."""
 
     CREATING = "creating"
@@ -195,7 +195,7 @@ class SandboxTester:
         for entry in self.base_dir.iterdir():
             if entry.is_dir() and (entry / "sandbox.json").exists():
                 try:
-                    with open(entry / "sandbox.json") as f:
+                    with Path(entry / "sandbox.json").open() as f:
                         data = json.load(f)
 
                     sandbox = SandboxInfo(
@@ -240,7 +240,7 @@ class SandboxTester:
             "persistent_path": str(sandbox.persistent_path) if sandbox.persistent_path else None,
         }
 
-        with open(state_file, "w") as f:
+        with Path(state_file).open("w") as f:
             json.dump(state_data, f, indent=2, default=str)
 
     async def create_sandbox(

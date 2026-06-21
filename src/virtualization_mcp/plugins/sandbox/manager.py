@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import tempfile
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +22,7 @@ from .portfolio_manager import PortfolioManager
 logger = logging.getLogger(__name__)
 
 
-class SandboxState(str, Enum):
+class SandboxState(StrEnum):
     RUNNING = "Running"
     STOPPED = "Stopped"
     STARTING = "Starting"
@@ -30,7 +30,7 @@ class SandboxState(str, Enum):
     ERROR = "Error"
 
 
-class SandboxPortfolio(str, Enum):
+class SandboxPortfolio(StrEnum):
     """Preconfigured sandbox portfolios with files and commands."""
 
     VSCODE = "vscode"
@@ -481,13 +481,13 @@ class WindowsSandboxHelper:
                 dest_dir = download.get("destination", portfolio_dir)
 
                 # Download to temp directory
-                temp_file = os.path.join(portfolio_dir, filename)
+                temp_file = str(Path(portfolio_dir) / filename)
                 await self._download_file(url, temp_file)
 
                 # Add to copy_files
                 config.copy_files.append(
                     FileCopyOperation(
-                        source_path=temp_file, destination_path=os.path.join(dest_dir, filename), overwrite=True
+                        source_path=temp_file, destination_path=str(Path(dest_dir) / filename), overwrite=True
                     )
                 )
 
@@ -513,15 +513,15 @@ class WindowsSandboxHelper:
         logger.info(f"Downloading {url} to {destination_path}")
 
         # Create destination directory if it doesn't exist
-        dest_dir = os.path.dirname(destination_path)
-        os.makedirs(dest_dir, exist_ok=True)
+        dest_dir = str(Path(destination_path).parent)
+        Path(dest_dir).mkdir(parents=True, exist_ok=True)
 
         timeout = aiohttp.ClientTimeout(total=300)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as response:
                 response.raise_for_status()
 
-                with open(destination_path, "wb") as f:
+                with Path(destination_path).open("wb") as f:
                     async for chunk in response.content.iter_chunked(8192):
                         f.write(chunk)
 
@@ -569,13 +569,13 @@ class WindowsSandboxHelper:
             dest_dir = download.get(dest_key) or download.get("destination", portfolio_dir)
 
             # Download to temp directory first
-            temp_file = os.path.join(portfolio_dir, filename)
+            temp_file = str(Path(portfolio_dir) / filename)
             await self._download_file(url, temp_file)
 
             # Add to copy_files to copy into sandbox/VM
             config.copy_files.append(
                 FileCopyOperation(
-                    source_path=temp_file, destination_path=os.path.join(dest_dir, filename), overwrite=True
+                    source_path=temp_file, destination_path=str(Path(dest_dir) / filename), overwrite=True
                 )
             )
             downloaded_files.append(temp_file)
@@ -684,8 +684,8 @@ class WindowsSandboxHelper:
                 for file_copy in config.copy_files:
                     source = file_copy.source_path
                     # Copy to staging folder with original filename
-                    filename = os.path.basename(source)
-                    staging_path = os.path.join(staging_folder, filename)
+                    filename = Path(source).name
+                    staging_path = str(Path(staging_folder) / filename)
                     shutil.copy2(source, staging_path)
                     logger.info(f"Copied {source} to staging: {staging_path}")
 
@@ -707,7 +707,7 @@ class WindowsSandboxHelper:
 
             # Start the sandbox using Windows Sandbox executable directly
             sandbox_exe = r"C:\Windows\System32\WindowsSandbox.exe"
-            if not os.path.exists(sandbox_exe):
+            if not Path(sandbox_exe).exists():
                 raise RuntimeError(
                     "Windows Sandbox is not available. Please enable Windows Sandbox feature in Windows Features."
                 )
@@ -776,9 +776,9 @@ class WindowsSandboxHelper:
         except Exception as e:
             logger.error(f"Error creating sandbox: {e}", exc_info=True)
             # Clean up on error
-            if wsx_path and os.path.exists(wsx_path):
+            if wsx_path and Path(wsx_path).exists():
                 try:
-                    os.unlink(wsx_path)
+                    Path(wsx_path).unlink()
                 except Exception as cleanup_error:
                     logger.warning(f"Failed to clean up temporary file {wsx_path}: {cleanup_error}")
             raise
@@ -815,8 +815,8 @@ class WindowsSandboxHelper:
         if config.copy_files and staging_folder:
             # Create destination directories and copy files
             for file_copy in config.copy_files:
-                dest_dir = os.path.dirname(file_copy.destination_path)
-                filename = os.path.basename(file_copy.source_path)
+                dest_dir = str(Path(file_copy.destination_path).parent)
+                filename = Path(file_copy.source_path).name
                 source_in_sandbox = f"C:\\Users\\WDAGUtilityAccount\\Desktop\\SandboxFiles\\{filename}"
 
                 # Create destination directory if it doesn't exist

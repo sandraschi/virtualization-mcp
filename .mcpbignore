@@ -1,12 +1,64 @@
 # Build and distribution
 build/
 dist/
+target/
+native/target/
 *.egg-info/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+
+# Virtual environments (CRITICAL - 40MB!)
+.venv/
+venv/
+env/
+.env/
+
+# Cache directories (CRITICAL - large!)
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# VirtualBox VM files (CRITICAL - multi-GB!)
+assets/
+.vbox/
+VMs/
+*.vdi
+*.vmdk
+*.vhd
+*.vbox
+*.vbox-prev
+*.vdi.bak
+
+# Test artifacts and data (CRITICAL - large!)
+MagicMock/
+sandboxes/
+quarantine/
+analysis/
+backups/
+snapshots/
+logs/
+cua-reports/
+
+# Rust artifacts (CRITICAL!)
+Cargo.lock
+Cargo.toml
+
+# Web
+webapp/node_modules/
+web_sota/node_modules/
+node_modules/
+
+# Misc large dirs
+scripts/
+*.ps1
+*.sh
+*.bat
+*.bak
+security_reports/
+security_tools/
 
 # Virtual environments (CRITICAL - 40MB!)
 .venv/

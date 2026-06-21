@@ -16,14 +16,14 @@ Key Features:
 import logging
 import os
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """Example status enum for demonstration purposes."""
 
     PENDING = "pending"

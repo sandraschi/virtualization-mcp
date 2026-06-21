@@ -7,13 +7,13 @@ This module provides tools for security testing and vulnerability assessment.
 import logging
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class TestStatus(str, Enum):
+class TestStatus(StrEnum):
     """Status of a security test."""
 
     PENDING = "pending"
@@ -23,7 +23,7 @@ class TestStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class TestSeverity(str, Enum):
+class TestSeverity(StrEnum):
     """Severity levels for security test findings."""
 
     INFO = "info"

@@ -5,7 +5,7 @@ This module provides functionality to manage audio settings for virtual machines
 """
 
 import logging
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastapi import APIRouter
@@ -17,7 +17,7 @@ from ...plugins.base import BasePlugin
 logger = logging.getLogger(__name__)
 
 
-class AudioControllerType(str, Enum):
+class AudioControllerType(StrEnum):
     """Supported audio controller types with compatibility notes:
     - HDA: Intel HD Audio (recommended for modern OSes)
     - AC97: Legacy controller for older OSes
@@ -31,7 +31,7 @@ class AudioControllerType(str, Enum):
     NONE = "None"  # No audio
 
 
-class AudioDriverType(str, Enum):
+class AudioDriverType(StrEnum):
     """Audio driver backends with platform support:
     - DirectSound: Windows default (recommended on Windows)
     - WASAPI: Windows Audio Session API (lower latency)

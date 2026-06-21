@@ -1,4 +1,4 @@
-import { Cpu, Download, ExternalLink, Loader2, Play, Share2, Square, Zap } from "lucide-react";
+import { Download, ExternalLink, Loader2, Play } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../api/config";
 

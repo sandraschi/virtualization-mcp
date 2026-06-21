@@ -5,7 +5,7 @@ This module provides functionality to manage video settings for virtual machines
 """
 
 import logging
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastapi import APIRouter
@@ -17,7 +17,7 @@ from ...plugins.base import BasePlugin
 logger = logging.getLogger(__name__)
 
 
-class GraphicsControllerType(str, Enum):
+class GraphicsControllerType(StrEnum):
     """Supported graphics controller types.
 
     VirtualBox and Hyper-V support different graphics controllers with varying capabilities:
@@ -44,7 +44,7 @@ class GraphicsControllerType(str, Enum):
     NONE = "None"
 
 
-class VideoModeType(str, Enum):
+class VideoModeType(StrEnum):
     """Supported video modes."""
 
     ENABLED = "enabled"
@@ -52,7 +52,7 @@ class VideoModeType(str, Enum):
     ENABLED_3D = "enabled_3d"
 
 
-class ResolutionPreset(str, Enum):
+class ResolutionPreset(StrEnum):
     """Common resolution presets."""
 
     HD_720P = "1280x720"

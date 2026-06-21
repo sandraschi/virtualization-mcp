@@ -57,7 +57,7 @@ class PortfolioManager:
             raise ValueError(f"Portfolio '{portfolio_name}' not found. Available portfolios: {', '.join(available)}")
 
         try:
-            with open(portfolio_file, encoding="utf-8") as f:
+            with Path(portfolio_file).open(encoding="utf-8") as f:
                 portfolio = yaml.safe_load(f)
 
             if not isinstance(portfolio, dict):

@@ -81,7 +81,6 @@ export default function VirtualBox() {
   const [createMemoryMb, setCreateMemoryMb] = useState(4096);
   const [createDiskGb, setCreateDiskGb] = useState(25);
   const [createIsoPath, setCreateIsoPath] = useState("");
-  const [failedScreenshots, setFailedScreenshots] = useState<Set<string>>(new Set());
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [vboxAssets, setVboxAssets] = useState<VBoxAsset[]>([]);
   const [showAttachModal, setShowAttachModal] = useState(false);

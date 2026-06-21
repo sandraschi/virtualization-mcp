@@ -56,7 +56,7 @@ class VMOperations:
         """Load VM templates from YAML file"""
         try:
             if self.templates_path.exists():
-                with open(self.templates_path) as f:
+                with Path(self.templates_path).open() as f:
                     data = yaml.safe_load(f)
                     return data.get("templates", {})
             else:
@@ -242,12 +242,11 @@ class VMOperations:
 
     def _create_disk(self, vm_name: str, size_gb: int) -> str:
         """Create virtual disk in the VM's folder."""
-        import os as _os
 
-        home = _os.path.expanduser("~")
-        vbox_folder = _os.path.join(home, "VirtualBox VMs", vm_name)
-        _os.makedirs(vbox_folder, exist_ok=True)
-        disk_path = _os.path.join(vbox_folder, f"{vm_name}.vdi")
+        home = str(Path.home())
+        vbox_folder = str(Path(home) / "VirtualBox VMs" / vm_name)
+        Path(vbox_folder).mkdir(parents=True, exist_ok=True)
+        disk_path = str(Path(vbox_folder) / f"{vm_name}.vdi")
         size_mb = size_gb * 1024
 
         import subprocess as _sub

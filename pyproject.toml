@@ -25,7 +25,7 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
 ]
 dependencies = [
-    "fastmcp>=3.2.0,<4",
+    "fastmcp>=3.4.2,<4",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
@@ -94,7 +94,7 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "PTH", "A"]
 ignore = ["S101", "B008", "E501", "S603", "S607"]
 
 [tool.ruff.format]

@@ -6,12 +6,12 @@ the VM services package.
 """
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal, TypedDict
 
 
 # VM State Enums
-class VMState(str, Enum):
+class VMState(StrEnum):
     """Virtual machine states."""
 
     POWERED_OFF = "PoweredOff"
@@ -24,7 +24,7 @@ class VMState(str, Enum):
     UNKNOWN = "Unknown"
 
 
-class VMPowerState(str, Enum):
+class VMPowerState(StrEnum):
     """VM power states for lifecycle operations."""
 
     ON = "on"
@@ -34,7 +34,7 @@ class VMPowerState(str, Enum):
 
 
 # Device Types
-class DeviceType(str, Enum):
+class DeviceType(StrEnum):
     """Types of devices that can be attached to VMs."""
 
     USB = "usb"
@@ -61,7 +61,7 @@ class USBDeviceFilter:
 
 
 # Storage Types
-class StorageControllerType(str, Enum):
+class StorageControllerType(StrEnum):
     """Storage controller types supported by VirtualBox."""
 
     IDE = "IDE"
@@ -79,7 +79,7 @@ class StorageControllerType(str, Enum):
     BUSLOGIC = "BusLogic"
 
 
-class StorageBus(str, Enum):
+class StorageBus(StrEnum):
     """Storage bus types."""
 
     IDE = "IDE"
@@ -103,7 +103,7 @@ class StorageMedium:
 
 
 # Network Types (re-export from network module)
-class NetworkAttachmentType(str, Enum):
+class NetworkAttachmentType(StrEnum):
     """Network attachment types."""
 
     NAT = "nat"

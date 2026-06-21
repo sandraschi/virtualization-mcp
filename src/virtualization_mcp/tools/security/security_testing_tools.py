@@ -11,7 +11,7 @@ import logging
 import shutil
 import tempfile
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, field_validator
 logger = logging.getLogger(__name__)
 
 
-class TestStatus(str, Enum):
+class TestStatus(StrEnum):
     """Status of a security test."""
 
     PENDING = "pending"
@@ -30,7 +30,7 @@ class TestStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class TestSeverity(str, Enum):
+class TestSeverity(StrEnum):
     """Severity levels for security test findings."""
 
     INFO = "info"
@@ -192,7 +192,7 @@ class SecurityTester:
 
             # Save the report
             report_path = self.reports_dir / f"security_scan_{test_id}.json"
-            with open(report_path, "w") as f:
+            with Path(report_path).open("w") as f:
                 json.dump(result.dict(), f, default=str)
 
             result.report_path = report_path
@@ -238,12 +238,12 @@ class SecurityTester:
         """
         return self.available_tools
 
-    async def generate_report(self, test_id: str, format: str = "json") -> str:
+    async def generate_report(self, test_id: str, output_format: str = "json") -> str:
         """Generate a report for a completed test.
 
         Args:
             test_id: ID of the test to generate a report for
-            format: Report format (json, html, pdf)
+            output_format: Report format (json, html, pdf)
 
         Returns:
             Path to the generated report file
@@ -261,9 +261,9 @@ class SecurityTester:
 
         # In a real implementation, this would generate a formatted report
         # For now, just return the JSON representation
-        report_path = self.reports_dir / f"security_report_{test_id}.{format}"
+        report_path = self.reports_dir / f"security_report_{test_id}.{output_format}"
 
-        with open(report_path, "w") as f:
+        with Path(report_path).open("w") as f:
             json.dump(result.dict(), f, indent=2, default=str)
 
         return str(report_path)

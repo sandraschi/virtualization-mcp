@@ -1,12 +1,11 @@
-"""
-VM Storage Management Module
+"""VM Storage Management Module
 
 This module provides functionality for managing VM storage including disks and ISOs.
 """
 
 import logging
-import os
 from functools import wraps
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -89,7 +88,7 @@ class VMStorageMixin:
         # Input validation
         if not vm_name:
             raise ValueError("VM name is required")
-        if not disk_path or not os.path.isfile(disk_path):
+        if not disk_path or not Path(disk_path).is_file():
             raise ValueError(f"Disk file not found: {disk_path}")
         if not 0 <= port <= 3:
             raise ValueError("Port must be between 0 and 3")

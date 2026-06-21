@@ -1,13 +1,13 @@
-"""
-Docker Sandbox Backend
+"""Docker Sandbox Backend
 
 Low-level Docker operations for ephemeral and stateful code execution.
-No FastMCP dependencies — pure Docker SDK logic.
+No FastMCP dependencies -- pure Docker SDK logic.
 """
 
 import logging
 import os
 import uuid
+from pathlib import Path
 from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
@@ -135,11 +135,11 @@ def execute_file(
     network_enabled: bool = False,
 ) -> dict[str, Any]:
     """Run a host file in a throwaway container. Language auto-detected from extension."""
-    if not os.path.isfile(host_path):
+    if not Path(host_path).is_file():
         return {"success": False, "error": f"File not found: {host_path}"}
 
     if language is None:
-        ext = os.path.splitext(host_path)[1].lower()
+        ext = Path(host_path).suffix.lower()
         ext_map = {".py": "python", ".js": "javascript", ".sh": "bash"}
         language = ext_map.get(ext)
         if language is None:
@@ -168,7 +168,7 @@ def execute_file(
             network_disabled=not network_enabled,
         )
         try:
-            with open(host_path, "rb") as f:
+            with Path(host_path).open("rb") as f:
                 file_data = f.read()
             tar_buf = io.BytesIO()
             with tarfile.open(fileobj=tar_buf, mode="w") as tar:
@@ -269,8 +269,8 @@ def session_write_file(sandbox_id: str, container_path: str, content: str) -> di
         import tarfile
 
         data = content.encode("utf-8")
-        filename = os.path.basename(container_path)
-        dirpath = os.path.dirname(container_path) or "/"
+        filename = Path(container_path).name
+        dirpath = str(Path(container_path).parent) or "/"
         tar_buf = io.BytesIO()
         with tarfile.open(fileobj=tar_buf, mode="w") as tar:
             info = tarfile.TarInfo(name=filename)

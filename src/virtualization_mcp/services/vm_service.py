@@ -1,9 +1,8 @@
-"""
-VirtualBox VM management service with compatibility layer.
-"""
+"""VirtualBox VM management service with compatibility layer."""
 
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 from ..vbox.compat_adapter import VBoxManagerError, get_vbox_manager
@@ -1609,7 +1608,7 @@ class VMService:
         disk_path: str,
         port: int = 0,
         device: int = 0,
-        type: str = "hdd",
+        disk_type: str = "hdd",
     ) -> dict[str, Any]:
         """
         Attach a virtual disk to a virtual machine.
@@ -1619,7 +1618,7 @@ class VMService:
             disk_path: Path to the virtual disk file
             port: Controller port number (default: 0)
             device: Device number on the port (default: 0)
-            type: Disk type ("hdd" or "dvd", default: "hdd")
+            disk_type: Disk type ("hdd" or "dvd", default: "hdd")
 
         Returns:
             Dict[str, Any]: Status and details of the disk attachment
@@ -1638,15 +1637,15 @@ class VMService:
             if not vm_name or not disk_path:
                 raise VBoxManagerError("VM name and disk path are required")
 
-            if type.lower() not in ["hdd", "dvd"]:
-                raise VBoxManagerError(f"Invalid disk type: {type}. Must be 'hdd' or 'dvd'")
+            if disk_type.lower() not in ["hdd", "dvd"]:
+                raise VBoxManagerError(f"Invalid disk type: {disk_type}. Must be 'hdd' or 'dvd'")
 
             # Check if VM exists
             if not self.vbox_manager.vm_exists(vm_name):
                 raise VBoxManagerError(f"VM '{vm_name}' does not exist")
 
             # Check if disk file exists
-            if not os.path.exists(disk_path):
+            if not Path(disk_path).exists():
                 raise VBoxManagerError(f"Disk file not found: {disk_path}")
 
             # Check if disk is already attached
@@ -1658,10 +1657,10 @@ class VMService:
             # Attach the disk
             result = self.vm_operations.attach_disk(
                 vm_name=vm_name,
-                disk_path=os.path.abspath(disk_path),
+                disk_path=str(Path(disk_path).resolve()),
                 port=port,
                 device=device,
-                disk_type=type.lower(),
+                disk_type=disk_type.lower(),
             )
 
             if not result.get("success", False):
@@ -1806,7 +1805,7 @@ class VMService:
                 raise VBoxManagerError(f"VM '{vm_name}' does not exist")
 
             # Check if ISO file exists
-            if not os.path.exists(iso_path):
+            if not Path(iso_path).exists():
                 raise VBoxManagerError(f"ISO file not found: {iso_path}")
 
             # Check if the file has a valid ISO extension
@@ -1816,7 +1815,7 @@ class VMService:
             # Attach the ISO
             result = self.vm_operations.attach_iso(
                 vm_name=vm_name,
-                iso_path=os.path.abspath(iso_path),
+                iso_path=str(Path(iso_path).resolve()),
                 port=port,
                 device=device,
             )
@@ -1948,14 +1947,14 @@ class VMService:
             )
             return {"status": "error", "error": str(e)}
 
-    def export_vm(self, vm_name: str, output_path: str, format: str = "ovf-1.0") -> dict[str, Any]:
+    def export_vm(self, vm_name: str, output_path: str, output_format: str = "ovf-1.0") -> dict[str, Any]:
         """
         Export a virtual machine to an OVF/OVA file.
 
         Args:
             vm_name: Name of the VM to export
             output_path: Path where to save the exported file
-            format: Export format ("ovf-1.0", "ovf-2.0", "ovf-2.0", "ova")
+            output_format: Export format ("ovf-1.0", "ovf-2.0", "ovf-2.0", "ova")
 
         Returns:
             Dict[str, Any]: Status and details of the export operation
@@ -2217,7 +2216,7 @@ class VMService:
         try:
             cpu_usage = psutil.cpu_percent(interval=0.5)
             mem = psutil.virtual_memory()
-            disk = psutil.disk_usage(os.path.split(os.path.abspath(__file__))[0][:2] + "\\")
+            disk = psutil.disk_usage(os.path.split(str(Path(__file__).resolve()))[0][:2] + "\\")
             vbox_version = ""
             try:
                 result = self.vbox_manager.run_command(["--version"])

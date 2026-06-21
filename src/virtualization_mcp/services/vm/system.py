@@ -7,7 +7,7 @@ This module provides functionality to manage system-level settings for virtual m
 import logging
 import os
 from datetime import timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastapi import APIRouter
@@ -19,7 +19,7 @@ from ...plugins.base import BasePlugin
 logger = logging.getLogger(__name__)
 
 
-class ChipsetType(str, Enum):
+class ChipsetType(StrEnum):
     """Supported chipset types with compatibility notes:
     - ICH9: Modern chipset with better performance (default)
     - PIIX3: Legacy chipset for older OSes
@@ -29,7 +29,7 @@ class ChipsetType(str, Enum):
     PIIX3 = "PIIX3"  # Legacy
 
 
-class FirmwareType(str, Enum):
+class FirmwareType(StrEnum):
     """Supported firmware types with architecture notes:
     - BIOS: Legacy BIOS (default for compatibility)
     - EFI: UEFI firmware (recommended for modern OSes)
@@ -44,7 +44,7 @@ class FirmwareType(str, Enum):
     EFIDUAL = "EFIDUAL"  # Dual-architecture UEFI
 
 
-class CPUProfile(str, Enum):
+class CPUProfile(StrEnum):
     """CPU profile presets for different use cases."""
 
     DESKTOP = "desktop"  # Balanced performance for general use
@@ -54,7 +54,7 @@ class CPUProfile(str, Enum):
     CUSTOM = "custom"  # Manual configuration
 
 
-class RTCUseUTC(str, Enum):
+class RTCUseUTC(StrEnum):
     """RTC time standard settings."""
 
     UTC = "UTC"  # Use UTC (recommended for Linux guests)

@@ -517,7 +517,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
         controller_name: str = "SATA Controller",
         port: int = 0,
         device: int = 0,
-        type: str = "hdd",
+        disk_type: str = "hdd",
     ) -> dict[str, Any]:
         """Attach a disk to a VM."""
         return await asyncio.to_thread(
@@ -527,7 +527,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             controller_name=controller_name,
             port=port,
             device=device,
-            type=type,
+            type=disk_type,
         )
 
     # --- VM Configuration ---

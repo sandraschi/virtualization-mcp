@@ -7,14 +7,14 @@ including command documentation, examples, and usage patterns.
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 # Version information
 __version__ = "1.0.0"
 
 
-class HelpCategory(str, Enum):
+class HelpCategory(StrEnum):
     """Categories for organizing help topics.
 
     Attributes:
@@ -103,7 +103,7 @@ class HelpTool:
             topic: str | None = None,
             category: HelpCategory | None = None,
             show_examples: bool = True,
-            format: str = "text",
+            output_format: str = "text",
         ) -> dict[str, str | list[dict]]:
             """
             Get help for virtualization-mcp commands and features.
@@ -115,7 +115,7 @@ class HelpTool:
                 topic: Specific command or topic to get help for
                 category: Filter by category (vm, storage, network, etc.)
                 show_examples: Whether to include usage examples (default: True)
-                format: Output format ('text' or 'json')
+                output_format: Output format ('text' or 'json')
 
             Returns:
                 Dictionary containing help information with the following structure:

@@ -1,5 +1,4 @@
-"""
-VirtualBox Compatibility Adapter
+"""VirtualBox Compatibility Adapter
 
 This module provides a compatibility layer between the existing VBoxManager class
 and our new vbox_compat module, allowing for a smooth transition.
@@ -7,6 +6,7 @@ and our new vbox_compat module, allowing for a smooth transition.
 
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 # Import our new compatibility layer
@@ -55,16 +55,15 @@ class VBoxManager:
     @property
     def log_path(self) -> str:
         """Get VirtualBox logs directory path."""
-        import os
 
-        home = os.path.expanduser("~")
+        home = Path("~").expanduser()
         candidates = [
-            os.path.join(home, ".config", "VirtualBox", "Logs"),
-            os.path.join(home, ".VirtualBox"),
-            os.path.join(home, "VirtualBox VMs"),
+            str(Path(home) / ".config" / "VirtualBox" / "Logs"),
+            str(Path(home) / ".VirtualBox"),
+            str(Path(home) / "VirtualBox VMs"),
         ]
         for p in candidates:
-            if os.path.isdir(p):
+            if Path(p).is_dir():
                 return p
         return candidates[0]
 
