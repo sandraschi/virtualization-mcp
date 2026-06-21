@@ -1,0 +1,23 @@
+# virtualization-mcp — VM and Sandbox Management
+
+MCP server for VirtualBox and Hyper-V virtual machines, Docker sandboxes, Windows Sandbox, and fleet app launch. Port 10700, web dashboard.
+
+## Tools
+
+- `vm_management` — Portmanteau: list, create, start, stop, delete, clone, reset, pause, resume, info
+- `network_management` — Portmanteau: list/create/remove host-only networks, list adapters, configure adapter
+- `snapshot_management` — Portmanteau: list, create, restore, delete snapshots
+- `storage_management` — Portmanteau: list/create/remove controllers, list/create/attach disks
+- `system_management` — Portmanteau: host info, VBox version, OS types, metrics, screenshot
+- `sandbox_management` — Portmanteau: ephemeral code execution, stateful sessions, file I/O
+- `hyperv_management` — Portmanteau (Windows): list, get, start, stop Hyper-V VMs
+- `info_tools` — Portmanteau: list_tools, tool_info, tool_schema, help
+- `agentic_tools` — suggest_config, sandbox_workflow, workflow (LLM sampling)
+
+## Config
+
+- Port: 10700
+- Requires: VirtualBox 7+ with VBoxManage, Windows 11 Pro+ for Hyper-V/Sandbox
+- Env: VBOX_USER_HOME, VIRTUALBOX_PATH
+
+See [llms-full.txt](llms-full.txt) for full tool reference.
