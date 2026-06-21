@@ -476,6 +476,7 @@ class ChatRequest(BaseModel):
     message: str
     history: list[dict[str, str]] = []
     model: str | None = None
+    personality: str | None = None
 
 
 class RefinePromptRequest(BaseModel):
@@ -2416,6 +2417,7 @@ async def fleet_install_run(request: FleetInstallRunRequest):
     os.makedirs(run_dir, exist_ok=True)
     safe_label = "".join(c if c.isalnum() or c in "-_" else "-" for c in request.label)
     script_path = os.path.join(run_dir, f"{safe_label}.ps1")
+    # No personality handling needed for install-run; original logic retained.
     with open(script_path, "w", encoding="utf-8") as f:
         f.write(request.script)
     log_path = os.path.join(run_dir, f"{safe_label}.log")
@@ -2442,6 +2444,20 @@ async def chat_interaction(request: ChatRequest):
     # Load base system prompt or skill content
     system_prompt = "You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet."
 
+    # Personality handling
+    personality = getattr(request, "personality", None) or "professional"
+    personality_instructions = {
+        "professional": "",
+        "pirate": "You speak like a pirate captain, using nautical terms and humor.",
+        "sarcastic": "You respond with dry sarcasm and witty remarks.",
+        "mentor": "You act as a supportive mentor, explaining patiently and encouraging the user.",
+    }
+    instr = personality_instructions.get(personality, "")
+    if instr:
+        system_prompt += f"\n\n{instr}"
+    else:
+        logger.warning("Unknown personality %s, defaulting to professional", personality)
+
     # Try to load the virtualization-expert skill to augment the prompt
     try:
         skills_dir = _get_skills_dir()
@@ -2459,7 +2475,8 @@ async def chat_interaction(request: ChatRequest):
     except Exception as e:
         logger.warning("Could not load virtualization-expert skill for chat prompt: %s", e)
 
-    prefix = f"{system_prompt}\n\nUser: "
+    # Build messages list for LLM payload
+    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": request.message}]
     reply = ""
 
     if provider == "ollama":
@@ -2507,7 +2524,7 @@ async def chat_interaction(request: ChatRequest):
             ollama_payload = _json.dumps(
                 {
                     "model": _preferred,
-                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "messages": messages,
                     "stream": False,
                 }
             ).encode()
@@ -2542,7 +2559,7 @@ async def chat_interaction(request: ChatRequest):
             openai_payload = _json.dumps(
                 {
                     "model": preferred_model or "gpt-4o-mini",
-                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "messages": messages,
                     "max_tokens": 1024,
                     "stream": False,
                 }
@@ -2579,7 +2596,7 @@ async def chat_interaction(request: ChatRequest):
             deepseek_payload = _json.dumps(
                 {
                     "model": preferred_model or "deepseek-v4-flash",
-                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "messages": messages,
                     "max_tokens": 1024,
                     "stream": False,
                 }
