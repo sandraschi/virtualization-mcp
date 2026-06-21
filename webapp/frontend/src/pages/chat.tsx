@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import {
   Bot,
   Command,
@@ -31,6 +32,7 @@ export default function Chat() {
   const [provider, setProvider] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
   const [activeModel, setActiveModel] = useState<string | null>(null);
+  const [refining, setRefining] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/settings/llm`)
@@ -58,6 +60,31 @@ export default function Chat() {
       .catch(() => setProvider(null))
       .finally(() => setChecking(false));
   }, []);
+
+  const handleRefine = async () => {
+    if (!input.trim() || refining) return;
+    setRefining(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/chat/refine`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: input,
+          model: activeModel || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.refined) {
+          setInput(data.refined);
+        }
+      }
+    } catch (error) {
+      console.error("Refine error:", error);
+    } finally {
+      setRefining(false);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -106,7 +133,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] max-w-5xl mx-auto border border-border bg-card/40 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4.5rem)] max-w-5xl mx-auto border border-border bg-card/40 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
       {/* Chat Header */}
       <div className="p-6 border-b border-border bg-white/5 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -131,6 +158,7 @@ export default function Chat() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             title="Open Command Center"
             aria-label="Commands"
             className="p-2 hover:bg-white/5 rounded-lg text-muted-foreground transition-colors"
@@ -197,6 +225,23 @@ export default function Chat() {
           />
           <div className="absolute right-3 bottom-3 flex items-center gap-2">
             <button
+              type="button"
+              onClick={handleRefine}
+              disabled={refining || !input.trim()}
+              title="Refine Prompt (AI Optimization)"
+              aria-label="Refine"
+              className={clsx(
+                "p-2 rounded-lg text-muted-foreground transition-colors hover:bg-white/5 hover:text-primary",
+                refining ? "animate-pulse text-primary" : "",
+                !input.trim() || refining
+                  ? "opacity-40 cursor-not-allowed"
+                  : "",
+              )}
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
               title="Attach File"
               aria-label="Attach"
               className="p-2 hover:bg-white/5 rounded-lg text-muted-foreground transition-colors"
@@ -204,6 +249,7 @@ export default function Chat() {
               <Paperclip className="w-4 h-4" />
             </button>
             <button
+              type="button"
               title="Voice Input"
               aria-label="Mic"
               className="p-2 hover:bg-white/5 rounded-lg text-muted-foreground transition-colors"
@@ -211,6 +257,7 @@ export default function Chat() {
               <Mic className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={handleSend}
               title="Send Message"
               aria-label="Send"
