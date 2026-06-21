@@ -1,0 +1,108 @@
+# virtualization-mcp — Full Reference
+
+## Architecture
+
+FastMCP 3.2 server with modular plugin architecture. VirtualBox operations via VBoxManage CLI (direct) and vboxapi/pyvbox (compat layer). Hyper-V via PowerShell cmdlets. Docker sandbox via Docker SDK. Portmanteau mode consolidates 60+ individual operations into 8 portmanteau tools with 33+ operations.
+
+### Supported Hypervisors
+
+| Platform | Mode | Interface |
+|----------|------|-----------|
+| VirtualBox 7+ | Primary | VBoxManage CLI + pyvbox compat |
+| Hyper-V | Windows only | PowerShell (Get-VM, Start-VM, etc.) |
+| Windows Sandbox | Windows only | Native .wsb configuration |
+| Docker | Container | Docker SDK for Python |
+
+## Tools — Full Reference
+
+### vm_management
+
+| Operation | Description |
+|-----------|-------------|
+| `list` | List all VMs (status, RAM, CPUs, OS) |
+| `create` | Create VM (name, OS type, RAM, disk) |
+| `start` | Start VM (headless or GUI) |
+| `stop` | Stop VM (acpi/shutdown/poweroff) |
+| `delete` | Delete VM and associated files |
+| `clone` | Clone VM with new name and MAC policy |
+| `reset` | Reset VM (hard reset) |
+| `pause` | Pause VM (save state) |
+| `resume` | Resume paused VM |
+| `info` | Detailed VM config and runtime status |
+
+### network_management
+
+| Operation | Description |
+|-----------|-------------|
+| `list_networks` | List host-only networks (name, CIDR, DHCP) |
+| `create_network` | Create host-only network with DHCP |
+| `remove_network` | Remove host-only network |
+| `list_adapters` | List VM network adapters |
+| `configure_adapter` | Attach adapter (NAT/bridged/host-only/internal) |
+
+### snapshot_management
+
+| Operation | Description |
+|-----------|-------------|
+| `list` | List snapshots for a VM (name, UUID, timestamp, description) |
+| `create` | Create snapshot with optional description |
+| `restore` | Restore VM to snapshot state |
+| `delete` | Delete snapshot |
+
+### storage_management
+
+| Operation | Description |
+|-----------|-------------|
+| `list_controllers` | List storage controllers on a VM |
+| `create_controller` | Create IDE/SATA/SCSI/SAS/USB/PCIe controller |
+| `remove_controller` | Remove storage controller |
+| `list_disks` | List virtual disks |
+| `create_disk` | Create new VDI/VMDK/VHD disk |
+| `attach_disk` | Attach disk to VM controller port |
+
+### system_management
+
+| Operation | Description |
+|-----------|-------------|
+| `host_info` | Host system information (OS, CPU, RAM) |
+| `vbox_version` | VirtualBox version and extension pack status |
+| `ostypes` | List available OS type identifiers |
+| `metrics` | VM performance metrics (CPU, RAM, disk, network) |
+| `screenshot` | Take VM screenshot (PNG) |
+
+### sandbox_management (Docker)
+
+| Operation | Description |
+|-----------|-------------|
+| `execute_code` | Run code in ephemeral container (python/javascript/bash) |
+| `execute_file` | Run host script file in ephemeral container |
+| `session_create` | Create stateful container session |
+| `session_run` | Execute command in session container |
+| `session_write_file` | Write file into session container |
+| `session_read_file` | Read file from session container |
+| `session_list` | List active sessions |
+| `session_destroy` | Remove session container |
+
+### hyperv_management
+
+| Operation | Description |
+|-----------|-------------|
+| `list` | List Hyper-V VMs |
+| `get` | Detailed VM info |
+| `start` | Start VM |
+| `stop` | Stop VM (force/wait options) |
+
+### agentic_tools (LLM sampling)
+
+- `suggest_config` — LLM recommends VM settings for use case (CI, malware sandbox, dev env)
+- `sandbox_workflow` — Step-by-step plan for spin-up → work → snapshot → tear-down
+- `workflow` — Autonomous multi-step VM orchestration
+
+## Error Handling
+
+All tools return `{"success": bool, "action": str, "data": {...}}` or `{"success": false, "error": str}`. VBoxManage errors propagated directly. Async operations use thread pool — never block event loop.
+
+## Cross-repo Integration
+
+- **openclaw-molt-mcp** — Sandbox provision for OpenClaw isolation
+- **meta-mcp** — Fleet webapp launch/stop via port detection
