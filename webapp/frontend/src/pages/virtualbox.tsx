@@ -241,7 +241,7 @@ export default function VirtualBox() {
       .catch(() => setVboxAssets([]));
   };
 
-  const fetchTemplates = async () => {
+  async function fetchTemplates() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/templates`);
       if (res.ok) {
@@ -251,7 +251,7 @@ export default function VirtualBox() {
     } catch {
       /* ignore */
     }
-  };
+  }
 
   const submitTemplate = async () => {
     if (!editTemplateName.trim()) return;

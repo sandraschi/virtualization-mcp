@@ -79,7 +79,7 @@ export default function Tools() {
   );
 
   return (
-    <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
+    <div className="space-y-6 h-[calc(100vh-8rem)] md:h-[calc(100vh-4.5rem)] flex flex-col">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Tools Console</h2>

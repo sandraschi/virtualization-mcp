@@ -478,6 +478,11 @@ class ChatRequest(BaseModel):
     model: str | None = None
 
 
+class RefinePromptRequest(BaseModel):
+    prompt: str
+    model: str | None = None
+
+
 class VrdeRequest(BaseModel):
     enabled: bool = True
     port: int | None = None
@@ -2723,6 +2728,40 @@ async def chat_interaction(request: ChatRequest):
         "reply": f"No LLM provider available at {endpoint}. Start Ollama (`ollama serve`), LM Studio, or set GOOGLE_API_KEY.",
         "provider": None,
     }
+
+
+@app.post("/api/v1/chat/refine")
+async def refine_prompt(request: RefinePromptRequest):
+    """Refine a virtualization prompt using the active LLM."""
+    if not request.prompt.strip():
+        return {"refined": ""}
+
+    refine_instruction = (
+        "You are a prompt engineering assistant. Your task is to rewrite the user's input prompt to be "
+        "clear, precise, and optimized for an AI virtualization assistant that controls VirtualBox and Hyper-V. "
+        "Make it detailed, specifying parameter options (like RAM, CPUs) if implied or suggested by best practices, "
+        "while keeping the core intent exactly the same. Do not output anything other than the raw refined prompt itself. "
+        "Do not include intro/outro comments, explanations, formatting code blocks, or conversational text. Just return the refined prompt.\n\n"
+        f"User Prompt: {request.prompt}\n\n"
+        "Refined Prompt:"
+    )
+
+    chat_req = ChatRequest(message=refine_instruction, history=[], model=request.model)
+
+    res = await chat_interaction(chat_req)
+    refined = res.get("reply", "").strip()
+
+    # Clean up markdown ticks if some LLMs append them
+    if refined.startswith("```") and refined.endswith("```"):
+        lines = refined.split("\n")
+        if len(lines) > 2:
+            refined = "\n".join(lines[1:-1]).strip()
+        else:
+            refined = refined.replace("```", "").strip()
+    elif refined.startswith('"') and refined.endswith('"'):
+        refined = refined[1:-1].strip()
+
+    return {"refined": refined}
 
 
 @app.post("/api/v1/vms")

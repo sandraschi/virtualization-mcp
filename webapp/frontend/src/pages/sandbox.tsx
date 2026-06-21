@@ -395,7 +395,7 @@ export default function Sandbox() {
         : previewXml || "Loading preview…";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)] md:h-[calc(100vh-4.5rem)]">
       {/* Configuration Form */}
       <div className="space-y-6">
         <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-xs text-muted-foreground">
