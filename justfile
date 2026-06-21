@@ -103,3 +103,15 @@ clean:
 
 # Build Tauri native desktop app (full pipeline: frontend + backend)
 build-native:
+# ── Playwright E2E ─────────────────────────────────────────────────────
+
+# Install Playwright browsers (one-time)
+e2e-install:
+    cd {{REPO}}\webapp/frontend
+    npx playwright install chromium
+
+# Run Playwright E2E smoke tests (start backend first: just serve)
+e2e:
+    cd {{REPO}}\webapp/frontend
+    npx playwright test
+
