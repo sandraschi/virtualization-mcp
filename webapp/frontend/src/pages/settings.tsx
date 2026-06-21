@@ -2,9 +2,9 @@ import {
   Bell,
   Cpu,
   Database,
+  ExternalLink,
   Eye,
   EyeOff,
-  ExternalLink,
   KeyRound,
   Loader2,
   Lock,
@@ -28,6 +28,10 @@ interface ProviderInfo {
 interface ProvidersData {
   ollama: ProviderInfo;
   lm_studio: ProviderInfo;
+  openai?: ProviderInfo;
+  deepseek?: ProviderInfo;
+  anthropic?: ProviderInfo;
+  gemini?: ProviderInfo;
 }
 
 interface KeyDef {
@@ -36,37 +40,107 @@ interface KeyDef {
   link: string;
 }
 
+const DEFAULT_KEY_DEFS: KeyDef[] = [
+  {
+    id: "DEEPSEEK_API_KEY",
+    label: "DeepSeek",
+    link: "https://platform.deepseek.com/api_keys",
+  },
+  {
+    id: "ANTHROPIC_API_KEY",
+    label: "Anthropic (Claude)",
+    link: "https://console.anthropic.com/settings/keys",
+  },
+  {
+    id: "GOOGLE_API_KEY",
+    label: "Google (Gemini)",
+    link: "https://aistudio.google.com/app/apikey",
+  },
+  {
+    id: "OPENAI_API_KEY",
+    label: "OpenAI",
+    link: "https://platform.openai.com/api-keys",
+  },
+];
+
 export default function Settings() {
   const [providers, setProviders] = useState<ProvidersData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
-  const [apiKeyDefs, setApiKeyDefs] = useState<KeyDef[]>([]);
+  const [apiKeyDefs, setApiKeyDefs] = useState<KeyDef[]>(DEFAULT_KEY_DEFS);
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
   const [editKeys, setEditKeys] = useState<Record<string, string>>({});
 
-  const [selectedProvider, setSelectedProvider] = useState<"ollama" | "lm_studio">("ollama");
+  const [selectedProvider, setSelectedProvider] = useState<
+    "ollama" | "lm_studio" | "openai" | "deepseek" | "anthropic" | "gemini"
+  >("ollama");
   const [customEndpoint, setCustomEndpoint] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [gpuAccel, setGpuAccel] = useState(true);
-  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    ok: boolean;
+    msg: string;
+  } | null>(null);
 
-  const fetchProviders = useCallback(async () => {
+  const fetchLlmSettings = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/settings/llm`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.provider) setSelectedProvider(data.provider);
+        if (data.endpoint) setCustomEndpoint(data.endpoint);
+        if (data.model) setSelectedModel(data.model);
+        if (data.gpu_accel !== undefined) setGpuAccel(data.gpu_accel);
+        return data;
+      }
+    } catch {
+      /* server down */
+    }
+    return null;
+  }, []);
+
+  const fetchProviders = useCallback(async (savedSettings?: any) => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/v1/settings/llm/providers`);
       if (res.ok) {
         const data: ProvidersData = await res.json();
         setProviders(data);
-        if (data.ollama.available && data.ollama.models.length > 0) {
-          setSelectedProvider("ollama");
-          setSelectedModel(data.ollama.models[0].name);
-        } else if (data.lm_studio.available && data.lm_studio.models.length > 0) {
-          setSelectedProvider("lm_studio");
-          setSelectedModel(data.lm_studio.models[0].name);
+        if (!savedSettings) {
+          if (data.ollama.available && data.ollama.models.length > 0) {
+            setSelectedProvider("ollama");
+            setSelectedModel(data.ollama.models[0].name);
+          } else if (
+            data.lm_studio.available &&
+            data.lm_studio.models.length > 0
+          ) {
+            setSelectedProvider("lm_studio");
+            setSelectedModel(data.lm_studio.models[0].name);
+          } else if (data.openai?.available && data.openai.models.length > 0) {
+            setSelectedProvider("openai");
+            setSelectedModel(data.openai.models[0].name);
+          } else if (
+            data.deepseek?.available &&
+            data.deepseek.models.length > 0
+          ) {
+            setSelectedProvider("deepseek");
+            setSelectedModel(data.deepseek.models[0].name);
+          } else if (
+            data.anthropic?.available &&
+            data.anthropic.models.length > 0
+          ) {
+            setSelectedProvider("anthropic");
+            setSelectedModel(data.anthropic.models[0].name);
+          } else if (data.gemini?.available && data.gemini.models.length > 0) {
+            setSelectedProvider("gemini");
+            setSelectedModel(data.gemini.models[0].name);
+          }
         }
       }
-    } catch { /* server down */ }
+    } catch {
+      /* server down */
+    }
     setLoading(false);
   }, []);
 
@@ -76,12 +150,21 @@ export default function Settings() {
       if (res.ok) {
         const d = await res.json();
         setApiKeys(d.keys || {});
-        setApiKeyDefs(d.definitions || []);
+        setApiKeyDefs(d.definitions || DEFAULT_KEY_DEFS);
       }
-    } catch { /* server down */ }
+    } catch {
+      /* server down */
+    }
   }, []);
 
-  useEffect(() => { fetchProviders(); fetchKeys(); }, [fetchProviders, fetchKeys]);
+  useEffect(() => {
+    const init = async () => {
+      const saved = await fetchLlmSettings();
+      await fetchProviders(saved);
+      await fetchKeys();
+    };
+    init();
+  }, [fetchLlmSettings, fetchProviders, fetchKeys]);
 
   const saveKeys = async () => {
     const toSave: Record<string, string> = {};
@@ -104,16 +187,72 @@ export default function Settings() {
           setSaved(true);
           setTimeout(() => setSaved(false), 2000);
         }
-      } catch { /* server down */ }
+      } catch {
+        /* server down */
+      }
     }
   };
 
   const activeProvider = providers?.[selectedProvider];
   const models = activeProvider?.models || [];
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const llmRes = await fetch(`${API_BASE}/api/v1/settings/llm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          endpoint:
+            customEndpoint ||
+            (selectedProvider === "ollama"
+              ? "http://localhost:11434"
+              : selectedProvider === "lm_studio"
+                ? "http://localhost:1234"
+                : selectedProvider === "deepseek"
+                  ? "https://api.deepseek.com/v1"
+                  : selectedProvider === "anthropic"
+                    ? "https://api.anthropic.com/v1"
+                    : selectedProvider === "gemini"
+                      ? "https://generativelanguage.googleapis.com"
+                      : "https://api.openai.com/v1"),
+          model: selectedModel,
+          gpu_accel: gpuAccel,
+        }),
+      });
+
+      const keysToSave: Record<string, string> = {};
+      for (const kd of apiKeyDefs) {
+        if (editKeys[kd.id] !== undefined) {
+          keysToSave[kd.id] = editKeys[kd.id] ?? "";
+        }
+      }
+      let keysSaved = true;
+      if (Object.keys(keysToSave).length > 0) {
+        const keysRes = await fetch(`${API_BASE}/api/v1/settings/keys`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys: keysToSave }),
+        });
+        if (keysRes.ok) {
+          const d = await keysRes.json();
+          setApiKeys(d.keys || {});
+          setEditKeys({});
+        } else {
+          keysSaved = false;
+        }
+      }
+
+      if (llmRes.ok && keysSaved) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch (err) {
+      console.error("Error saving settings:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const [activeSection, setActiveSection] = useState("Local Intelligence");
@@ -151,7 +290,11 @@ export default function Settings() {
                 : "bg-primary text-primary-foreground hover:bg-primary/90"
             }`}
           >
-            {saved ? <Lock className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {saved ? (
+              <Lock className="w-4 h-4" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
             {saved ? "Settings Saved" : "Save Changes"}
           </button>
         </div>
@@ -178,153 +321,249 @@ export default function Settings() {
         <div className="md:col-span-2 space-y-8">
           {/* LLM Provider Status */}
           {activeSection === "Local Intelligence" && (
-          <div className="p-6 rounded-2xl border border-border bg-card/40 backdrop-blur-sm space-y-6">
-            <div className="flex items-center gap-3 border-b border-border pb-4">
-              <Cpu className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-lg">Local Intelligence</h3>
-            </div>
+            <div className="p-6 rounded-2xl border border-border bg-card/40 backdrop-blur-sm space-y-6">
+              <div className="flex items-center gap-3 border-b border-border pb-4">
+                <Cpu className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-lg">Local Intelligence</h3>
+              </div>
 
-            {/* Provider cards */}
-            <div className="grid grid-cols-2 gap-4">
-              {(["ollama", "lm_studio"] as const).map((name) => {
-                const p = providers?.[name];
-                const isActive = name === selectedProvider;
-                return (
-                  <div
-                    key={name}
-                    onClick={() => p?.available && setSelectedProvider(name)}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                      isActive
-                        ? "border-primary/40 bg-primary/5"
-                        : p?.available
-                          ? "border-border hover:border-primary/20"
-                          : "border-border/50 opacity-50"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold capitalize">{name.replace("_", " ")}</span>
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                      ) : p?.available ? (
-                        <Wifi className="w-4 h-4 text-green-500" />
+              {/* Provider cards */}
+              <div className="grid grid-cols-3 gap-4">
+                {(
+                  [
+                    "ollama",
+                    "lm_studio",
+                    "openai",
+                    "deepseek",
+                    "anthropic",
+                    "gemini",
+                  ] as const
+                ).map((name) => {
+                  const p = providers?.[name];
+                  const isActive = name === selectedProvider;
+                  return (
+                    <div
+                      key={name}
+                      onClick={() => {
+                        setSelectedProvider(name);
+                        setCustomEndpoint("");
+                        setTestResult(null);
+                      }}
+                      className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                        isActive
+                          ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/5"
+                          : p?.available
+                            ? "border-border hover:border-primary/20 bg-card/20"
+                            : "border-border hover:border-primary/10 bg-card/10 opacity-70"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold capitalize">
+                          {name.replace("_", " ")}
+                        </span>
+                        {loading ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : p?.available ? (
+                          <Wifi className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <WifiOff className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      {p?.available ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            {p.version ? p.version : "Connected"}
+                          </p>
+                          <p className="text-xs text-green-500 mt-1">
+                            {p.models?.length || 0} model
+                            {p.models?.length !== 1 ? "s" : ""} available
+                          </p>
+                        </>
                       ) : (
-                        <WifiOff className="w-4 h-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground text-red-400">
+                          {name === "ollama" || name === "lm_studio"
+                            ? p?.error || "Not detected"
+                            : "API Key missing"}
+                        </p>
                       )}
                     </div>
-                    {p?.available ? (
-                      <>
-                        <p className="text-xs text-muted-foreground">
-                          {p.version ? `v${p.version}` : "Connected"}
-                        </p>
-                        <p className="text-xs text-green-500 mt-1">
-                          {p.models.length} model{p.models.length !== 1 ? "s" : ""} available
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {p?.error || "Not detected"}
+                  );
+                })}
+              </div>
+
+              {/* Endpoint */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Endpoint (
+                  {selectedProvider === "openai"
+                    ? "OpenAI Compatible Cloud"
+                    : selectedProvider === "deepseek"
+                      ? "DeepSeek API"
+                      : selectedProvider === "anthropic"
+                        ? "Anthropic API"
+                        : selectedProvider === "gemini"
+                          ? "Gemini API"
+                          : selectedProvider}
+                  )
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={
+                      customEndpoint ||
+                      (selectedProvider === "ollama"
+                        ? "http://localhost:11434"
+                        : selectedProvider === "lm_studio"
+                          ? "http://localhost:1234"
+                          : selectedProvider === "deepseek"
+                            ? "https://api.deepseek.com/v1"
+                            : selectedProvider === "anthropic"
+                              ? "https://api.anthropic.com/v1"
+                              : selectedProvider === "gemini"
+                                ? "https://generativelanguage.googleapis.com"
+                                : "https://api.openai.com/v1")
+                    }
+                    onChange={(e) => setCustomEndpoint(e.target.value)}
+                    className="flex-1 bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-primary transition-colors font-mono"
+                  />
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      setTestResult(null);
+                      try {
+                        const ep =
+                          customEndpoint ||
+                          (selectedProvider === "ollama"
+                            ? "http://localhost:11434"
+                            : selectedProvider === "lm_studio"
+                              ? "http://localhost:1234"
+                              : selectedProvider === "deepseek"
+                                ? "https://api.deepseek.com/v1"
+                                : selectedProvider === "anthropic"
+                                  ? "https://api.anthropic.com/v1"
+                                  : selectedProvider === "gemini"
+                                    ? "https://generativelanguage.googleapis.com"
+                                    : "https://api.openai.com/v1");
+                        const res = await fetch(
+                          `${API_BASE}/api/v1/settings/llm/models?endpoint=${encodeURIComponent(ep)}&provider=${selectedProvider}`,
+                        );
+                        if (res.ok) {
+                          const data = await res.json();
+                          if (data.available) {
+                            setTestResult({
+                              ok: true,
+                              msg: `${data.models?.length || 0} models found`,
+                            });
+                            setProviders((prev) => ({
+                              ...prev!,
+                              [selectedProvider]: data,
+                            }));
+                            if (data.models?.length > 0)
+                              setSelectedModel(data.models[0].name);
+                          } else {
+                            setTestResult({
+                              ok: false,
+                              msg: data.error || "Not available",
+                            });
+                          }
+                        } else {
+                          setTestResult({
+                            ok: false,
+                            msg: `HTTP ${res.status}`,
+                          });
+                        }
+                      } catch (e: any) {
+                        setTestResult({
+                          ok: false,
+                          msg: e.message || "Connection failed",
+                        });
+                      }
+                      setLoading(false);
+                    }}
+                    className="px-3 py-2 text-sm rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                  >
+                    Test
+                  </button>
+                  {testResult && (
+                    <span
+                      className={`text-xs flex items-center gap-1 ${testResult.ok ? "text-green-500" : "text-red-500"}`}
+                    >
+                      {testResult.ok ? "\u2713" : "\u2717"} {testResult.msg}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Model selector */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Model
+                </label>
+                {loading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Scanning...
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {models.length > 0 && (
+                      <select
+                        value={selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-primary transition-colors"
+                      >
+                        {models.map((m) => (
+                          <option key={m.name} value={m.name}>
+                            {m.name}
+                          </option>
+                        ))}
+                        <option value="custom">Custom model...</option>
+                      </select>
+                    )}
+                    {(models.length === 0 ||
+                      selectedModel === "custom" ||
+                      !models.some((m) => m.name === selectedModel)) && (
+                      <input
+                        type="text"
+                        value={selectedModel === "custom" ? "" : selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        placeholder="Enter model name (e.g. gpt-4o, deepseek-chat)..."
+                        className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-primary transition-colors font-mono"
+                      />
+                    )}
+                    {models.length === 0 && (
+                      <p className="text-xs text-muted-foreground font-mono">
+                        No models auto-detected. Type model name manually.
                       </p>
                     )}
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Endpoint */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">
-                Endpoint ({selectedProvider})
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={customEndpoint || (selectedProvider === "ollama" ? "http://localhost:11434" : "http://localhost:1234")}
-                  onChange={(e) => setCustomEndpoint(e.target.value)}
-                  className="flex-1 bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-primary transition-colors font-mono"
-                />
-                <button
-                  onClick={async () => {
-                    setLoading(true);
-                    setTestResult(null);
-                    try {
-                      const ep = customEndpoint || (selectedProvider === "ollama" ? "http://localhost:11434" : "http://localhost:1234");
-                      const res = await fetch(`${API_BASE}/api/v1/settings/llm/models?endpoint=${encodeURIComponent(ep)}&provider=${selectedProvider}`);
-                      if (res.ok) {
-                        const data = await res.json();
-                        if (data.available) {
-                          setTestResult({ ok: true, msg: `${data.models?.length || 0} models found` });
-                          setProviders((prev) => ({ ...prev!, [selectedProvider]: data }));
-                          if (data.models?.length > 0) setSelectedModel(data.models[0].name);
-                        } else {
-                          setTestResult({ ok: false, msg: data.error || "Not available" });
-                        }
-                      } else {
-                        setTestResult({ ok: false, msg: `HTTP ${res.status}` });
-                      }
-                    } catch (e: any) {
-                      setTestResult({ ok: false, msg: e.message || "Connection failed" });
-                    }
-                    setLoading(false);
-                  }}
-                  className="px-3 py-2 text-sm rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-                >
-                  Test
-                </button>
-                {testResult && (
-                  <span className={`text-xs flex items-center gap-1 ${testResult.ok ? "text-green-500" : "text-red-500"}`}>
-                    {testResult.ok ? "\u2713" : "\u2717"} {testResult.msg}
-                  </span>
                 )}
               </div>
-            </div>
 
-            {/* Model selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">
-                Model
-              </label>
-              {loading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Scanning...
+              {/* GPU toggle */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                <div className="space-y-0.5">
+                  <div className="text-sm font-bold uppercase tracking-wider">
+                    GPU Acceleration
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Utilize NVIDIA RTX 4090 for inference
+                  </div>
                 </div>
-              ) : models.length > 0 ? (
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-primary transition-colors"
+                <div
+                  className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${gpuAccel ? "bg-primary" : "bg-muted"}`}
+                  onClick={() => setGpuAccel(!gpuAccel)}
                 >
-                  {models.map((m) => (
-                    <option key={m.name} value={m.name}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No models found. Start {selectedProvider === "ollama" ? "Ollama" : "LM Studio"} and pull a model.
-                </p>
-              )}
-            </div>
-
-            {/* GPU toggle */}
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-              <div className="space-y-0.5">
-                <div className="text-sm font-bold uppercase tracking-wider">GPU Acceleration</div>
-                <div className="text-xs text-muted-foreground">Utilize NVIDIA RTX 4090 for inference</div>
-              </div>
-              <div
-                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${gpuAccel ? "bg-primary" : "bg-muted"}`}
-                onClick={() => setGpuAccel(!gpuAccel)}
-              >
-                <div className={`w-4 h-4 rounded-full bg-white transition-transform ${gpuAccel ? "translate-x-6" : "translate-x-0"}`} />
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${gpuAccel ? "translate-x-6" : "translate-x-0"}`}
+                  />
+                </div>
               </div>
             </div>
-          </div>
           )}
 
           {/* API Keys */}
-          {activeSection === "API Keys" && apiKeyDefs.length > 0 && (
+          {activeSection === "API Keys" && (
             <div className="p-6 rounded-2xl border border-border bg-card/40 backdrop-blur-sm space-y-6">
               <div className="flex items-center gap-3 border-b border-border pb-4">
                 <KeyRound className="w-5 h-5 text-primary" />
@@ -344,8 +583,15 @@ export default function Settings() {
                   return (
                     <div key={kd.id} className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-muted-foreground">{kd.label}</label>
-                        <a href={kd.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          {kd.label}
+                        </label>
+                        <a
+                          href={kd.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
                           Get key <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
@@ -354,16 +600,34 @@ export default function Settings() {
                           <input
                             type={isVisible ? "text" : "password"}
                             value={hasEdit ? editVal : masked}
-                            onChange={(e) => setEditKeys((prev) => ({ ...prev, [kd.id]: e.target.value }))}
-                            placeholder={masked ? "Leave empty to keep current" : "Paste API key..."}
+                            onChange={(e) =>
+                              setEditKeys((prev) => ({
+                                ...prev,
+                                [kd.id]: e.target.value,
+                              }))
+                            }
+                            placeholder={
+                              masked
+                                ? "Leave empty to keep current"
+                                : "Paste API key..."
+                            }
                             className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 pr-10 text-sm text-white font-mono outline-none focus:border-primary transition-colors"
                           />
                           <button
                             type="button"
-                            onClick={() => setVisibleKeys((prev) => ({ ...prev, [kd.id]: !prev[kd.id] }))}
+                            onClick={() =>
+                              setVisibleKeys((prev) => ({
+                                ...prev,
+                                [kd.id]: !prev[kd.id],
+                              }))
+                            }
                             className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
                           >
-                            {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {isVisible ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -391,12 +655,20 @@ export default function Settings() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-black/20 border border-white/5">
-                <div className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-1">Compute</div>
-                <div className="text-sm font-mono truncate">AMD Ryzen 9 5900X</div>
+                <div className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-1">
+                  Compute
+                </div>
+                <div className="text-sm font-mono truncate">
+                  AMD Ryzen 9 5900X
+                </div>
               </div>
               <div className="p-4 rounded-xl bg-black/20 border border-white/5">
-                <div className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-1">Graphics</div>
-                <div className="text-sm font-mono truncate text-green-500">NVIDIA RTX 4090</div>
+                <div className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-1">
+                  Graphics
+                </div>
+                <div className="text-sm font-mono truncate text-green-500">
+                  NVIDIA RTX 4090
+                </div>
               </div>
             </div>
           </div>

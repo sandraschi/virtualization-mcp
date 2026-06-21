@@ -1,15 +1,3 @@
-
-## [Unreleased] — 2026-06-14
-
-### Added
-- Tauri native wrapper (native/ directory) with bundle.resources + std::process::Command
-- CUA-NSIS: just cua-nsis-test recipe, scripts/cua-smoke.py, scripts/cua-nsis-config.json
-- Tauri CORS: tauri://localhost origins for WebView API access
-- NSIS installer at dist/ and native/target/release/bundle/nsis/
-
-### Changed
-- Frontend API calls use absolute http://127.0.0.1:{port} URLs in production build
-- CORS middleware includes allow_origin_regex for tauri.localhost
 # Changelog
 
 All notable changes to virtualization-mcp will be documented in this file.
@@ -20,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [Unreleased]
+
+## [1.3.0] - 2026-06-21
+
+### Added: System Logs Viewer & Help Terminal
+
+- **Logs API & Viewer** — New `GET /api/v1/logs` endpoint with level filtering (INFO, WARN, ERROR, DEBUG) and search queries; new System Logs dashboard page in the webapp with auto-scroll and automatic syntax highlighting.
+- **Help FAQ & Documentation** — New `GET /api/v1/help` serving structured FAQs and guides, plus an interactive Help & Docs interface in the webapp.
+
+### Added: 6-Way LLM switching, settings persistence & port self-healing
+
+- **6-Way LLM Grid** — Concurrent key/endpoint management in Settings for Ollama, LM Studio, OpenAI, DeepSeek, Anthropic, and Gemini. Chat page dynamically detects and shows the active provider.
+- **Persistence** — Local LLM preferences and custom endpoints are saved persistently to `%LOCALAPPDATA%\virtualization-mcp\llm_settings.json`.
+- **Port self-healing** — Automatic detection and correction of port overlaps (Ollama vs LM Studio) to prevent startup connection failures.
+
+### Fixed: Hyper-V Gen2 VM Creation
+
+- **Gen2 UEFI Boot order compatibility** — Omit `-BootDevice VHD` parameter when calling `New-VM` for Generation 2 virtual machines, as Windows firmware maps UEFI boot order dynamically once virtual disks are attached.
+
+### Added: Tauri Native Wrapper & Bundle
+
+- **Tauri native wrapper** — Native Tauri build files (`native/` directory) with `bundle.resources` and `std::process::Command` integration.
+- **Tauri CORS & WebView** — Configured `tauri://localhost` origins in CORS middleware (`allow_origin_regex`) for WebView API access in production.
+- **NSIS installer** — Added installer build recipes at `dist/` and `native/target/release/bundle/nsis/`.
+- **CUA-NSIS** — Added `just cua-nsis-test` recipe, `scripts/cua-smoke.py`, and `scripts/cua-nsis-config.json`.
 
 ### Added: Fleet cold-install execution APIs (Phase 2b)
 

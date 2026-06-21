@@ -5,7 +5,6 @@ Tests all REST API endpoints using FastAPI TestClient with mocked service layer.
 Does NOT require VirtualBox to be installed (CI-safe).
 """
 
-import json
 import os
 import sys
 from unittest.mock import MagicMock, patch
@@ -67,8 +66,9 @@ class TestVMs:
     """VM listing and CRUD endpoints."""
 
     def test_list_vms(self, client):
-        from main import service_manager
         from unittest.mock import AsyncMock
+
+        from main import service_manager
         service_manager.vm_service.list_vms.return_value = {"success": True, "vms": []}
         service_manager.vm_service.hyperv_manager = MagicMock()
         service_manager.vm_service.hyperv_manager.list_vms = AsyncMock(return_value=[])
@@ -86,8 +86,9 @@ class TestVMs:
         assert data["name"] == "test-vm1"
 
     def test_create_vm_hyperv(self, client):
-        from main import service_manager
         from unittest.mock import AsyncMock
+
+        from main import service_manager
         service_manager.vm_service.hyperv_manager = MagicMock()
         service_manager.vm_service.hyperv_manager.create_vm = AsyncMock(
             return_value={"status": "success", "vm_name": "hv-vm"}

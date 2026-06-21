@@ -6,14 +6,12 @@ Dual testing strategy:
 - `real_vbox` fixture: Only works when VirtualBox is installed (skipped in CI).
 """
 
-import os
 import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from virtualization_mcp.vbox.compat_adapter import VBoxManager, VBoxManagerError
-
+from virtualization_mcp.vbox.compat_adapter import VBoxManager
 
 # ── Mocks ──────────────────────────────────────────────────────────────────────
 

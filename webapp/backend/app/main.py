@@ -112,7 +112,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 chat_model = None
 if genai and GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
-    chat_model = genai.GenerativeModel("gemini-1.5-flash")
+    chat_model = genai.GenerativeModel("gemini-3.5-flash")
 elif not genai:
     logger.warning("google-generativeai not installed. Chat will be disabled.")
 elif not GOOGLE_API_KEY:
@@ -706,7 +706,7 @@ async def _check_lm_studio(endpoint: str) -> dict:
 
 @app.get("/api/v1/settings/llm/providers")
 async def llm_providers():
-    """Check default Ollama and LM Studio endpoints, return what's available."""
+    """Check default Ollama and LM Studio endpoints, and check API keys for cloud providers."""
     ollama, lm = await asyncio.gather(
         _check_ollama("http://localhost:11434"),
         _check_lm_studio("http://localhost:1234"),
@@ -716,17 +716,288 @@ async def llm_providers():
         ollama = {"available": False, "error": str(ollama), "models": []}
     if isinstance(lm, Exception):
         lm = {"available": False, "error": str(lm), "models": []}
-    return {"ollama": ollama, "lm_studio": lm}
+
+    saved_keys = _load_keys()
+
+    def has_key(name: str) -> bool:
+        return bool(saved_keys.get(name) or os.environ.get(name))
+
+    openai = {
+        "available": has_key("OPENAI_API_KEY"),
+        "version": "Cloud API",
+        "models": [{"name": "gpt-4o-mini", "size": ""}, {"name": "gpt-4o", "size": ""}],
+    }
+    deepseek = {
+        "available": has_key("DEEPSEEK_API_KEY"),
+        "version": "DeepSeek API",
+        "models": [{"name": "deepseek-v4-flash", "size": ""}, {"name": "deepseek-v4-pro", "size": ""}],
+    }
+    anthropic = {
+        "available": has_key("ANTHROPIC_API_KEY"),
+        "version": "Anthropic API",
+        "models": [{"name": "claude-3-5-sonnet-latest", "size": ""}, {"name": "claude-3-5-haiku-latest", "size": ""}],
+    }
+    gemini = {
+        "available": has_key("GOOGLE_API_KEY"),
+        "version": "Gemini API",
+        "models": [{"name": "gemini-3.5-flash", "size": ""}, {"name": "gemini-1.5-pro", "size": ""}],
+    }
+
+    return {
+        "ollama": ollama,
+        "lm_studio": lm,
+        "openai": openai,
+        "deepseek": deepseek,
+        "anthropic": anthropic,
+        "gemini": gemini,
+    }
 
 
 @app.get("/api/v1/settings/llm/models")
 async def llm_models(endpoint: str = "", provider: str = ""):
     """List models from a specific LLM provider endpoint."""
     if not provider:
-        provider = "ollama" if "11434" in endpoint else "lm_studio"
+        if "api.openai.com" in endpoint or "openai" in endpoint:
+            provider = "openai"
+        elif "deepseek" in endpoint:
+            provider = "deepseek"
+        elif "anthropic" in endpoint:
+            provider = "anthropic"
+        elif "googleapis.com" in endpoint:
+            provider = "gemini"
+        else:
+            provider = "ollama" if "11434" in endpoint else "lm_studio"
+
+    if provider == "openai":
+        return {
+            "available": True,
+            "version": "Cloud API",
+            "models": [{"name": "gpt-4o-mini", "size": ""}, {"name": "gpt-4o", "size": ""}],
+        }
+    if provider == "deepseek":
+        return {
+            "available": True,
+            "version": "DeepSeek API",
+            "models": [{"name": "deepseek-v4-flash", "size": ""}, {"name": "deepseek-v4-pro", "size": ""}],
+        }
+    if provider == "anthropic":
+        return {
+            "available": True,
+            "version": "Anthropic API",
+            "models": [
+                {"name": "claude-3-5-sonnet-latest", "size": ""},
+                {"name": "claude-3-5-haiku-latest", "size": ""},
+            ],
+        }
+    if provider == "gemini":
+        return {
+            "available": True,
+            "version": "Gemini API",
+            "models": [{"name": "gemini-3.5-flash", "size": ""}, {"name": "gemini-1.5-pro", "size": ""}],
+        }
     if provider == "ollama":
         return await _check_ollama(endpoint or "http://localhost:11434")
     return await _check_lm_studio(endpoint or "http://localhost:1234")
+
+
+# ── Local LLM Settings, Logs, and Help ─────────────────────────────────────────
+
+LLM_SETTINGS_FILE = os.path.join(os.path.dirname(KEYS_FILE), "llm_settings.json")
+
+
+class LlmSettingsRequest(BaseModel):
+    provider: str = "ollama"
+    endpoint: str = "http://localhost:11434"
+    model: str = "gemma4:e4b"
+    gpu_accel: bool = True
+
+
+def _load_llm_settings() -> dict[str, Any]:
+    """Load saved LLM settings from llm_settings.json."""
+    try:
+        if os.path.isfile(LLM_SETTINGS_FILE):
+            with open(LLM_SETTINGS_FILE, encoding="utf-8") as f:
+                data = json.load(f)
+                provider = data.get("provider", "ollama")
+                endpoint = data.get("endpoint", "")
+
+                # Auto-correct mismatched default ports
+                if provider == "lm_studio" and "11434" in endpoint:
+                    data["endpoint"] = endpoint.replace("11434", "1234")
+                elif provider == "ollama" and "1234" in endpoint:
+                    data["endpoint"] = endpoint.replace("1234", "11434")
+                elif provider == "openai" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+                    data["endpoint"] = "https://api.openai.com/v1"
+                elif provider == "deepseek" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+                    data["endpoint"] = "https://api.deepseek.com/v1"
+                elif provider == "anthropic" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+                    data["endpoint"] = "https://api.anthropic.com/v1"
+                elif provider == "gemini" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+                    data["endpoint"] = "https://generativelanguage.googleapis.com"
+                elif not endpoint:
+                    if provider == "ollama":
+                        data["endpoint"] = "http://localhost:11434"
+                    elif provider == "lm_studio":
+                        data["endpoint"] = "http://localhost:1234"
+
+                return data
+    except Exception:
+        pass
+    return {
+        "provider": "ollama",
+        "endpoint": "http://localhost:11434",
+        "model": "gemma4:e4b",
+        "gpu_accel": True,
+    }
+
+
+def _save_llm_settings(settings: dict[str, Any]) -> None:
+    """Save LLM settings to llm_settings.json."""
+    os.makedirs(os.path.dirname(LLM_SETTINGS_FILE), exist_ok=True)
+    with open(LLM_SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=2)
+
+
+@app.get("/api/v1/settings/llm")
+async def get_llm_settings():
+    """Get the saved LLM configuration."""
+    return _load_llm_settings()
+
+
+@app.post("/api/v1/settings/llm")
+async def set_llm_settings(request: LlmSettingsRequest):
+    """Save LLM configuration."""
+    data = request.dict()
+    provider = data.get("provider", "ollama")
+    endpoint = data.get("endpoint", "")
+
+    # Auto-correct mismatched default ports on save
+    if provider == "lm_studio" and "11434" in endpoint:
+        data["endpoint"] = endpoint.replace("11434", "1234")
+    elif provider == "ollama" and "1234" in endpoint:
+        data["endpoint"] = endpoint.replace("1234", "11434")
+    elif provider == "openai" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+        data["endpoint"] = "https://api.openai.com/v1"
+    elif provider == "deepseek" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+        data["endpoint"] = "https://api.deepseek.com/v1"
+    elif provider == "anthropic" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+        data["endpoint"] = "https://api.anthropic.com/v1"
+    elif provider == "gemini" and ("1234" in endpoint or "11434" in endpoint or not endpoint):
+        data["endpoint"] = "https://generativelanguage.googleapis.com"
+
+    _save_llm_settings(data)
+    return {"success": True, "settings": data}
+
+
+@app.get("/api/v1/logs")
+async def get_logs(file: str = "", limit: int = 200, level: str = "all", search: str = ""):
+    """Read application logs with search and level filters."""
+    logs_dir = os.path.join(_repo_root, "logs")
+    if not os.path.exists(logs_dir):
+        return {"files": [], "current_file": "", "lines": [], "error": "Logs directory not found"}
+
+    files = [f for f in os.listdir(logs_dir) if f.endswith(".log")]
+    files.sort()
+
+    if not files:
+        return {"files": [], "current_file": "", "lines": []}
+
+    if not file or file not in files:
+        if "virtualization-mcp.log" in files:
+            file = "virtualization-mcp.log"
+        else:
+            file = files[-1]
+
+    file_path = os.path.join(logs_dir, file)
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=400, detail="Log file does not exist")
+
+    matching_lines = []
+    search_lower = search.lower().strip() if search else ""
+    level_upper = level.upper().strip() if level and level != "all" else ""
+
+    try:
+        with open(file_path, encoding="utf-8", errors="ignore") as f:
+            all_lines = f.readlines()
+
+        for line in reversed(all_lines):
+            line_strip = line.strip()
+            if not line_strip:
+                continue
+
+            if level_upper and level_upper not in line_strip.upper():
+                continue
+
+            if search_lower and search_lower not in line_strip.lower():
+                continue
+
+            matching_lines.append(line_strip)
+            if len(matching_lines) >= limit:
+                break
+
+        matching_lines.reverse()
+    except Exception as e:
+        logger.error("Error reading log file %s: %s", file, e)
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return {
+        "files": files,
+        "current_file": file,
+        "lines": matching_lines,
+    }
+
+
+@app.get("/api/v1/help")
+async def get_help():
+    """Return FAQ and troubleshooting documentation."""
+    return {
+        "faqs": [
+            {
+                "question": "How do I launch a Windows Sandbox?",
+                "answer": "Navigate to the 'Windows Sandbox' page, select your configuration preset, and click 'Launch Sandbox'. The backend will generate a temporary .wsb configuration file and execute it.",
+                "category": "Sandbox",
+            },
+            {
+                "question": "Can I run VirtualBox VMs headlessly?",
+                "answer": "Yes. Start/stop controls on the VirtualBox page manage VMs in headless or standard GUI mode depending on global VirtualBox settings.",
+                "category": "VirtualBox",
+            },
+            {
+                "question": "Why does creating Hyper-V VMs fail?",
+                "answer": "This is usually caused by insufficient permissions to manage Hyper-V. Ensure the virtualization backend is running with Administrator privileges, or that your user account is in the 'Hyper-V Administrators' local group.",
+                "category": "Hyper-V",
+            },
+            {
+                "question": "How do I configure a local LLM?",
+                "answer": "Install Ollama or LM Studio, download/pull a model (e.g. gemma4:e4b, llama3.2), and update the Endpoint and Model fields on the Settings page.",
+                "category": "Local LLM",
+            },
+            {
+                "question": "What is the purpose of the MCP Server?",
+                "answer": "The Model Context Protocol (MCP) server allows Claude Desktop or other AI clients to inspect, query, and run tools on your virtualization fleet automatically.",
+                "category": "MCP Infrastructure",
+            },
+        ],
+        "troubleshooting": [
+            {
+                "issue": "VirtualBox VM fails to start",
+                "fix": "Ensure that hardware virtualization (VT-x/AMD-V) is enabled in your host system's BIOS, and close Hyper-V if it causes compatibility conflicts.",
+            },
+            {
+                "issue": "Ollama connection refused",
+                "fix": "Ensure the Ollama service is running (`ollama serve`). If running inside a VM or container, ensure it listens on `0.0.0.0` instead of `127.0.0.1` and that firewall ports are open.",
+            },
+            {
+                "issue": "Hyper-V VM creation fails (Permission Denied)",
+                "fix": "Hyper-V commands require elevated permissions. Run the backend server as Administrator, or add your user account to the local 'Hyper-V Administrators' group by running 'Add-LocalGroupMember -Group \"Hyper-V Administrators\" -Member $env:USERNAME' in an elevated PowerShell prompt and then log out/in.",
+            },
+        ],
+        "system_info": {
+            "docs_link": "https://github.com/sandraschi/virtualization-mcp",
+            "version": "1.0.0",
+            "mcp_version": "FastMCP 3.1",
+        },
+    }
 
 
 @app.get("/api/v1/status")
@@ -2158,76 +2429,289 @@ async def chat_interaction(request: ChatRequest):
     import json as _json
     import urllib.request as _req
 
-    prefix = "You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet.\nUser: "
+    settings = _load_llm_settings()
+    provider = settings.get("provider", "ollama")
+    endpoint = settings.get("endpoint", "http://localhost:11434").rstrip("/")
+    preferred_model = request.model or settings.get("model", "gemma4:e4b")
 
-    # Try Ollama — discover available model or use default
-    try:
-        # Probe available models to pick one that exists
-        _avail_req = _req.urlopen("http://localhost:11434/api/tags", timeout=3)
-        _avail_data = _json.loads(_avail_req.read())
-        _models = [m["name"] for m in _avail_data.get("models", [])]
-    except Exception:
-        _models = []
-    _preferred = request.model or "gemma4:e4b"
-    if _preferred not in _models and _models:
-        # Fallback to any chat-capable small model
-        for _fallback in (
-            "gemma4:e4b",
-            "gemma4:e2b",
-            "llama3.2:3b",
-            "llama3.2:1b",
-            "llama3.1:latest",
-            "qwen2.5-coder:latest",
-        ):
-            if _fallback in _models:
-                _preferred = _fallback
-                break
-        else:
-            _preferred = _models[0]
-    try:
-        ollama_payload = _json.dumps(
-            {
-                "model": _preferred,
-                "messages": [{"role": "user", "content": prefix + request.message}],
-                "stream": False,
-            }
-        ).encode()
-        oreq = _req.Request(
-            "http://localhost:11434/api/chat",
-            data=ollama_payload,
-            headers={"Content-Type": "application/json"},
-        )
-        with _req.urlopen(oreq, timeout=120) as r:
-            data = _json.loads(r.read())
-            reply = data.get("message", {}).get("content", "")
-            if reply:
-                return {"reply": reply, "provider": f"ollama ({_preferred})"}
-    except Exception:
-        pass
+    # Load base system prompt or skill content
+    system_prompt = "You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet."
 
-    # Fallback: LM Studio
+    # Try to load the virtualization-expert skill to augment the prompt
     try:
-        lm_payload = _json.dumps(
-            {
-                "messages": [{"role": "user", "content": prefix + request.message}],
-                "max_tokens": 1024,
-                "stream": False,
-            }
-        ).encode()
-        lreq = _req.Request(
-            "http://localhost:1234/v1/chat/completions",
-            data=lm_payload,
-            headers={"Content-Type": "application/json"},
-        )
-        with _req.urlopen(lreq, timeout=60) as r:
-            data = _json.loads(r.read())
-            reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            if reply:
-                return {"reply": reply, "provider": "lm_studio"}
-    except Exception:
-        pass
+        skills_dir = _get_skills_dir()
+        if skills_dir:
+            expert_skill_path = os.path.join(skills_dir, "virtualization-expert", "SKILL.md")
+            if os.path.isfile(expert_skill_path):
+                with open(expert_skill_path, encoding="utf-8") as f:
+                    skill_content = f.read()
+                # Strip YAML frontmatter if present
+                if skill_content.startswith("---"):
+                    end_fm = skill_content.find("---", 3)
+                    if end_fm != -1:
+                        skill_content = skill_content[end_fm + 3 :].strip()
+                system_prompt += "\n\nUse the following skill guidelines when helping the user:\n" + skill_content
+    except Exception as e:
+        logger.warning("Could not load virtualization-expert skill for chat prompt: %s", e)
 
-    # Fallback: Gemini (if configured)
+    prefix = f"{system_prompt}\n\nUser: "
+    reply = ""
+
+    if provider == "ollama":
+        try:
+            # Probe available models to pick one that exists
+            ollama_endpoint = endpoint
+            # Auto-correct mismatched default port
+            if "1234" in ollama_endpoint:
+                ollama_endpoint = ollama_endpoint.replace("1234", "11434")
+
+            try:
+                _avail_req = _req.urlopen(f"{ollama_endpoint}/api/tags", timeout=3)
+                _avail_data = _json.loads(_avail_req.read())
+                _models = [m["name"] for m in _avail_data.get("models", [])]
+            except Exception:
+                if ollama_endpoint != "http://localhost:11434":
+                    try:
+                        ollama_endpoint = "http://localhost:11434"
+                        _avail_req = _req.urlopen(f"{ollama_endpoint}/api/tags", timeout=3)
+                        _avail_data = _json.loads(_avail_req.read())
+                        _models = [m["name"] for m in _avail_data.get("models", [])]
+                    except Exception:
+                        _models = []
+                else:
+                    _models = []
+        except Exception:
+            _models = []
+
+        _preferred = preferred_model
+        if _preferred not in _models and _models:
+            for _fallback in (
+                "gemma4:e4b",
+                "gemma4:e2b",
+                "llama3.2:3b",
+                "llama3.2:1b",
+                "llama3.1:latest",
+                "qwen2.5-coder:latest",
+            ):
+                if _fallback in _models:
+                    _preferred = _fallback
+                    break
+            else:
+                _preferred = _models[0]
+        try:
+            ollama_payload = _json.dumps(
+                {
+                    "model": _preferred,
+                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "stream": False,
+                }
+            ).encode()
+            oreq = _req.Request(
+                f"{ollama_endpoint}/api/chat",
+                data=ollama_payload,
+                headers={"Content-Type": "application/json"},
+            )
+            with _req.urlopen(oreq, timeout=120) as r:
+                data = _json.loads(r.read())
+                reply = data.get("message", {}).get("content", "")
+                if reply:
+                    return {"reply": reply, "provider": f"ollama ({_preferred})"}
+        except Exception:
+            pass
+
+    if provider == "openai":
+        try:
+            saved_keys = _load_keys()
+            api_key = saved_keys.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+
+            headers = {"Content-Type": "application/json"}
+            if api_key:
+                headers["Authorization"] = f"Bearer {api_key}"
+
+            openai_url = endpoint.rstrip("/")
+            if not openai_url.endswith("/chat/completions"):
+                if not openai_url.endswith("/v1"):
+                    openai_url += "/v1"
+                openai_url += "/chat/completions"
+
+            openai_payload = _json.dumps(
+                {
+                    "model": preferred_model or "gpt-4o-mini",
+                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "max_tokens": 1024,
+                    "stream": False,
+                }
+            ).encode()
+
+            oreq = _req.Request(
+                openai_url,
+                data=openai_payload,
+                headers=headers,
+            )
+            with _req.urlopen(oreq, timeout=60) as r:
+                data = _json.loads(r.read())
+                reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if reply:
+                    return {"reply": reply, "provider": f"openai compatible ({preferred_model})"}
+        except Exception as e:
+            logger.error("OpenAI compatible chat error: %s", e)
+
+    if provider == "deepseek":
+        try:
+            saved_keys = _load_keys()
+            api_key = saved_keys.get("DEEPSEEK_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
+            if not api_key:
+                return {"reply": "DeepSeek API Key is missing. Please set it in Settings.", "provider": None}
+
+            headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
+
+            url = endpoint.rstrip("/")
+            if not url.endswith("/chat/completions"):
+                if not url.endswith("/v1"):
+                    url += "/v1"
+                url += "/chat/completions"
+
+            deepseek_payload = _json.dumps(
+                {
+                    "model": preferred_model or "deepseek-v4-flash",
+                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "max_tokens": 1024,
+                    "stream": False,
+                }
+            ).encode()
+
+            oreq = _req.Request(
+                url,
+                data=deepseek_payload,
+                headers=headers,
+            )
+            with _req.urlopen(oreq, timeout=60) as r:
+                data = _json.loads(r.read())
+                reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if reply:
+                    return {"reply": reply, "provider": f"deepseek ({preferred_model or 'deepseek-v4-flash'})"}
+        except Exception as e:
+            logger.error("DeepSeek chat error: %s", e)
+            return {"reply": f"DeepSeek API Error: {e}", "provider": None}
+
+    if provider == "anthropic":
+        try:
+            saved_keys = _load_keys()
+            api_key = saved_keys.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                return {"reply": "Anthropic API Key is missing. Please set it in Settings.", "provider": None}
+
+            headers = {"Content-Type": "application/json", "x-api-key": api_key, "anthropic-version": "2023-06-01"}
+
+            anthropic_payload = _json.dumps(
+                {
+                    "model": preferred_model or "claude-3-5-sonnet-latest",
+                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "max_tokens": 1024,
+                }
+            ).encode()
+
+            url = endpoint.rstrip("/")
+            if "api.anthropic.com" in url and not url.endswith("/v1/messages"):
+                if not url.endswith("/v1"):
+                    url += "/v1"
+                url += "/messages"
+            elif not url.endswith("/messages") and "api.anthropic.com" not in url:
+                pass
+            else:
+                url = "https://api.anthropic.com/v1/messages"
+
+            oreq = _req.Request(
+                url,
+                data=anthropic_payload,
+                headers=headers,
+            )
+            with _req.urlopen(oreq, timeout=60) as r:
+                data = _json.loads(r.read())
+                reply = data.get("content", [{}])[0].get("text", "")
+                if reply:
+                    return {"reply": reply, "provider": f"anthropic ({preferred_model or 'claude-3-5-sonnet-latest'})"}
+        except Exception as e:
+            logger.error("Anthropic chat error: %s", e)
+            return {"reply": f"Anthropic API Error: {e}", "provider": None}
+
+    if provider == "gemini":
+        try:
+            saved_keys = _load_keys()
+            api_key = saved_keys.get("GOOGLE_API_KEY") or os.environ.get("GOOGLE_API_KEY", "")
+            if not api_key:
+                return {"reply": "Google API Key is missing. Please set it in Settings.", "provider": None}
+
+            model_name = preferred_model or "gemini-3.5-flash"
+            if genai:
+                try:
+                    genai.configure(api_key=api_key)
+                    gmodel = genai.GenerativeModel(model_name)
+                    response = await asyncio.to_thread(gmodel.generate_content, prefix + request.message)
+                    return {"reply": response.text, "provider": f"gemini ({model_name})"}
+                except Exception as sdk_e:
+                    logger.warning("Gemini SDK call failed, falling back to direct HTTP: %s", sdk_e)
+
+            # Fallback to direct HTTP POST if SDK not available or failed
+            headers = {"Content-Type": "application/json"}
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+            payload = _json.dumps({"contents": [{"parts": [{"text": prefix + request.message}]}]}).encode()
+
+            oreq = _req.Request(url, data=payload, headers=headers)
+            with _req.urlopen(oreq, timeout=60) as r:
+                data = _json.loads(r.read())
+                reply = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if reply:
+                    return {"reply": reply, "provider": f"gemini ({model_name})"}
+        except Exception as e:
+            logger.error("Gemini chat error: %s", e)
+            return {"reply": f"Gemini API Error: {e}", "provider": None}
+
+    if provider == "lm_studio" or not reply:
+        try:
+            lm_endpoint = endpoint if provider == "lm_studio" else "http://localhost:1234"
+            # Auto-correct mismatched default port
+            if provider == "lm_studio" and "11434" in lm_endpoint:
+                lm_endpoint = lm_endpoint.replace("11434", "1234")
+
+            lm_payload = _json.dumps(
+                {
+                    "model": preferred_model,
+                    "messages": [{"role": "user", "content": prefix + request.message}],
+                    "max_tokens": 1024,
+                    "stream": False,
+                }
+            ).encode()
+            lreq = _req.Request(
+                f"{lm_endpoint}/v1/chat/completions",
+                data=lm_payload,
+                headers={"Content-Type": "application/json"},
+            )
+            try:
+                with _req.urlopen(lreq, timeout=60) as r:
+                    data = _json.loads(r.read())
+                    reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if reply:
+                        return {"reply": reply, "provider": f"lm_studio ({preferred_model})"}
+            except Exception as inner_e:
+                # If custom failed and is not default, try fallback to default LM Studio port
+                if lm_endpoint != "http://localhost:1234":
+                    logger.warning("LM Studio custom endpoint failed, trying default: %s", inner_e)
+                    lreq_fallback = _req.Request(
+                        "http://localhost:1234/v1/chat/completions",
+                        data=lm_payload,
+                        headers={"Content-Type": "application/json"},
+                    )
+                    with _req.urlopen(lreq_fallback, timeout=30) as r:
+                        data = _json.loads(r.read())
+                        reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                        if reply:
+                            return {"reply": reply, "provider": f"lm_studio default ({preferred_model})"}
+                raise inner_e
+        except Exception as e:
+            logger.error("LM Studio chat error: %s", e)
+
+    # Fallback: Gemini (if configured via legacy/fallback path)
     if chat_model:
         try:
             response = await asyncio.to_thread(chat_model.generate_content, prefix + request.message)
@@ -2236,7 +2720,7 @@ async def chat_interaction(request: ChatRequest):
             logger.error("Gemini chat error: %s", e)
 
     return {
-        "reply": "No LLM provider available. Start Ollama (`ollama serve`), LM Studio, or set GOOGLE_API_KEY.",
+        "reply": f"No LLM provider available at {endpoint}. Start Ollama (`ollama serve`), LM Studio, or set GOOGLE_API_KEY.",
         "provider": None,
     }
 
