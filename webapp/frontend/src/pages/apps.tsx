@@ -12,13 +12,49 @@ interface FleetApp {
   start_command?: string;
 }
 
-const CATEGORIES: { key: string; label: string; match: (t: string[]) => boolean }[] = [
-  { key: "ai", label: "AI & LLM", match: (t) => t.some((x) => ["ai", "llm", "agent", "local-llm"].includes(x)) },
-  { key: "media", label: "Media & VJ", match: (t) => t.some((x) => ["media", "vj", "vr", "3d", "creative"].includes(x)) },
-  { key: "dev", label: "Dev & Infra", match: (t) => t.some((x) => ["development", "infra", "cli", "toolbench", "factory"].includes(x)) },
-  { key: "smarthome", label: "Smart Home & IoT", match: (t) => t.some((x) => ["smart-home", "control", "voice"].includes(x)) },
-  { key: "research", label: "Knowledge & Research", match: (t) => t.some((x) => ["books", "knowledge", "research", "arxiv", "rss", "rag"].includes(x)) },
-  { key: "comm", label: "Communication", match: (t) => t.some((x) => ["discord", "command"].includes(x)) },
+const CATEGORIES: {
+  key: string;
+  label: string;
+  match: (t: string[]) => boolean;
+}[] = [
+  {
+    key: "ai",
+    label: "AI & LLM",
+    match: (t) =>
+      t.some((x) => ["ai", "llm", "agent", "local-llm"].includes(x)),
+  },
+  {
+    key: "media",
+    label: "Media & VJ",
+    match: (t) =>
+      t.some((x) => ["media", "vj", "vr", "3d", "creative"].includes(x)),
+  },
+  {
+    key: "dev",
+    label: "Dev & Infra",
+    match: (t) =>
+      t.some((x) =>
+        ["development", "infra", "cli", "toolbench", "factory"].includes(x),
+      ),
+  },
+  {
+    key: "smarthome",
+    label: "Smart Home & IoT",
+    match: (t) => t.some((x) => ["smart-home", "control", "voice"].includes(x)),
+  },
+  {
+    key: "research",
+    label: "Knowledge & Research",
+    match: (t) =>
+      t.some((x) =>
+        ["books", "knowledge", "research", "arxiv", "rss", "rag"].includes(x),
+      ),
+  },
+  {
+    key: "comm",
+    label: "Communication",
+    match: (t) => t.some((x) => ["discord", "command"].includes(x)),
+  },
   { key: "other", label: "Other", match: () => true },
 ];
 
@@ -41,9 +77,15 @@ export default function Apps() {
       const res = await fetch(`${API_BASE}/api/v1/apps`);
       if (res.ok) {
         const data = await res.json();
-        setApps((data.webapps || []).sort((a: FleetApp, b: FleetApp) => a.label.localeCompare(b.label)));
+        setApps(
+          (data.webapps || []).sort((a: FleetApp, b: FleetApp) =>
+            a.label.localeCompare(b.label),
+          ),
+        );
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setLoading(false);
   }, []);
 
@@ -54,10 +96,14 @@ export default function Apps() {
         const data = await res.json();
         setStatuses(data.statuses || {});
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
-  useEffect(() => { fetchApps().then(checkHealth); }, [fetchApps, checkHealth]);
+  useEffect(() => {
+    fetchApps().then(checkHealth);
+  }, [fetchApps, checkHealth]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, FleetApp[]> = {};
@@ -74,7 +120,9 @@ export default function Apps() {
     try {
       await fetch(`${API_BASE}/api/v1/apps/${appId}/start`, { method: "POST" });
       setTimeout(checkHealth, 3000);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setStarting(null);
   };
 
@@ -83,9 +131,15 @@ export default function Apps() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Apps Hub</h2>
-          <p className="text-muted-foreground mt-1">Fleet app discovery, health monitoring, and launch ({apps.length} apps)</p>
+          <p className="text-muted-foreground mt-1">
+            Fleet app discovery, health monitoring, and launch ({apps.length}{" "}
+            apps)
+          </p>
         </div>
-        <button onClick={checkHealth} className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 text-muted-foreground">
+        <button
+          onClick={checkHealth}
+          className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 text-muted-foreground"
+        >
           <Loader2 className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
@@ -93,7 +147,10 @@ export default function Apps() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-48 rounded-2xl border border-border bg-card/20 animate-pulse" />
+            <div
+              key={i}
+              className="h-48 rounded-2xl border border-border bg-card/20 animate-pulse"
+            />
           ))}
         </div>
       ) : (
@@ -105,7 +162,9 @@ export default function Apps() {
               <div key={cat.key}>
                 <h3 className="text-lg font-semibold text-muted-foreground mb-4 flex items-center gap-2">
                   {cat.label}
-                  <span className="text-xs font-mono text-muted-foreground/50">{items.length}</span>
+                  <span className="text-xs font-mono text-muted-foreground/50">
+                    {items.length}
+                  </span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {items.map((app) => {
@@ -118,27 +177,41 @@ export default function Apps() {
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-semibold text-sm">{app.label}</h4>
-                            <p className="text-[11px] text-muted-foreground/60 mt-0.5">{app.id}</p>
+                            <h4 className="font-semibold text-sm">
+                              {app.label}
+                            </h4>
+                            <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                              {app.id}
+                            </p>
                           </div>
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ml-2 ${
-                            isRunning ? "bg-green-500/20 text-green-500" : "bg-muted/30 text-muted-foreground"
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-green-500" : "bg-muted-foreground"}`} />
+                          <div
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ml-2 ${
+                              isRunning
+                                ? "bg-green-500/20 text-green-500"
+                                : "bg-muted/30 text-muted-foreground"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-green-500" : "bg-muted-foreground"}`}
+                            />
                             {status}
                           </div>
                         </div>
                         {app.description && (
-                          <p className="text-xs text-muted-foreground/70 mb-3">{app.description}</p>
+                          <p className="text-xs text-muted-foreground/70 mb-3">
+                            {app.description}
+                          </p>
                         )}
                         <div className="flex items-center gap-2 mt-auto">
                           {isRunning ? (
                             <a
                               href={`http://localhost:${app.port}`}
-                              target="_blank" rel="noopener noreferrer"
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors font-medium"
                             >
-                              <ExternalLink className="w-3 h-3" /> Open :{app.port}
+                              <ExternalLink className="w-3 h-3" /> Open :
+                              {app.port}
                             </a>
                           ) : (
                             <button
@@ -146,7 +219,11 @@ export default function Apps() {
                               disabled={starting === app.id}
                               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg bg-white/10 text-muted-foreground hover:bg-white/20 transition-colors font-medium disabled:opacity-50"
                             >
-                              {starting === app.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                              {starting === app.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Play className="w-3 h-3" />
+                              )}
                               Start
                             </button>
                           )}
@@ -169,11 +246,14 @@ export default function Apps() {
             onClick={async () => {
               const selected = apps.filter((a) => selectedApps.has(a.id));
               if (selected.length === 0) return;
-              const res = await fetch(`${API_BASE}/api/v1/fleet/install-script`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ repos: selected.map((a) => a.id) }),
-              });
+              const res = await fetch(
+                `${API_BASE}/api/v1/fleet/install-script`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ repos: selected.map((a) => a.id) }),
+                },
+              );
               if (res.ok) {
                 const data = await res.json();
                 const blob = new Blob([data.script], { type: "text/plain" });
@@ -202,7 +282,9 @@ export default function Apps() {
                 setSelectedApps(next);
               }}
               className={`px-2.5 py-1 text-[11px] rounded-lg border transition-colors ${
-                selectedApps.has(app.id) ? "bg-primary/20 text-primary border-primary/30" : "bg-white/5 text-muted-foreground border-border hover:border-primary/30"
+                selectedApps.has(app.id)
+                  ? "bg-primary/20 text-primary border-primary/30"
+                  : "bg-white/5 text-muted-foreground border-border hover:border-primary/30"
               }`}
             >
               {app.label}

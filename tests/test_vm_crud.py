@@ -1,11 +1,10 @@
 """Tests for VM CRUD operations via vm_operations (template-based creation path)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from virtualization_mcp.vbox.compat_adapter import VBoxManager, VBoxManagerError
-from virtualization_mcp.vbox.vm_operations import VMOperations
 from virtualization_mcp.vbox.vm_operations import VMOperations
 
 
@@ -53,7 +52,7 @@ class TestCreateVM:
             vm_ops.create_vm(name="my/vm")
 
     def test_create_vm_duplicate(self, ops):
-        vm_ops, mock_run = ops
+        vm_ops, _mock_run = ops
         # First call succeeds
         with patch.object(vm_ops.manager, "vm_exists", return_value=True):
             with pytest.raises(VBoxManagerError, match="already exists"):
@@ -65,7 +64,7 @@ class TestCreateVM:
             vm_ops.create_vm(name="test-vm", template="nonexistent")
 
     def test_create_vm_with_overrides(self, ops):
-        vm_ops, mock_run = ops
+        vm_ops, _mock_run = ops
         result = vm_ops.create_vm(name="test-vm", template="ubuntu-dev", memory_mb=8192, disk_gb=50, cpus=4)
         assert result["success"] is True
         assert result["configuration"]["memory_mb"] == 8192
@@ -101,7 +100,7 @@ class TestDeleteVM:
     """VM deletion."""
 
     def test_delete_vm_success(self, ops):
-        vm_ops, mock_run = ops
+        vm_ops, _mock_run = ops
         with patch.object(vm_ops.manager, "vm_exists", return_value=True):
             result = vm_ops.delete_vm("test-vm")
             assert result["success"] is True

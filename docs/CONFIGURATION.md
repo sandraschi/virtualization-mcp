@@ -38,9 +38,12 @@ Config: `%APPDATA%\Claude\claude_desktop_config.json` (Windows).
 
 ## Webapp settings
 
-API keys and templates are stored under:
+API keys, local LLM configurations, and templates are stored under:
 
 `%LOCALAPPDATA%\virtualization-mcp\`
+
+- **`keys.json`** — Stores DeepSeek, Anthropic, Gemini, and OpenAI API keys.
+- **`llm_settings.json`** — Stores local LLM provider configuration (selected provider, custom endpoints, model names, GPU acceleration preferences).
 
 See legacy [install.md](install.md) for ISO categories and template JSON paths.
 

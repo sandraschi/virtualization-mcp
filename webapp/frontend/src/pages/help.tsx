@@ -9,8 +9,10 @@ import {
   Terminal,
   Zap,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { API_BASE } from "../api/config";
 
-const faqItems = [
+const fallbackFaqs = [
   {
     question: "How do I launch a Windows Sandbox?",
     answer:
@@ -78,6 +80,30 @@ const containerTech = [
 ];
 
 export default function Help() {
+  const [faqs, setFaqs] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/v1/help`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.faqs) {
+          const mapped = data.faqs.map((item: any) => {
+            let icon = HelpCircle;
+            if (item.category === "Sandbox") icon = Box;
+            else if (item.category === "VirtualBox") icon = Server;
+            else if (item.category === "Local LLM") icon = Zap;
+            return { ...item, icon };
+          });
+          setFaqs(mapped);
+        } else {
+          setFaqs(fallbackFaqs);
+        }
+      })
+      .catch(() => {
+        setFaqs(fallbackFaqs);
+      });
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20">
       {/* Hero Section */}
@@ -175,7 +201,7 @@ export default function Help() {
           </h3>
         </div>
         <div className="grid gap-4">
-          {faqItems.map((item, idx) => (
+          {faqs.map((item, idx) => (
             <div
               key={idx}
               className="p-6 rounded-2xl border border-border bg-card/40 hover:bg-white/5 transition-colors group"

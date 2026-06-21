@@ -88,10 +88,11 @@ class HyperVManager:
         """Create a new Hyper-V VM."""
         try:
             vhd_path = f"C:\\VMs\\{name}\\{name}.vhdx"
+            boot_device_param = "-BootDevice VHD" if generation == 1 else ""
             ps = (
                 f"New-Item -ItemType Directory -Path 'C:\\VMs\\{name}' -Force | Out-Null; "
-                f"New-VM -Name '{name}' -MemoryStartupBytes {memory_mb}MB "
-                f"-BootDevice VHD -NewVHDPath '{vhd_path}' -NewVHDSizeBytes {disk_gb}GB "
+                f"New-VM -Name '{name}' -MemoryStartupBytes {memory_mb}MB {boot_device_param} "
+                f"-NewVHDPath '{vhd_path}' -NewVHDSizeBytes {disk_gb}GB "
                 f"-Generation {generation}"
             )
             await self._run_ps(ps)

@@ -1,7 +1,7 @@
 # VirtualBox MCP Server - Product Requirements Document (PRD)
 
 ## Version: 1.3.0
-**Last Updated**: March 2026  
+**Last Updated**: June 2026  
 **Status**: Active  
 **Author**: virtualization-mcp Team  
 **MCP Version**: 2.10+  
@@ -40,11 +40,15 @@ VirtualBox MCP Server (virtualization-mcp) is a FastMCP 2.10+ compliant server t
 - **VirtualBox**: Version 7.0 and above
 - **Python**: 3.8+
 
-### 2.2 In Scope (v1.3 – Windows Sandbox & assets)
+### 2.2 In Scope (v1.3.0 – Windows Sandbox, Assets, Logs, and 6-Way LLM switching)
 
 - **Assets reuse**: Repo folders `assets/sandbox` (Sandbox installers) and `assets/vbox` (ISOs, OVA) for one-time download and reuse. Webapp and APIs use these paths.
 - **Windows Sandbox full dev setup**: Automated script (winget + deps, then optional Python/Node/uv/Git/Just/VS Code/Notepad++/Windsurf/Cursor/Antigravity/Claude Desktop/OpenClaw/OpenFang/RoboFang). AIRGAP mode (networking off). Optional host Ollama access from sandbox.
 - **Webapp VM from assets**: Create VM with optional ISO from `assets/vbox`; Attach ISO to existing VM from same folder. Win 11 Pro template for creating/importing a ready-to-use Windows 11 Pro VM asset (install once, export OVA, import for reuse).
+- **Diagnostics & Help**: Interactive System Logs page/endpoint (real-time filtering by level/query) and an interactive Help FAQ/documentation terminal in the webapp.
+- **6-Way LLM Selector**: Complete frontend integration with Ollama, LM Studio, OpenAI, DeepSeek, Anthropic, and Google Gemini fallback, saved persistently to `%LOCALAPPDATA%\virtualization-mcp\llm_settings.json`.
+- **Self-healing Port Conflicts**: Automatic detection and healing of port overlaps (e.g. Ollama vs LM Studio) to prevent startup connection lockouts.
+- **Hyper-V Generation 2 support**: Refined VM provisioning to support Generation 2 EFI/UEFI VMs correctly by omitting `-BootDevice VHD` parameter from PowerShell command chains.
 
 ### 2.3 Future Scope
 
@@ -372,11 +376,14 @@ Follows Semantic Versioning (SemVer): MAJOR.MINOR.PATCH
 - FastMCP 3.1 prompts and skills
 - Webapp Prompts & Skills page, health wait, status API
 
-### 12.3 v1.3.0 (Q1 2026)
-- Windows Sandbox full dev setup (automated winget + optional tools)
+### 12.3 v1.3.0 (Q2 2026) ✅
+- Windows Sandbox dev setup (automated winget + optional tools selection)
 - Assets folders (sandbox, vbox) and webapp integration
 - AIRGAP and host Ollama options for Sandbox
 - Create VM / Attach ISO from assets/vbox; Win 11 Pro template and OVA asset workflow
+- Interactive System Logs and Help Terminal UI in the webapp dashboard
+- 6-way LLM integration with local settings persistence and port self-healing
+- Hyper-V Gen2 VM creation UEFI boot order resolution fixes
 
 ### 12.4 v2.0.0 (Q3 2026)
 - Multi-hypervisor support
@@ -496,7 +503,7 @@ Terminology and concepts
 | v1.0.1b2 Quality Pass | 2025-10-20 | ✅ Complete |
 | v1.1.0 Multi-Provider | 2026-03-03 | ✅ Complete |
 | v1.2.0 FastMCP 3.1 & webapp | 2026-03-05 | ✅ Complete |
-| v1.3.0 Sandbox full dev & assets | 2026-03 | 🚀 In progress |
+| v1.3.0 Sandbox full dev, logs, 6-way LLMs & assets | 2026-06 | ✅ Complete |
 | v1.4.0 Cloud integration | 2026-Q3 | 📅 Planned |
 
 ## 12. Approval

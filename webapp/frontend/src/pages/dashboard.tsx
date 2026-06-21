@@ -1,5 +1,15 @@
-import { Activity, Box, Cpu, ExternalLink, HardDrive, MemoryStick, Monitor, Server } from "lucide-react";
+import {
+  Activity,
+  Box,
+  Cpu,
+  ExternalLink,
+  HardDrive,
+  MemoryStick,
+  Monitor,
+  Server,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Area,
   AreaChart,
@@ -9,7 +19,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../api/config";
 
 interface HostInfo {
@@ -28,7 +37,13 @@ interface VmInfo {
 
 interface DashboardData {
   host: HostInfo;
-  vms: { total: number; running: number; stopped: number; paused: number; list: VmInfo[] };
+  vms: {
+    total: number;
+    running: number;
+    stopped: number;
+    paused: number;
+    list: VmInfo[];
+  };
   virtualbox: { version: string };
 }
 
@@ -49,7 +64,9 @@ export default function Dashboard() {
           const s = await r.json();
           setVboxAvail(s.available);
         }
-      } catch { /* backend down */ }
+      } catch {
+        /* backend down */
+      }
     };
     fetchStatus();
     const fetchData = async () => {
@@ -59,7 +76,7 @@ export default function Dashboard() {
         const d: DashboardData = await res.json();
         setData(d);
 
-        const h = d.host || {} as HostInfo;
+        const h = d.host || ({} as HostInfo);
         setHistory((prev) => {
           const memTotal = h.memory_total || 1;
           const memAvail = h.memory_available || 0;
@@ -109,7 +126,9 @@ export default function Dashboard() {
     },
     {
       label: "Disk Free",
-      value: h ? `${((h.disk_usage?.free || 0) / 1024 ** 3).toFixed(0)} GB` : "...",
+      value: h
+        ? `${((h.disk_usage?.free || 0) / 1024 ** 3).toFixed(0)} GB`
+        : "...",
       icon: HardDrive,
       color: "text-orange-500",
       bg: "bg-orange-500/10",
@@ -125,7 +144,7 @@ export default function Dashboard() {
         <h2 className="text-3xl md:text-4xl font-black tracking-tight mt-2">
           Host & VM Overview
         </h2>
-              <p className="text-foreground/80 mt-3 max-w-3xl text-base">
+        <p className="text-foreground/80 mt-3 max-w-3xl text-base">
           Live host metrics, VM status, and VirtualBox info. Refreshes every 5s.
           {data?.virtualbox?.version && (
             <span className="ml-2 text-primary font-semibold">
@@ -133,9 +152,7 @@ export default function Dashboard() {
             </span>
           )}
         </p>
-        {error && (
-          <p className="mt-2 text-sm text-red-400">{error}</p>
-        )}
+        {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -146,7 +163,9 @@ export default function Dashboard() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {s.label}
+                </p>
                 <p className="text-2xl font-bold mt-1">{s.value}</p>
               </div>
               <div className={`p-3 rounded-full ${s.bg}`}>
@@ -160,18 +179,27 @@ export default function Dashboard() {
       {/* Virtualization stack status */}
       {vboxAvail === false && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
-          <h3 className="font-semibold text-lg text-amber-200">VirtualBox not detected</h3>
+          <h3 className="font-semibold text-lg text-amber-200">
+            VirtualBox not detected
+          </h3>
           <p className="text-sm text-muted-foreground mt-2">
-            VirtualBox is required to create and manage VMs. If you just installed it, open
-            VirtualBox once to initialize the service, then refresh this page.
+            VirtualBox is required to create and manage VMs. If you just
+            installed it, open VirtualBox once to initialize the service, then
+            refresh this page.
           </p>
           <div className="flex gap-3 mt-4">
-            <a href={VBOX_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-200 hover:bg-amber-500/30 transition-colors font-medium text-sm">
+            <a
+              href={VBOX_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-200 hover:bg-amber-500/30 transition-colors font-medium text-sm"
+            >
               <ExternalLink className="w-4 h-4" /> Download VirtualBox
             </a>
-            <button onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-colors text-sm">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-colors text-sm"
+            >
               Refresh
             </button>
           </div>
@@ -201,9 +229,28 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
                 <XAxis dataKey="time" hide />
                 <YAxis stroke="#666" fontSize={12} unit="%" />
-                <Tooltip contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333", borderRadius: "8px" }} itemStyle={{ fontSize: "12px" }} />
-                <Area type="monotone" dataKey="cpu" stroke="#3b82f6" fill="url(#cpuGrad)" name="CPU" />
-                <Area type="monotone" dataKey="memory" stroke="#a855f7" fill="url(#memGrad)" name="Memory" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1a1a1a",
+                    border: "1px solid #333",
+                    borderRadius: "8px",
+                  }}
+                  itemStyle={{ fontSize: "12px" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="cpu"
+                  stroke="#3b82f6"
+                  fill="url(#cpuGrad)"
+                  name="CPU"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="memory"
+                  stroke="#a855f7"
+                  fill="url(#memGrad)"
+                  name="Memory"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -219,13 +266,33 @@ export default function Dashboard() {
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Running", count: vms.running, color: "text-green-500", bg: "bg-green-500/10" },
-                  { label: "Stopped", count: vms.stopped, color: "text-gray-400", bg: "bg-gray-500/10" },
-                  { label: "Paused", count: vms.paused, color: "text-yellow-500", bg: "bg-yellow-500/10" },
+                  {
+                    label: "Running",
+                    count: vms.running,
+                    color: "text-green-500",
+                    bg: "bg-green-500/10",
+                  },
+                  {
+                    label: "Stopped",
+                    count: vms.stopped,
+                    color: "text-gray-400",
+                    bg: "bg-gray-500/10",
+                  },
+                  {
+                    label: "Paused",
+                    count: vms.paused,
+                    color: "text-yellow-500",
+                    bg: "bg-yellow-500/10",
+                  },
                 ].map((s) => (
-                  <div key={s.label} className={`p-3 rounded-lg ${s.bg} text-center`}>
+                  <div
+                    key={s.label}
+                    className={`p-3 rounded-lg ${s.bg} text-center`}
+                  >
                     <p className={`text-2xl font-bold ${s.color}`}>{s.count}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {s.label}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -251,7 +318,7 @@ export default function Dashboard() {
       </div>
 
       {/* VM list */}
-      {vms && vms.list && vms.list.length > 0 && (
+      {vms?.list && vms.list.length > 0 && (
         <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm">
           <h3 className="font-semibold mb-4 flex items-center gap-2">
             <Monitor className="w-4 h-4 text-primary" />
@@ -259,9 +326,14 @@ export default function Dashboard() {
           </h3>
           <div className="space-y-2">
             {vms.list.map((vm) => (
-              <div key={vm.name} className="flex items-center justify-between py-2 px-3 rounded-lg bg-background/30 border border-border/50">
+              <div
+                key={vm.name}
+                className="flex items-center justify-between py-2 px-3 rounded-lg bg-background/30 border border-border/50"
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${vm.state === "running" ? "bg-green-500" : vm.state === "paused" ? "bg-yellow-500" : "bg-gray-500"}`} />
+                  <div
+                    className={`w-2 h-2 rounded-full ${vm.state === "running" ? "bg-green-500" : vm.state === "paused" ? "bg-yellow-500" : "bg-gray-500"}`}
+                  />
                   <span className="text-sm font-medium">{vm.name}</span>
                   {vm.provider && (
                     <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted/50 text-muted-foreground uppercase font-bold">
@@ -269,7 +341,9 @@ export default function Dashboard() {
                     </span>
                   )}
                 </div>
-                <span className="text-xs capitalize text-muted-foreground">{vm.state}</span>
+                <span className="text-xs capitalize text-muted-foreground">
+                  {vm.state}
+                </span>
               </div>
             ))}
           </div>

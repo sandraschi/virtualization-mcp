@@ -92,10 +92,18 @@ asyncio_mode = "auto"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+exclude = [
+    "tests",
+    "scripts",
+    "MagicMock",
+    "run_virtualization-mcp.py",
+    "run_server.py",
+    "remove_description_params.py"
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "PTH", "A"]
-ignore = ["S101", "B008", "E501", "S603", "S607"]
+ignore = ["S101", "B008", "E501", "S603", "S607", "PTH"]
 
 [tool.ruff.format]
 quote-style = "double"

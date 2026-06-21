@@ -177,13 +177,15 @@ export default function Sandbox() {
         if (status.running) {
           return window.confirm(
             "A Windows Sandbox is already running.\n\n" +
-            "Close it and launch a new one?\n\n" +
-            "Click OK to close the existing sandbox and start a new one.\n" +
-            "Click Cancel to keep the existing sandbox running."
+              "Close it and launch a new one?\n\n" +
+              "Click OK to close the existing sandbox and start a new one.\n" +
+              "Click Cancel to keep the existing sandbox running.",
           );
         }
       }
-    } catch { /* backend unreachable, proceed anyway */ }
+    } catch {
+      /* backend unreachable, proceed anyway */
+    }
     return true;
   };
 
@@ -447,7 +449,10 @@ export default function Sandbox() {
                 aria-label="Memory in MB"
                 value={config.memoryInMB}
                 onChange={(e) =>
-                  setConfig({ ...config, memoryInMB: parseInt(e.target.value) })
+                  setConfig({
+                    ...config,
+                    memoryInMB: parseInt(e.target.value, 10),
+                  })
                 }
                 className="bg-transparent border border-input rounded px-2 py-1 w-24 text-right"
               />
@@ -614,11 +619,11 @@ export default function Sandbox() {
             WSB: Consumer (nearly naked)
           </h3>
           <p className="text-sm text-muted-foreground">
-            Validates fleet <code className="text-foreground/80">INSTALL.md</code>{" "}
-            Options A–C. Bootstraps winget only — does{" "}
-            <strong>not</strong> install git, uv, node, just, ruff, or biome.
-            Optional Claude Desktop MSIX for Option A drag-and-drop tests. Checklist
-            on Desktop:{" "}
+            Validates fleet{" "}
+            <code className="text-foreground/80">INSTALL.md</code> Options A–C.
+            Bootstraps winget only — does <strong>not</strong> install git, uv,
+            node, just, ruff, or biome. Optional Claude Desktop MSIX for Option
+            A drag-and-drop tests. Checklist on Desktop:{" "}
             <code className="text-foreground/80">
               consumer-install-test-checklist.txt
             </code>

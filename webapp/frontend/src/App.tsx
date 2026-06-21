@@ -4,12 +4,13 @@ import Apps from "./pages/apps";
 import Chat from "./pages/chat";
 import Dashboard from "./pages/dashboard";
 import Help from "./pages/help";
+import HyperV from "./pages/hyperv";
+import Logs from "./pages/logs";
 import PromptsSkills from "./pages/prompts-skills";
 import Sandbox from "./pages/sandbox";
 import Settings from "./pages/settings";
 import Tools from "./pages/tools";
 import VirtualBox from "./pages/virtualbox";
-import HyperV from "./pages/hyperv";
 import VmConsole from "./pages/vm-console";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="apps" element={<Apps />} />
           <Route path="prompts-skills" element={<PromptsSkills />} />
           <Route path="chat" element={<Chat />} />
+          <Route path="logs" element={<Logs />} />
           <Route path="help" element={<Help />} />
           <Route path="settings" element={<Settings />} />
         </Route>

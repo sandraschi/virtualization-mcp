@@ -134,20 +134,33 @@ tail -f /var/log/virtualization-mcp.log
 
 ## Windows-Specific Issues
 
-### 1. Hyper-V Conflicts
+### 1. Hyper-V and VirtualBox Side-by-Side
+
+Modern Windows 10/11 platforms support running VirtualBox and Hyper-V side-by-side using the Windows Hypervisor Platform (WHPX). Ensure nested virtualization is enabled if running inside another VM.
+
+### 2. Hyper-V Elevation & Permissions
 
 **Symptoms**
-- `VT-x is not available` errors
-- VMs fail to start with virtualization errors
+- Hyper-V VM list is empty or returns access denied errors
+- PowerShell commands like `Get-VM` or `New-VM` fail with permission errors
 
 **Solutions**
-1. Disable Hyper-V:
-   ```powershell
-   bcdedit /set hypervisorlaunchtype off
-   ```
-2. Reboot your computer
+1. Running Hyper-V management commands requires administrative privileges. Start the `virtualization-mcp` backend from an elevated terminal ("Run as Administrator").
+2. Alternatively, add your Windows user account to the local `Hyper-V Administrators` group:
+   - Run `lusrmgr.msc` (Local Users and Groups) or open Computer Management as Administrator.
+   - Go to System Tools -> Local Users and Groups -> Groups -> Hyper-V Administrators.
+   - Add your user account to this group, then log out and log back in for changes to take effect.
 
-### 2. Windows Sandbox Issues
+### 3. Hyper-V Generation 2 VM Creation Failures
+
+**Symptoms**
+- Creating a Generation 2 VM fails in PowerShell or the dashboard.
+
+**Solutions**
+1. PowerShell's `New-VM` cmdlet validation fails if both `-Generation 2` and `-BootDevice VHD` are passed concurrently.
+2. The server automatically handles this by omitting the `-BootDevice` flag for Gen2/UEFI VM creations, letting UEFI dynamically map boot volumes when attached. Ensure you are using `v1.3.0+` for full UEFI compatibility.
+
+### 4. Windows Sandbox Issues
 
 **Prerequisites**
 - Windows 10 Pro/Enterprise/Education (build 18305 or later)

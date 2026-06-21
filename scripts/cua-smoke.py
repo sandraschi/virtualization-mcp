@@ -65,7 +65,7 @@ def _check_version():
     """Warn if this file doesn't match the template version."""
     from pathlib import Path
 
-    ver_file = Path(__file__)
+    Path(__file__)
     # If the template path exists, compare versions
     tpl = Path(os.getenv("MCP_CENTRAL_DOCS", "")) / "templates/tauri-native/scripts/cua-smoke.py"
     if tpl.exists():
@@ -527,7 +527,7 @@ def nav_click_through(output_dir: str):
             # OCR after click
             snap_path = os.path.join(snap_dir, f"nav-{label.lower()}-{int(time.time())}.png")
             os.makedirs(snap_dir, exist_ok=True)
-            result = cua_screenshot(win.get("handle", 0), snap_path)
+            cua_screenshot(win.get("handle", 0), snap_path)
             text = cua_ocr_text(win.get("handle", 0), snap_path)
 
             if expected_header.lower() in text.lower():

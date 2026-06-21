@@ -30,14 +30,30 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [provider, setProvider] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
+  const [activeModel, setActiveModel] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/v1/settings/llm/providers`)
-      .then((r) => r.ok ? r.json() : null)
+    fetch(`${API_BASE}/api/v1/settings/llm`)
+      .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d?.ollama?.available) setProvider("Ollama");
-        else if (d?.lm_studio?.available) setProvider("LM Studio");
-        else setProvider(null);
+        if (d?.provider) {
+          const mapping: Record<string, string> = {
+            ollama: "Ollama",
+            lm_studio: "LM Studio",
+            openai: "OpenAI Compatible",
+            deepseek: "DeepSeek",
+            anthropic: "Anthropic Claude",
+            gemini: "Google Gemini",
+          };
+          const provName = mapping[d.provider] || d.provider;
+          const modelName = d.model ? ` (${d.model})` : "";
+          setProvider(`${provName}${modelName}`);
+          if (d.model) {
+            setActiveModel(d.model);
+          }
+        } else {
+          setProvider(null);
+        }
       })
       .catch(() => setProvider(null))
       .finally(() => setChecking(false));
@@ -64,6 +80,7 @@ export default function Chat() {
         body: JSON.stringify({
           message: currentInput,
           history: messages.map((m) => ({ role: m.role, content: m.content })),
+          model: activeModel || undefined,
         }),
       });
       const data = await res.json();
@@ -101,8 +118,14 @@ export default function Chat() {
               Fleet Intelligence
             </h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${provider ? "bg-green-500" : "bg-red-500"}`} />
-              {checking ? "Scanning..." : provider ? provider : "No LLM available"}
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${provider ? "bg-green-500" : "bg-red-500"}`}
+              />
+              {checking
+                ? "Scanning..."
+                : provider
+                  ? provider
+                  : "No LLM available"}
             </p>
           </div>
         </div>
