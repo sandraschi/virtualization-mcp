@@ -6,11 +6,11 @@ the networking module.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal, TypedDict
 
 
-class NetworkAdapterType(str, Enum):
+class NetworkAdapterType(StrEnum):
     """Types of network adapters supported by VirtualBox."""
 
     NAT = "nat"
@@ -26,7 +26,7 @@ class NetworkAdapterType(str, Enum):
 NetworkAttachmentType = NetworkAdapterType
 
 
-class NetworkAdapterState(str, Enum):
+class NetworkAdapterState(StrEnum):
     """Possible states of a network adapter."""
 
     ENABLED = "enabled"

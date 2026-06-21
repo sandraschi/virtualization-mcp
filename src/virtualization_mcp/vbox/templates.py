@@ -41,7 +41,7 @@ class TemplateManager:
         """Load templates from YAML file with fallback to defaults"""
         try:
             if self.templates_path.exists():
-                with open(self.templates_path, encoding="utf-8") as f:
+                with Path(self.templates_path).open(encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     templates = data.get("templates", {})
 
@@ -269,7 +269,7 @@ class TemplateManager:
             }
 
             # Write to file
-            with open(self.templates_path, "w", encoding="utf-8") as f:
+            with Path(self.templates_path).open("w", encoding="utf-8") as f:
                 yaml.dump(data, f, default_flow_style=False, sort_keys=True, indent=2)
 
             logger.info(f"Templates saved to {self.templates_path}")

@@ -97,7 +97,7 @@ class ResourceExhaustedError(VMError):
         super().__init__(f"{resource} limit exceeded: {limit}")
 
 
-class TimeoutError(VMError):
+class OperationTimedOut(VMError):
     """Raised when an operation times out."""
 
     def __init__(self, operation: str, timeout: int):

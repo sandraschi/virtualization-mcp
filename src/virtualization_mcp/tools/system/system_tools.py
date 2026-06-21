@@ -467,7 +467,7 @@ async def _get_linux_cpu_info() -> dict[str, Any]:
     """Get CPU information on Linux."""
     try:
         # Get CPU info from /proc/cpuinfo
-        with open("/proc/cpuinfo") as f:
+        with Path("/proc/cpuinfo").open() as f:
             cpuinfo = f.read()
 
         info = {}
@@ -577,7 +577,7 @@ async def _get_unix_memory_info() -> dict[str, Any]:
     """Get memory information on Linux/macOS."""
     try:
         if platform.system() == "Linux":
-            with open("/proc/meminfo") as f:
+            with Path("/proc/meminfo").open() as f:
                 meminfo = {}
                 for line in f:
                     key, value = line.split(":")

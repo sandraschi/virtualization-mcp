@@ -93,8 +93,19 @@ async def lifespan(app: FastAPI):
     logger.info("Virtualization Backend Stopping...")
 
 
-# Registry Path
-REGISTRY_PATH = "D:/Dev/repos/mcp-central-docs/operations/webapp-registry.json"
+# Registry Path (optional — may not exist in PyInstaller or on other machines)
+REGISTRY_PATH = os.environ.get("REGISTRY_PATH", "") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..",
+    "..",
+    "..",
+    "..",
+    "mcp-central-docs",
+    "operations",
+    "webapp-registry.json",
+)
+if not os.path.exists(REGISTRY_PATH):
+    REGISTRY_PATH = ""
 
 # Initialize Gemini (optional)
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -110,7 +121,10 @@ elif not GOOGLE_API_KEY:
 app = FastAPI(title="Virtualization MCP Backend", lifespan=lifespan)
 
 # CORS Configuration (frontend dev: 10700; backend: 10701)
-origins = os.getenv("CORS_ORIGINS", "http://localhost:10700,http://127.0.0.1:10700,http://localhost:10760").split(",")
+origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:10700,http://127.0.0.1:10700,http://goliath:10700,http://localhost:10760,http://goliath:10760",
+).split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

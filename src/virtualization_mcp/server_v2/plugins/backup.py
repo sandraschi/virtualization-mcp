@@ -162,7 +162,7 @@ class BackupPlugin(BasePlugin):
         """Write metadata to backup directory."""
         import json
 
-        with open(backup_path / "metadata.json", "w") as f:
+        with Path(backup_path / "metadata.json").open("w") as f:
             json.dump(metadata, f, indent=2)
 
     def _read_metadata(self, backup_path: Path) -> dict[str, Any]:
@@ -174,7 +174,7 @@ class BackupPlugin(BasePlugin):
             return {}
 
         try:
-            with open(metadata_file) as f:
+            with Path(metadata_file).open() as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"Failed to read metadata from {metadata_file}: {e!s}")

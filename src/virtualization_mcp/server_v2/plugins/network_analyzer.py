@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections import defaultdict, deque
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastapi import HTTPException, WebSocket, status
@@ -16,7 +16,7 @@ from virtualization_mcp.server_v2.plugins.base import BasePlugin
 logger = logging.getLogger(__name__)
 
 
-class TrafficAlertLevel(str, Enum):
+class TrafficAlertLevel(StrEnum):
     INFO = "info"
     LOW = "low"
     MEDIUM = "medium"

@@ -1,5 +1,4 @@
-"""
-VirtualBox Manager - CLI wrapper for VBoxManage operations
+"""VirtualBox Manager - CLI wrapper for VBoxManage operations
 Provides robust, error-handled interface to VirtualBox CLI
 """
 
@@ -7,6 +6,7 @@ import json
 import logging
 import re
 import subprocess
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -70,14 +70,14 @@ class VBoxManager:
                 for path_dir in path_dirs:
                     if not path_dir:
                         continue
-                    exe_path = os.path.join(path_dir, exe_name)
-                    if os.path.isfile(exe_path):
+                    exe_path = str(Path(path_dir) / exe_name)
+                    if Path(exe_path).is_file():
                         logger.info(f"Found VBoxManage in PATH: {exe_path}")
                         return exe_path
 
         # Check common installation paths
         for path in common_paths:
-            if os.path.isfile(path):
+            if Path(path).is_file():
                 logger.info(f"Found VBoxManage at common location: {path}")
                 return path
 
@@ -100,16 +100,15 @@ class VBoxManager:
     @property
     def log_path(self) -> str:
         """Get VirtualBox logs directory path."""
-        import os
 
-        home = os.path.expanduser("~")
+        home = Path("~").expanduser()
         candidates = [
-            os.path.join(home, ".config", "VirtualBox", "Logs"),
-            os.path.join(home, ".VirtualBox"),
-            os.path.join(home, "VirtualBox VMs"),
+            str(Path(home) / ".config" / "VirtualBox" / "Logs"),
+            str(Path(home) / ".VirtualBox"),
+            str(Path(home) / "VirtualBox VMs"),
         ]
         for p in candidates:
-            if os.path.isdir(p):
+            if Path(p).is_dir():
                 return p
         return candidates[0]
 

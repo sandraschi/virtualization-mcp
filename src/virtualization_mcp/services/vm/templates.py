@@ -1,5 +1,4 @@
-"""
-VM Template Management Module
+"""VM Template Management Module
 
 This module provides functionality for managing VM templates, including creating
 from existing VMs, deploying new VMs from templates, and managing template
@@ -8,10 +7,10 @@ lifecycle.
 
 import json
 import logging
-import os
 import shutil
 import time
 from functools import wraps
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -60,10 +59,10 @@ class VMTemplateMixin:
         self.vm_operations = vm_service.vm_operations
 
         # Ensure template directory exists
-        self.template_dir = os.path.join(
-            self.vbox_manager.vbox.system_properties.default_machine_folder, self.TEMPLATE_DIR
+        self.template_dir = str(
+            Path(self.vbox_manager.vbox.system_properties.default_machine_folder) / self.TEMPLATE_DIR
         )
-        os.makedirs(self.template_dir, exist_ok=True)
+        Path(self.template_dir).mkdir(parents=True, exist_ok=True)
 
     @template_operation
     def create_template(
@@ -116,12 +115,12 @@ class VMTemplateMixin:
             raise RuntimeError(f"VM '{vm_name}' not found")
 
         # Create template directory
-        template_path = os.path.join(self.template_dir, template_name)
-        os.makedirs(template_path, exist_ok=True)
+        template_path = str(Path(self.template_dir) / template_name)
+        Path(template_path).mkdir(parents=True, exist_ok=True)
 
         try:
             # Export the VM to OVF format
-            ovf_path = os.path.join(template_path, f"{template_name}.ovf")
+            ovf_path = str(Path(template_path) / f"{template_name}.ovf")
 
             # Create export options
             options = [
@@ -154,7 +153,7 @@ class VMTemplateMixin:
                 "ovf_path": f"{template_name}.ovf",
             }
 
-            with open(os.path.join(template_path, "metadata.json"), "w") as f:
+            with Path(str(Path(template_path) / "metadata.json")).open("w") as f:
                 import json
 
                 json.dump(metadata, f, indent=2)
@@ -169,7 +168,7 @@ class VMTemplateMixin:
 
         except Exception as e:
             # Clean up on error
-            if os.path.exists(template_path):
+            if Path(template_path).exists():
                 shutil.rmtree(template_path, ignore_errors=True)
             raise RuntimeError(f"Failed to create template: {e}") from e
 
@@ -221,24 +220,24 @@ class VMTemplateMixin:
             raise ValueError("New VM name is required")
 
         # Check if template exists
-        template_path = os.path.join(self.template_dir, template_name)
-        if not os.path.isdir(template_path):
+        template_path = str(Path(self.template_dir) / template_name)
+        if not Path(template_path).is_dir():
             raise RuntimeError(f"Template '{template_name}' not found")
 
         # Load template metadata
-        metadata_path = os.path.join(template_path, "metadata.json")
-        if not os.path.isfile(metadata_path):
+        metadata_path = str(Path(template_path) / "metadata.json")
+        if not Path(metadata_path).is_file():
             raise RuntimeError(f"Invalid template: metadata not found in {template_path}")
 
         try:
             import json
 
-            with open(metadata_path) as f:
+            with Path(metadata_path).open() as f:
                 metadata = json.load(f)
 
             # Get OVF file path
-            ovf_file = os.path.join(template_path, metadata["ovf_path"])
-            if not os.path.isfile(ovf_file):
+            ovf_file = str(Path(template_path) / metadata["ovf_path"])
+            if not Path(ovf_file).is_file():
                 raise RuntimeError(f"OVF file not found: {ovf_file}")
 
             # Import the appliance
@@ -301,16 +300,16 @@ class VMTemplateMixin:
     def list_templates(self) -> list[dict[str, Any]]:
         """List all available VM templates."""
         templates = []
-        if not os.path.exists(self.template_dir):
+        if not Path(self.template_dir).exists():
             return templates
 
-        for template_name in os.listdir(self.template_dir):
-            template_path = os.path.join(self.template_dir, template_name)
-            if os.path.isdir(template_path):
-                metadata_path = os.path.join(template_path, "metadata.json")
-                if os.path.isfile(metadata_path):
+        for template_name in Path(self.template_dir).iterdir():
+            template_path = str(Path(self.template_dir) / template_name)
+            if Path(template_path).is_dir():
+                metadata_path = str(Path(template_path) / "metadata.json")
+                if Path(metadata_path).is_file():
                     try:
-                        with open(metadata_path) as f:
+                        with Path(metadata_path).open() as f:
                             metadata = json.load(f)
                         templates.append(metadata)
                     except Exception:
@@ -321,8 +320,8 @@ class VMTemplateMixin:
     @template_operation
     def delete_template(self, template_name: str) -> dict[str, Any]:
         """Delete a VM template."""
-        template_path = os.path.join(self.template_dir, template_name)
-        if not os.path.exists(template_path):
+        template_path = str(Path(self.template_dir) / template_name)
+        if not Path(template_path).exists():
             return {"status": "error", "error": f"Template '{template_name}' not found"}
 
         import shutil

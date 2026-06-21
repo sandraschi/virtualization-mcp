@@ -1,5 +1,4 @@
-"""
-VM Device and Media Management Module
+"""VM Device and Media Management Module
 
 This module provides comprehensive functionality for managing VM devices and media,
 including ISO handling, USB devices, shared folders, and hardware passthrough.
@@ -7,12 +6,12 @@ Supports both VirtualBox and Hyper-V hypervisors with appropriate fallbacks.
 """
 
 import logging
-import os
 import platform
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -163,7 +162,7 @@ class VMDeviceMixin:
         # Input validation
         if not vm_name:
             raise ValueError("VM name is required")
-        if not iso_path or not os.path.isfile(iso_path):
+        if not iso_path or not Path(iso_path).is_file():
             raise ValueError(f"ISO file not found: {iso_path}")
 
         # Get the VM
@@ -239,7 +238,7 @@ class VMDeviceMixin:
             # Convert Windows path if needed
             if ":" in iso_path and not iso_path.startswith("\\"):
                 # Local path
-                iso_path = os.path.abspath(iso_path)
+                iso_path = str(Path(iso_path).resolve())
 
             # Use PowerShell to attach the ISO
             cmd = [
@@ -582,14 +581,14 @@ class VMDeviceMixin:
 
             # Remove the USB device filter
             if usb_filter:
-                for filter in session.machine.usb_device_filters:
-                    if filter.name == usb_filter:
-                        session.machine.remove_usb_device_filter(filter)
+                for usb_filter_item in session.machine.usb_device_filters:
+                    if usb_filter_item.name == usb_filter:
+                        session.machine.remove_usb_device_filter(usb_filter_item)
                         break
             else:
                 # Remove all USB device filters
-                for filter in session.machine.usb_device_filters:
-                    session.machine.remove_usb_device_filter(filter)
+                for usb_filter_item in session.machine.usb_device_filters:
+                    session.machine.remove_usb_device_filter(usb_filter_item)
 
             # Save settings
             session.machine.save_settings()

@@ -7,7 +7,7 @@ This module provides tools for managing Hyper-V virtual machines.
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
-class VMState(str, Enum):
+class VMState(StrEnum):
     """Enumeration of possible VM states."""
 
     RUNNING = "Running"

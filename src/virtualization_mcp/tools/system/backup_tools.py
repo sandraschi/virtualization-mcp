@@ -156,7 +156,7 @@ class BackupManager:
     def _write_metadata(self, backup_path: Path, metadata: dict[str, Any]) -> None:
         """Write metadata to a backup directory."""
         metadata_path = backup_path / "metadata.json"
-        with open(metadata_path, "w") as f:
+        with Path(metadata_path).open("w") as f:
             json.dump(metadata, f, indent=2)
 
     def _read_metadata(self, backup_path: Path) -> dict[str, Any] | None:
@@ -166,7 +166,7 @@ class BackupManager:
             return None
 
         try:
-            with open(metadata_path) as f:
+            with Path(metadata_path).open() as f:
                 return json.load(f)
         except Exception:
             return None

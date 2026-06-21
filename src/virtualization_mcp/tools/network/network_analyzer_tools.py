@@ -8,7 +8,7 @@ import asyncio
 import logging
 from collections import defaultdict, deque
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
-class TrafficAlertLevel(str, Enum):
+class TrafficAlertLevel(StrEnum):
     """Severity levels for network traffic alerts."""
 
     INFO = "info"

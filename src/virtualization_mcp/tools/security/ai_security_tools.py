@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
-class TestSeverity(str, Enum):
+class TestSeverity(StrEnum):
     """Security test severity levels."""
 
     INFO = "info"
@@ -149,7 +149,7 @@ class AISecurityAnalyzer:
     async def _save_report(self, report: SecurityReport) -> None:
         """Save a security report to disk."""
         report_path = self.reports_dir / f"{report.scan_id}.json"
-        with open(report_path, "w") as f:
+        with Path(report_path).open("w") as f:
             f.write(report.json(indent=2))
 
 

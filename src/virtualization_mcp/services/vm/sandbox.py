@@ -1,17 +1,16 @@
-"""
-Sandbox management for virtual machines.
+"""Sandbox management for virtual machines.
 
 This module provides functionality for creating and managing isolated testing environments (sandboxes)
 for virtual machines, including snapshot management, network isolation, and resource constraints.
 """
 
 import json
-import os
 import shutil
 import subprocess
 import tempfile
 import time
 import uuid
+from pathlib import Path
 from typing import Any
 
 from ....vbox.vm_operations import VMOperations
@@ -42,8 +41,8 @@ class VMSandboxManager:
         self.active_sandboxes: dict[str, dict[str, Any]] = {}
 
         # Setup sandbox base directory
-        self.sandbox_dir = os.path.join(tempfile.gettempdir(), "virtualization-mcp_sandboxes")
-        os.makedirs(self.sandbox_dir, exist_ok=True)
+        self.sandbox_dir = str(Path(tempfile.gettempdir()), "virtualization-mcp_sandboxes")
+        Path(self.sandbox_dir).mkdir(parents=True, exist_ok=True)
 
     def create_sandbox(
         self,
@@ -82,8 +81,8 @@ class VMSandboxManager:
             name = f"sandbox-{str(uuid.uuid4())[:8]}"
 
         # Create a temporary directory for this sandbox
-        sandbox_path = os.path.join(self.sandbox_dir, name)
-        os.makedirs(sandbox_path, exist_ok=True)
+        sandbox_path = str(Path(self.sandbox_dir) / name)
+        Path(sandbox_path).mkdir(parents=True, exist_ok=True)
 
         # Clone the VM
         try:
@@ -119,7 +118,7 @@ class VMSandboxManager:
 
         except Exception as e:
             # Cleanup on failure
-            if os.path.exists(sandbox_path):
+            if Path(sandbox_path).exists():
                 shutil.rmtree(sandbox_path, ignore_errors=True)
             raise RuntimeError(f"Failed to create sandbox: {e!s}") from e
 
@@ -156,7 +155,7 @@ class VMSandboxManager:
                 self._delete_vm_hyperv(name)
 
             # Remove sandbox directory
-            if os.path.exists(sandbox["path"]):
+            if Path(sandbox["path"]).exists():
                 shutil.rmtree(sandbox["path"])
 
             # Remove from active sandboxes

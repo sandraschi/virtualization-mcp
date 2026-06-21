@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import os
 import platform
 import shutil
 import subprocess
@@ -53,7 +52,7 @@ class WindowsSandboxHelper:
         if platform.system() != "Windows":
             raise WindowsSandboxError("Windows Sandbox is only available on Windows 10/11")
 
-        if not os.path.exists(self.WSX_EXECUTABLE):
+        if not Path(self.WSX_EXECUTABLE).exists():
             raise WindowsSandboxError("Windows Sandbox is not installed or not available on this system")
 
         self.sandbox_dir = Path(sandbox_dir or tempfile.gettempdir()) / "virtualization-mcp_sandboxes"
@@ -415,13 +414,13 @@ class WindowsSandboxHelper:
             sandbox_path = folder.get("sandbox_path", f"C:\\shared\\{i}")
             read_only = folder.get("read_only", "true").lower() == "true"
 
-            if not host_path or not os.path.exists(host_path):
+            if not host_path or not Path(host_path).exists():
                 continue
 
             mf = ET.SubElement(mapped_folders, "MappedFolder")
 
             host = ET.SubElement(mf, "HostFolder")
-            host.text = os.path.abspath(host_path)
+            host.text = str(Path(host_path).resolve())
 
             sandbox = ET.SubElement(mf, "SandboxFolder")
             sandbox.text = sandbox_path
@@ -450,7 +449,7 @@ class WindowsSandboxHelper:
 
         # Save batch file to a shared folder
         batch_path = self.sandbox_dir / "startup.bat"
-        with open(batch_path, "w") as f:
+        with Path(batch_path).open("w") as f:
             f.write(batch_content)
 
         command.text = f'C:\\Windows\\System32\\cmd.exe /c "{batch_path}"'
@@ -478,7 +477,7 @@ class WindowsSandboxHelper:
         shared_dir.mkdir(exist_ok=True, parents=True)
 
         temp_file = shared_dir / filename
-        with open(temp_file, "w") as f:
+        with Path(temp_file).open("w") as f:
             f.write(content)
 
         return f"C:\\shared\\{filename}"

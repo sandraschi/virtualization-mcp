@@ -46,7 +46,7 @@ def get_backup_dir() -> Path:
     # Set appropriate permissions (Unix-like systems)
     if hasattr(os, "chmod"):
         try:
-            os.chmod(backup_dir, 0o700)  # rwx------
+            Path(backup_dir).chmod(0o700)  # rwx------
         except Exception as e:
             logger.warning(f"Could not set permissions on backup directory: {e}")
 
@@ -67,7 +67,7 @@ def get_backup_config() -> dict:
         return {"backups": {}, "next_id": 1}
 
     try:
-        with open(config_file) as f:
+        with Path(config_file).open() as f:
             return json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         logger.error(f"Error loading backup config: {e}")
@@ -87,7 +87,7 @@ def save_backup_config(config: dict) -> bool:
     config_file = backup_dir / BACKUP_CONFIG_FILE
 
     try:
-        with open(config_file, "w") as f:
+        with Path(config_file).open("w") as f:
             json.dump(config, f, indent=2)
         return True
     except (OSError, TypeError) as e:

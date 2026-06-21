@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,7 @@ from virtualization_mcp.server_v2.plugins.base import BasePlugin
 logger = logging.getLogger(__name__)
 
 
-class SecurityThreatLevel(str, Enum):
+class SecurityThreatLevel(StrEnum):
     """Security threat levels."""
 
     INFO = "info"
@@ -262,7 +262,7 @@ class AISecurityAnalyzerPlugin(BasePlugin):
         """Save a report to disk."""
         try:
             report_path = self.reports_dir / f"{report.scan_id}.json"
-            with open(report_path, "w") as f:
+            with Path(report_path).open("w") as f:
                 f.write(report.json(indent=2))
         except Exception as e:
             logger.error(f"Error saving report {report.scan_id}: {e!s}")

@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Virtualization MCP",
+	"version": "0.1.0",
+	"identifier": "ai.fleet.virtualization-mcp",
+	"build": {
+		"frontendDist": "../webapp/frontend/dist",
+		"devUrl": "http://localhost:10945"
+	},
+	"app": {
+		"windows": [
+			{
+				"label": "main",
+				"title": "Virtualization MCP",
+				"width": 1280,
+				"height": 860,
+				"resizable": true,
+				"center": true
+			}
+		],
+		"security": {
+			"csp": null
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": ["nsis"],
+		"icon": ["icons/icon.png", "icons/icon.ico"],
+		"resources": [
+			"resources/virtualization-mcp-backend.exe",
+			"../scripts/install-mcp-clients.ps1"
+		],
+		"windows": {
+			"webviewInstallMode": {
+				"type": "skip"
+			},
+			"nsis": {
+				"installMode": "currentUser",
+				"installerHooks": "./windows/hooks.nsh"
+			}
+		}
+	},
+	"plugins": {}
+}
+

@@ -1,4 +1,5 @@
-﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+import 'scripts/just/fleet.just'
 
 # ── Default ──────────────────────────────────────────────────────────────────
 
@@ -98,3 +99,7 @@ clean:
     Remove-Item -Recurse -Force webapp\frontend\dist -ErrorAction SilentlyContinue
     Remove-Item -Force .pytest_cache -ErrorAction SilentlyContinue
 
+# ── Tauri Native ───────────────────────────────────────────────────────────────
+
+# Build Tauri native desktop app (full pipeline: frontend + backend)
+build-native:

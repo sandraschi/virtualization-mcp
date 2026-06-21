@@ -6,7 +6,7 @@ This module provides Hyper-V VM management functionality.
 
 import asyncio
 import logging
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastmcp import FastMCP
@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
-class VMState(str, Enum):
+class VMState(StrEnum):
     RUNNING = "Running"
     OFF = "Off"
     STARTING = "Starting"

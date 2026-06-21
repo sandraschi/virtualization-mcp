@@ -36,7 +36,7 @@ class TemplateManager:
             return []
 
         try:
-            with open(self.templates_path, encoding="utf-8") as f:
+            with Path(self.templates_path).open(encoding="utf-8") as f:
                 templates = yaml.safe_load(f)
                 return templates if isinstance(templates, list) else []
         except Exception as e:
@@ -116,7 +116,7 @@ class TemplateManager:
         templates.append(template)
 
         try:
-            with open(self.templates_path, "w", encoding="utf-8") as f:
+            with Path(self.templates_path).open("w", encoding="utf-8") as f:
                 yaml.safe_dump(templates, f, default_flow_style=False, indent=2)
 
             # Clear cache to force reload
@@ -145,7 +145,7 @@ class TemplateManager:
                 templates.pop(i)
 
                 try:
-                    with open(self.templates_path, "w", encoding="utf-8") as f:
+                    with Path(self.templates_path).open("w", encoding="utf-8") as f:
                         yaml.safe_dump(templates, f, default_flow_style=False, indent=2)
 
                     # Clear cache to force reload

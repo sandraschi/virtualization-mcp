@@ -4,7 +4,7 @@ import asyncio
 import logging
 import time
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,7 @@ from virtualization_mcp.server_v2.plugins.base import BasePlugin
 logger = logging.getLogger(__name__)
 
 
-class VMState(str, Enum):
+class VMState(StrEnum):
     RUNNING = "Running"
     OFF = "Off"
     STARTING = "Starting"
