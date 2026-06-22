@@ -1,0 +1,4 @@
+- disk_gb: 20
+  memory_mb: 2048
+  name: test-template
+  os_type: Linux_64

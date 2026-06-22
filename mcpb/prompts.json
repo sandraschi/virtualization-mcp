@@ -1,0 +1,25 @@
+[
+  {
+    "name": "create_vm_guided",
+    "description": "Guided help for creating a VM based on use case and OS type",
+    "arguments": [
+      {"name": "use_case", "description": "The scenario for the VM (e.g., dev, test, prod)", "required": true},
+      {"name": "os_type", "description": "Operating system type (e.g., Windows, Linux)", "required": true}
+    ]
+  },
+  {
+    "name": "troubleshoot_vm",
+    "description": "Diagnose and fix VM problems",
+    "arguments": [
+      {"name": "vm_name", "description": "Name of the virtual machine", "required": true},
+      {"name": "problem_type", "description": "Type of problem (e.g., boot failure, network)", "required": true}
+    ]
+  },
+  {
+    "name": "snapshot_best_practices",
+    "description": "Recommendations for snapshot management",
+    "arguments": [
+      {"name": "vm_name", "description": "Target VM name", "required": true}
+    ]
+  }
+]

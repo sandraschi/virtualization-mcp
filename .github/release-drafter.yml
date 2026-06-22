@@ -1,0 +1,55 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+categories:
+  - title: '🚀 Features'
+    label: 'enhancement'
+  - title: '🐛 Bug Fixes'
+    label: 'bug'
+  - title: '🧹 Chores'
+    label: 'chore'
+  - title: '📚 Documentation'
+    label: 'documentation'
+  - title: '🧪 Tests'
+    label: 'test'
+  - title: '🔧 Refactor'
+    label: 'refactor'
+  - title: '⚡ Performance'
+    label: 'performance'
+  - title: '🔒 Security'
+    label: 'security'
+
+template: |
+  ## What's Changed
+  $CHANGES
+
+  ## Installation
+  
+  ### Using pip
+  ```bash
+  pip install virtualization-mcp==$RESOLVED_VERSION
+  ```
+  
+  ### Using Docker
+  ```bash
+  docker pull ghcr.io/$OWNER/$REPOSITORY:$RESOLVED_VERSION
+  ```
+  
+  ## Changelog
+  
+  $CHANGES
+  
+  ## Contributors
+  
+  Thank you to all the contributors who helped with this release:
+  
+  $CONTRIBUTORS
+
+exclude-labels:
+  - 'skip-changelog'
+  - 'duplicate'
+  - 'wontfix'
+  - 'invalid'
+
+
+

@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "virtualization-mcp": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "d:\\Dev\\repos\\virtualization-mcp",
+        "python",
+        "-m",
+        "virtualization_mcp"
+      ],
+      "env": {
+        "VBOX_INSTALL_PATH": "C:\\Program Files\\Oracle\\VirtualBox",
+        "VBOX_USER_HOME": "%USERPROFILE%\\VirtualBox VMs",
+        "DEBUG": "true",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+
+
+

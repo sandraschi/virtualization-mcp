@@ -1,0 +1,10 @@
+id = "virtualization-mcp"
+name = "VirtualizationManagement"
+version = "0.1.0"
+schema_version = 1
+authors = ["Sandra <sandraschipal@hotmail.com>"]
+description = "VM and container management tools"
+repository = "https://github.com/sandraschi/virtualization-mcp"
+
+[context_servers.virtualization-mcp]
+name = "Virtualization Tools"

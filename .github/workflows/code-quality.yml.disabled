@@ -1,0 +1,120 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, master, 'feature/*' ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sunday
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint with Ruff
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+    
+    - name: Install dependencies
+      run: uv sync --dev
+    
+    - name: Run ruff linting
+      run: uv run ruff check .
+      continue-on-error: true
+    
+    - name: Run ruff format check
+      run: uv run ruff format --check .
+      continue-on-error: true
+
+  mypy:
+    name: Type checking with mypy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+    
+    - name: Install dependencies
+      run: uv sync --dev
+    
+    - name: Run mypy
+      run: uv run mypy src/ --ignore-missing-imports || echo "Type checking completed"
+      continue-on-error: true
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+    
+    - name: Install dependencies
+      run: uv sync --dev
+    
+    - name: Run Bandit
+      run: uv run bandit -r src/ -ll -x tests/ -f json -o bandit-results.json || echo "Bandit completed"
+      continue-on-error: true
+    
+    - name: Run Safety Scan
+      run: uv run safety scan --output json --save-as safety-results.json || echo "Safety completed"
+      continue-on-error: true
+    
+    - name: Upload Security Scan Results
+      if: always()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: security-scan-results.sarif
+
+  codeql-analysis:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: python
+        queries: security-extended,security-and-quality
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+
+

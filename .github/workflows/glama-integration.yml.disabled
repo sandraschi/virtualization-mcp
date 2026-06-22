@@ -1,0 +1,60 @@
+name: GLAMA.ai Integration
+
+on:
+  push:
+    branches: [ main, master ]
+  release:
+    types: [ published ]
+
+jobs:
+  glama-quality-check:
+    name: GLAMA.ai Quality Assessment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      
+      - name: Install dependencies
+        run: uv sync --dev
+      
+      - name: Run quality assessment
+        run: |
+          echo "## GLAMA.ai Quality Assessment" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Coverage" >> $GITHUB_STEP_SUMMARY
+          uv run pytest --cov=virtualization_mcp --cov-report=term-missing --cov-report=xml || echo "Tests completed"
+          coverage=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); print(f'{float(tree.getroot().attrib[\"line-rate\"])*100:.1f}%')" 2>/dev/null || echo "N/A")
+          echo "- Coverage: $coverage" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Security Scan" >> $GITHUB_STEP_SUMMARY
+          uv run bandit -r src/ -f json -o bandit-report.json || echo "Bandit completed"
+          uv run safety scan --output json --save-as safety-report.json || echo "Safety completed"
+          echo "- Security scan completed" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Documentation Check" >> $GITHUB_STEP_SUMMARY
+          if [ -f "README.md" ] && [ -f "CONTRIBUTING.md" ] && [ -f "CHANGELOG.md" ]; then
+            echo "- ✅ All required documentation present" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Missing required documentation" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Upload quality reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: glama-quality-reports
+          path: |
+            coverage.xml
+            bandit-report.json
+            safety-report.json
+
+
+

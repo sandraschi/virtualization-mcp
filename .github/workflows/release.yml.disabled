@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - name: Install dependencies
+        run: uv sync --dev
+      
+      - name: Install build tools
+        run: uv pip install twine build
+      
+      - name: Build package
+        run: uv build
+      
+      - name: Check package
+        run: uv run twine check dist/*
+        continue-on-error: true
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/*.whl
+      
+      - name: Upload source distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-sdist
+          path: dist/*.tar.gz
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install MCPB CLI
+        run: npm install -g @anthropic-ai/mcpb
+      - name: Build MCPB package
+        run: |
+          if command -v mcpb >/dev/null 2>&1; then
+            mcpb pack . dist/virtualization-mcp-${GITHUB_REF_NAME#v}.mcpb
+          else
+            echo "MCPB CLI not available, creating basic package"
+            cd mcpb
+            zip -r ../dist/virtualization-mcp-${GITHUB_REF_NAME#v}.mcpb . -x "*.git*" "*.pyc" "__pycache__/*"
+            cd ..
+          fi
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
+            CHANGELOG=$(git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" --reverse)
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: virtualization-mcp ${{ steps.version.outputs.version }}
+          body: |
+            ## 🚀 What's New in virtualization-mcp ${{ steps.version.outputs.version }}
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ## 📦 Installation
+            
+            ### Claude Desktop Extension
+            1. Download `virtualization-mcp-v1.0.0.mcpb` from the assets below
+            2. Open Claude Desktop
+            3. Go to Settings > Extensions
+            4. Drop the `.mcpb` file into the extensions page
+            
+            ### Python Package
+            ```bash
+            pip install virtualization-mcp==${{ steps.version.outputs.version_number }}
+            ```
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/*.mcpb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # PyPI publishing removed - not needed for MCP servers
+  # Users can install from GitHub releases or use MCPB package
+
+
+

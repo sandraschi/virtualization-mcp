@@ -1,0 +1,33 @@
+{
+  "include": [
+    "src",
+    "tests"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    ".git",
+    "build",
+    "dist"
+  ],
+  "venvPath": "C:\\Users\\sandr\\AppData\\Local\\Programs\\Python\\Python310",
+  "venv": ".",
+  "reportMissingImports": "none",
+  "reportMissingTypeStubs": false,
+  "pythonVersion": "3.10",
+  "pythonPlatform": "Windows",
+  "typeCheckingMode": "basic",
+  "executionEnvironments": [
+    {
+      "root": "src"
+    },
+    {
+      "root": "tests",
+      "extraPaths": ["src"]
+    }
+  ]
+}
+
+
+
+

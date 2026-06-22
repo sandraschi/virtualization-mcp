@@ -1,0 +1,116 @@
+{
+  "manifest_version": "0.2",
+  "name": "virtualization_mcp",
+  "version": "1.2.0",
+  "description": "VirtualBox & Hyper-V VM management, Docker sandbox execution, Windows Sandbox bringup, snapshots, networking, storage, and fleet install testing via FastMCP 3.4",
+  "long_description": "Virtualization MCP is a production-ready FastMCP 3.4 server providing comprehensive VM management (VirtualBox + Hyper-V), Docker sandbox environments (ephemeral and stateful), Windows Sandbox bringup, snapshot management, networking, storage, system diagnostics, ISO download pipeline, and fleet app install testing. 8 portmanteau tools with 60+ operations.",
+  "author": {
+    "name": "Sandra Schipal",
+    "email": "sandra@schipal.at",
+    "url": "https://github.com/sandraschi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/virtualization-mcp"
+  },
+  "homepage": "https://github.com/sandraschi/virtualization-mcp",
+  "documentation": "https://github.com/sandraschi/virtualization-mcp/blob/main/README.md",
+  "support": "https://github.com/sandraschi/virtualization-mcp/issues",
+  "license": "MIT",
+  "keywords": ["mcp", "virtualbox", "hyperv", "vm", "virtualization", "sandbox", "docker", "windows-sandbox", "fastmcp"],
+  "icon": "assets/icon.png",
+  "prompts": {
+    "system": "prompts/system.md",
+    "user": "prompts/user.md",
+    "examples": "prompts/examples.json"
+  },
+  "screenshots": [
+    "assets/screenshots/main-interface.png",
+    "assets/screenshots/vm-management.png"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "src/virtualization_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "virtualization_mcp"],
+      "env": {
+        "PYTHONPATH": "src",
+        "VBOX_INSTALL_PATH": "${user_config.vbox_install_path}",
+        "VBOX_USER_HOME": "${user_config.vbox_user_home}",
+        "DEBUG": "${user_config.debug_mode}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "user_config": {
+    "vbox_install_path": {
+      "type": "directory",
+      "title": "VirtualBox Installation Directory",
+      "description": "Directory where VirtualBox is installed (e.g., C:\\Program Files\\Oracle\\VirtualBox)",
+      "required": true,
+      "default": "C:\\Program Files\\Oracle\\VirtualBox"
+    },
+    "vbox_user_home": {
+      "type": "directory",
+      "title": "VirtualBox User Home",
+      "description": "Directory where VirtualBox stores VM files and settings",
+      "required": true,
+      "default": "${HOME}\\VirtualBox VMs"
+    },
+    "debug_mode": {
+      "type": "boolean",
+      "title": "Debug Mode",
+      "description": "Enable detailed logging for troubleshooting",
+      "required": false,
+      "default": false
+    }
+  },
+  "tools": [
+    {"name": "vm_management", "description": "Portmanteau: list, create, start, stop, delete, clone, reset, pause, resume, info"},
+    {"name": "network_management", "description": "Portmanteau: list/create/remove host-only networks, list adapters, configure adapter"},
+    {"name": "snapshot_management", "description": "Portmanteau: list, create, restore, delete snapshots"},
+    {"name": "storage_management", "description": "Portmanteau: list/create/remove controllers, list/create/attach disks"},
+    {"name": "system_management", "description": "Portmanteau: host info, VBox version, OS types, metrics, screenshot"},
+    {"name": "sandbox_management", "description": "Portmanteau: ephemeral code exec, stateful sessions, file I/O"},
+    {"name": "hyperv_management", "description": "Portmanteau: list, get, start, stop Hyper-V VMs"},
+    {"name": "agentic_tools", "description": "LLM sampling: suggest_config, sandbox_workflow, workflow"}
+  ],
+  "prompts": [
+    {
+      "name": "create_vm_guided",
+      "description": "Get guided help for creating a virtual machine based on your use case",
+      "arguments": ["use_case", "os_type"],
+      "text": "I need help creating a ${arguments.os_type} virtual machine for ${arguments.use_case}. Please recommend appropriate configuration (memory, CPU, disk, network) and guide me through the setup process."
+    },
+    {
+      "name": "troubleshoot_vm",
+      "description": "Get help diagnosing and fixing virtual machine issues",
+      "arguments": ["vm_name", "problem_type"],
+      "text": "I'm having ${arguments.problem_type} issues with virtual machine ${arguments.vm_name}. Please help me diagnose the problem and provide step-by-step troubleshooting guidance."
+    },
+    {
+      "name": "setup_network",
+      "description": "Get guidance on network configuration for your use case",
+      "arguments": ["network_type", "use_case"],
+      "text": "I need to configure ${arguments.network_type} networking for ${arguments.use_case}. Please explain the configuration and guide me through the setup process."
+    },
+    {
+      "name": "snapshot_best_practices",
+      "description": "Get recommendations for snapshot management strategy",
+      "arguments": ["vm_name"],
+      "text": "I need help with snapshot management for ${arguments.vm_name}. Please recommend a snapshot strategy including when to create snapshots, naming conventions, and cleanup policies."
+    },
+    {
+      "name": "multi_vm_deployment",
+      "description": "Get guidance for deploying multi-VM architectures",
+      "arguments": ["deployment_type"],
+      "text": "I want to deploy a ${arguments.deployment_type} multi-VM architecture. Please recommend the VM configuration, network topology, and guide me through the deployment process step by step."
+    }
+  ],
+  "tools_generated": true,
+  "prompts_generated": false,
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"]
+  }
+}

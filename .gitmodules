@@ -1,0 +1,3 @@
+[submodule "virtualization_mcp/chat"]
+	path = virtualization_mcp/chat
+	url = file:///D:/Dev/repos/virtualization-mcp/chat_module

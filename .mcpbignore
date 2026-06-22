@@ -1,0 +1,52 @@
+# Exclude build artifacts and large binaries – NSIS installer will provide them
+build/
+dist/
+assets/vbox/
+
+# Exclude native binaries
+native/
+
+# Keep required icon
+!assets/icon.png
+
+# Virtual environments (large)
+.venv/
+venv/
+env/
+.env/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Cache directories
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Node modules (if any)
+node_modules/
+webapp/node_modules/
+web_sota/node_modules/
+
+# IDE/editor junk
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git metadata (already excluded but explicit)
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD config
+.github/
+
+# Documentation – keep only README and LICENSE
+!README.md
+!LICENSE

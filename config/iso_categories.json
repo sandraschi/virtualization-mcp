@@ -1,0 +1,123 @@
+[
+  {
+    "id": "ubuntu",
+    "label": "Ubuntu",
+    "items": [
+      {
+        "version": "24.04 LTS Server",
+        "url": "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-live-server-amd64.iso",
+        "description": "Ubuntu Server 24.04 LTS — recommended for VMs",
+        "size": "~2.6 GB"
+      },
+      {
+        "version": "24.04 LTS Desktop",
+        "url": "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-desktop-amd64.iso",
+        "description": "Ubuntu Desktop 24.04 LTS — full GUI",
+        "size": "~5.7 GB"
+      },
+      {
+        "version": "22.04 LTS Server",
+        "url": "https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso",
+        "description": "Ubuntu Server 22.04 LTS — stable, long support",
+        "size": "~2.6 GB"
+      },
+      {
+        "version": "22.04 LTS Desktop",
+        "url": "https://releases.ubuntu.com/22.04/ubuntu-22.04.5-desktop-amd64.iso",
+        "description": "Ubuntu Desktop 22.04 LTS",
+        "size": "~4.6 GB"
+      },
+      {
+        "version": "25.04 Server",
+        "url": "https://releases.ubuntu.com/25.04/ubuntu-25.04-live-server-amd64.iso",
+        "description": "Ubuntu Server 25.04 — latest release",
+        "size": "~2.8 GB"
+      }
+    ]
+  },
+  {
+    "id": "debian",
+    "label": "Debian",
+    "items": [
+      {
+        "version": "Debian 12 Bookworm",
+        "url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.10.0-amd64-netinst.iso",
+        "description": "Debian 12 netinstall — minimal, rock-solid",
+        "size": "~700 MB"
+      },
+      {
+        "version": "Debian 12 Live XFCE",
+        "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-12.10.0-amd64-xfce.iso",
+        "description": "Debian 12 with XFCE desktop",
+        "size": "~3.1 GB"
+      }
+    ]
+  },
+  {
+    "id": "windows",
+    "label": "Windows",
+    "items": [
+      {
+        "version": "Windows 11 24H2 (eval — Microsoft)",
+        "url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-11-enterprise",
+        "description": "Windows 11 Enterprise Evaluation — fill form, get ISO (includes Pro features, 90-day trial)",
+        "size": "~6.4 GB",
+        "filename": "Win11_24H2_Eval.iso",
+        "manual_download": true
+      },
+      {
+        "version": "Windows 11 24H2 Pro (Archive.org)",
+        "url": "https://archive.org/details/windows-11-24h2-26100.1742",
+        "description": "Windows 11 Pro — download from Internet Archive (direct ISO, no form needed)",
+        "size": "~6.4 GB",
+        "filename": "Win11_24H2_Pro_IA.iso",
+        "manual_download": true
+      },
+      {
+        "version": "Windows Server 2025 (eval)",
+        "url": "https://go.microsoft.com/fwlink/?linkid=2294501",
+        "description": "Windows Server 2025 Evaluation — 180-day trial",
+        "size": "~6.0 GB",
+        "filename": "WinServer2025_Eval.iso"
+      },
+      {
+        "version": "Windows 95 OSR 2.5",
+        "url": "https://archive.org/download/win95osr25/win95osr25.iso",
+        "description": "Windows 95 OSR 2.5 — for the nostalgia VM",
+        "size": "~650 MB",
+        "filename": "Win95_OSR25.iso",
+        "os_type": "Windows95"
+      }
+    ]
+  },
+  {
+    "id": "utilities",
+    "label": "Utilities",
+    "items": [
+      {
+        "version": "GParted Live",
+        "url": "https://downloads.sourceforge.net/gparted/gparted-live-1.6.0-1-amd64.iso",
+        "description": "Partition manager — resize, repair, recover disks",
+        "size": "~550 MB"
+      }
+    ]
+  },
+  {
+    "id": "safety",
+    "label": "Safety Tools",
+    "items": [
+      {
+        "version": "Kali Linux 2025",
+        "url": "https://cdimage.kali.org/kali-2025.1/kali-linux-2025.1-installer-amd64.iso",
+        "description": "Penetration testing and security auditing distro",
+        "size": "~4.6 GB"
+      },
+      {
+        "version": "Kali Linux Live (2025)",
+        "url": "https://cdimage.kali.org/kali-2025.1/kali-linux-2025.1-live-amd64.iso",
+        "description": "Kali live environment — no install needed",
+        "size": "~4.2 GB"
+      }
+    ]
+  }
+]

@@ -1,0 +1,115 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "virtualization-mcp"
+version = "1.2.0"
+description = "VirtualBox & Hyper-V VM management, Docker sandboxing, snapshots, networking and storage via FastMCP 3.4"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [
+    { name = "Sandra Schipal", email = "sandra@schipal.at" }
+]
+keywords = ["mcp", "virtualbox", "vm", "virtualization", "sandbox", "fastmcp", "hypervisor"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Emulators",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "fastmcp>=3.4.2,<4",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "pywin32>=306; sys_platform == 'win32'",
+    "pyvbox>=2.1.1",
+    "psutil>=5.9.0",
+    "pyyaml>=6.0.1",
+    "aiohttp>=3.8.0",
+    "aiofiles>=23.0.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.29.0",
+    "python-multipart>=0.0.9",
+    "python-socketio>=5.10.0",
+    "jinja2>=3.1.0",
+    "prometheus-client>=0.19.0",
+    "rich>=13.0.0",
+    "loguru>=0.7.0",
+    "docker>=7.0.0",
+    "prefab-ui>=0.14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "ruff>=0.8.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sandraschi/virtualization-mcp"
+Repository = "https://github.com/sandraschi/virtualization-mcp"
+Issues = "https://github.com/sandraschi/virtualization-mcp/issues"
+
+[project.scripts]
+virtualization-mcp = "virtualization_mcp.all_tools_server:main"
+
+[tool.mcpb]
+manifest = "mcpb/manifest.json"
+build-dir = "dist"
+signing-key = ""
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+fallback-version = "1.2.0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/virtualization_mcp"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+addopts = "-v -s"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = [
+    "tests",
+    "scripts",
+    "MagicMock",
+    "run_virtualization-mcp.py",
+    "run_server.py",
+    "remove_description_params.py"
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "PTH", "A"]
+ignore = ["S101", "B008", "E501", "S603", "S607", "PTH"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = true

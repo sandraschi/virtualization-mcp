@@ -1,0 +1,25 @@
+name: Browser Testing
+description: Browser testing environment with Chrome
+version: 1.0.0
+targets:
+  - sandbox
+  - vm
+
+downloads:
+  - url: https://dl.google.com/chrome/install/ChromeStandaloneSetup64.exe
+    filename: chrome-installer.exe
+    destination: C:\Users\WDAGUtilityAccount\Desktop
+    vm_destination: C:\Temp
+
+setup_commands:
+  sandbox:
+    - C:\Users\WDAGUtilityAccount\Desktop\chrome-installer.exe /silent /install
+  vm:
+    - C:\Temp\chrome-installer.exe /silent /install
+
+startup_scripts:
+  sandbox:
+    - C:\Program Files\Google\Chrome\Application\chrome.exe
+  vm:
+    - C:\Program Files\Google\Chrome\Application\chrome.exe
+

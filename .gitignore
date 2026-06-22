@@ -1,0 +1,141 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+# Sandbox winget bootstrap (exception: repo root lib/ is ignored above)
+!assets/sandbox/lib/
+!assets/sandbox/lib/**
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+*.log
+*.sqlite
+*.db
+temp/
+tmp/
+.cache/
+
+# VirtualBox files (should not be in git)
+*.vdi
+*.vmdk
+*.vbox
+*.vbox-prev
+Logs/
+
+# Configuration files with secrets
+.env
+config/secrets.yaml
+config/local_settings.yaml
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.json
+coverage.xml
+test_results.txt
+ruff_errors.json
+junit/
+
+# Test artifacts and temporary data
+MagicMock/
+sandboxes/
+quarantine/
+analysis/
+backups/
+security_reports/
+security_tools/
+vms/
+
+# Status and progress markdown files in root only (keep organized in docs/)
+/*STATUS*.md
+/*SUMMARY*.md
+/*PROGRESS*.md
+/*REPORT*.md
+/*CHECKLIST*.md
+/*PLAN*.md
+!README.md
+!CHANGELOG.md
+!LICENSE.md
+!CONTRIBUTING.md
+!SECURITY.md
+!TROUBLESHOOTING.md
+
+# Private documentation (internal dev notes, not for public)
+docs-private/
+
+# Documentation builds
+docs/_build/
+.readthedocs.yml
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+
+# Windows Sandbox full-dev assets (store here for reuse; do not commit)
+assets/sandbox/*.msixbundle
+assets/sandbox/*.msix
+assets/sandbox/DesktopAppInstaller_Dependencies.zip
+assets/sandbox/Setup-DevSandbox.ps1
+
+# VirtualBox VM media (ISOs, OVA/OVF – store here for reuse; do not commit)
+assets/vbox/*.iso
+assets/vbox/*.ova
+assets/vbox/*.ovf
+assets/vbox/*.vdi
+assets/vbox/*.vmdk
+# Rust / Zed IDE — rust-analyzer may create target/ at repo root
+target/
+
+# Backup / temp files
+*.bak
+pytest_full_output.txt
+
+_dashboard/

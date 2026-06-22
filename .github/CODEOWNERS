@@ -1,0 +1,20 @@
+# Default owners for everything in the repo
+* @sandraschi
+
+# Core VM functionality
+/src/virtualization-mcp/server/core/ @sandraschi @vm-experts
+
+# Plugins
+/src/virtualization-mcp/server/plugins/ @sandraschi @plugin-maintainers
+
+# Documentation
+/docs/ @sandraschi @docs-team
+
+# CI/CD
+.github/workflows/ @sandraschi @devops-team
+
+# Security
+SECURITY.md @sandraschi @security-team
+
+
+

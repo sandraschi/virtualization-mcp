@@ -1,0 +1,42 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["sandraschi"],
+  "name": "virtualization-mcp",
+  "description": "FastMCP 3.4 server for VirtualBox & Hyper-V VM management, Docker sandbox execution, Windows Sandbox bringup, snapshots, networking, storage, and fleet app install testing. 8 portmanteau tools with 60+ operations. Production status.",
+  "type": "mcp_server",
+  "status": "stable",
+  "framework": "FastMCP 3.4.2",
+  "tools": 8,
+  "transport": ["stdio", "http"],
+  "keywords": [
+    "virtualbox",
+    "hyperv",
+    "vm",
+    "virtualization",
+    "sandbox",
+    "docker",
+    "windows-sandbox",
+    "vm-management",
+    "mcp-server",
+    "fastmcp"
+  ],
+  "features": {
+    "vm_lifecycle": {
+      "enabled": true,
+      "operations": 60
+    },
+    "hyperv": {
+      "enabled": true,
+      "operations": 4
+    },
+    "sandbox": {
+      "enabled": true,
+      "operations": 8
+    },
+    "switchable_modes": {
+      "enabled": true,
+      "modes": ["production", "testing"]
+    }
+  }
+}
+
