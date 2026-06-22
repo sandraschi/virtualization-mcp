@@ -1,7 +1,8 @@
 # virtualization_mcp/chat/service.py
 """Chat service for virtualization-mcp backend."""
 
-from typing import Any, Optional
+from typing import Any
+
 
 # ---------------------------------------------------------------------------
 # Core service implementation.
@@ -15,7 +16,7 @@ class ChatService:
 
     def __init__(self, db_path: str = "chat_memory.db", limit: int = 40):
         self.memory = ChatMemory(db_path=db_path, limit=limit)
-        self._settings_cache: Optional[dict[str, Any]] = None
+        self._settings_cache: dict[str, Any] | None = None
         self._provider_order = ["lmstudio", "deepseek", "openai", "anthropic", "ollama"]
 
     # ---------------------------------------------------------------------
@@ -23,14 +24,14 @@ class ChatService:
     # ---------------------------------------------------------------------
     def _load_settings(self) -> dict[str, Any]:
         if self._settings_cache is None:
-            self._settings_cache = _load_llm_settings()
+            self._settings_cache = self._load_llm_settings()
         return self._settings_cache
 
-    def _build_system_prompt(self, personality: Optional[str]) -> str:
-        base = (
-            "You are the SOTA Virtualization Assistant. You help manage VMs, "
-            "Sandboxes, and the MCP Fleet."
-        )
+    def _load_llm_settings(self) -> dict[str, Any]:
+        return {"endpoint": os.environ.get("OLLAMA_HOST", "http://localhost:11434"), "model": "gemma4:e4b"}
+
+    def _build_system_prompt(self, personality: str | None) -> str:
+        base = "You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet."
         personality_instructions = {
             "professional": "",
             "pirate": "You speak like a pirate captain, using nautical terms and humor.",
@@ -57,7 +58,7 @@ class ChatService:
             pass
         return base
 
-    def _get_skills_dir(self) -> Optional[str]:
+    def _get_skills_dir(self) -> str | None:
         repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         candidate = os.path.join(repo_root, "skills")
         return candidate if os.path.isdir(candidate) else None
@@ -71,6 +72,16 @@ class ChatService:
         messages.append({"role": "user", "content": request.message})
         return messages
 
+    def _load_keys(self) -> dict[str, str]:
+        keys_file = os.environ.get("VIRTUALIZATION_KEYS_FILE", "")
+        if keys_file and os.path.isfile(keys_file):
+            try:
+                with open(keys_file) as f:
+                    return _json.load(f)
+            except Exception:
+                pass
+        return {}
+
     # ---------------------------------------------------------------------
     # Public API
     # ---------------------------------------------------------------------
@@ -80,7 +91,7 @@ class ChatService:
         """
         try:
             settings = self._load_settings()
-            endpoint = settings.get("endpoint", "http://localhost:11434").rstrip('/')
+            endpoint = settings.get("endpoint", "http://localhost:11434").rstrip("/")
             preferred_model = request.model or settings.get("model", "gemma4:e4b")
             messages = self._build_messages(request)
             session_id = request.session_id or "default"
@@ -111,11 +122,13 @@ class ChatService:
                                     break
                             else:
                                 _preferred = models[0]
-                        payload = _json.dumps({
-                            "model": _preferred,
-                            "messages": messages,
-                            "stream": False,
-                        }).encode()
+                        payload = _json.dumps(
+                            {
+                                "model": _preferred,
+                                "messages": messages,
+                                "stream": False,
+                            }
+                        ).encode()
                         oreq = _req.Request(
                             f"{endpoint}/api/chat",
                             data=payload,
@@ -133,22 +146,24 @@ class ChatService:
                 # OpenAI compatible provider
                 if provider == "openai":
                     try:
-                        keys = _load_keys()
+                        keys = self._load_keys()
                         api_key = keys.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY", "")
                         headers = {"Content-Type": "application/json"}
                         if api_key:
                             headers["Authorization"] = f"Bearer {api_key}"
-                        openai_url = endpoint.rstrip('/')
+                        openai_url = endpoint.rstrip("/")
                         if not openai_url.endswith("/chat/completions"):
                             if not openai_url.endswith("/v1"):
                                 openai_url += "/v1"
                             openai_url += "/chat/completions"
-                        payload = _json.dumps({
-                            "model": preferred_model or "gpt-4o-mini",
-                            "messages": messages,
-                            "max_tokens": 1024,
-                            "stream": False,
-                        }).encode()
+                        payload = _json.dumps(
+                            {
+                                "model": preferred_model or "gpt-4o-mini",
+                                "messages": messages,
+                                "max_tokens": 1024,
+                                "stream": False,
+                            }
+                        ).encode()
                         oreq = _req.Request(openai_url, data=payload, headers=headers)
                         with _req.urlopen(oreq, timeout=60) as r:
                             data = _json.loads(r.read())
@@ -162,21 +177,26 @@ class ChatService:
                 # DeepSeek provider
                 if provider == "deepseek":
                     try:
-                        keys = _load_keys()
+                        keys = self._load_keys()
                         api_key = keys.get("DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_API_KEY", "")
                         if not api_key:
-                            return {"reply": "DeepSeek API Key is missing. Please set it in Settings.", "provider": None}
+                            return {
+                                "reply": "DeepSeek API Key is missing. Please set it in Settings.",
+                                "provider": None,
+                            }
                         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-                        url = endpoint.rstrip('/')
+                        url = endpoint.rstrip("/")
                         if not url.endswith("/chat/completions"):
                             if not url.endswith("/v1"):
                                 url += "/v1"
                             url += "/chat/completions"
-                        payload = _json.dumps({
-                            "model": preferred_model or "deepseek-v4-flash",
-                            "messages": messages,
-                            "max_tokens": 1024,
-                        }).encode()
+                        payload = _json.dumps(
+                            {
+                                "model": preferred_model or "deepseek-v4-flash",
+                                "messages": messages,
+                                "max_tokens": 1024,
+                            }
+                        ).encode()
                         oreq = _req.Request(url, data=payload, headers=headers)
                         with _req.urlopen(oreq, timeout=60) as r:
                             data = _json.loads(r.read())
@@ -190,7 +210,7 @@ class ChatService:
                 # Anthropic provider
                 if provider == "anthropic":
                     try:
-                        keys = _load_keys()
+                        keys = self._load_keys()
                         api_key = keys.get("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_API_KEY", "")
                         if not api_key:
                             return {"reply": "Anthropic API Key missing.", "provider": None}
@@ -199,12 +219,14 @@ class ChatService:
                             "x-api-key": api_key,
                             "anthropic-version": "2023-06-01",
                         }
-                        url = endpoint.rstrip('/') + "/v1/messages"
-                        payload = _json.dumps({
-                            "model": preferred_model or "claude-3-opus-20240229",
-                            "messages": messages,
-                            "max_tokens": 1024,
-                        }).encode()
+                        url = endpoint.rstrip("/") + "/v1/messages"
+                        payload = _json.dumps(
+                            {
+                                "model": preferred_model or "claude-3-opus-20240229",
+                                "messages": messages,
+                                "max_tokens": 1024,
+                            }
+                        ).encode()
                         oreq = _req.Request(url, data=payload, headers=headers)
                         with _req.urlopen(oreq, timeout=60) as r:
                             data = _json.loads(r.read())
@@ -219,13 +241,15 @@ class ChatService:
                 if provider == "lmstudio":
                     try:
                         headers = {"Content-Type": "application/json"}
-                        lm_url = endpoint.rstrip('/') + "/v1/chat/completions"
-                        payload = _json.dumps({
-                            "model": preferred_model or "gpt-4o-mini",
-                            "messages": messages,
-                            "max_tokens": 1024,
-                            "stream": False,
-                        }).encode()
+                        lm_url = endpoint.rstrip("/") + "/v1/chat/completions"
+                        payload = _json.dumps(
+                            {
+                                "model": preferred_model or "gpt-4o-mini",
+                                "messages": messages,
+                                "max_tokens": 1024,
+                                "stream": False,
+                            }
+                        ).encode()
                         oreq = _req.Request(lm_url, data=payload, headers=headers)
                         with _req.urlopen(oreq, timeout=60) as r:
                             data = _json.loads(r.read())

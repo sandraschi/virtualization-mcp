@@ -132,6 +132,7 @@ class RateLimiter:
     def is_allowed(self) -> bool:
         """Simple sliding-window rate limit check (no client id, single bucket)."""
         import time
+
         now = time.time()
         self._cleanup(now)
         if len(self._calls) < self.max_calls:

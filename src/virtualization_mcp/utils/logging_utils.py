@@ -7,7 +7,12 @@ import logging.handlers
 from pathlib import Path
 
 
-def setup_logging(debug: bool = False, log_file: str = "logs/virtualization-mcp.log", name: str | None = None, level: str | None = None) -> logging.Logger:
+def setup_logging(
+    debug: bool = False,
+    log_file: str = "logs/virtualization-mcp.log",
+    name: str | None = None,
+    level: str | None = None,
+) -> logging.Logger:
     """
     Configure logging with optional debug mode and file output.
 

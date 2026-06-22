@@ -14,7 +14,7 @@ use tauri::{AppHandle, Emitter, Manager};
 pub struct BackendProcess(pub Mutex<Option<Child>>);
 
 const BACKEND_NAME: &str = "virtualization-mcp-backend.exe";
-const BACKEND_PORT: u16 = 10700;
+const BACKEND_PORT: u16 = 10701;
 const BACKEND_TAG: &str = "virtualization-mcp-backend-x86_64-pc-windows-msvc.exe";
 const ENV_PORT: &str = "PORT";
 const ENV_HOST: &str = "HOST";

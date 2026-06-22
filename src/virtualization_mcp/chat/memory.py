@@ -1,10 +1,10 @@
-'''memory.py - SQLite-backed chat memory
+"""memory.py - SQLite-backed chat memory
 Provides persistent storage of chat messages per session with a limit of 40 entries.
-''' 
+"""
+
 import sqlite3
-import json
 from pathlib import Path
-from typing import List, Dict, Any
+
 
 class ChatMemory:
     def __init__(self, db_path: str, limit: int = 40):
@@ -29,12 +29,11 @@ class ChatMemory:
             )
             conn.commit()
 
-    def get_messages(self, session_id: str) -> List[Dict[str, str]]:
+    def get_messages(self, session_id: str) -> list[dict[str, str]]:
         """Return messages for the given session in chronological order."""
         with self._connect() as conn:
             rows = conn.execute(
-                "SELECT role, content FROM chat_memory WHERE session_id = ? ORDER BY timestamp ASC",
-                (session_id,)
+                "SELECT role, content FROM chat_memory WHERE session_id = ? ORDER BY timestamp ASC", (session_id,)
             ).fetchall()
         return [{"role": r[0], "content": r[1]} for r in rows]
 
@@ -42,8 +41,7 @@ class ChatMemory:
         """Add a new message and trim older messages to respect the limit."""
         with self._connect() as conn:
             conn.execute(
-                "INSERT INTO chat_memory (session_id, role, content) VALUES (?, ?, ?)",
-                (session_id, role, content)
+                "INSERT INTO chat_memory (session_id, role, content) VALUES (?, ?, ?)", (session_id, role, content)
             )
             # Trim excess rows
             conn.execute(
@@ -56,6 +54,6 @@ class ChatMemory:
                     LIMIT ?
                 ) AND session_id = ?;
                 """,
-                (session_id, self.limit, session_id)
+                (session_id, self.limit, session_id),
             )
             conn.commit()
