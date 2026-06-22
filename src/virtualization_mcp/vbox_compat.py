@@ -90,6 +90,7 @@ class VBoxManage:
                 "check": True,
                 "capture_output": True,
                 "text": True,
+                "timeout": 30,
             }
             if sys.platform == "win32":
                 kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW  # type: ignore[attr-defined]
@@ -105,6 +106,10 @@ class VBoxManage:
 
             return output
 
+        except subprocess.TimeoutExpired as e:
+            error_msg = f"VBoxManage command timed out after 30s: {' '.join(full_args)}"
+            logger.error(error_msg)
+            raise VirtualBoxError(error_msg) from e
         except subprocess.CalledProcessError as e:
             error_msg = f"VBoxManage command failed with code {e.returncode}: {e.stderr}"
             logger.error(error_msg)

@@ -160,8 +160,6 @@ export default function VirtualBox() {
     fetchVMs();
     fetchVboxStatus();
     fetchTemplates();
-    const interval = setInterval(fetchVMs, 10000);
-    return () => clearInterval(interval);
   }, [fetchVboxStatus, fetchVMs, fetchTemplates]);
 
   const handleOpenVirtualBox = async () => {

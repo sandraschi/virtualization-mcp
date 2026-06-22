@@ -1,4 +1,4 @@
-use std::fs::{self, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
@@ -161,8 +161,22 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         .env(ENV_PORT, BACKEND_PORT.to_string())
         .env(ENV_HOST, "127.0.0.1")
         .env(ENV_TAURI, &tauri_cors)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
+        .stdout(Stdio::null());
+
+    // Redirect stderr to a file so we can see crash tracebacks
+    let stderr_path = app.path().app_log_dir().ok().map(|d| {
+        let _ = fs::create_dir_all(&d);
+        d.join("backend-stderr.log")
+    });
+    if let Some(ref p) = stderr_path {
+        if let Ok(f) = File::create(p) {
+            command.stderr(f);
+        } else {
+            command.stderr(Stdio::null());
+        }
+    } else {
+        command.stderr(Stdio::null());
+    }
 
     #[cfg(windows)]
     {
