@@ -132,6 +132,39 @@ Reasons not currently supported:
 
 If you are running OpenStack in production and want MCP integration, the right approach is to run a lightweight MCP bridge on your OpenStack controller node that translates MCP tool calls to OpenStack REST API calls (nova, cinder, neutron). That bridge is not part of this repo but could be a separate `openstack-mcp` server.
 
+### Kubernetes (CNCF / community)
+**Status: ⚠️ Not directly managed by this server, but adjacent**
+
+Kubernetes is a container orchestration platform that schedules and manages containerized workloads across a cluster of machines. It is not a VM hypervisor — it runs on top of one (Docker, containerd, CRI-O) — but it competes for the same "where do I run my workload?" mindshare.
+
+**Perception vs reality on complexity:**
+
+The conventional wisdom is that Kubernetes is too complex for individual developers. This is true for a manually-configured production cluster with etcd, CNI plugins, ingress controllers, cert-manager, service meshes, monitoring stacks, and persistent storage. Setting that up from scratch is a multi-day slog even for experienced ops teams.
+
+However, the lightweight distributions have changed the calculus significantly:
+
+| Distribution | Install | Footprint | Use case |
+|-------------|---------|-----------|----------|
+| **k3s** (Rancher) | Single binary, `curl \| sh` | ~50 MB, runs on a Raspberry Pi | Edge, IoT, dev clusters |
+| **MicroK8s** (Canonical) | `snap install microk8s` | ~200 MB, includes add-ons | Local dev, CI, offline |
+| **kind** (Kubernetes in Docker) | `go install sigs.k8s.io/kind` | Container nodes | CI testing, ephemeral clusters |
+| **minikube** | Binary + driver | VM-based (Docker or Hyper-V) | Local development, learning |
+| **K3d** (k3s in Docker) | `brew install k3d` | k3s clusters as Docker containers | Dev, CI, multi-node testing |
+
+On a modern machine (16+ GB RAM, SSD), any of these can boot a functional Kubernetes cluster in under 5 minutes. The real time sink was always configuration — picking the right CNI, storage class, ingress, cert management — and this is precisely where AI assistance (Claude, ChatGPT, Codex) shines. An AI agent given "spin up a k3s cluster on this machine with Traefik, Longhorn, and cert-manager" can:
+1. Install k3s (one-line curl pipe)
+2. Write the Helm values or YAML manifests for each component
+3. Apply them in dependency order
+4. Verify the cluster is healthy
+
+The total human effort is "type the prompt, review the plan, press enter." The AI handles the five years of Kubernetes tribal knowledge.
+
+**Why it's not directly managed by this server:**
+
+This project manages VMs (VirtualBox, Hyper-V) and sandboxes (Windows Sandbox). Kubernetes is a layer above — it expects a running cluster (on VMs or bare metal) and manages containers within it. The MCP server could expose `kubectl` wrappers (get pods, apply manifests, port-forward), but that is a separate project (`kubernetes-mcp` or similar). The `local-llm-mcp` server in the fleet already uses k3s internally for containerized model serving, proving the lightweight-Kubernetes-on-a-single-machine pattern works in production.
+
+**Bottom line:** Kubernetes is complex, but AI makes the configuration pain disappear. The lightweight distros make the infrastructure cost near-zero. If you need container orchestration alongside VM management, run k3s on the same host and use a separate `kubernetes-mcp` server for `kubectl` access.
+
 ### Comparison Table
 
 | Technology | License | Cost | Type | Windows | Linux | macOS | API |
@@ -145,6 +178,7 @@ If you are running OpenStack in production and want MCP integration, the right a
 | **KVM** | GPLv2 | Free | Type-1 | ❌ | ✅ | ❌ | `virsh` / libvirt |
 | **Nutanix AHV** | Proprietary | Per-node subscription | Type-1 | ❌ | ✅ | ❌ | REST API (`Prism`) |
 | **OpenStack** | Apache 2.0 | Free (DIY infra cost) | Type-1 (KVM) | ❌ | ✅ | ❌ | REST API (`nova`, `cinder`, `neutron`) |
+| **Kubernetes (k3s)** | Apache 2.0 | Free | Orchestrator | ✅ | ✅ | ✅ | `kubectl` / REST API |
 
 ## Quick Install
 
