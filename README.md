@@ -17,6 +17,52 @@ Spin up VMs, sandboxes, and dev environments from Claude Desktop, Cursor, or the
 - **Unattended Win11** — autoinstall with optional dev tools (dev VMs only)
 - **Fleet dashboard** — health-check and launch registered MCP webapps
 
+## A Brief History of Virtual Machines
+
+Virtual machines are older than you think. The concept dates to the **1960s**, driven by a problem that still sounds familiar: expensive hardware that was mostly idle.
+
+### Mainframe era (1960s–1970s)
+
+IBM pioneered virtualization on the **IBM System/360-67** (1966) and later the **System/370** (1972). The CP/CMS operating system (precursor to VM/370) introduced the idea of a **hypervisor** — a thin layer that partitions physical hardware into isolated "virtual machines," each running its own OS. This was pure pragmatism: a mainframe cost millions and ran batch jobs at night. Virtualization let multiple research teams share the machine concurrently without stepping on each other.
+
+IBM's **VM/370** became the production version, and its design — a privileged "control program" managing guest operating systems — is the direct ancestor of every Type-1 hypervisor today. The term "virtual machine" itself comes from this era.
+
+### The x86 dark ages (1980s–1990s)
+
+When computing moved from mainframes to x86 workstations and servers, virtualization was essentially lost. The x86 architecture had no concept of privilege rings that could trap and emulate guest OS instructions efficiently. The few attempts (like **VMware Workstation 1.0 in 1999**) used **binary translation** — dynamically rewriting guest instructions on the fly — which was slow and fragile but proved it could be done.
+
+Intel and AMD eventually added hardware virtualization extensions: **Intel VT-x** (2005) and **AMD-V** (2006). These introduced a new "root mode" that lets the CPU natively execute guest instructions without binary translation. This was the unlock that made x86 virtualization performant enough for production.
+
+### The golden age (2005–2015)
+
+With hardware assist in place, virtualization exploded:
+
+- **VMware** dominated the enterprise with ESX/vSphere, building a multi-billion-dollar business on server consolidation (replacing 10 underutilized physical servers with 1 host running 10 VMs).
+- **Xen** (2003, Cambridge University) became the open-source standard, powering early AWS (EC2 ran on Xen until 2017). Amazon chose Xen because it was free and could be customized for multi-tenant isolation at scale.
+- **KVM** (2007, Avi Kivity/Qumranet) turned Linux itself into a Type-1 hypervisor by adding the `kvm` kernel module. Red Hat acquired Qumranet in 2008 and made KVM the default for RHEV and OpenStack. KVM is now the most widely deployed hypervisor on the planet by sheer host count (every Android phone runs a KVM-based protected VM for Trusty/AVB, every Chromebook runs KVM for Linux containers, every major public cloud uses KVM or a derivative).
+- **VirtualBox** (2007, Sun Microsystems, later Oracle) targeted the desktop and developer market — free, cross-platform, easy to use. It never aimed at the datacenter but became the de-facto standard for "I need a VM on my laptop."
+- **Hyper-V** (2008, Microsoft) was Microsoft's response, a Type-1 hypervisor built into Windows Server and later Windows Pro/Enterprise. It competed with VMware on Windows workloads and came free with the OS.
+- **Parallels** targeted Mac users running Windows VMs, leveraging the macOS hypervisor framework.
+
+### The cloud and container correction (2015–present)
+
+The rise of AWS, Azure, and GCP changed the question from "which hypervisor do I install?" to "which API do I call?" Nobody cared whether EC2 ran on Xen or KVM (it's KVM now) — they cared about the `RunInstances` API.
+
+Containers (Docker, 2013) then questioned whether full VMs were needed at all. Why run a whole OS when a process-level sandbox with cgroups and namespaces was faster and lighter? Kubernetes (2014) orchestrated containers at scale, and for a while it seemed like VMs were legacy.
+
+But containers don't actually replace VMs — they run on top of them. Every Kubernetes node is a VM (or bare metal, but mostly VMs in the cloud). The two technologies are complementary, not competing. The industry settled on: **containers for application packaging, VMs for isolation and infrastructure.**
+
+### The present (2026)
+
+Today's landscape is stratified:
+
+- **Public cloud** — AWS Nitro (KVM-based with custom silicon), Azure (Hyper-V), GCP (KVM). Customers consume VMs through APIs, never touching a hypervisor.
+- **Enterprise on-prem** — VMware (declining post-Broadcom), Hyper-V, Nutanix AHV, Proxmox VE (rising). The Broadcom VMware disaster accelerated a migration wave that will take years to play out.
+- **Developer laptops** — VirtualBox, Hyper-V (via Docker Desktop/WSL2), Parallels (macOS), UTM (Apple Silicon QEMU), and Multipass (Canonical's lightweight Ubuntu VMs). The trend is toward lightweight, API-driven VMs that can be provisioned in seconds and discarded just as fast.
+- **Edge / IoT** — k3s (Kubernetes on VMs or bare metal), KVM-on-arm (Raspberry Pi 5 can run VMs now), and embedded hypervisors like Jailhouse and ACRN.
+
+This project sits in the developer laptop and edge segment — managing VirtualBox and Hyper-V VMs, Windows Sandbox ephemeral environments, and Docker sandbox containers, all from a unified MCP tool surface. It's a pragmatic snapshot of the 2026 virtualization landscape: free tools, local execution, API-driven, AI-friendly.
+
 ## Virtualization Landscape
 
 This project integrates with a deliberately curated set of virtualization backends. Here is the full landscape and why each technology was chosen or rejected.
