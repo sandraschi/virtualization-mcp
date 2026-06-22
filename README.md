@@ -106,6 +106,32 @@ Proxmox VE is an open-source (GNU AGPLv3) virtualization platform based on KVM a
 
 KVM (Kernel-based Virtual Machine) is the Linux-native Type-1 hypervisor. It is managed via `libvirt` and `virsh`. Linux-native support would be added if cross-platform parity becomes a priority.
 
+### Nutanix AHV (Nutanix)
+**Status: ❌ Not supported — enterprise scope**
+
+Nutanix AHV is a Type-1 hypervisor built into the Nutanix Acropolis hyperconverged infrastructure (HCI) platform. It is proprietary, licensed per-node as part of the Nutanix AOS/Prism bundle. AHV is KVM-based under the hood but managed exclusively through Nutanix Prism (UI and REST API). It competes with VMware vSphere in the enterprise HCI space and has been a major beneficiary of the Broadcom VMware exodus.
+
+Reasons not currently supported:
+- Requires a Nutanix cluster — not available to individual developers or small shops
+- The Prism REST API is complex and targets infrastructure teams, not ad-hoc VM management
+- Licensing is per-node subscription, typically $5k–$20k/node/year depending on bundle
+- The open-source KVM layer underneath is not directly accessible when managed by Acropolis
+
+AHV support would make sense for a future "fleet datacenter" tier that targets enterprise Nutanix customers, but it is out of scope for the current single-machine developer workflow.
+
+### OpenStack (OpenInfra Foundation / community)
+**Status: ❌ Not supported — DIY complexity**
+
+OpenStack is a set of open-source (Apache 2.0) projects that together provide infrastructure-as-a-service (Compute via Nova, Storage via Cinder/Swift, Networking via Neutron, Identity via Keystone, etc.). It is the de-facto open-source cloud platform, used by massive deployments (OVH, Rackspace, CERN, Walmart) and telcos.
+
+Reasons not currently supported:
+- **DIY infrastructure cost:** OpenStack is free software, but operating it requires a cluster of bare-metal hosts, shared storage (Ceph/CEPH or SAN), and at least 3 controller nodes for HA. A minimal production deployment starts at 6–10 physical servers. There is no "OpenStack on a laptop" — even dev environments (DevStack, MicroStack, Kolla) need significant RAM and multiple VMs.
+- **Operational complexity:** OpenStack has 30+ core services. Upgrades are painful, networking (Neutron + OVS/OVN) is notoriously brittle, and troubleshooting requires deep knowledge of RabbitMQ, MySQL/Galera, and distributed system internals.
+- **Wrong abstraction layer:** This project manages individual VMs and sandboxes on a single Windows machine. OpenStack is a multi-tenant cloud orchestrator for datacenter-scale deployments. The API surface (Nova boot with flavors, networks, security groups, availability zones) is designed for a cloud operator, not a developer spinning up a single Ubuntu VM.
+- **Alternatives exist:** For those who want OpenStack-like capabilities at smaller scale, Proxmox VE provides a similar VM management API with 1% of the operational overhead. We may support Proxmox before OpenStack.
+
+If you are running OpenStack in production and want MCP integration, the right approach is to run a lightweight MCP bridge on your OpenStack controller node that translates MCP tool calls to OpenStack REST API calls (nova, cinder, neutron). That bridge is not part of this repo but could be a separate `openstack-mcp` server.
+
 ### Comparison Table
 
 | Technology | License | Cost | Type | Windows | Linux | macOS | API |
@@ -117,6 +143,8 @@ KVM (Kernel-based Virtual Machine) is the Linux-native Type-1 hypervisor. It is 
 | **VMware** | Proprietary | Subscription | Type-1/2 | ✅ | ✅ | ✅ | `govc` / REST API |
 | **Proxmox VE** | AGPLv3 | Free | Type-1 | ❌ | ✅ | ❌ | REST API |
 | **KVM** | GPLv2 | Free | Type-1 | ❌ | ✅ | ❌ | `virsh` / libvirt |
+| **Nutanix AHV** | Proprietary | Per-node subscription | Type-1 | ❌ | ✅ | ❌ | REST API (`Prism`) |
+| **OpenStack** | Apache 2.0 | Free (DIY infra cost) | Type-1 (KVM) | ❌ | ✅ | ❌ | REST API (`nova`, `cinder`, `neutron`) |
 
 ## Quick Install
 
