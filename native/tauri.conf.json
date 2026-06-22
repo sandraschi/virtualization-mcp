@@ -6,7 +6,7 @@
 	"build": {
 		"frontendDist": "../webapp/frontend/dist",
 		"devUrl": "http://localhost:10700",
-		"beforeBuildCommand": "powershell.exe -NoProfile -Command \"$env:TAURI_BUILD='1'; cd ../webapp/frontend; npm run build\""
+		"beforeBuildCommand": "powershell.exe -NoProfile -Command \"$env:TAURI_BUILD='1'; $env:VITE_API_URL='http://127.0.0.1:10701'; cd ../webapp/frontend; npm run build\""
 	},
 	"app": {
 		"windows": [

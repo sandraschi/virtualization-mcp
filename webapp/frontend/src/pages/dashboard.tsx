@@ -105,9 +105,10 @@ export default function Dashboard() {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       await invoke("start_backend");
-    } catch {
-      setRestarting(false);
+    } catch (e) {
+      console.error("Restart backend failed:", e);
     }
+    setRestarting(false);
   }, []);
 
   useEffect(() => {
