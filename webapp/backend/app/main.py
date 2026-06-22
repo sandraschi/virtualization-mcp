@@ -1772,7 +1772,16 @@ async def get_vms():
         if hasattr(service_manager.vm_service, "hyperv_manager"):
             hyperv_list = await service_manager.vm_service.hyperv_manager.list_vms()
 
-        return {"status": "success", "vms": vbox_list + hyperv_list}
+        # Get Proxmox VMs (if configured)
+        proxmox_list = []
+        try:
+            pm = service_manager.proxmox_manager
+            if pm:
+                proxmox_list = await asyncio.to_thread(pm.list_vms)
+        except Exception as e:
+            logger.warning("Proxmox VM list failed: %s", e)
+
+        return {"status": "success", "vms": vbox_list + hyperv_list + proxmox_list}
     except Exception as e:
         logger.error(f"Error fetching VMs: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e

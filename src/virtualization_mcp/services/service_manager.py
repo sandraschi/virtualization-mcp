@@ -5,6 +5,7 @@ Handles initialization and management of all services and their dependencies.
 """
 
 import logging
+import os
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,21 @@ class ServiceManager:
                 logger.error(f"Failed to initialize services: {e}", exc_info=True)
                 raise
 
+            # Initialize Proxmox manager (optional, only if PROXMOX_HOST is set)
+            proxmox_host = os.environ.get("PROXMOX_HOST", "")
+            if proxmox_host:
+                try:
+                    from .proxmox_manager import ProxmoxManager
+
+                    pm = ProxmoxManager()
+                    pm.authenticate()
+                    self._services["proxmox_manager"] = pm
+                    logger.info("Proxmox manager initialized for host: %s", proxmox_host)
+                except Exception as e:
+                    logger.warning("Proxmox init failed (skipping): %s", e)
+            else:
+                logger.debug("Proxmox not configured (PROXMOX_HOST not set)")
+
             logger.info("All services initialized successfully")
 
     def get_service(self, service_name: str) -> Any:
@@ -93,6 +109,14 @@ class ServiceManager:
     def config(self):
         """Get the configuration."""
         return self.get_service("config")
+
+    @property
+    def proxmox_manager(self):
+        """Get the Proxmox manager (or None if not configured)."""
+        try:
+            return self.get_service("proxmox_manager")
+        except ValueError:
+            return None
 
 
 # Global service manager instance

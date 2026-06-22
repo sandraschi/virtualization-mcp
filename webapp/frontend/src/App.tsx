@@ -7,6 +7,7 @@ import Dashboard from "./pages/dashboard";
 import Help from "./pages/help";
 import HyperV from "./pages/hyperv";
 import Logs from "./pages/logs";
+import Proxmox from "./pages/proxmox";
 import PromptsSkills from "./pages/prompts-skills";
 import Sandbox from "./pages/sandbox";
 import Settings from "./pages/settings";
@@ -22,6 +23,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="virtualbox" element={<VirtualBox />} />
           <Route path="hyperv" element={<HyperV />} />
+          <Route path="proxmox" element={<Proxmox />} />
           <Route path="sandbox" element={<Sandbox />} />
           <Route path="tools" element={<Tools />} />
           <Route path="apps" element={<Apps />} />

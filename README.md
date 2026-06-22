@@ -143,9 +143,35 @@ For a virtualization management tool like this one, depending on VMware would me
 We may add **Proxmox VE** support in a future release, as it is the most natural open-source replacement for vSphere in the small-to-mid datacenter segment.
 
 ### Proxmox VE (Proxmox Server Solutions GmbH)
-**Status: 🔜 Under consideration for future support**
+**Status: ✅ Supported via REST API**
 
-Proxmox VE is an open-source (GNU AGPLv3) virtualization platform based on KVM and LXC. It provides a web UI, REST API, clustering, and live migration — similar to vSphere but without the licensing cost. It is the leading candidate for the next hypervisor backend added to this project.
+Proxmox VE is an open-source (GNU AGPLv3) virtualization platform based on KVM and LXC. It provides a web UI, REST API, clustering, and live migration — similar to vSphere but without the licensing cost.
+
+**It is already supported as a remote backend in this project.** If you have a Proxmox host (even a single node), set three environment variables and the MCP server will discover and manage Proxmox VMs alongside VirtualBox and Hyper-V:
+
+```bash
+# In your shell or start.ps1
+export PROXMOX_HOST=192.168.1.100
+export PROXMOX_USER=root@pam
+export PROXMOX_PASSWORD=your-password
+# Optional:
+# export PROXMOX_NODE=pve1          # autodetected if not set
+# export PROXMOX_VERIFY_SSL=0       # default: 0 (self-signed certs)
+```
+
+That's it. No Proxmox-specific plugins, no agent installs, no separate service. The client authenticates via the Proxmox ticket API and supports:
+
+| Operation | Endpoint |
+|-----------|----------|
+| List VMs | `GET /api/v1/vms` (merged with VirtualBox + Hyper-V) |
+| Start/Stop/Shutdown | `POST .../status/start\|stop\|shutdown` |
+| Create VM | Configurable CPU, RAM, disk, ISO, network bridge |
+| Delete VM | `DELETE .../qemu/{vmid}` |
+| Snapshots | Create, list, delete via `/snapshot` API |
+| Node status | CPU, memory, disk via `/nodes/{node}/status` |
+| Cluster resources | `GET /cluster/resources` cross-node |
+
+**Proxmox is not harder than VirtualBox to set up from the MCP side** — the hard part was always the Proxmox installation itself (Debian ISO, install, configure storage). But once Proxmox is running, plugging it into this MCP server is just those three env vars. We did the complicated part (the REST API client) so you don't have to.
 
 ### KVM / libvirt (Red Hat / community)
 **Status: 🔍 Under investigation**

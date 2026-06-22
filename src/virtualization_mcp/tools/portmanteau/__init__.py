@@ -17,6 +17,7 @@ from virtualization_mcp.tools.agentic_tools import register_agentic_tools
 
 from .discovery_management import register_info_tools_tool
 from .network_management import register_network_management_tool
+from .proxmox_management import register_proxmox_management_tool
 from .sandbox_management import register_sandbox_management_tool
 from .snapshot_management import register_snapshot_management_tool
 from .storage_management import register_storage_management_tool
@@ -59,6 +60,12 @@ def register_all_portmanteau_tools(mcp: FastMCP) -> None:
             logger.info("Hyper-V management tool registered (Windows platform)")
         except ImportError as e:
             logger.debug(f"Hyper-V tools not available: {e}")
+
+    # Proxmox management (cross-platform, runtime-configurable via PROXMOX_HOST)
+    try:
+        register_proxmox_management_tool(mcp)
+    except Exception as e:
+        logger.debug(f"Proxmox tools not available: {e}")
 
     logger.info("All portmanteau tools registered successfully")
 
