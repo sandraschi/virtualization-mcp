@@ -1,7 +1,7 @@
 import {
   Bell,
+  CheckCircle2,
   Cpu,
-  Database,
   ExternalLink,
   Eye,
   EyeOff,
@@ -10,8 +10,8 @@ import {
   Lock,
   Monitor,
   RefreshCw,
-  RotateCcw,
   Save,
+  Server,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -78,6 +78,18 @@ export default function Settings() {
   const [customEndpoint, setCustomEndpoint] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [gpuAccel, setGpuAccel] = useState(true);
+
+  // Proxmox settings
+  const [proxmoxHost, setProxmoxHost] = useState("");
+  const [proxmoxUser, setProxmoxUser] = useState("root@pam");
+  const [proxmoxPassword, setProxmoxPassword] = useState("");
+  const [proxmoxNode, setProxmoxNode] = useState("");
+  const [proxmoxTesting, setProxmoxTesting] = useState(false);
+  const [proxmoxTestResult, setProxmoxTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [proxmoxSaved, setProxmoxSaved] = useState(false);
   const [testResult, setTestResult] = useState<{
     ok: boolean;
     msg: string;
@@ -257,13 +269,77 @@ export default function Settings() {
 
   const [activeSection, setActiveSection] = useState("Local Intelligence");
 
-  const sidebarItems = [
-    { label: "Local Intelligence", icon: Cpu },
-    { label: "API Keys", icon: KeyRound },
-    { label: "Notifications", icon: Bell },
-    { label: "Security", icon: Lock },
-    { label: "Database", icon: Database },
+  const settingsTabs = [
+    { id: "Local Intelligence", label: "Local LLM", icon: Cpu },
+    { id: "API Keys", label: "API Keys", icon: KeyRound },
+    { id: "Proxmox", label: "Proxmox VE", icon: Server },
+    { id: "Hardware", label: "Hardware", icon: Monitor },
+    { id: "Notifications", label: "Alerts", icon: Bell },
   ];
+
+  // ---- Proxmox handlers ----
+
+  const testProxmox = async () => {
+    setProxmoxTesting(true);
+    setProxmoxTestResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/settings/proxmox/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          host: proxmoxHost,
+          user: proxmoxUser,
+          password: proxmoxPassword,
+          node: proxmoxNode || undefined,
+        }),
+      });
+      const data = await res.json();
+      setProxmoxTestResult(
+        data.success
+          ? { success: true, message: data.message || "Connected" }
+          : { success: false, message: data.detail || data.message || "Connection failed" }
+      );
+    } catch {
+      setProxmoxTestResult({ success: false, message: "Cannot reach backend" });
+    } finally {
+      setProxmoxTesting(false);
+    }
+  };
+
+  const saveProxmox = async () => {
+    setProxmoxSaved(false);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/settings/proxmox`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          host: proxmoxHost,
+          user: proxmoxUser,
+          password: proxmoxPassword,
+          node: proxmoxNode || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProxmoxSaved(true);
+        setTimeout(() => setProxmoxSaved(false), 3000);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Load saved Proxmox config on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/api/v1/settings/proxmox`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.host) setProxmoxHost(data.host);
+        if (data?.user) setProxmoxUser(data.user);
+        if (data?.node) setProxmoxNode(data.node);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -300,27 +376,31 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1 space-y-1">
-          {sidebarItems.map((item) => (
+      {/* Horizontal Tabs */}
+      <div className="flex gap-1 overflow-x-auto pb-2 border-b border-border">
+        {settingsTabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
             <button
-              key={item.label}
-              onClick={() => setActiveSection(item.label)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                item.label === activeSection
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "hover:bg-white/5 text-muted-foreground"
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveSection(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-t-xl text-sm font-medium transition-all whitespace-nowrap ${
+                tab.id === activeSection
+                  ? "bg-card border border-b-0 border-border text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
               }`}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <Icon className="w-4 h-4" />
+              {tab.label}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        <div className="md:col-span-2 space-y-8">
-          {/* LLM Provider Status */}
-          {activeSection === "Local Intelligence" && (
+      <div className="space-y-8">
+        {/* LLM Provider Status */}
+        {activeSection === "Local Intelligence" && (
             <div className="p-6 rounded-2xl border border-border bg-card/40 backdrop-blur-sm space-y-6">
               <div className="flex items-center gap-3 border-b border-border pb-4">
                 <Cpu className="w-5 h-5 text-primary" />
@@ -647,7 +727,112 @@ export default function Settings() {
             </div>
           )}
 
+          {/* Proxmox Configuration */}
+          {activeSection === "Proxmox" && (
+          <div className="p-6 rounded-2xl border border-border bg-card/40 backdrop-blur-sm space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <Server className="w-5 h-5 text-primary" />
+              <h3 className="font-bold text-lg">Proxmox VE</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Connect to a remote Proxmox VE host to manage QEMU VMs via the
+              REST API. The backend uses ticket-based auth (user + password).
+            </p>
+            <div className="grid gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Host
+                </label>
+                <input
+                  type="text"
+                  value={proxmoxHost}
+                  onChange={(e) => setProxmoxHost(e.target.value)}
+                  placeholder="192.168.1.100 or proxmox.example.com"
+                  className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white font-mono outline-none focus:border-primary transition-colors"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    User
+                  </label>
+                  <input
+                    type="text"
+                    value={proxmoxUser}
+                    onChange={(e) => setProxmoxUser(e.target.value)}
+                    placeholder="root@pam"
+                    className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white font-mono outline-none focus:border-primary transition-colors"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={proxmoxPassword}
+                    onChange={(e) => setProxmoxPassword(e.target.value)}
+                    placeholder="Proxmox password"
+                    className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white font-mono outline-none focus:border-primary transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Node <span className="text-xs text-muted-foreground">(optional — autodetected)</span>
+                </label>
+                <input
+                  type="text"
+                  value={proxmoxNode}
+                  onChange={(e) => setProxmoxNode(e.target.value)}
+                  placeholder="pve1"
+                  className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2 text-sm text-white font-mono outline-none focus:border-primary transition-colors"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={testProxmox}
+                disabled={proxmoxTesting}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 transition-colors text-sm font-medium"
+              >
+                {proxmoxTesting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Test Connection
+              </button>
+              <button
+                onClick={saveProxmox}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-bold"
+              >
+                <Save className="w-4 h-4" />
+                Save
+              </button>
+              {proxmoxSaved && (
+                <span className="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Saved
+                </span>
+              )}
+            </div>
+            {proxmoxTestResult && (
+              <div
+                className={`p-3 rounded-xl text-sm ${
+                  proxmoxTestResult.success
+                    ? "bg-green-500/10 border border-green-500/20 text-green-400"
+                    : "bg-red-500/10 border border-red-500/20 text-red-400"
+                }`}
+              >
+                {proxmoxTestResult.message}
+              </div>
+            )}
+          </div>
+          )}
+
           {/* Hardware Status */}
+          {activeSection === "Hardware" && (
           <div className="p-6 rounded-2xl border border-border bg-card/40 backdrop-blur-sm space-y-4">
             <div className="flex items-center gap-3 mb-2">
               <Monitor className="w-5 h-5 text-primary" />
@@ -672,14 +857,7 @@ export default function Settings() {
               </div>
             </div>
           </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:bg-white/5 transition-colors text-sm font-medium uppercase tracking-widest">
-              <RotateCcw className="w-4 h-4" />
-              Reset Defaults
-            </button>
-          </div>
-        </div>
+          )}
       </div>
     </div>
   );

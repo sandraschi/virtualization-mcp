@@ -678,6 +678,95 @@ async def set_api_keys(request: ApiKeysRequest):
     return {"keys": masked, "definitions": KEY_DEFINITIONS, "saved": True}
 
 
+# ── Proxmox Settings ─────────────────────────────────────────────────────────
+
+
+PROXMOX_KEYS_FILE = os.path.join(
+    os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
+    "virtualization-mcp",
+    "proxmox_config.json",
+)
+os.makedirs(os.path.dirname(PROXMOX_KEYS_FILE), exist_ok=True)
+
+
+def _load_proxmox_config() -> dict:
+    try:
+        with open(PROXMOX_KEYS_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_proxmox_config(cfg: dict) -> None:
+    with open(PROXMOX_KEYS_FILE, "w") as f:
+        json.dump(cfg, f)
+
+
+class ProxmoxConfigRequest(BaseModel):
+    host: str = ""
+    user: str = "root@pam"
+    password: str = ""
+    node: str | None = None
+
+
+@app.get("/api/v1/settings/proxmox")
+async def get_proxmox_config():
+    """Return saved Proxmox config (password masked)."""
+    cfg = _load_proxmox_config()
+    return {
+        "host": cfg.get("host", ""),
+        "user": cfg.get("user", "root@pam"),
+        "node": cfg.get("node", ""),
+        "configured": bool(cfg.get("host")),
+    }
+
+
+@app.post("/api/v1/settings/proxmox")
+async def set_proxmox_config(request: ProxmoxConfigRequest):
+    """Save Proxmox config and set env vars for the current process."""
+    cfg = {
+        "host": request.host,
+        "user": request.user,
+        "password": request.password,
+        "node": request.node or "",
+    }
+    _save_proxmox_config(cfg)
+    # Set env vars for live use
+    if request.host:
+        os.environ["PROXMOX_HOST"] = request.host
+        os.environ["PROXMOX_USER"] = request.user
+        os.environ["PROXMOX_PASSWORD"] = request.password
+        if request.node:
+            os.environ["PROXMOX_NODE"] = request.node
+    return {"success": True, "message": "Proxmox config saved"}
+
+
+@app.post("/api/v1/settings/proxmox/test")
+async def test_proxmox_connection(request: ProxmoxConfigRequest):
+    """Test connectivity to a Proxmox host with given credentials."""
+    if not request.host:
+        return {"success": False, "message": "Host is required"}
+    try:
+        from virtualization_mcp.services.proxmox_manager import ProxmoxManager
+
+        pm = ProxmoxManager(
+            host=request.host,
+            user=request.user,
+            password=request.password,
+            node=request.node or None,
+        )
+        pm.authenticate()
+        nodes = pm._request("GET", "nodes")
+        node_count = len(nodes) if isinstance(nodes, list) else 1
+        vms = pm.list_vms()
+        return {
+            "success": True,
+            "message": f"Connected to {request.host} ({node_count} node(s), {len(vms)} VMs)",
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
 # ── LLM Provider Discovery ────────────────────────────────────────────────────
 
 
