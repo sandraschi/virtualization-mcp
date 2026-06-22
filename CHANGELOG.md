@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-06-22
+
+### Fixed
+- **Tauri backend pipe buffer hang** — `backend.rs` changed from `Stdio::piped()` to `Stdio::null()` for stdout. uvicorn access logs filled the 4 KB Windows pipe buffer after ~40 requests, blocking the Python process. Backend now logs to files via its own logging config; stdout goes to NUL, stderr goes to `backend-stderr.log` for crash traces.
+- **VBoxManage / VBoxSVC hang** — Added `timeout=30` to `subprocess.run` in `vbox_compat.py:_run_command`. If VBoxManage hangs (VBoxSVC stuck), it's killed after 30 seconds instead of hanging the backend forever. Added `except TimeoutExpired` handler.
+- **Aggressive 10s VM polling** — Removed `setInterval(fetchVMs, 10000)` from VirtualBox page. Each poll ran `VBoxManage list vms --long` which contacted VBoxSVC. Overlapping calls corrupted VBoxSVC state. VMs now fetch on page load and manual refresh only.
+- **Frontend API_BASE** — Hardcoded `http://127.0.0.1:10701` instead of `import.meta.env.VITE_API_URL ?? "http://127.0.0.1:10701"`. Env vars are unreliable in Tauri's `beforeBuildCommand` context.
+- **Restart Backend button** — `setRestarting(false)` now runs after successful `invoke("start_backend")`. Previously it only ran on error, leaving the button stuck in "Restarting..." state.
+- **Frontend startup patience** — Health indicator now shows yellow "Starting..." (not red "Offline") on first fetch failure. Only shows "Offline" if previously "Connected" and then connection drops.
+- **Backend health check window** — Extended from 30 attempts (60s) to 90 attempts (3 min) to handle slow first-start with VBox detection and service initialization.
+- **Tauri CORS** — Added `tauri://localhost`, `http://tauri.localhost`, `https://tauri.localhost` to default CORS `allow_origins` list in webapp backend.
+- **Chat submodule** — Copied `chat_module/virtualization_mcp/chat/` into `src/virtualization_mcp/chat/` so PyInstaller bundle includes it. Fixed `service.py` imports (`_json`, `_req`, `os`, `ChatMemory`).
+- **FastAPI version** — Lockfile requires FastAPI 0.138.0. System had 0.121.1 incompatible with Starlette 1.3.1. Upgraded to match lockfile.
+- **mcpb/manifest.json** — Updated to list 8 portmanteau tools instead of 12 individual tools.
+
+### Docs
+- **TAURI_PRODUCTION_PITFALLS.md** — Documented 9 new pitfalls from virtualization-mcp postmortem: port mismatch, FastAPI version, ruff import stripping, stale backend.exe in NSIS, localhost IPv6 resolution, piped stdout pipe buffer hang, VBoxManage subprocess timeout, VBoxSVC overlapping polling, npx tauri build vs build.ps1.
+
 ## [1.3.1] - 2026-06-22
 
 ### Added
