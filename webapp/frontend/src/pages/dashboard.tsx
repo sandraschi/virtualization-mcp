@@ -64,14 +64,20 @@ export default function Dashboard() {
   const [vboxAvail, setVboxAvail] = useState<boolean | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [backendOk, setBackendOk] = useState<boolean | null>(null);
+  const [backendOk, setBackendOk] = useState<string>("starting");
   const [restarting, setRestarting] = useState(false);
   const navigate = useNavigate();
 
   const refresh = useCallback(async () => {
     const h = await checkBackendHealth();
-    setBackendOk(h.ok);
-  }, []);
+    if (h.ok) {
+      setBackendOk("connected");
+    } else if (backendOk === "connected") {
+      setBackendOk("offline");
+    } else if (backendOk === "starting" || backendOk === null) {
+      // Stay in "starting" — don't show "offline" immediately
+    }
+  }, [backendOk]);
 
   // Poll via HTTP every 10s (works in dev browser)
   useEffect(() => {
@@ -88,9 +94,10 @@ export default function Dashboard() {
         const { listen } = await import("@tauri-apps/api/event");
         unlisten = await listen<string>("backend-status", (event) => {
           if (event.payload === "ready") {
+            setBackendOk("connected");
             refresh();
           } else if (typeof event.payload === "string" && event.payload.startsWith("error:")) {
-            setBackendOk(false);
+            setBackendOk("offline");
           }
         });
       } catch {
@@ -182,26 +189,26 @@ export default function Dashboard() {
           <div
             data-testid="backend-status"
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-              backendOk === null
-                ? "bg-gray-500/10 text-gray-400"
-                : backendOk
+              backendOk === "starting"
+                ? "bg-yellow-500/10 text-yellow-400"
+                : backendOk === "connected"
                   ? "bg-green-500/10 text-green-400"
                   : "bg-red-500/10 text-red-400"
             }`}
           >
             <div
               className={`w-2 h-2 rounded-full animate-pulse ${
-                backendOk === null
-                  ? "bg-gray-500"
-                  : backendOk
+                backendOk === "starting"
+                  ? "bg-yellow-500"
+                  : backendOk === "connected"
                     ? "bg-green-500"
                     : "bg-red-500"
               }`}
             />
-            {backendOk === null ? "Connecting..." : backendOk ? "Connected" : "Offline"}
+            {backendOk === "starting" ? "Starting..." : backendOk === "connected" ? "Connected" : "Offline"}
           </div>
           {/* Restart button when offline */}
-          {backendOk === false && (
+          {backendOk === "offline" && (
             <button
               type="button"
               data-testid="restart-backend"

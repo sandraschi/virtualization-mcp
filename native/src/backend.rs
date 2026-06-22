@@ -1,5 +1,5 @@
 use std::fs::{self, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -107,6 +107,7 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 fn free_port(port: u16) {
     #[cfg(windows)]
     {
+        // Kill any process listening on this port
         let script = format!(
             "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>$null }}"
         );
@@ -115,8 +116,9 @@ fn free_port(port: u16) {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status();
-        thread::sleep(Duration::from_millis(300));
     }
+    // Wait for TIME_WAIT to clear so the new backend can bind
+    thread::sleep(Duration::from_secs(3));
 }
 
 fn stop_managed_child(state: &BackendProcess) {
@@ -128,6 +130,8 @@ fn stop_managed_child(state: &BackendProcess) {
 
 pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, String> {
     stop_managed_child(state);
+
+    // Extra step: free port (kills ANY lingering process on the port)
     free_port(BACKEND_PORT);
 
     let backend_path = materialize_backend(&app)?;
@@ -157,8 +161,8 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         .env(ENV_PORT, BACKEND_PORT.to_string())
         .env(ENV_HOST, "127.0.0.1")
         .env(ENV_TAURI, &tauri_cors)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
 
     #[cfg(windows)]
     {
@@ -171,24 +175,14 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         .spawn()
         .map_err(|e| format!("Failed to spawn {}: {e}", backend_path.display()))?;
 
-    let stdout = child.stdout.take();
-    let stderr = child.stderr.take();
+    // Store child in managed state
     state.0.lock().unwrap().replace(child);
-
-    if let Some(out) = stdout {
-        let app_handle = app.clone();
-        thread::spawn(move || watch_backend_stream(out, app_handle));
-    }
-    if let Some(err) = stderr {
-        let app_handle = app.clone();
-        thread::spawn(move || watch_backend_stream(err, app_handle));
-    }
 
     // Poll backend TCP port to confirm it is actually listening
     let addr = SocketAddr::from_str(&format!("127.0.0.1:{BACKEND_PORT}")).unwrap();
     let app_health = app.clone();
     thread::spawn(move || {
-        for attempt in 0..30 {
+        for attempt in 0..90 {
             thread::sleep(Duration::from_secs(2));
             match TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
                 Ok(_) => {
@@ -201,16 +195,9 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
                 }
             }
         }
-        log_line(&app_health, &format!("Backend health check FAILED - not listening on port {BACKEND_PORT} after 30 attempts"));
+        log_line(&app_health, &format!("Backend health check FAILED - not listening on port {BACKEND_PORT} after 90 attempts"));
         let _ = app_health.emit("backend-status", "error: backend not reachable");
     });
 
     Ok(format!("Backend starting on port {BACKEND_PORT}"))
-}
-
-fn watch_backend_stream<R: std::io::Read + Send + 'static>(stream: R, app: AppHandle) {
-    let reader = BufReader::new(stream);
-    for line in reader.lines().map_while(Result::ok) {
-        log_line(&app, &line);
-    }
 }
