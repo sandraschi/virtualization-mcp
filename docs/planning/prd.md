@@ -1,90 +1,103 @@
-# VirtualBox MCP Server - Product Requirements Document (PRD)
+# Virtualization MCP - Product Requirements Document (PRD)
 
-## Version: 1.3.0
+## Version: 1.2.1
 **Last Updated**: June 2026  
 **Status**: Active  
-**Author**: virtualization-mcp Team  
-**MCP Version**: 2.10+  
-**VirtualBox Version**: 7.0+
+**Author**: Sandra Schipal  
+**MCP Version**: 3.4+  
+**FastMCP**: >=3.4.2,<4  
+**VirtualBox Version**: 7.0+  
+**Python**: 3.12+
 
 ## 1. Executive Summary
 
 ### 1.1 Product Overview
-VirtualBox MCP Server (virtualization-mcp) is a FastMCP 2.10+ compliant server that provides comprehensive VirtualBox management capabilities through a standardized MCP (Model-Controller-Presenter) interface. It enables seamless integration with MCP clients like Claude Desktop, allowing natural language control over VirtualBox environments.
+Virtualization MCP (`virtualization-mcp`) is a FastMCP 3.4+ server that provides comprehensive VM management across multiple hypervisors through a unified MCP interface. It manages VirtualBox (local), Hyper-V (local), Windows Sandbox (local), Docker (local containers), and Proxmox VE (remote REST API) — all from the same portmanteau tool surface and web dashboard.
+
+The server ships as a dual-mode application: a stdio MCP server for Claude Desktop/Cursor integration, and a full web dashboard (FastAPI + React + Tauri) for browser-based management and desktop native installation.
 
 ### 1.2 Key Benefits
-- **Unified Management**: Control VirtualBox through a standardized MCP interface
-- **Natural Language Integration**: Interact with VirtualBox using natural language via Claude
-- **Automation Ready**: Scriptable VM management for development and testing
-- **Security Focused**: Sandboxed operations with proper access controls
-- **Extensible Architecture**: Plugin system for custom functionality
+- **Multi-Hypervisor Unified Management**: Manage VirtualBox, Hyper-V, and Proxmox VMs through a single MCP tool surface
+- **Windows Sandbox Integration**: Launch disposable Windows environments for fleet install testing, dev setups, and CI-like workflows
+- **Desktop Native App**: Tauri 2.0 NSIS installer bundles the Python backend + React frontend into a single Windows `.exe`
+- **Natural Language Integration**: Interact with all hypervisors using natural language via Claude Desktop or Cursor
+- **Automation Ready**: Portmanteau tools with 60+ operations for programmable VM lifecycle, networking, storage, and snapshots
+- **Free and Open**: No license costs — VirtualBox (GPLv2), Hyper-V (Windows built-in), Proxmox (AGPLv3), Docker (Apache 2.0)
 
 ## 2. Product Scope
 
-### 2.1 In Scope (v1.0.0)
+### 2.1 In Scope (v1.0.0 – Core)
+
+#### Hypervisor Support
+- **VirtualBox 7+** (primary, local): VM lifecycle, snapshots, networking, storage, VRDP, unattended installs, ISO pipeline
+- **Hyper-V** (secondary, Windows): VM lifecycle, Gen2 UEFI support, PowerShell-based management
+- **Windows Sandbox** (ephemeral): Consumer, Dev Infra, and Full Dev sandbox modes with automated tooling install
+- **Docker** (container): Ephemeral code execution, sandbox-style container management
+- **Proxmox VE** (remote, via REST API): VM lifecycle, snapshots, node/cluster status, configured via `PROXMOX_HOST` env var or Settings UI
 
 #### Core Functionality
-- **VM Lifecycle Management**: Create, start, stop, pause, resume, reset, and delete VMs
-- **Snapshot Management**: Create, restore, delete, and list snapshots
-- **Resource Configuration**:
-  - CPU allocation and limits
-  - Memory allocation and management
-  - Storage configuration (HDDs, ISOs, etc.)
-  - Network adapters and modes
-- **Template System**: Predefined configurations for common OS and use cases
-- **MCP Tool Registration**: Full support for MCP 2.10+ tool discovery and invocation
+- **VM Lifecycle Management**: Create, start, stop, pause, resume, reset, delete VMs across all supported hypervisors
+- **Snapshot Management**: Create, restore, delete, list snapshots (VirtualBox and Proxmox)
+- **Resource Configuration**: CPU, memory, storage, network adapters and modes
+- **Template System**: 10+ predefined VM templates (Ubuntu, Windows, Debian, etc.) in `config/vm_templates.yaml`
+- **ISO Pipeline**: Download Ubuntu, Debian, Windows ISOs into `assets/vbox` with background thread + progress tracking
+- **Unattended Win11 Install**: Auto-generated answer files with optional dev tools
 
-#### Platform Support
-- **Host OS**: Windows 10/11, Linux (Ubuntu/Debian, RHEL/CentOS), macOS (Intel/Apple Silicon)
-- **Guest OS**: Windows, Linux, BSD, macOS (with limitations)
-- **VirtualBox**: Version 7.0 and above
-- **Python**: 3.8+
+#### MCP Tool Surface
+- 8 portmanteau tools with 60+ operations: `vm_management`, `network_management`, `snapshot_management`, `storage_management`, `system_management`, `sandbox_management`, `hyperv_management`, `proxmox_management`
+- Agentic tools with `ctx.sample()` support: `suggest_config`, `sandbox_workflow`, `workflow`
+- FastMCP 3.4+: Skills provider, prompts, dual transport (stdio + HTTP)
 
-### 2.2 In Scope (v1.3.0 – Windows Sandbox, Assets, Logs, and 6-Way LLM switching)
+#### Web Dashboard (React + Vite + Tauri)
+- 14 pages: Dashboard, VirtualBox, Hyper-V, Proxmox VE, Windows Sandbox, Tools Console, Apps Hub, Prompts & Skills, AI Chat, API Docs, System Logs, Help & Docs, Settings, VM Console
+- Dark theme (Zinc-950), glassmorphism, Framer Motion, Recharts, Zustand
+- Dynamic tool discovery (no hardcoded tool lists)
+- Local LLM auto-discovery (Ollama :11434, LM Studio :1234)
+- 6-way provider chat (Ollama, LM Studio, OpenAI, DeepSeek, Anthropic, Gemini)
+- Fleet webapp registry and launch
 
-- **Assets reuse**: Repo folders `assets/sandbox` (Sandbox installers) and `assets/vbox` (ISOs, OVA) for one-time download and reuse. Webapp and APIs use these paths.
-- **Windows Sandbox full dev setup**: Automated script (winget + deps, then optional Python/Node/uv/Git/Just/VS Code/Notepad++/Windsurf/Cursor/Antigravity/Claude Desktop/OpenClaw/OpenFang/RoboFang). AIRGAP mode (networking off). Optional host Ollama access from sandbox.
-- **Webapp VM from assets**: Create VM with optional ISO from `assets/vbox`; Attach ISO to existing VM from same folder. Win 11 Pro template for creating/importing a ready-to-use Windows 11 Pro VM asset (install once, export OVA, import for reuse).
-- **Diagnostics & Help**: Interactive System Logs page/endpoint (real-time filtering by level/query) and an interactive Help FAQ/documentation terminal in the webapp.
-- **6-Way LLM Selector**: Complete frontend integration with Ollama, LM Studio, OpenAI, DeepSeek, Anthropic, and Google Gemini fallback, saved persistently to `%LOCALAPPDATA%\virtualization-mcp\llm_settings.json`.
-- **Self-healing Port Conflicts**: Automatic detection and healing of port overlaps (e.g. Ollama vs LM Studio) to prevent startup connection lockouts.
-- **Hyper-V Generation 2 support**: Refined VM provisioning to support Generation 2 EFI/UEFI VMs correctly by omitting `-BootDevice VHD` parameter from PowerShell command chains.
+#### Desktop App (Tauri 2.0 + NSIS)
+- Single NSIS installer with embedded Python backend (PyInstaller)
+- Rust shell spawns backend with `PORT`, `HOST`, `CORS_ORIGINS` env vars
+- WebView2 frontend with CORS to `tauri://localhost`
+- PREINSTALL/PREUNINSTALL hooks kill both native + backend processes
+- Optional MCP client registration in Cursor / Claude Desktop
+
+### 2.2 In Scope (v1.2.x – Current)
+
+- **Proxmox VE REST API client**: Full ticket-based auth, VM lifecycle, snapshots, node/cluster status
+- **Settings UI with horizontal tabs**: Local LLM, API Keys, Proxmox VE, Hardware, Alerts
+- **Proxmox settings**: Host/user/password/node management via Settings page + backend persistence
+- **Proxmox web page**: VM listing filtered from unified `/api/v1/vms` endpoint
+- **Horizontal tab help system**: 6 tabs (Getting Started, VirtualBox, Proxmox VE, Windows Sandbox, Desktop App, Troubleshooting, FAQ)
+- **Virtualization landscape README**: Full comparison of VirtualBox, Hyper-V, Sandbox, Docker, VMware (Broadcom), Proxmox, KVM, Nutanix AHV, OpenStack, Kubernetes
+- **SOTA fixes**: Hardcoded API_BASE, `Stdio::null()` pipe fix, `subprocess.run(timeout=30)` for VBoxManage, removed 10s VM polling, FastAPI 0.138.0 version match, backend-status patience indicator, 90-attempt health check window, restart button bugfix
 
 ### 2.3 Future Scope
 
-#### Planned Features
-- **Advanced Storage Management**:
-  - Storage migration
-  - Disk resizing
-  - Storage encryption
-  - iSCSI support
+#### Hypervisor Backends
+- **Proxmox VE** (deepen): Snapshot UI in webapp, VM creation dialog, cluster HA status, live migration
+- **KVM/libvirt**: Linux-native Type-1 support via `virsh` API
+- **VMware**: Only if Broadcom reverses licensing — unlikely; not planned
+- **Nutanix AHV**: Enterprise tier — only if a Nutanix cluster is available for testing
+- **OpenStack**: Not planned — wrong abstraction layer (multi-tenant cloud vs single-machine VM manager)
 
-#### Enhanced Networking
-- **Network Topologies**:
-  - Complex NAT setups
-  - Internal networking
-  - Cloud networking integration
-  - VPN passthrough
+#### Desktop App
+- **Auto-update**: Tauri updater plugin for in-app update notifications
+- **System tray**: Minimize to tray with backend status icon
+- **MCP client registration** in NSIS post-install hook (Cursor, Claude Desktop)
+- **macOS/Linux builds**: Tauri cross-platform builds (blocked by VirtualBox/Hyper-V Windows dependency)
 
-#### Cloud & Enterprise
-- **Cloud Integration**:
-  - AWS/Azure/GCP connectivity
-  - Hybrid cloud deployments
-  - Cloud backup solutions
+#### Web Dashboard
+- **VM console** via noVNC WebSocket proxy (VRDP bridge)
+- **Performance graphs**: CPU/memory/disk time-series across VM lifecycle
+- **Batch operations**: Start/stop/snapshot multiple VMs at once
+- **Role-based access**: Multi-user auth for team environments
 
-#### Monitoring & Management
-- **Advanced Monitoring**:
-  - Real-time metrics
-  - Performance analytics
-  - Alerting system
-  - Usage reporting
-
-#### Security Enhancements
-- **Security Features**:
-  - TPM 2.0 support
-  - Secure Boot integration
-  - VM encryption
-  - Enhanced access controls
+#### MCP Tools
+- **Workflow automation**: Composable multi-step VM workflows via `ctx.sample()`
+- **Resource optimization**: Suggest VM sizing based on host capacity
+- **Backup/restore**: Export/import OVA via MCP tools
 
 ## 3. User Stories & Use Cases
 
