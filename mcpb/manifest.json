@@ -19,6 +19,11 @@
   "license": "MIT",
   "keywords": ["mcp", "virtualbox", "vm", "virtualization", "automation", "fastmcp", "hypervisor"],
   "icon": "assets/icon.png",
+  "prompts": {
+    "system": "prompts/system.md",
+    "user": "prompts/user.md",
+    "examples": "prompts/examples.json"
+  },
   "screenshots": [
     "assets/screenshots/main-interface.png",
     "assets/screenshots/vm-management.png"
@@ -146,10 +151,6 @@
   "tools_generated": true,
   "prompts_generated": false,
   "compatibility": {
-    "platforms": ["win32", "darwin", "linux"],
-    "python_version": ">=3.10"
+    "platforms": ["win32", "darwin", "linux"]
   }
 }
-
-
-

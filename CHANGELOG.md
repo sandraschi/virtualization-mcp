@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-06-22
+
+### Added
+- Integrated `ChatService` with provider failover and session persistence.
+- Updated `/api/v1/chat` endpoint to delegate to `ChatService.ask(request)`.
+- Added detailed documentation in `docs/mcp-technical/CHAT_SERVICE.md`.
+
+
+## [1.3.2] - 2026-06-22
+
+### Added
+
+- Added extensive ChatService documentation (`docs/mcp-technical/CHAT_SERVICE.md`).
+
 ## [1.3.0] - 2026-06-21
 
 ### Added: System Logs Viewer & Help Terminal

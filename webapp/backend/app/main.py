@@ -22,6 +22,8 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from virtualization_mcp.chat import ChatService
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", FutureWarning)
     try:
@@ -119,6 +121,7 @@ elif not GOOGLE_API_KEY:
     logger.warning("GOOGLE_API_KEY not found; chat will be in limited mode.")
 
 app = FastAPI(title="Virtualization MCP Backend", lifespan=lifespan)
+chat_service = ChatService()
 
 # CORS Configuration (frontend dev: 10700; backend: 10701)
 origins = os.getenv(
@@ -2433,6 +2436,7 @@ async def fleet_install_run(request: FleetInstallRunRequest):
 @app.post("/api/v1/chat")
 async def chat_interaction(request: ChatRequest):
     """Handle AI chat using local LLM (Ollama/LM Studio) or Gemini fallback."""
+    return await chat_service.ask(request)
     import json as _json
     import urllib.request as _req
 

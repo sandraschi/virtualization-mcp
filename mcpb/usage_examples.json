@@ -1,0 +1,25 @@
+[
+  {
+    "prompt": "create_vm_guided",
+    "arguments": {
+      "use_case": "development",
+      "os_type": "Linux"
+    },
+    "description": "Guided creation of a Linux VM for development purposes"
+  },
+  {
+    "prompt": "troubleshoot_vm",
+    "arguments": {
+      "vm_name": "test-vm",
+      "problem_type": "network"
+    },
+    "description": "Diagnose network connectivity issue for a test VM"
+  },
+  {
+    "prompt": "snapshot_best_practices",
+    "arguments": {
+      "vm_name": "prod-vm"
+    },
+    "description": "Provide snapshot strategy recommendations for a production VM"
+  }
+]
