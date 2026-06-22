@@ -11,18 +11,18 @@ class TestVirtualizationMCPExceptions:
     """Test all exception classes."""
 
     def test_virtualization_mcp_error(self):
-        """Test base VirtualizationMCPError."""
-        from virtualization_mcp.exceptions import VirtualizationMCPError
+        """Test base VMError."""
+        from virtualization_mcp.exceptions import VMError
 
-        error = VirtualizationMCPError("test error")
+        error = VMError("test error")
         assert str(error) == "test error"
         assert isinstance(error, Exception)
 
     def test_vbox_error(self):
-        """Test VBoxError exception."""
-        from virtualization_mcp.exceptions import VBoxError
+        """Test VMError (replaces old VBoxError)."""
+        from virtualization_mcp.exceptions import VMError
 
-        error = VBoxError("VBox error occurred")
+        error = VMError("VBox error occurred")
         assert "VBox error occurred" in str(error)
 
     def test_vm_not_found_error(self):
@@ -33,52 +33,53 @@ class TestVirtualizationMCPExceptions:
         assert "test-vm" in str(error)
 
     def test_vm_already_exists_error(self):
-        """Test VMAlreadyExistsError exception."""
-        from virtualization_mcp.exceptions import VMAlreadyExistsError
+        """Test VMError with 'already exists' message (no dedicated class)."""
+        from virtualization_mcp.exceptions import VMError
 
-        error = VMAlreadyExistsError("existing-vm")
+        error = VMError("VM 'existing-vm' already exists")
         assert "existing-vm" in str(error)
 
     def test_invalid_state_error(self):
         """Test InvalidStateError exception."""
         from virtualization_mcp.exceptions import InvalidStateError
 
-        error = InvalidStateError("Cannot perform action in current state")
-        assert "current state" in str(error).lower()
+        error = InvalidStateError(operation="start", current_state="running")
+        assert "in state" in str(error).lower()
+        assert "running" in str(error)
 
     def test_invalid_configuration_error(self):
-        """Test InvalidConfigurationError exception."""
-        from virtualization_mcp.exceptions import InvalidConfigurationError
+        """Test ConfigurationError (replaces old InvalidConfigurationError)."""
+        from virtualization_mcp.exceptions import ConfigurationError
 
-        error = InvalidConfigurationError("Invalid config")
+        error = ConfigurationError("Invalid config")
         assert "config" in str(error).lower()
 
     def test_snapshot_error(self):
         """Test SnapshotError exception."""
         from virtualization_mcp.exceptions import SnapshotError
 
-        error = SnapshotError("Snapshot operation failed")
+        error = SnapshotError(operation="create", error="Snapshot operation failed")
         assert "snapshot" in str(error).lower()
 
     def test_network_error(self):
         """Test NetworkError exception."""
         from virtualization_mcp.exceptions import NetworkError
 
-        error = NetworkError("Network configuration failed")
+        error = NetworkError(operation="config", error="Network configuration failed")
         assert "network" in str(error).lower()
 
     def test_storage_error(self):
         """Test StorageError exception."""
         from virtualization_mcp.exceptions import StorageError
 
-        error = StorageError("Storage operation failed")
+        error = StorageError(operation="attach", error="Storage operation failed")
         assert "storage" in str(error).lower()
 
     def test_timeout_error(self):
-        """Test TimeoutError exception."""
-        from virtualization_mcp.exceptions import TimeoutError
+        """Test OperationTimedOut (replaces old TimeoutError)."""
+        from virtualization_mcp.exceptions import OperationTimedOut
 
-        error = TimeoutError("Operation timed out")
+        error = OperationTimedOut(operation="start", timeout=30)
         assert "timed out" in str(error).lower()
 
     def test_authentication_error(self):
@@ -103,25 +104,27 @@ class TestVirtualizationMCPExceptions:
         assert "validation" in str(error).lower()
 
     def test_rate_limit_error(self):
-        """Test RateLimitError exception."""
-        from virtualization_mcp.exceptions import RateLimitError
+        """Test RateLimitExceeded (replaces old RateLimitError)."""
+        from virtualization_mcp.exceptions import RateLimitExceeded
 
-        error = RateLimitError("Rate limit exceeded")
+        error = RateLimitExceeded("Rate limit exceeded")
         assert "rate limit" in str(error).lower()
 
     def test_service_unavailable_error(self):
-        """Test ServiceUnavailableError exception."""
-        from virtualization_mcp.exceptions import ServiceUnavailableError
+        """Test ServiceUnavailable (replaces old ServiceUnavailableError)."""
+        from virtualization_mcp.exceptions import ServiceUnavailable
 
-        error = ServiceUnavailableError("Service is unavailable")
+        error = ServiceUnavailable(service_name="TestService", reason="Service is unavailable")
         assert "unavailable" in str(error).lower()
 
     def test_resource_exhausted_error(self):
         """Test ResourceExhaustedError exception."""
         from virtualization_mcp.exceptions import ResourceExhaustedError
 
-        error = ResourceExhaustedError("Resources exhausted")
-        assert "exhausted" in str(error).lower()
+        error = ResourceExhaustedError(resource="memory", limit="8GB")
+        assert "limit exceeded" in str(error).lower()
+        assert "memory" in str(error).lower()
+        assert "8gb" in str(error).lower()
 
     def test_configuration_error(self):
         """Test ConfigurationError exception."""
@@ -134,40 +137,38 @@ class TestVirtualizationMCPExceptions:
         """Test VMManagerError exception."""
         from virtualization_mcp.exceptions import VMManagerError
 
-        error = VMManagerError("VM Manager error")
-        assert "manager" in str(error).lower()
+        error = VMManagerError(operation="create", error="failed")
+        assert "failed to create" in str(error).lower()
 
 
 class TestExceptionHierarchy:
     """Test exception inheritance hierarchy."""
 
     def test_all_exceptions_inherit_from_base(self):
-        """Test all custom exceptions inherit from VirtualizationMCPError."""
+        """Test all custom exceptions inherit from VMError."""
         from virtualization_mcp.exceptions import (
             AuthenticationError,
             NetworkError,
             SnapshotError,
             StorageError,
             ValidationError,
-            VBoxError,
-            VirtualizationMCPError,
+            VMError,
             VMNotFoundError,
         )
 
-        assert issubclass(VBoxError, VirtualizationMCPError)
-        assert issubclass(VMNotFoundError, VirtualizationMCPError)
-        assert issubclass(SnapshotError, VirtualizationMCPError)
-        assert issubclass(NetworkError, VirtualizationMCPError)
-        assert issubclass(StorageError, VirtualizationMCPError)
-        assert issubclass(ValidationError, VirtualizationMCPError)
-        assert issubclass(AuthenticationError, VirtualizationMCPError)
+        assert issubclass(VMNotFoundError, VMError)
+        assert issubclass(SnapshotError, VMError)
+        assert issubclass(NetworkError, VMError)
+        assert issubclass(StorageError, VMError)
+        assert issubclass(ValidationError, VMError)
+        assert issubclass(AuthenticationError, VMError)
 
     def test_exceptions_can_be_raised(self):
         """Test exceptions can be raised and caught."""
-        from virtualization_mcp.exceptions import VBoxError
+        from virtualization_mcp.exceptions import VMError
 
-        with pytest.raises(VBoxError) as exc_info:
-            raise VBoxError("Test error")
+        with pytest.raises(VMError) as exc_info:
+            raise VMError("Test error")
 
         assert "Test error" in str(exc_info.value)
 

@@ -43,6 +43,14 @@ class WindowsSandboxHelper:
         "vsmb_share_path": "C:\\Users\\WDAGUtilityAccount\\Desktop",
     }
 
+    def check_prerequisites(self) -> dict:
+        """Check if Windows Sandbox prerequisites are met."""
+        return {
+            "os_ok": platform.system() == "Windows",
+            "executable_exists": Path(self.WSX_EXECUTABLE).exists(),
+            "ready": platform.system() == "Windows" and Path(self.WSX_EXECUTABLE).exists(),
+        }
+
     def __init__(self, sandbox_dir: str | Path | None = None):
         """Initialize the Windows Sandbox helper.
 

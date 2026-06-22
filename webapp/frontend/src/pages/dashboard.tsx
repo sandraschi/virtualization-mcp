@@ -8,7 +8,7 @@ import {
   Monitor,
   Server,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Area,
@@ -49,306 +49,363 @@ interface DashboardData {
 
 const VBOX_DOWNLOAD_URL = "https://www.virtualbox.org/wiki/Downloads";
 
+async function checkBackendHealth(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/health`);
+    if (!r.ok) return { ok: false, error: `HTTP ${r.status}` };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Network error" };
+  }
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [vboxAvail, setVboxAvail] = useState<boolean | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [backendOk, setBackendOk] = useState<boolean | null>(null);
+  const [restarting, setRestarting] = useState(false);
   const navigate = useNavigate();
+
+  const refresh = useCallback(async () => {
+    const h = await checkBackendHealth();
+    setBackendOk(h.ok);
+  }, []);
+
+  // Poll via HTTP every 10s (works in dev browser)
+  useEffect(() => {
+    refresh();
+    const interval = setInterval(refresh, 10_000);
+    return () => clearInterval(interval);
+  }, [refresh]);
+
+  // Listen for Tauri backend-status event (instant updates in WebView)
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    (async () => {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        unlisten = await listen<string>("backend-status", (event) => {
+          if (event.payload === "ready") {
+            refresh();
+          } else if (typeof event.payload === "string" && event.payload.startsWith("error:")) {
+            setBackendOk(false);
+          }
+        });
+      } catch {
+        // Not inside Tauri - HTTP polling handles it
+      }
+    })();
+    return () => { if (unlisten) unlisten(); };
+  }, [refresh]);
+
+  const restartBackend = useCallback(async () => {
+    setRestarting(true);
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("start_backend");
+    } catch {
+      setRestarting(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const r = await fetch(`${API_BASE}/api/v1/vbox/status`);
-        if (r.ok) {
-          const s = await r.json();
-          setVboxAvail(s.available);
-        }
-      } catch {
-        /* backend down */
-      }
-    };
-    fetchStatus();
-    const fetchData = async () => {
-      try {
         const res = await fetch(`${API_BASE}/api/v1/dashboard`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const d: DashboardData = await res.json();
-        setData(d);
-
-        const h = d.host || ({} as HostInfo);
-        setHistory((prev) => {
-          const memTotal = h.memory_total || 1;
-          const memAvail = h.memory_available || 0;
-          const entry = {
-            time: new Date().toLocaleTimeString(),
-            cpu: h.cpu_usage || 0,
-            memory: ((memTotal - memAvail) / memTotal) * 100,
-          };
-          return [...prev, entry].slice(-20);
-        });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const result = await res.json();
+        setData(result);
+        setVboxAvail(result.host?.virtualbox?.version ? true : false);
         setError(null);
-      } catch (e: any) {
-        setError(e.message);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch dashboard data");
       }
     };
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const h = data?.host;
-  const vms = data?.vms;
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/metrics/history`);
+        if (res.ok) {
+          const result = await res.json();
+          setHistory(result.history || []);
+        }
+      } catch {
+        // Silently fail for history
+      }
+    };
 
-  const stats = [
-    {
-      label: "CPU",
-      value: h ? `${h.cpu_usage?.toFixed(1) ?? "?"}%` : "...",
-      icon: Cpu,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
-    },
-    {
-      label: "RAM",
-      value: h
-        ? `${(((h.memory_total || 0) - (h.memory_available || 0)) / 1024 ** 3).toFixed(1)} / ${(h.memory_total / 1024 ** 3).toFixed(0)} GB`
-        : "...",
-      icon: MemoryStick,
-      color: "text-purple-500",
-      bg: "bg-purple-500/10",
-    },
-    {
-      label: "VMs",
-      value: vms ? `${vms.running} running / ${vms.total} total` : "...",
-      icon: Monitor,
-      color: "text-green-500",
-      bg: "bg-green-500/10",
-    },
-    {
-      label: "Disk Free",
-      value: h
-        ? `${((h.disk_usage?.free || 0) / 1024 ** 3).toFixed(0)} GB`
-        : "...",
-      icon: HardDrive,
-      color: "text-orange-500",
-      bg: "bg-orange-500/10",
-    },
-  ];
+    fetchHistory();
+    const interval = setInterval(fetchHistory, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatBytes = (bytes: number) => {
+    const gb = bytes / 1024 ** 3;
+    return `${gb.toFixed(1)} GB`;
+  };
+
+  const getStatusColor = (state: string) => {
+    switch (state?.toLowerCase()) {
+      case "running":
+        return "text-green-500";
+      case "paused":
+        return "text-yellow-500";
+      default:
+        return "text-gray-500";
+    }
+  };
 
   return (
-    <div className="space-y-8 pb-8">
-      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/15 via-card/60 to-card/20 p-6 md:p-8">
-        <p className="text-xs uppercase tracking-widest text-primary font-semibold">
-          Virtualization Control Center
-        </p>
-        <h2 className="text-3xl md:text-4xl font-black tracking-tight mt-2">
-          Host & VM Overview
-        </h2>
-        <p className="text-foreground/80 mt-3 max-w-3xl text-base">
-          Live host metrics, VM status, and VirtualBox info. Refreshes every 5s.
-          {data?.virtualbox?.version && (
-            <span className="ml-2 text-primary font-semibold">
-              VBox {data.virtualbox.version}
-            </span>
-          )}
-        </p>
-        {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="p-5 rounded-xl border border-border bg-card/40 backdrop-blur-sm hover:border-primary/20 transition-all"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  {s.label}
-                </p>
-                <p className="text-2xl font-bold mt-1">{s.value}</p>
-              </div>
-              <div className={`p-3 rounded-full ${s.bg}`}>
-                <s.icon className={`w-5 h-5 ${s.color}`} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Virtualization stack status */}
-      {vboxAvail === false && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
-          <h3 className="font-semibold text-lg text-amber-200">
-            VirtualBox not detected
-          </h3>
-          <p className="text-sm text-muted-foreground mt-2">
-            VirtualBox is required to create and manage VMs. If you just
-            installed it, open VirtualBox once to initialize the service, then
-            refresh this page.
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            System overview and fleet health
           </p>
-          <div className="flex gap-3 mt-4">
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Backend status indicator */}
+          <div
+            data-testid="backend-status"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+              backendOk === null
+                ? "bg-gray-500/10 text-gray-400"
+                : backendOk
+                  ? "bg-green-500/10 text-green-400"
+                  : "bg-red-500/10 text-red-400"
+            }`}
+          >
+            <div
+              className={`w-2 h-2 rounded-full animate-pulse ${
+                backendOk === null
+                  ? "bg-gray-500"
+                  : backendOk
+                    ? "bg-green-500"
+                    : "bg-red-500"
+              }`}
+            />
+            {backendOk === null ? "Connecting..." : backendOk ? "Connected" : "Offline"}
+          </div>
+          {/* Restart button when offline */}
+          {backendOk === false && (
+            <button
+              type="button"
+              data-testid="restart-backend"
+              onClick={restartBackend}
+              disabled={restarting}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+            >
+              {restarting ? "Restarting..." : "Restart Backend"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div data-testid="kpi-cpu" className="glass-panel p-6 rounded-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <Cpu className="w-5 h-5 text-blue-400" />
+            </div>
+            <span className="text-2xl font-bold">
+              {data?.host?.cpu_usage?.toFixed(1) ?? "--"}%
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">CPU Usage</p>
+        </div>
+
+        <div data-testid="kpi-memory" className="glass-panel p-6 rounded-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+              <MemoryStick className="w-5 h-5 text-green-400" />
+            </div>
+            <span className="text-2xl font-bold">
+              {data?.host ? formatBytes(data.host.memory_total - data.host.memory_available) : "--"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Memory Used / {data?.host ? formatBytes(data.host.memory_total) : "--"}
+          </p>
+        </div>
+
+        <div data-testid="kpi-disk" className="glass-panel p-6 rounded-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
+              <HardDrive className="w-5 h-5 text-purple-400" />
+            </div>
+            <span className="text-2xl font-bold">
+              {data?.host?.disk_usage?.percent?.toFixed(1) ?? "--"}%
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">Disk Usage</p>
+        </div>
+
+        <div data-testid="kpi-vms" className="glass-panel p-6 rounded-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+              <Monitor className="w-5 h-5 text-amber-400" />
+            </div>
+            <span className="text-2xl font-bold">
+              {data?.vms?.total ?? "--"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            VMs: {data?.vms?.running ?? 0} running, {data?.vms?.stopped ?? 0} stopped
+          </p>
+        </div>
+      </div>
+
+      {/* CPU/Memory History Chart */}
+      <div className="glass-panel p-6 rounded-xl">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Activity className="w-5 h-5 text-primary" />
+          System Metrics (Last 5 min)
+        </h2>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={history}>
+              <defs>
+                <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="memGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis
+                dataKey="time"
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="cpu"
+                stroke="#3b82f6"
+                fill="url(#cpuGradient)"
+                strokeWidth={2}
+                name="CPU %"
+              />
+              <Area
+                type="monotone"
+                dataKey="memory"
+                stroke="#22c55e"
+                fill="url(#memGradient)"
+                strokeWidth={2}
+                name="Memory %"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* VirtualBox Status */}
+      <div className="glass-panel p-6 rounded-xl">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Box className="w-5 h-5 text-primary" />
+          VirtualBox Status
+        </h2>
+        {vboxAvail === null ? (
+          <p className="text-muted-foreground">Checking...</p>
+        ) : vboxAvail ? (
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-green-500" />
+            <span className="text-sm">
+              Version {data?.host?.virtualbox?.version ?? "unknown"}{" "}
+              <span className="text-green-400">(Available)</span>
+            </span>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-sm text-red-400">VirtualBox not found</span>
+            </div>
             <a
               href={VBOX_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-200 hover:bg-amber-500/30 transition-colors font-medium text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm hover:bg-primary/20 transition-colors"
             >
-              <ExternalLink className="w-4 h-4" /> Download VirtualBox
+              <ExternalLink className="w-4 h-4" />
+              Download VirtualBox
             </a>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 transition-colors text-sm"
-            >
-              Refresh
-            </button>
           </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* System Resources chart */}
-        <div className="lg:col-span-2 p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-primary" />
-            CPU & Memory (last ~2 min)
-          </h3>
-          <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={history}>
-                <defs>
-                  <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="memGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                <XAxis dataKey="time" hide />
-                <YAxis stroke="#666" fontSize={12} unit="%" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #333",
-                    borderRadius: "8px",
-                  }}
-                  itemStyle={{ fontSize: "12px" }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="cpu"
-                  stroke="#3b82f6"
-                  fill="url(#cpuGrad)"
-                  name="CPU"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="memory"
-                  stroke="#a855f7"
-                  fill="url(#memGrad)"
-                  name="Memory"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* VM Status Breakdown */}
-        <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Server className="w-4 h-4 text-primary" />
-            VMs
-          </h3>
-          {vms ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  {
-                    label: "Running",
-                    count: vms.running,
-                    color: "text-green-500",
-                    bg: "bg-green-500/10",
-                  },
-                  {
-                    label: "Stopped",
-                    count: vms.stopped,
-                    color: "text-gray-400",
-                    bg: "bg-gray-500/10",
-                  },
-                  {
-                    label: "Paused",
-                    count: vms.paused,
-                    color: "text-yellow-500",
-                    bg: "bg-yellow-500/10",
-                  },
-                ].map((s) => (
-                  <div
-                    key={s.label}
-                    className={`p-3 rounded-lg ${s.bg} text-center`}
-                  >
-                    <p className={`text-2xl font-bold ${s.color}`}>{s.count}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {s.label}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate("/virtualbox")}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-                >
-                  <Monitor className="w-3.5 h-3.5" /> VirtualBox
-                </button>
-                <button
-                  onClick={() => navigate("/sandbox")}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
-                >
-                  <Box className="w-3.5 h-3.5" /> Sandbox
-                </button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* VM list */}
-      {vms?.list && vms.list.length > 0 && (
-        <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Monitor className="w-4 h-4 text-primary" />
-            Recent VMs
-          </h3>
-          <div className="space-y-2">
-            {vms.list.map((vm) => (
-              <div
+      {/* VM List */}
+      <div className="glass-panel p-6 rounded-xl">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Server className="w-5 h-5 text-primary" />
+          Virtual Machines
+        </h2>
+        {data?.vms?.list && data.vms.list.length > 0 ? (
+          <div className="grid gap-3">
+            {data.vms.list.map((vm) => (
+              <button
+                type="button"
                 key={vm.name}
-                className="flex items-center justify-between py-2 px-3 rounded-lg bg-background/30 border border-border/50"
+                onClick={() => navigate(`/vm/${vm.name}/console`)}
+                data-testid={`vm-item-${vm.name}`}
+                className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.07] transition-all text-left w-full"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-2 h-2 rounded-full ${vm.state === "running" ? "bg-green-500" : vm.state === "paused" ? "bg-yellow-500" : "bg-gray-500"}`}
-                  />
-                  <span className="text-sm font-medium">{vm.name}</span>
+                  <Server className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">{vm.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-medium ${getStatusColor(vm.state)}`}>
+                    {vm.state}
+                  </span>
                   {vm.provider && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted/50 text-muted-foreground uppercase font-bold">
+                    <span className="text-xs text-muted-foreground bg-white/5 px-2 py-1 rounded-md">
                       {vm.provider}
                     </span>
                   )}
                 </div>
-                <span className="text-xs capitalize text-muted-foreground">
-                  {vm.state}
-                </span>
-              </div>
+              </button>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            {data ? "No VMs found. Create one in the VirtualBox or Hyper-V section." : "Loading..."}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

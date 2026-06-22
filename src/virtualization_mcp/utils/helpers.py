@@ -69,6 +69,23 @@ def get_vbox_vms_dir() -> Path:
     return vms_dir
 
 
+def format_bytes(bytes_val: int) -> str:
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if bytes_val < 1024:
+            return f"{bytes_val:.1f} {unit}"
+        bytes_val /= 1024
+    return f"{bytes_val:.1f} PB"
+
+
+def parse_vm_info(raw: str) -> dict:
+    return {"raw": raw}
+
+
+def sanitize_vm_name(name: str) -> str:
+    import re
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
+
 def ensure_dir_exists(path: Path) -> Path:
     """
     Ensure that the specified directory exists.

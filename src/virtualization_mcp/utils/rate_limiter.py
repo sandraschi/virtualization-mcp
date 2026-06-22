@@ -9,6 +9,8 @@ import threading
 import time
 from collections import defaultdict
 
+from ..exceptions import RateLimitExceeded
+
 
 class RateLimiter:
     """
@@ -40,6 +42,9 @@ class RateLimiter:
 
         # Track sliding window for each client
         self._windows = defaultdict(list)
+
+        # Single-bucket tracking for is_allowed()
+        self._calls: list = []
 
     def allow_request(self, client_id: str = "default") -> bool:
         """
@@ -124,6 +129,20 @@ class RateLimiter:
         """
         return max(0, self.period - (time.time() % self.period))
 
+    def is_allowed(self) -> bool:
+        """Simple sliding-window rate limit check (no client id, single bucket)."""
+        import time
+        now = time.time()
+        self._cleanup(now)
+        if len(self._calls) < self.max_calls:
+            self._calls.append(now)
+            return True
+        return False
+
+    def _cleanup(self, now):
+        while self._calls and now - self._calls[0] > self.period:
+            self._calls.pop(0)
+
     def reset(self, client_id: str = "default") -> None:
         """
         Reset the rate limiter for a client.
@@ -138,6 +157,7 @@ class RateLimiter:
                 del self._timestamps[client_id]
             if client_id in self._windows:
                 del self._windows[client_id]
+        self._calls.clear()
 
 
 # Global rate limiter instance
@@ -146,3 +166,21 @@ global_rate_limiter = RateLimiter(
     period=60,  # per minute
     burst=20,  # allow burst of 20 requests
 )
+
+
+def rate_limit(max_calls: int = 5, period: float = 60):
+    """Decorator that applies rate limiting to a function."""
+    import functools
+
+    limiter = RateLimiter(max_calls=max_calls, period=period)
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if not limiter.is_allowed():
+                raise RateLimitExceeded("Rate limit exceeded")
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

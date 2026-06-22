@@ -1,12 +1,12 @@
 {
   "manifest_version": "0.2",
   "name": "virtualization_mcp",
-  "version": "1.0.1b2",
-  "description": "Professional VirtualBox management server with comprehensive VM operations, networking, storage, and security features",
-  "long_description": "VirtualizationMCP is a production-ready MCP server that provides comprehensive VirtualBox management capabilities including VM lifecycle management, networking configuration, storage operations, snapshots, templates, and advanced security features. Built with FastMCP 2.12+ for maximum compatibility and performance.",
+  "version": "1.2.0",
+  "description": "VirtualBox & Hyper-V VM management, Docker sandbox execution, Windows Sandbox bringup, snapshots, networking, storage, and fleet install testing via FastMCP 3.4",
+  "long_description": "Virtualization MCP is a production-ready FastMCP 3.4 server providing comprehensive VM management (VirtualBox + Hyper-V), Docker sandbox environments (ephemeral and stateful), Windows Sandbox bringup, snapshot management, networking, storage, system diagnostics, ISO download pipeline, and fleet app install testing. 8 portmanteau tools with 60+ operations.",
   "author": {
-    "name": "Sandra Schi",
-    "email": "sandraschipal@protonmail.com",
+    "name": "Sandra Schipal",
+    "email": "sandra@schipal.at",
     "url": "https://github.com/sandraschi"
   },
   "repository": {
@@ -17,7 +17,7 @@
   "documentation": "https://github.com/sandraschi/virtualization-mcp/blob/main/README.md",
   "support": "https://github.com/sandraschi/virtualization-mcp/issues",
   "license": "MIT",
-  "keywords": ["mcp", "virtualbox", "vm", "virtualization", "automation", "fastmcp", "hypervisor"],
+  "keywords": ["mcp", "virtualbox", "hyperv", "vm", "virtualization", "sandbox", "docker", "windows-sandbox", "fastmcp"],
   "icon": "assets/icon.png",
   "prompts": {
     "system": "prompts/system.md",
@@ -67,54 +67,14 @@
     }
   },
   "tools": [
-    {
-      "name": "list_vms",
-      "description": "List all virtual machines with their current status"
-    },
-    {
-      "name": "create_vm",
-      "description": "Create a new virtual machine with specified configuration"
-    },
-    {
-      "name": "start_vm",
-      "description": "Start a virtual machine"
-    },
-    {
-      "name": "stop_vm",
-      "description": "Stop a virtual machine gracefully"
-    },
-    {
-      "name": "get_vm_info",
-      "description": "Get detailed information about a virtual machine"
-    },
-    {
-      "name": "create_snapshot",
-      "description": "Create a snapshot of a virtual machine"
-    },
-    {
-      "name": "restore_snapshot",
-      "description": "Restore a virtual machine from a snapshot"
-    },
-    {
-      "name": "list_snapshots",
-      "description": "List all snapshots for a virtual machine"
-    },
-    {
-      "name": "configure_network",
-      "description": "Configure network settings for a virtual machine"
-    },
-    {
-      "name": "attach_storage",
-      "description": "Attach storage devices to a virtual machine"
-    },
-    {
-      "name": "get_host_info",
-      "description": "Get information about the host system"
-    },
-    {
-      "name": "create_backup",
-      "description": "Create a backup of a virtual machine"
-    }
+    {"name": "vm_management", "description": "Portmanteau: list, create, start, stop, delete, clone, reset, pause, resume, info"},
+    {"name": "network_management", "description": "Portmanteau: list/create/remove host-only networks, list adapters, configure adapter"},
+    {"name": "snapshot_management", "description": "Portmanteau: list, create, restore, delete snapshots"},
+    {"name": "storage_management", "description": "Portmanteau: list/create/remove controllers, list/create/attach disks"},
+    {"name": "system_management", "description": "Portmanteau: host info, VBox version, OS types, metrics, screenshot"},
+    {"name": "sandbox_management", "description": "Portmanteau: ephemeral code exec, stateful sessions, file I/O"},
+    {"name": "hyperv_management", "description": "Portmanteau: list, get, start, stop Hyper-V VMs"},
+    {"name": "agentic_tools", "description": "LLM sampling: suggest_config, sandbox_workflow, workflow"}
   ],
   "prompts": [
     {

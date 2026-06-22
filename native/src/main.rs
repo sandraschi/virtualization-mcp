@@ -3,12 +3,18 @@ mod backend;
 use backend::{BackendProcess, spawn_backend};
 use tauri::{Emitter, Manager};
 
+#[tauri::command]
+async fn start_backend(app: tauri::AppHandle, state: tauri::State<'_, BackendProcess>) -> Result<String, String> {
+    spawn_backend(app, &state)
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
         .manage(BackendProcess(std::sync::Mutex::new(None)))
+        .invoke_handler(tauri::generate_handler![start_backend])
         .setup(|app| {
             let handle = app.handle().clone();
             let state: &BackendProcess = &app.state::<BackendProcess>();

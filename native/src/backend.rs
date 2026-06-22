@@ -1,7 +1,9 @@
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::str::FromStr;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -13,6 +15,10 @@ pub struct BackendProcess(pub Mutex<Option<Child>>);
 
 const BACKEND_NAME: &str = "virtualization-mcp-backend.exe";
 const BACKEND_PORT: u16 = 10700;
+const BACKEND_TAG: &str = "virtualization-mcp-backend-x86_64-pc-windows-msvc.exe";
+const ENV_PORT: &str = "PORT";
+const ENV_HOST: &str = "HOST";
+const ENV_TAURI: &str = "CORS_ORIGINS";
 
 fn dev_backend_path() -> Option<PathBuf> {
     if !cfg!(debug_assertions) {
@@ -20,7 +26,7 @@ fn dev_backend_path() -> Option<PathBuf> {
     }
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("binaries")
-        .join("virtualization-mcp-backend-x86_64-pc-windows-msvc.exe");
+        .join(BACKEND_TAG);
     path.exists().then_some(path)
 }
 
@@ -140,12 +146,17 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         ),
     );
 
+    // Set CORS origins to include Tauri origins for the WebView
+    let tauri_cors = format!(
+        "http://127.0.0.1:{BACKEND_PORT},http://localhost:{BACKEND_PORT},tauri://localhost,http://tauri.localhost,https://tauri.localhost,null"
+    );
+
     let mut command = Command::new(&backend_path);
     command
         .current_dir(&workdir)
-        .env("PORT", BACKEND_PORT.to_string())
-        .env("HOST", "127.0.0.1")
-        .env("VIRTUALIZATION_TAURI", "1")
+        .env(ENV_PORT, BACKEND_PORT.to_string())
+        .env(ENV_HOST, "127.0.0.1")
+        .env(ENV_TAURI, &tauri_cors)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -173,19 +184,33 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         thread::spawn(move || watch_backend_stream(err, app_handle));
     }
 
+    // Poll backend TCP port to confirm it is actually listening
+    let addr = SocketAddr::from_str(&format!("127.0.0.1:{BACKEND_PORT}")).unwrap();
+    let app_health = app.clone();
+    thread::spawn(move || {
+        for attempt in 0..30 {
+            thread::sleep(Duration::from_secs(2));
+            match TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
+                Ok(_) => {
+                    log_line(&app_health, &format!("Backend health check PASSED on port {BACKEND_PORT} (attempt {})", attempt + 1));
+                    let _ = app_health.emit("backend-status", "ready");
+                    return;
+                }
+                Err(e) => {
+                    log_line(&app_health, &format!("Backend health check: {e} (attempt {})", attempt + 1));
+                }
+            }
+        }
+        log_line(&app_health, &format!("Backend health check FAILED - not listening on port {BACKEND_PORT} after 30 attempts"));
+        let _ = app_health.emit("backend-status", "error: backend not reachable");
+    });
+
     Ok(format!("Backend starting on port {BACKEND_PORT}"))
 }
 
 fn watch_backend_stream<R: std::io::Read + Send + 'static>(stream: R, app: AppHandle) {
     let reader = BufReader::new(stream);
-    let mut ready = false;
     for line in reader.lines().map_while(Result::ok) {
         log_line(&app, &line);
-        if !ready
-            && (line.contains("Uvicorn running") || line.contains("Application startup complete"))
-        {
-            ready = true;
-            let _ = app.emit("backend-status", "ready");
-        }
     }
 }

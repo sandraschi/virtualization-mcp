@@ -1,5 +1,6 @@
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Layout from "./Layout";
+import ApiDocs from "./pages/api-docs";
 import Apps from "./pages/apps";
 import Chat from "./pages/chat";
 import Dashboard from "./pages/dashboard";
@@ -24,6 +25,7 @@ function App() {
           <Route path="sandbox" element={<Sandbox />} />
           <Route path="tools" element={<Tools />} />
           <Route path="apps" element={<Apps />} />
+          <Route path="api-docs" element={<ApiDocs />} />
           <Route path="prompts-skills" element={<PromptsSkills />} />
           <Route path="chat" element={<Chat />} />
           <Route path="logs" element={<Logs />} />

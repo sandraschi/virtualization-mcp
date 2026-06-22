@@ -123,10 +123,10 @@ elif not GOOGLE_API_KEY:
 app = FastAPI(title="Virtualization MCP Backend", lifespan=lifespan)
 chat_service = ChatService()
 
-# CORS Configuration (frontend dev: 10700; backend: 10701)
+# CORS Configuration (frontend dev: 10700; backend: 10701; Tauri: tauri://localhost)
 origins = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:10700,http://127.0.0.1:10700,http://goliath:10700,http://localhost:10760,http://goliath:10760",
+    "http://localhost:10700,http://127.0.0.1:10700,http://goliath:10700,http://localhost:10760,http://goliath:10760,tauri://localhost,http://tauri.localhost,https://tauri.localhost",
 ).split(",")
 app.add_middleware(
     CORSMiddleware,

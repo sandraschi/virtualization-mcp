@@ -2,6 +2,9 @@ import { clsx } from "clsx";
 import {
   BookOpen,
   Box,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
   Cpu,
   HelpCircle,
   LayoutDashboard,
@@ -39,6 +42,7 @@ export default function Layout() {
     { to: "/apps", icon: Share2, label: "Apps Hub" },
     { to: "/prompts-skills", icon: BookOpen, label: "Prompts & Skills" },
     { to: "/chat", icon: MessageSquare, label: "AI Chat" },
+    { to: "/api-docs", icon: Code2, label: "API Docs" },
     { to: "/logs", icon: ScrollText, label: "System Logs" },
     { to: "/help", icon: HelpCircle, label: "Help & Docs" },
     { to: "/settings", icon: Settings, label: "Settings" },
@@ -119,7 +123,7 @@ export default function Layout() {
               className="hidden md:flex p-2 hover:bg-white/5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Toggle Sidebar Size"
             >
-              <Menu className="w-5 h-5" />
+              {isMinimized ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
             </button>
             {/* Mobile Close Button */}
             <button

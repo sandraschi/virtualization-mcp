@@ -10,6 +10,13 @@ from virtualization_mcp.services.vm.network.service import VMNetworkingService
 from virtualization_mcp.services.vm.network.types import NetworkAdapterConfig, NetworkAttachmentType
 
 
+@pytest.fixture
+def mock_networking():
+    """Mock networking service for tests."""
+    mock = MagicMock(spec=VMNetworkingService)
+    return mock
+
+
 class TestVMNetworkingService:
     """Tests for the VMNetworkingService class."""
 

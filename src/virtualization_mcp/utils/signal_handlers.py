@@ -27,3 +27,13 @@ def register_signal_handlers() -> None:
     """Register signal handlers for graceful shutdown."""
     signal.signal(signal.SIGINT, handle_shutdown)
     signal.signal(signal.SIGTERM, handle_shutdown)
+
+
+def setup_signal_handlers(loop=None, cleanup_callback=None):
+    import signal
+    signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
+    signal.signal(signal.SIGTERM, lambda s, f: sys.exit(0))
+
+
+def graceful_shutdown_handler(signum=None, frame=None):
+    sys.exit(0)

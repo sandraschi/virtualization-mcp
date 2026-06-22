@@ -4,6 +4,54 @@ VM Status Utilities
 This module provides utility functions for checking the status of VirtualBox VMs.
 """
 
+import enum
+
+
+class VMState(enum.Enum):
+    UNKNOWN = "unknown"
+    RUNNING = "running"
+    PAUSED = "paused"
+    POWERED_OFF = "poweroff"
+    SAVED = "saved"
+    ABORTED = "aborted"
+    STARTING = "starting"
+    STOPPING = "stopping"
+    ERROR = "error"
+
+
+def parse_vm_state(state_str: str) -> VMState:
+    mapping = {
+        "running": VMState.RUNNING,
+        "paused": VMState.PAUSED,
+        "poweroff": VMState.POWERED_OFF,
+        "powered off": VMState.POWERED_OFF,
+        "poweredoff": VMState.POWERED_OFF,
+        "saved": VMState.SAVED,
+        "aborted": VMState.ABORTED,
+        "starting": VMState.STARTING,
+        "stopping": VMState.STOPPING,
+        "error": VMState.ERROR,
+    }
+    return mapping.get(state_str.lower().strip(), VMState.UNKNOWN)
+
+
+def get_vm_state_from_info(vm_info: dict) -> VMState:
+    state = vm_info.get("state") or vm_info.get("State") or vm_info.get("vmstate") or "unknown"
+    return parse_vm_state(state)
+
+
+def vm_state_to_string(state: VMState) -> str:
+    return state.value
+
+
+def get_vm_uptime(vm_info: dict) -> int:
+    raw = vm_info.get("uptime") or vm_info.get("uptime", 0)
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        return 0
+
+
 # Import the VBoxManager only when needed to avoid circular imports
 # We'll use a lazy import pattern to handle the dependency
 _vbox_manager = None

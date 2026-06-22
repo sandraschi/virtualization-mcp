@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "virtualization-mcp"
 version = "1.2.0"
-description = "VirtualBox & Hyper-V VM management, Docker sandboxing, snapshots, networking and storage via FastMCP 3.2"
+description = "VirtualBox & Hyper-V VM management, Docker sandboxing, snapshots, networking and storage via FastMCP 3.4"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }

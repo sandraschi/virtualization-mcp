@@ -5,7 +5,8 @@
 	"identifier": "ai.fleet.virtualization-mcp",
 	"build": {
 		"frontendDist": "../webapp/frontend/dist",
-		"devUrl": "http://localhost:10945"
+		"devUrl": "http://localhost:10700",
+		"beforeBuildCommand": "powershell.exe -NoProfile -Command \"$env:TAURI_BUILD='1'; cd ../webapp/frontend; npm run build\""
 	},
 	"app": {
 		"windows": [
