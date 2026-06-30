@@ -480,6 +480,7 @@ class ChatRequest(BaseModel):
     history: list[dict[str, str]] = []
     model: str | None = None
     personality: str | None = None
+    session_id: str | None = None
 
 
 class RefinePromptRequest(BaseModel):

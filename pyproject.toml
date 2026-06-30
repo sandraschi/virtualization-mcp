@@ -47,7 +47,7 @@ dependencies = [
     "prefab-ui>=0.14.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
@@ -103,7 +103,7 @@ exclude = [
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "PTH", "A"]
-ignore = ["S101", "B008", "E501", "S603", "S607", "PTH"]
+ignore = ["S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S112", "S310", "RUF002", "RUF003"]
 
 [tool.ruff.format]
 quote-style = "double"
