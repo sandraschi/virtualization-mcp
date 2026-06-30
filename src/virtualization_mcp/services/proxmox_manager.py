@@ -17,8 +17,8 @@ import json
 import logging
 import os
 from typing import Any
-from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 logger = logging.getLogger(__name__)
 
@@ -135,16 +135,18 @@ class ProxmoxManager:
         vms = self._request("GET", f"nodes/{self.node}/qemu")
         result = []
         for vm in vms:
-            result.append({
-                "name": vm.get("name", ""),
-                "vmid": str(vm.get("vmid", "")),
-                "status": vm.get("status", "unknown"),
-                "mem": vm.get("mem", 0),
-                "cpus": vm.get("cpus", 0),
-                "disk": vm.get("disk", 0),
-                "uptime": vm.get("uptime", 0),
-                "provider": "proxmox",
-            })
+            result.append(
+                {
+                    "name": vm.get("name", ""),
+                    "vmid": str(vm.get("vmid", "")),
+                    "status": vm.get("status", "unknown"),
+                    "mem": vm.get("mem", 0),
+                    "cpus": vm.get("cpus", 0),
+                    "disk": vm.get("disk", 0),
+                    "uptime": vm.get("uptime", 0),
+                    "provider": "proxmox",
+                }
+            )
         return result
 
     def get_vm_status(self, vmid: str) -> dict[str, Any]:

@@ -1,12 +1,12 @@
 # virtualization_mcp/chat/service.py
 """Chat service for virtualization-mcp backend."""
 
-import json as _json  # noqa: F401 - used in ask() nested try/except
-import os  # noqa: F401 - used in _load_keys, _get_skills_dir, etc.
-import urllib.request as _req  # noqa: F401 - used in ask() for LLM HTTP calls
+import json as _json
+import os
+import urllib.request as _req
 from typing import Any
 
-from .memory import ChatMemory  # noqa: F401 - used in __init__
+from .memory import ChatMemory
 
 
 # ---------------------------------------------------------------------------
