@@ -1,20 +1,21 @@
 set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 import 'scripts/just/fleet.just'
 
-# ── Default ──────────────────────────────────────────────────────────────────
+# --- Default ---
 
 # Open the interactive recipe dashboard in the browser
 default:
     @just --list
 
-# ── Setup ────────────────────────────────────────────────────────────────────
+# --- Setup ---
 
 # Install everything (Python venv + npm deps)
 install:
-    cd {{justfile_directory()}}
-    uv sync
-    cd webapp\\frontend
-    npm install
+    Set-Location '{{justfile_directory()}}'; uv sync --group dev; Set-Location '{{justfile_directory()}}/webapp/frontend'; npm ci; if ($LASTEXITCODE -ne 0) { npm install }
+
+bootstrap: install
+    Set-Location '{{justfile_directory()}}'; uv run pre-commit install
+    Write-Host "Pre-commit hooks installed." -ForegroundColor Green
 
 # Install just the Python backend
 install-py:
@@ -26,7 +27,7 @@ install-frontend:
     cd {{justfile_directory()}}\\webapp\\frontend
     npm install
 
-# ── Run ──────────────────────────────────────────────────────────────────────
+# --- Run ---
 
 # Start the web dashboard (backend + frontend)
 start:
@@ -43,7 +44,7 @@ start-frontend:
     cd {{justfile_directory()}}\\webapp\\frontend
     bun run dev
 
-# ── Test ──────────────────────────────────────────────────────────────────────
+# --- Test ---
 
 # Run all core tests (62 tests, mock-only, no VBox needed)
 test:
@@ -57,7 +58,7 @@ test-file file:
     $env:PYTHONPATH = "src"
     uv run pytest {{file}} -v --tb=short -o "addopts="
 
-# ── Quality ───────────────────────────────────────────────────────────────────
+# --- Quality ---
 
 lint:
     powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/lint.ps1"
@@ -68,19 +69,19 @@ fix:
 check-unicode:
     powershell.exe -NoProfile -File '{{justfile_directory()}}\\scripts\\check-unicode-safe.ps1'
 
-# ── Build ─────────────────────────────────────────────────────────────────────
+# --- Build ---
 
 # Build frontend for production
 build:
     cd {{justfile_directory()}}\\webapp\\frontend
     bun run build
 
-# ── Clean ─────────────────────────────────────────────────────────────────────
+# --- Clean ---
 
 clean:
     powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/clean.ps1"
 
-# ── Tauri Native ───────────────────────────────────────────────────────────────
+# --- Tauri Native ---
 
 # Build Tauri native desktop app (full pipeline: frontend + PyInstaller + NSIS)
 build-native:
@@ -93,10 +94,14 @@ build-native-debug:
     $env:Path = "$env:USERPROFILE\\.cargo\\bin;$env:Path"
     npx @tauri-apps/cli build --debug
 
-# ── Playwright E2E ─────────────────────────────────────────────────────
+# --- Playwright E2E ---
 
 e2e-install:
     powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/e2e-install.ps1"
 
 e2e:
-    powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/e2e.ps1"
+	powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/e2e.ps1"
+
+# --- Native CUA ---
+
+# Bootstrap: install dev deps + pre-commit hook

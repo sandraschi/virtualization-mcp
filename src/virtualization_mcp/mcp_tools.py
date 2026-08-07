@@ -223,7 +223,7 @@ class MCPToolDiscovery:
         return False
 
 
-from .services.service_manager import service_manager  # noqa: E402
+from .services.service_manager import service_manager
 
 
 def register_mcp_tools(mcp: FastMCP) -> None:

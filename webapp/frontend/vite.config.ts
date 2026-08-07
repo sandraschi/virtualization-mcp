@@ -6,6 +6,7 @@ const BACKEND_PORT = 10701;
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: "0.0.0.0",
     allowedHosts: ["goliath"],
     port: 10700,
     proxy: {

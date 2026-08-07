@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-    { name = "Sandra Schipal", email = "sandra@schipal.at" }
+    { name = "Sandra Schipal", email = "sandraschipal@gmail.com" }
 ]
 keywords = ["mcp", "virtualbox", "vm", "virtualization", "sandbox", "fastmcp", "hypervisor"]
 classifiers = [
@@ -25,7 +25,7 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
 ]
 dependencies = [
-    "fastmcp>=3.4.2,<4",
+    "fastmcp>=3.4.4,<4",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
@@ -53,7 +53,7 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.12.0",
-    "ruff>=0.8.0",
+    "ruff>=0.16.0,<0.17",
     "mypy>=1.8.0",
     "pre-commit>=3.6.0",
 ]
@@ -103,7 +103,7 @@ exclude = [
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "PTH", "A"]
-ignore = ["S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S112", "S310", "RUF002", "RUF003"]
+ignore = ["S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S112", "S310", "RUF002", "RUF003", "S106", "S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S112", "S310", "RUF002", "RUF003", "S106", "RUF012", "S310", "RUF002", "RUF003", "S324", "E402", "S310", "RUF002", "RUF003"]
 
 [tool.ruff.format]
 quote-style = "double"

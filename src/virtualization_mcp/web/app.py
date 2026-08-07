@@ -15,6 +15,6 @@ _repo_root = Path(__file__).resolve().parent.parent.parent.parent
 if _repo_root.exists() and str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 
-from webapp.backend.app.main import app  # noqa: E402
+from webapp.backend.app.main import app
 
 __all__ = ["app"]

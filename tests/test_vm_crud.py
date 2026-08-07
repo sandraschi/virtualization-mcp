@@ -117,10 +117,14 @@ class TestListVMs:
 
     def test_list_vms_success(self, ops):
         vm_ops, _mock_run = ops
-        with patch.object(vm_ops.manager, "list_vms", return_value=[
-            {"name": "vm1", "state": "running"},
-            {"name": "vm2", "state": "poweroff"},
-        ]):
+        with patch.object(
+            vm_ops.manager,
+            "list_vms",
+            return_value=[
+                {"name": "vm1", "state": "running"},
+                {"name": "vm2", "state": "poweroff"},
+            ],
+        ):
             result = vm_ops.list_vms()
             assert result["success"] is True
             assert len(result["vms"]) == 2

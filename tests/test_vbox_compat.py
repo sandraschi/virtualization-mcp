@@ -17,7 +17,7 @@ project_root = str(Path(__file__).parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from virtualization_mcp.vbox.compat_adapter import get_vbox_manager  # noqa: E402
+from virtualization_mcp.vbox.compat_adapter import get_vbox_manager
 
 # Configure logging
 logging.basicConfig(

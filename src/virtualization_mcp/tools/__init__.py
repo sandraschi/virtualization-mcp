@@ -138,11 +138,9 @@ __all__ = [
     "SecurityFinding",
     "SecurityReport",  # Backward compatibility
     "SecurityTestResult",
-    "SecurityTestResult",
     "SecurityTester",
     # Security Tools
     "SecurityThreatLevel",  # Backward compatibility
-    "TestSeverity",
     "TestSeverity",
     "TestStatus",
     "ThreatLevel",
@@ -160,9 +158,7 @@ __all__ = [
     "add_alert",
     "add_port_forwarding",
     "analyze_file",
-    "analyze_file",
     "cancel_test",
-    "clone_vm",
     "clone_vm",
     # Network Configuration Tools
     "configure_network_adapter",
@@ -172,10 +168,8 @@ __all__ = [
     "create_nat_network",
     "create_task",
     "create_vm",
-    "create_vm",
     "delete_analysis",
     "delete_backup",
-    "delete_vm",
     "delete_vm",
     # Development Tools
     "document_tool",
@@ -189,7 +183,6 @@ __all__ = [
     "get_openapi_schema",
     "get_security_scan_status",
     "get_test_status",
-    "get_vm_info",
     "get_vm_info",
     # Example Tools
     "greet",
@@ -205,12 +198,9 @@ __all__ = [
     # VM Tools
     "list_vms",
     # VM Tools
-    "list_vms",
     "metrics_manager",
     "modify_vm",
-    "modify_vm",
     "network_analyzer",
-    "pause_vm",
     "pause_vm",
     "record_api_request",
     "record_error",
@@ -220,19 +210,14 @@ __all__ = [
     "remove_nat_network",
     "remove_port_forwarding",
     "reset_vm",
-    "reset_vm",
     "resume_vm",
-    "resume_vm",
-    "run_security_scan",
     "run_security_scan",
     "security_tester",
     "start_analysis",
     "start_metrics_server",
     "start_security_scan",  # Backward compatibility
     "start_vm",
-    "start_vm",
     "stop_analysis",
-    "stop_vm",
     "stop_vm",
     "unregister_websocket",
     "update_system_metrics",

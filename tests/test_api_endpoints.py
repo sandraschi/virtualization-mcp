@@ -25,6 +25,7 @@ def mock_network():
         patch("socket.create_connection") as mock_socket,
     ):
         from unittest.mock import MagicMock as _M
+
         mock_resp = _M()
         mock_resp.read.return_value = b'{"version":"0.0.0"}'
         mock_resp.__enter__.return_value = mock_resp
@@ -37,6 +38,7 @@ def mock_network():
 def client():
     """FastAPI TestClient with mocked service_manager."""
     import main as webapp
+
     webapp.service_manager = MagicMock()
     webapp.service_manager.vm_service = MagicMock()
     webapp.ASSETS_VBOX = os.path.join(os.path.dirname(__file__), "..", "assets", "vbox")
@@ -69,6 +71,7 @@ class TestVMs:
         from unittest.mock import AsyncMock
 
         from main import service_manager
+
         service_manager.vm_service.list_vms.return_value = {"success": True, "vms": []}
         service_manager.vm_service.hyperv_manager = MagicMock()
         service_manager.vm_service.hyperv_manager.list_vms = AsyncMock(return_value=[])
@@ -77,9 +80,8 @@ class TestVMs:
 
     def test_create_vm(self, client):
         from main import service_manager
-        service_manager.vm_service.create_vm.return_value = {
-            "status": "success", "name": "test-vm1", "vm_id": "abc"
-        }
+
+        service_manager.vm_service.create_vm.return_value = {"status": "success", "name": "test-vm1", "vm_id": "abc"}
         r = client.post("/api/v1/vms", json={"name": "test-vm1", "template": "ubuntu-dev"})
         assert r.status_code == 200
         data = r.json()
@@ -89,6 +91,7 @@ class TestVMs:
         from unittest.mock import AsyncMock
 
         from main import service_manager
+
         service_manager.vm_service.hyperv_manager = MagicMock()
         service_manager.vm_service.hyperv_manager.create_vm = AsyncMock(
             return_value={"status": "success", "vm_name": "hv-vm"}
@@ -100,18 +103,21 @@ class TestVMs:
 
     def test_delete_vm(self, client):
         from main import service_manager
+
         service_manager.vm_service.delete_vm.return_value = {"status": "success", "message": "Deleted"}
         r = client.delete("/api/v1/vms/test-vm1")
         assert r.status_code == 200
 
     def test_start_vm(self, client):
         from main import service_manager
+
         service_manager.vm_service.start_vm.return_value = {"status": "success"}
         r = client.post("/api/v1/vms/test-vm1/start")
         assert r.status_code == 200
 
     def test_stop_vm(self, client):
         from main import service_manager
+
         service_manager.vm_service.stop_vm.return_value = {"status": "success"}
         r = client.post("/api/v1/vms/test-vm1/stop")
         assert r.status_code == 200
@@ -122,15 +128,15 @@ class TestSnapshots:
 
     def test_create_snapshot(self, client):
         from main import service_manager
+
         service_manager.vm_service.create_snapshot.return_value = {"status": "success"}
         r = client.post("/api/v1/vms/test-vm1/snapshot", json={"snapshot_name": "snap1"})
         assert r.status_code == 200
 
     def test_list_snapshots(self, client):
         from main import service_manager
-        service_manager.vm_service.list_snapshots.return_value = {
-            "status": "success", "snapshots": [{"name": "snap1"}]
-        }
+
+        service_manager.vm_service.list_snapshots.return_value = {"status": "success", "snapshots": [{"name": "snap1"}]}
         r = client.get("/api/v1/vms/test-vm1/snapshots")
         assert r.status_code == 200
         data = r.json()

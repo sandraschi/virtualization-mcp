@@ -10,21 +10,50 @@ import {
   LayoutDashboard,
   Menu,
   MessageSquare,
+  Moon,
   ScrollText,
   Server,
   Settings,
   Share2,
+  Sun,
   Terminal,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+
+// EXPERIMENTAL light mode (invert hack). Not fleet standard — see index.css.
+// Toggling `.dark` off the root flips the invert filter; persisted so the
+// choice survives reloads. Delete this + the CSS block to revert.
+const THEME_KEY = "virtualization-light-mode";
+
+function useExperimentalTheme() {
+  const [light, setLight] = useState(() => {
+    try {
+      return localStorage.getItem(THEME_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", !light);
+    try {
+      localStorage.setItem(THEME_KEY, light ? "1" : "0");
+    } catch {
+      // ignore storage errors
+    }
+  }, [light]);
+
+  return { light, toggle: () => setLight((v) => !v) };
+}
 
 export default function Layout() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(() => {
     return localStorage.getItem("sidebar-minimized") === "true";
   });
+  const { light, toggle } = useExperimentalTheme();
 
   const toggleMinimize = () => {
     setIsMinimized((prev) => {
@@ -117,6 +146,16 @@ export default function Layout() {
               isMinimized ? "md:flex-col md:gap-2" : "",
             )}
           >
+            {/* Desktop Minimize Button */}
+            <button
+              type="button"
+              onClick={toggle}
+              className="hidden md:flex p-2 hover:bg-white/5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Toggle light mode (experimental)"
+              title={light ? "Switch to dark (experimental light mode)" : "Switch to light (experimental, ugly)"}
+            >
+              {light ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </button>
             {/* Desktop Minimize Button */}
             <button
               type="button"

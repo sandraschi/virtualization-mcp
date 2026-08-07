@@ -51,11 +51,9 @@ __all__ = [
     "SecurityFinding",
     "SecurityReport",  # Alias for backward compatibility
     "SecurityTestResult",
-    "SecurityTestResult",
     "SecurityTester",
     # AI Security Tools
     "SecurityThreatLevel",  # Alias for backward compatibility
-    "TestSeverity",
     "TestSeverity",
     # Security Testing Tools
     "TestStatus",
@@ -70,7 +68,6 @@ __all__ = [
     "list_analyses",
     "list_available_tools",
     "list_quarantine",
-    "run_security_scan",
     "run_security_scan",
     "security_tester",
     "start_security_scan",  # Alias for backward compatibility

@@ -15,6 +15,7 @@ from virtualization_mcp.vbox.compat_adapter import VBoxManager
 
 # ── Mocks ──────────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def mock_vbox():
     """VBoxManager with all subprocess calls mocked."""
@@ -48,12 +49,15 @@ def mock_vbox_manager():
 
 # ── Real VirtualBox (requires installed VBoxManage) ──────────────────────────
 
+
 def vbox_available() -> bool:
     """Check if VBoxManage is available on this system."""
     try:
         r = subprocess.run(
             [r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe", "--version"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         return r.returncode == 0
     except Exception:
@@ -72,6 +76,7 @@ def real_vbox():
 
 
 # ── Test helpers ──────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def sample_vm_config():

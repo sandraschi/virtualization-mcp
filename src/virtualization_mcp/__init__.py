@@ -59,7 +59,7 @@ def get_version() -> str:
 
 
 # Initialize logging when the package is imported
-import logging  # noqa: E402
+import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
