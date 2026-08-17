@@ -64,7 +64,7 @@ class VirtualizationMCPServer:
             self.mcp = FastMCP(
                 name="virtualization_mcp",
                 version=self.config.version,
-                instructions="VirtualBox Management and Control Protocol Server",
+                description="VirtualBox Management and Control Protocol Server",
             )
 
             # Register prompts (FastMCP 3.1)

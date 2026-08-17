@@ -22,7 +22,7 @@ class MCPToolDiscovery:
         self.mcp = mcp
         self.tool_cache = {}
 
-    def get_tool_info(self, tool_name: str) -> dict[str, Any]:
+    async def get_tool_info(self, tool_name: str) -> dict[str, Any]:
         """Get detailed information about a specific tool.
 
         Args:
@@ -31,16 +31,18 @@ class MCPToolDiscovery:
         Returns:
             Dictionary containing tool information
         """
-        if not hasattr(self.mcp, "_tools") or tool_name not in self.mcp._tools:
+        tools = {t.name: t for t in await self.mcp.list_tools()}
+        tool = tools.get(tool_name)
+        if tool is None:
             return {"error": f"Tool '{tool_name}' not found"}
 
-        tool = self.mcp._tools[tool_name]
-        if not hasattr(tool, "func"):
+        tool_func = getattr(tool, "fn", getattr(tool, "func", tool))
+        if not callable(tool_func):
             return {"error": f"Tool '{tool_name}' has no function implementation"}
 
-        return self._describe_tool(tool_name, tool)
+        return self._describe_tool(tool_name, tool_func)
 
-    def list_tools(self, category: str | None = None, search: str | None = None) -> list[dict[str, Any]]:
+    async def list_tools(self, category: str | None = None, search: str | None = None) -> list[dict[str, Any]]:
         """List all available tools with optional filtering.
 
         Args:
@@ -50,15 +52,16 @@ class MCPToolDiscovery:
         Returns:
             List of tool information dictionaries
         """
-        if not hasattr(self.mcp, "_tools"):
-            return []
-
         tools = []
-        for name, tool in self.mcp._tools.items():
-            if name.startswith("_") or not hasattr(tool, "func"):
+        for tool in await self.mcp.list_tools():
+            name = tool.name
+            if name.startswith("_"):
+                continue
+            tool_func = getattr(tool, "fn", getattr(tool, "func", tool))
+            if not callable(tool_func):
                 continue
 
-            tool_info = self._describe_tool(name, tool)
+            tool_info = self._describe_tool(name, tool_func)
 
             # Apply filters
             if category and category.lower() not in tool_info.get("categories", []):
@@ -71,7 +74,7 @@ class MCPToolDiscovery:
 
         return tools
 
-    def get_tool_schema(self, tool_name: str) -> dict[str, Any]:
+    async def get_tool_schema(self, tool_name: str) -> dict[str, Any]:
         """Get the JSON schema for a tool's parameters.
 
         Args:
@@ -80,14 +83,16 @@ class MCPToolDiscovery:
         Returns:
             JSON schema for the tool's parameters
         """
-        if not hasattr(self.mcp, "_tools") or tool_name not in self.mcp._tools:
+        tools = {t.name: t for t in await self.mcp.list_tools()}
+        tool = tools.get(tool_name)
+        if tool is None:
             return {"error": f"Tool '{tool_name}' not found"}
 
-        tool = self.mcp._tools[tool_name]
-        if not hasattr(tool, "func"):
+        tool_func = getattr(tool, "fn", getattr(tool, "func", tool))
+        if not callable(tool_func):
             return {"error": f"Tool '{tool_name}' has no function implementation"}
 
-        return self._generate_parameter_schema(tool.func)
+        return self._generate_parameter_schema(tool_func)
 
     def _describe_tool(self, name: str, tool) -> dict[str, Any]:
         """Generate a description dictionary for a tool."""
@@ -264,7 +269,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             tools = await mcp.call("list_tools", {"search": "network"})
             ```
         """
-        return discovery.list_tools(category=category, search=search)
+        return await discovery.list_tools(category=category, search=search)
 
     @mcp.tool()
     async def get_tool_info(tool_name: str) -> dict[str, Any]:
@@ -283,7 +288,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             print(tool_info['description'])
             ```
         """
-        return discovery.get_tool_info(tool_name)
+        return await discovery.get_tool_info(tool_name)
 
     @mcp.tool()
     async def get_tool_schema(tool_name: str) -> dict[str, Any]:
@@ -305,7 +310,7 @@ def register_mcp_tools(mcp: FastMCP) -> None:
             print(json.dumps(schema, indent=2))
             ```
         """
-        return discovery.get_tool_schema(tool_name)
+        return await discovery.get_tool_schema(tool_name)
 
     # --- VM Service Tools ---
     vm_service = service_manager.vm_service

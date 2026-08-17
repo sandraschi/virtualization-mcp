@@ -116,8 +116,20 @@ class APIDocumentation:
         Returns:
             dict: The complete OpenAPI specification.
         """
-        # Get all registered tools
-        tools = self.mcp._tools if hasattr(self.mcp, "_tools") else {}
+        # Get all registered tools (public async API - private attrs removed
+        # in FastMCP 3.4.x; loop-guard because this generator is sync)
+        tools = {}
+        try:
+            import asyncio
+
+            async def _snapshot() -> dict:
+                return {t.name: t for t in await self.mcp.list_tools()}
+
+            loop = asyncio.get_event_loop()
+            if not loop.is_running():
+                tools = asyncio.run(_snapshot())
+        except Exception:
+            tools = {}
 
         # Group tools by path
         for name, tool in tools.items():
@@ -126,10 +138,8 @@ class APIDocumentation:
                 continue
 
             # Get endpoint metadata
-            endpoint = tool.endpoint
-            method = tool.method.lower()
-
-            # Initialize path if it doesn't exist
+            endpoint = getattr(tool, "endpoint", None) or f"/tools/{tool.name}"
+            method = getattr(tool, "method", "GET").lower()
             if endpoint not in self.spec["paths"]:
                 self.spec["paths"][endpoint] = {}
 
@@ -398,12 +408,11 @@ def register_documentation_routes(mcp: FastMCP) -> None:
             }
             ```
         """
-        tools = mcp._tools if hasattr(mcp, "_tools") else {}
+        tools = {t.name: t for t in await mcp.list_tools()}
 
-        if tool_name not in tools:
+        tool = tools.get(tool_name)
+        if tool is None:
             return {"status": "error", "message": f"Tool '{tool_name}' not found", "code": 404}
-
-        tool = tools[tool_name]
         if not hasattr(tool, "func"):
             return {
                 "status": "error",
@@ -513,7 +522,7 @@ def register_documentation_routes(mcp: FastMCP) -> None:
             GET /api-endpoints?search=network
             ```
         """
-        tools = mcp._tools if hasattr(mcp, "_tools") else {}
+        tools = {t.name: t for t in await mcp.list_tools()}
         endpoints = {}
 
         # Helper function to determine if a tool matches the search criteria

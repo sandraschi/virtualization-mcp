@@ -74,9 +74,17 @@ def main() -> None:
             logger.info("Registering API routes...")
             register_routes(mcp)
 
-            # Verify tools are registered
-            if hasattr(mcp, "_tools") and mcp._tools:
-                logger.info(f"Registered {len(mcp._tools)} tools: {list(mcp._tools.keys())}")
+            # Verify tools are registered (public async API - private attrs
+            # were removed in FastMCP 3.4.x)
+            import asyncio
+
+            async def _count() -> list:
+                return await mcp.list_tools()
+
+            loop = asyncio.get_event_loop()
+            tools = asyncio.run(_count()) if not loop.is_running() else []
+            if tools:
+                logger.info(f"Registered {len(tools)} tools: {[t.name for t in tools]}")
             else:
                 logger.warning("No tools were registered with the MCP server")
 
