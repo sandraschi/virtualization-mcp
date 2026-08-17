@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.2] - 2026-08-17
+
+### Fixed
+- FastMCP 3.4 migration: `description` kwarg removed -> `instructions`
+- `plugin_manager` relative import depth (server_v2/core)
+
 ## [Unreleased]
 
 ## [1.2.1] - 2026-06-22
@@ -536,4 +542,3 @@ For more details, see:
 - [Release Notes](https://github.com/sandraschi/virtualization-mcp/releases/tag/v1.0.1b2)
 - [Project Status](docs/mcp-technical/PROJECT_STATUS_FINAL.md)
 - [Quick Start Guide](docs/QUICK_START.md)
-
