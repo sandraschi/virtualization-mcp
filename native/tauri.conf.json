@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
 	"productName": "Virtualization MCP",
-	"version": "0.1.0",
+	"version": "1.4.0",
 	"identifier": "ai.fleet.virtualization-mcp",
 	"build": {
 		"frontendDist": "../webapp/frontend/dist",

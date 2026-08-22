@@ -1,6 +1,7 @@
 # Exclude build artifacts and large binaries – NSIS installer will provide them
 build/
 dist/
+target/
 assets/vbox/
 
 # Exclude native binaries

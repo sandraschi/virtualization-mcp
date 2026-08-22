@@ -1,6 +1,6 @@
 {
   "name": "virtualization-mcp",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Professional VirtualBox & Hyper-V management server with comprehensive VM operations, networking, storage, and security features",
   "author": "Sandra Schi",
   "license": "MIT",
