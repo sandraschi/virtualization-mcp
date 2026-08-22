@@ -126,11 +126,11 @@ const tabs = [
               },
               {
                 action: "Snapshots",
-                how: 'Click the camera icon on a VM to open the snapshot panel. Create snapshots with a name, restore to a previous state, or delete outdated snapshots. This is the built-in VirtualBox snapshot engine, not a full backup.',
+                how: "Click the camera icon on a VM to open the snapshot panel. Create snapshots with a name, restore to a previous state, or delete outdated snapshots. This is the built-in VirtualBox snapshot engine, not a full backup.",
               },
               {
                 action: "VM Console",
-                how: 'Click a VM name to open the Console page (noVNC-style). View the VM screen via screenshot polling, enable VRDP for remote desktop, or download a .rdp file for mstsc.exe.',
+                how: "Click a VM name to open the Console page (noVNC-style). View the VM screen via screenshot polling, enable VRDP for remote desktop, or download a .rdp file for mstsc.exe.",
               },
             ].map((item) => (
               <div
@@ -175,11 +175,13 @@ const tabs = [
     content: () => (
       <div className="space-y-8">
         <section>
-          <h3 className="text-xl font-bold mb-3">Getting Started with Proxmox</h3>
+          <h3 className="text-xl font-bold mb-3">
+            Getting Started with Proxmox
+          </h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Proxmox VE is an open-source virtualization platform (KVM + LXC) with
-            a REST API. This MCP server can manage a remote Proxmox host through
-            the same tool interface used for VirtualBox and Hyper-V.
+            Proxmox VE is an open-source virtualization platform (KVM + LXC)
+            with a REST API. This MCP server can manage a remote Proxmox host
+            through the same tool interface used for VirtualBox and Hyper-V.
           </p>
           <div className="grid gap-4">
             <div className="p-4 rounded-xl border border-green-500/20 bg-green-500/5">
@@ -188,15 +190,15 @@ const tabs = [
                 Setup is three env vars
               </h4>
               <pre className="mt-2 p-3 rounded-lg bg-black/40 text-xs font-mono text-green-400 overflow-x-auto">
-{`PROXMOX_HOST=192.168.1.100
+                {`PROXMOX_HOST=192.168.1.100
 PROXMOX_USER=root@pam
 PROXMOX_PASSWORD=your-password`}
               </pre>
               <p className="text-xs text-muted-foreground mt-2">
-                Set these in your shell or start.ps1. The MCP server auto-detects
-                Proxmox at startup and registers the proxmox_management tool.
-                VMs appear merged in the same /api/v1/vms list as VirtualBox and
-                Hyper-V VMs.
+                Set these in your shell or start.ps1. The MCP server
+                auto-detects Proxmox at startup and registers the
+                proxmox_management tool. VMs appear merged in the same
+                /api/v1/vms list as VirtualBox and Hyper-V VMs.
               </p>
             </div>
           </div>
@@ -206,19 +208,44 @@ PROXMOX_PASSWORD=your-password`}
           <h3 className="text-xl font-bold mb-3">Supported Operations</h3>
           <div className="grid gap-3">
             {[
-              { op: "list_vms", desc: "List all QEMU VMs on the Proxmox node with status, CPU, memory, disk" },
-              { op: "start_vm / stop_vm / shutdown_vm", desc: "Power operations — start, hard-stop, or ACPI shutdown by VMID" },
-              { op: "create_vm", desc: "Create a VM with configurable CPU, RAM, disk size, ISO, and network bridge" },
+              {
+                op: "list_vms",
+                desc: "List all QEMU VMs on the Proxmox node with status, CPU, memory, disk",
+              },
+              {
+                op: "start_vm / stop_vm / shutdown_vm",
+                desc: "Power operations — start, hard-stop, or ACPI shutdown by VMID",
+              },
+              {
+                op: "create_vm",
+                desc: "Create a VM with configurable CPU, RAM, disk size, ISO, and network bridge",
+              },
               { op: "delete_vm", desc: "Delete a VM (must be stopped first)" },
-              { op: "snapshots", desc: "Create, list, and delete VM snapshots via the Proxmox snapshot API" },
-              { op: "node_status", desc: "Get node-level CPU, memory, and disk usage" },
-              { op: "cluster_resources", desc: "List all resources (VMs, storage, nodes) across the Proxmox cluster" },
+              {
+                op: "snapshots",
+                desc: "Create, list, and delete VM snapshots via the Proxmox snapshot API",
+              },
+              {
+                op: "node_status",
+                desc: "Get node-level CPU, memory, and disk usage",
+              },
+              {
+                op: "cluster_resources",
+                desc: "List all resources (VMs, storage, nodes) across the Proxmox cluster",
+              },
             ].map((item) => (
-              <div key={item.op} className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card/40">
+              <div
+                key={item.op}
+                className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card/40"
+              >
                 <Server className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <code className="text-xs font-mono text-primary">{item.op}</code>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                  <code className="text-xs font-mono text-primary">
+                    {item.op}
+                  </code>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {item.desc}
+                  </p>
                 </div>
               </div>
             ))}
@@ -231,11 +258,22 @@ PROXMOX_PASSWORD=your-password`}
             <div>
               <h4 className="font-semibold text-amber-500">Prerequisites</h4>
               <ul className="text-sm text-muted-foreground mt-1 space-y-1 list-disc list-inside">
-                <li>A running Proxmox VE host (version 7.x or 8.x) — bare metal or VM</li>
-                <li>Network connectivity from this machine to the Proxmox host (port 8006)</li>
+                <li>
+                  A running Proxmox VE host (version 7.x or 8.x) — bare metal or
+                  VM
+                </li>
+                <li>
+                  Network connectivity from this machine to the Proxmox host
+                  (port 8006)
+                </li>
                 <li>Proxmox user with API access (default root@pam works)</li>
-                <li>Self-signed TLS cert is normal — set PROXMOX_VERIFY_SSL=0</li>
-                <li>If the Proxmox host changes IP, restart the MCP server to re-authenticate</li>
+                <li>
+                  Self-signed TLS cert is normal — set PROXMOX_VERIFY_SSL=0
+                </li>
+                <li>
+                  If the Proxmox host changes IP, restart the MCP server to
+                  re-authenticate
+                </li>
               </ul>
             </div>
           </div>
@@ -250,23 +288,31 @@ PROXMOX_PASSWORD=your-password`}
     content: () => (
       <div className="space-y-8">
         <section>
-          <h3 className="text-xl font-bold mb-3">Sandbox Modes</h3>
+          <h3 className="text-xl font-bold mb-3">
+            Sandbox Modes & MCP Integration
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Windows Sandbox provides disposable, isolated execution. You can
+            trigger sandbox bringup either from the webapp UI or directly via
+            FastMCP tool calls using{" "}
+            <code className="text-primary font-mono">sandbox_management</code>.
+          </p>
           <div className="grid gap-4">
             {[
               {
-                mode: "Consumer Sandbox",
+                mode: "Consumer Sandbox (win_sandbox_launch_consumer)",
                 when: "Testing a fresh Windows install or a naked-PC software install walkthrough.",
-                how: 'Select "Consumer" preset and launch. The sandbox boots a clean Windows image with no pre-installed tooling.',
+                how: 'Select "Consumer" preset or call sandbox_management(action="win_sandbox_launch_consumer"). Boots a clean Windows session with winget bootstrap.',
               },
               {
-                mode: "Dev Infra Sandbox",
-                when: "Testing MCP server installs, fleet deployment scripts, or CI-like workflows.",
-                how: 'Select "Dev Infra" preset. Includes winget, uv, git, and connectivity to the host network.',
+                mode: "Dev Infra Sandbox (win_sandbox_launch_devinfra)",
+                when: "Testing MCP server installs, fleet deployment scripts, or CI workflows.",
+                how: 'Select "Dev Infra" preset or call sandbox_management(action="win_sandbox_launch_devinfra"). Includes winget, uv, git, and host network connectivity.',
               },
               {
                 mode: "Full Dev Sandbox",
-                when: "Building or testing code in an isolated environment.",
-                how: "Configure tools (Python, Node, VS Code, etc.) via the checkboxes. The sandbox downloads and installs everything automatically on first boot.",
+                when: "Building or testing code in an isolated environment with custom tools.",
+                how: "Configure tools (Python, Node, VS Code, etc.) via the checkboxes. Installed automatically at sandbox boot.",
               },
             ].map((item) => (
               <div
@@ -290,24 +336,99 @@ PROXMOX_PASSWORD=your-password`}
           </div>
         </section>
 
+        <section>
+          <h3 className="text-xl font-bold mb-3">
+            Singleton Management & Reliability
+          </h3>
+          <div className="grid gap-3">
+            <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
+              <h4 className="font-semibold text-blue-400">
+                Singleton Process Auto-Cleanup
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Windows Sandbox enforces a 1-instance OS constraint per Windows
+                login. Launching a new sandbox via script or MCP automatically
+                terminates any stuck prior{" "}
+                <code className="font-mono">WindowsSandboxClient.exe</code>{" "}
+                process to prevent launch failures.
+              </p>
+            </div>
+            <div className="p-4 rounded-xl border border-green-500/20 bg-green-500/5">
+              <h4 className="font-semibold text-green-400">
+                30s Mapped Folder Mount Stabilization
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Mapped guest folders (
+                <code className="font-mono">C:\Assets</code>) use an active
+                retry loop to wait up to 30 seconds for folder initialization,
+                guaranteeing setup scripts start cleanly.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section className="p-4 rounded-xl border border-border bg-card/40">
           <h4 className="font-semibold mb-2">Prerequisites</h4>
           <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+            <li>Windows 11 Pro, Enterprise, or Education edition required</li>
+            <li>Virtualization must be enabled in BIOS (Intel VT-x / AMD-V)</li>
             <li>
-              Windows 11 Pro, Enterprise, or Education edition required
-            </li>
-            <li>
-              Virtualization must be enabled in BIOS (Intel VT-x / AMD-V)
-            </li>
-            <li>
-              Windows Sandbox feature must be enabled: Turn Windows features on
-              or off → Windows Sandbox
-            </li>
-            <li>
-              Host network access is shared; VPNs may interfere with guest
-              connectivity
+              Windows Sandbox feature must be enabled in Optional Features
             </li>
           </ul>
+        </section>
+      </div>
+    ),
+  },
+  {
+    id: "libvirt",
+    label: "Libvirt / KVM",
+    icon: Server,
+    content: () => (
+      <div className="space-y-8">
+        <section>
+          <h3 className="text-xl font-bold mb-3">Libvirt / KVM Management</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            For Linux hosts and WSL2 environments, virtualization-mcp provides
+            native KVM/QEMU hypervisor management through the{" "}
+            <code className="text-primary font-mono">libvirt_management</code>{" "}
+            tool.
+          </p>
+          <div className="grid gap-3">
+            {[
+              {
+                op: "list_vms",
+                desc: "List active and inactive libvirt domains with CPU/RAM metrics",
+              },
+              {
+                op: "create_vm",
+                desc: "Define and start a new KVM domain with custom disk, RAM, and ISO",
+              },
+              {
+                op: "start_vm / stop_vm",
+                desc: "Domain state lifecycle management",
+              },
+              {
+                op: "create_snapshot",
+                desc: "Create domain snapshots for rollback and recovery",
+              },
+            ].map((item) => (
+              <div
+                key={item.op}
+                className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card/40"
+              >
+                <Server className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <code className="text-xs font-mono text-primary">
+                    {item.op}
+                  </code>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       </div>
     ),
@@ -319,9 +440,7 @@ PROXMOX_PASSWORD=your-password`}
     content: () => (
       <div className="space-y-8">
         <section>
-          <h3 className="text-xl font-bold mb-3">
-            How the Desktop App Works
-          </h3>
+          <h3 className="text-xl font-bold mb-3">How the Desktop App Works</h3>
           <p className="text-sm text-muted-foreground mb-4">
             The NSIS installer bundles two components: the Rust desktop shell
             and the Python backend (frozen with PyInstaller). When you launch
@@ -549,15 +668,15 @@ PROXMOX_PASSWORD=your-password`}
           <div className="space-y-2">
             {[
               {
-                cmd: 'Invoke-WebRequest http://127.0.0.1:10701/api/v1/health',
+                cmd: "Invoke-WebRequest http://127.0.0.1:10701/api/v1/health",
                 what: "Check if backend responds",
               },
               {
-                cmd: 'Get-NetTCPConnection -LocalPort 10701',
+                cmd: "Get-NetTCPConnection -LocalPort 10701",
                 what: "Check if port 10701 is listening",
               },
               {
-                cmd: 'Get-Process -Name virtualization-mcp-backend',
+                cmd: "Get-Process -Name virtualization-mcp-backend",
                 what: "Check if backend process exists",
               },
               {
@@ -654,9 +773,7 @@ PROXMOX_PASSWORD=your-password`}
                 </span>
               </div>
             </summary>
-            <p className="text-sm text-muted-foreground mt-3 pl-8">
-              {item.a}
-            </p>
+            <p className="text-sm text-muted-foreground mt-3 pl-8">{item.a}</p>
           </details>
         ))}
       </div>

@@ -55,7 +55,10 @@ async function checkBackendHealth(): Promise<{ ok: boolean; error?: string }> {
     if (!r.ok) return { ok: false, error: `HTTP ${r.status}` };
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Network error" };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Network error",
+    };
   }
 }
 
@@ -96,7 +99,10 @@ export default function Dashboard() {
           if (event.payload === "ready") {
             setBackendOk("connected");
             refresh();
-          } else if (typeof event.payload === "string" && event.payload.startsWith("error:")) {
+          } else if (
+            typeof event.payload === "string" &&
+            event.payload.startsWith("error:")
+          ) {
             setBackendOk("offline");
           }
         });
@@ -104,7 +110,9 @@ export default function Dashboard() {
         // Not inside Tauri - HTTP polling handles it
       }
     })();
-    return () => { if (unlisten) unlisten(); };
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, [refresh]);
 
   const restartBackend = useCallback(async () => {
@@ -130,7 +138,9 @@ export default function Dashboard() {
         setVboxAvail(result.host?.virtualbox?.version ? true : false);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch dashboard data");
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch dashboard data",
+        );
       }
     };
 
@@ -205,7 +215,11 @@ export default function Dashboard() {
                     : "bg-red-500"
               }`}
             />
-            {backendOk === "starting" ? "Starting..." : backendOk === "connected" ? "Connected" : "Offline"}
+            {backendOk === "starting"
+              ? "Starting..."
+              : backendOk === "connected"
+                ? "Connected"
+                : "Offline"}
           </div>
           {/* Restart button when offline */}
           {backendOk === "offline" && (
@@ -248,11 +262,16 @@ export default function Dashboard() {
               <MemoryStick className="w-5 h-5 text-green-400" />
             </div>
             <span className="text-2xl font-bold">
-              {data?.host ? formatBytes(data.host.memory_total - data.host.memory_available) : "--"}
+              {data?.host
+                ? formatBytes(
+                    data.host.memory_total - data.host.memory_available,
+                  )
+                : "--"}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Memory Used / {data?.host ? formatBytes(data.host.memory_total) : "--"}
+            Memory Used /{" "}
+            {data?.host ? formatBytes(data.host.memory_total) : "--"}
           </p>
         </div>
 
@@ -278,7 +297,8 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            VMs: {data?.vms?.running ?? 0} running, {data?.vms?.stopped ?? 0} stopped
+            VMs: {data?.vms?.running ?? 0} running, {data?.vms?.stopped ?? 0}{" "}
+            stopped
           </p>
         </div>
       </div>
@@ -302,7 +322,10 @@ export default function Dashboard() {
                   <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+              />
               <XAxis
                 dataKey="time"
                 stroke="hsl(var(--muted-foreground))"
@@ -396,7 +419,9 @@ export default function Dashboard() {
                   <span className="font-medium text-sm">{vm.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`text-xs font-medium ${getStatusColor(vm.state)}`}>
+                  <span
+                    className={`text-xs font-medium ${getStatusColor(vm.state)}`}
+                  >
                     {vm.state}
                   </span>
                   {vm.provider && (
@@ -410,7 +435,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <p className="text-muted-foreground text-sm">
-            {data ? "No VMs found. Create one in the VirtualBox or Hyper-V section." : "Loading..."}
+            {data
+              ? "No VMs found. Create one in the VirtualBox or Hyper-V section."
+              : "Loading..."}
           </p>
         )}
       </div>

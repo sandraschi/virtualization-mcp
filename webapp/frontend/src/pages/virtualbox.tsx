@@ -197,7 +197,7 @@ export default function VirtualBox() {
               : undefined,
         },
       );
-      const data = await res.json();
+      await res.json();
       setTimeout(fetchVMs, 1500);
     } catch (error) {
       console.error(`Failed to execute ${action} on ${vmName}:`, error);

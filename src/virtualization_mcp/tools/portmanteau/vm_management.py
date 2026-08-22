@@ -24,6 +24,7 @@ from virtualization_mcp.tools.vm.vm_tools import (
     start_vm,
     stop_vm,
 )
+from virtualization_mcp.utils.resource_guard import ResourceGuard, ResourceQuotaExceededError
 
 logger = logging.getLogger(__name__)
 
@@ -250,6 +251,7 @@ async def _handle_create_vm(
         }
 
     try:
+        ResourceGuard.check_resource_quota(requested_memory_mb=memory_mb or 1024)
         if ctx:
             try:
                 await ctx.report_progress(progress=20, total=100)
@@ -279,6 +281,14 @@ async def _handle_create_vm(
                 "Ensure vm_name is unique (list_vms)",
             ]
         return out
+    except ResourceQuotaExceededError as e:
+        return {
+            "success": False,
+            "action": "create",
+            "vm_name": vm_name,
+            "error": str(e),
+            "recovery_options": ["Free up host RAM before launching additional VMs"],
+        }
     except Exception as e:
         return {
             "success": False,
@@ -299,6 +309,7 @@ async def _handle_start_vm(vm_name: str | None = None) -> dict[str, Any]:
         }
 
     try:
+        ResourceGuard.check_resource_quota()
         result = await start_vm(vm_name=vm_name)
         ok = isinstance(result, dict) and result.get("status") == "success"
         return {
@@ -307,6 +318,14 @@ async def _handle_start_vm(vm_name: str | None = None) -> dict[str, Any]:
             "vm_name": vm_name,
             "data": result,
             "recovery_options": None if ok else (result.get("recovery_options") if isinstance(result, dict) else None),
+        }
+    except ResourceQuotaExceededError as e:
+        return {
+            "success": False,
+            "action": "start",
+            "vm_name": vm_name,
+            "error": str(e),
+            "recovery_options": ["Stop idle VMs to free host memory before starting new ones"],
         }
     except Exception as e:
         return {

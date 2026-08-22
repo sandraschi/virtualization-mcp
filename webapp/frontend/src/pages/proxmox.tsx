@@ -25,12 +25,12 @@ export default function Proxmox() {
         const data = await res.json();
         if (data.status === "success") {
           const proxmoxVms = (data.vms || []).filter(
-            (vm: any) => vm.provider === "proxmox"
+            (vm: any) => vm.provider === "proxmox",
           );
           setVms(proxmoxVms);
           if (proxmoxVms.length === 0 && !error) {
             setConfigMsg(
-              "No Proxmox VMs found. If you have a Proxmox host, set PROXMOX_HOST, PROXMOX_USER, and PROXMOX_PASSWORD env vars."
+              "No Proxmox VMs found. If you have a Proxmox host, set PROXMOX_HOST, PROXMOX_USER, and PROXMOX_PASSWORD env vars.",
             );
           } else {
             setConfigMsg(null);

@@ -38,11 +38,22 @@ function Invoke-WsbWingetExe {
 
 function Install-WsbWingetViaMsix {
     Write-WsbStep 'Installing winget (Desktop App Installer) from GitHub release'
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 
     $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
     $null = New-Item -ItemType Directory -Path $work -Force
 
-    $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing
+    $release = $null
+    for ($retry = 1; $retry -le 3; $retry++) {
+        try {
+            $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing -ErrorAction Stop
+            break
+        } catch {
+            if ($retry -eq 3) { throw $_ }
+            Write-Warning "GitHub release query failed (attempt $retry). Retrying in 3s..."
+            Start-Sleep -Seconds 3
+        }
+    }
 
     Write-WsbStep 'Downloading dependencies bundle'
     $depsAsset = $null

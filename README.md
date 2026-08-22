@@ -5,16 +5,20 @@ Spin up VMs, sandboxes, and dev environments from Claude Desktop, Cursor, or the
 <p align="center">
   <a href="https://github.com/sandraschi/virtualization-mcp"><img src="https://img.shields.io/github/stars/sandraschi/virtualization-mcp?style=flat-square" alt="Stars"></a>
   <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
-  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.4.4+-7c5cfc?style=flat-square" alt="FastMCP"></a>
 </p>
 
 ## Features
 
 - **VirtualBox & Hyper-V** — create, start, stop, snapshot, clone VMs
-- **Windows Sandbox** — consumer (nearly naked) and dev-infra bringups for fleet install testing
+- **Libvirt / KVM / QEMU** — native Linux and WSL2 hypervisor management
+- **Windows Sandbox & MCP Tools** — consumer (nearly naked) and dev-infra bringups with direct MCP tool triggers (`win_sandbox_launch_consumer`, `win_sandbox_launch_devinfra`, `win_sandbox_terminate`) and singleton auto-cleanup
+- **ResourceGuard Safety** — physical host CPU & RAM quota enforcement (default 95% threshold) to protect host stability
+- **Prefab UI Cards** — interactive FastMCP UI cards (`show_vm_card`, `show_hypervisor_health_card`, `show_sandbox_status_card`)
+- **Cloud-Init ISO Generator** — create non-interactive Linux VM seed ISOs (`user-data` & `meta-data`)
 - **ISO pipeline** — download Ubuntu, Debian, Windows ISOs into `assets/vbox`
 - **noVNC console** — browser VM console from the webapp
-- **Unattended Win11** — autoinstall with optional dev tools (dev VMs only)
+- **Modular Webapp Backend** — structured FastAPI routers (`/api/vms`, `/api/snapshots`, `/api/system`)
 - **Fleet dashboard** — health-check and launch registered MCP webapps
 
 ## A Brief History of Virtual Machines
@@ -174,9 +178,9 @@ That's it. No Proxmox-specific plugins, no agent installs, no separate service. 
 **Proxmox is not harder than VirtualBox to set up from the MCP side** — the hard part was always the Proxmox installation itself (Debian ISO, install, configure storage). But once Proxmox is running, plugging it into this MCP server is just those three env vars. We did the complicated part (the REST API client) so you don't have to.
 
 ### KVM / libvirt (Red Hat / community)
-**Status: 🔍 Under investigation**
+**Status: ✅ Supported as native Linux/WSL2 hypervisor backend**
 
-KVM (Kernel-based Virtual Machine) is the Linux-native Type-1 hypervisor. It is managed via `libvirt` and `virsh`. Linux-native support would be added if cross-platform parity becomes a priority.
+KVM (Kernel-based Virtual Machine) is the Linux-native Type-1 hypervisor. It is managed via `libvirt` and `virsh` via the `libvirt_management` portmanteau tool. Provides VM creation, domain lifecycle control, and snapshot management for Linux hosts and WSL2 environments.
 
 ### Nutanix AHV (Nutanix)
 **Status: ❌ Not supported — enterprise scope**

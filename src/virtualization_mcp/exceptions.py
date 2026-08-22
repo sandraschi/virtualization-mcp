@@ -12,6 +12,9 @@ class VMError(Exception):
         super().__init__(self.message)
 
 
+VirtualizationMCPError = VMError
+
+
 class ValidationError(VMError):
     """Raised when input validation fails."""
 

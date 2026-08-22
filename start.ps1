@@ -10,8 +10,8 @@ $WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
 
 $env:FASTMCP_LOG_LEVEL = 'WARNING'
 
-# Clear port 10702 (MCP HTTP) before binding
-Get-NetTCPConnection -LocalPort 10702 -ErrorAction SilentlyContinue | ForEach-Object {
+# Clear port 16000 (MCP HTTP) before binding
+Get-NetTCPConnection -LocalPort 16000 -ErrorAction SilentlyContinue | ForEach-Object {
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
 

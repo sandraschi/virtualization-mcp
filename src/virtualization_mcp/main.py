@@ -28,7 +28,7 @@ def parse_arguments() -> argparse.Namespace:
         "--port",
         type=int,
         default=settings.PORT,
-        help="Port for MCP HTTP/SSE (default from config, 10702)",
+        help="Port for MCP HTTP/SSE (default from config, 16000)",
     )
     return parser.parse_args()
 

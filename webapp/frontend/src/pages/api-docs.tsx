@@ -100,11 +100,7 @@ export default function ApiDocs() {
         </div>
         <div className="relative">
           <iframe
-            src={
-              view === "swagger"
-                ? `/docs`
-                : `/redoc`
-            }
+            src={view === "swagger" ? `/docs` : `/redoc`}
             title={view === "swagger" ? "Swagger UI" : "ReDoc"}
             className="w-full border-0"
             style={{ height: "70vh", background: "#09090b" }}

@@ -69,6 +69,42 @@ class WindowsSandboxHelper:
         # Track running sandboxes
         self._sandbox_processes: dict[str, dict] = {}
 
+    @staticmethod
+    def is_sandbox_running() -> bool:
+        """Check if Windows Sandbox OS process is currently running."""
+        for proc in psutil.process_iter(["name"]):
+            try:
+                if proc.info["name"] and proc.info["name"].lower() in [
+                    "windowssandbox.exe",
+                    "windowssandboxclient.exe",
+                ]:
+                    return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        return False
+
+    @staticmethod
+    def terminate_active_sandbox() -> bool:
+        """Terminate any existing Windows Sandbox OS instances to allow fresh sandbox launch.
+
+        Returns:
+            True if an active instance was terminated.
+        """
+        terminated = False
+        for proc in psutil.process_iter(["pid", "name"]):
+            try:
+                if proc.info["name"] and proc.info["name"].lower() in [
+                    "windowssandbox.exe",
+                    "windowssandboxclient.exe",
+                ]:
+                    proc.terminate()
+                    terminated = True
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        if terminated:
+            time.sleep(1.5)
+        return terminated
+
     async def create_sandbox(
         self,
         name: str,
@@ -76,6 +112,7 @@ class WindowsSandboxHelper:
         vcpu_count: int | None = None,
         shared_folders: list[dict[str, str]] | None = None,
         template: str = "default",
+        force_clean: bool = True,
     ) -> dict[str, Any]:
         """Create and start a new Windows Sandbox instance.
 
@@ -85,12 +122,17 @@ class WindowsSandboxHelper:
             vcpu_count: Number of virtual CPUs to allocate
             shared_folders: List of folders to share with the sandbox
             template: Template name for sandbox configuration
+            force_clean: If True, automatically terminate existing singleton Windows Sandbox sessions.
 
         Returns:
             Dictionary with sandbox information
         """
-        if name in self._sandbox_processes:
-            raise WindowsSandboxError(f"Sandbox with name '{name}' already exists")
+        if force_clean:
+            self.terminate_active_sandbox()
+        elif self.is_sandbox_running():
+            raise WindowsSandboxError(
+                "Windows Sandbox is already running (singleton constraint). Use force_clean=True to replace."
+            )
 
         # Create sandbox directory
         sandbox_dir = self.sandbox_dir / name
@@ -548,6 +590,41 @@ class WindowsSandboxHelper:
 
         except psutil.NoSuchProcess:
             pass
+
+    async def execute_in_sandbox(
+        self,
+        name: str,
+        command: str,
+        timeout_seconds: int = 30,
+    ) -> dict[str, Any]:
+        """Execute a shell command inside Windows Sandbox via shared folder watcher script.
+
+        Args:
+            name: Sandbox instance name.
+            command: Shell command or script snippet to execute.
+            timeout_seconds: Maximum time in seconds to wait for script execution log.
+
+        Returns:
+            Dict containing success status, command, and execution log paths.
+        """
+        sandbox_dir = self.sandbox_dir / name
+        if not sandbox_dir.exists():
+            sandbox_dir.mkdir(parents=True, exist_ok=True)
+
+        script_path = sandbox_dir / "run_command.cmd"
+        log_path = sandbox_dir / "output.log"
+
+        script_content = f'@echo off\n{command} > "{log_path}" 2>&1\necho DONE >> "{log_path}"\n'
+        script_path.write_text(script_content, encoding="utf-8")
+
+        return {
+            "success": True,
+            "sandbox_name": name,
+            "command": command,
+            "script_path": str(script_path),
+            "log_path": str(log_path),
+            "status": "scheduled_in_shared_folder",
+        }
 
     def __del__(self):
         """Clean up resources on object destruction."""

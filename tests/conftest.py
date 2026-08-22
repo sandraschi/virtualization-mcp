@@ -75,6 +75,17 @@ def real_vbox():
     return VBoxManager()
 
 
+@pytest.fixture
+def vbox_manager(mock_vbox_manager):
+    """Fixture providing a VBoxManager instance (real if available, mock otherwise)."""
+    if vbox_available():
+        try:
+            return VBoxManager()
+        except Exception:
+            pass
+    return mock_vbox_manager
+
+
 # ── Test helpers ──────────────────────────────────────────────────────────────
 
 

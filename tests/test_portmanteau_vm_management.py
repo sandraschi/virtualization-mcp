@@ -114,7 +114,9 @@ class TestVMManagementPortmanteau:
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.create_vm", new_callable=AsyncMock
-        ) as mock_create_vm:
+        ) as mock_create_vm, patch(
+            "virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"
+        ):
             mock_create_vm.return_value = mock_result
 
             result = await vm_management_tool(
@@ -159,7 +161,9 @@ class TestVMManagementPortmanteau:
         """Test create VM action with error."""
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.create_vm", new_callable=AsyncMock
-        ) as mock_create_vm:
+        ) as mock_create_vm, patch(
+            "virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"
+        ):
             mock_create_vm.side_effect = Exception("Creation failed")
 
             result = await vm_management_tool(action="create", vm_name="TestVM", os_type="Windows10_64")
@@ -175,7 +179,9 @@ class TestVMManagementPortmanteau:
 
         with patch(
             "virtualization_mcp.tools.portmanteau.vm_management.start_vm", new_callable=AsyncMock
-        ) as mock_start_vm:
+        ) as mock_start_vm, patch(
+            "virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"
+        ):
             mock_start_vm.return_value = mock_result
 
             result = await vm_management_tool(action="start", vm_name="TestVM")

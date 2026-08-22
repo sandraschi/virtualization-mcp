@@ -10,7 +10,7 @@ import json
 import logging
 import shutil
 import tempfile
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -148,13 +148,13 @@ class SecurityTester:
         Returns:
             SecurityTestResult with the scan results
         """
-        test_id = test_id or f"scan_{int(datetime.utcnow().timestamp())}"
+        test_id = test_id or f"scan_{int(datetime.now(UTC).timestamp())}"
 
         # Create a new test result
         result = SecurityTestResult(
             test_id=test_id,
             status=TestStatus.RUNNING,
-            start_time=datetime.utcnow(),
+            start_time=datetime.now(UTC),
             metrics={"target": target, "scan_type": scan_type, "options": options or {}},
         )
 
@@ -188,12 +188,12 @@ class SecurityTester:
             result.metrics["error"] = str(e)
 
         finally:
-            result.end_time = datetime.utcnow()
+            result.end_time = datetime.now(UTC)
 
             # Save the report
             report_path = self.reports_dir / f"security_scan_{test_id}.json"
             with Path(report_path).open("w") as f:
-                json.dump(result.dict(), f, default=str)
+                json.dump(result.model_dump(), f, default=str)
 
             result.report_path = report_path
 

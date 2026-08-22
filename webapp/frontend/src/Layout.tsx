@@ -152,9 +152,17 @@ export default function Layout() {
               onClick={toggle}
               className="hidden md:flex p-2 hover:bg-white/5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Toggle light mode (experimental)"
-              title={light ? "Switch to dark (experimental light mode)" : "Switch to light (experimental, ugly)"}
+              title={
+                light
+                  ? "Switch to dark (experimental light mode)"
+                  : "Switch to light (experimental, ugly)"
+              }
             >
-              {light ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              {light ? (
+                <Moon className="w-5 h-5" />
+              ) : (
+                <Sun className="w-5 h-5" />
+              )}
             </button>
             {/* Desktop Minimize Button */}
             <button
@@ -163,7 +171,11 @@ export default function Layout() {
               className="hidden md:flex p-2 hover:bg-white/5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Toggle Sidebar Size"
             >
-              {isMinimized ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+              {isMinimized ? (
+                <ChevronRight className="w-5 h-5" />
+              ) : (
+                <ChevronLeft className="w-5 h-5" />
+              )}
             </button>
             {/* Mobile Close Button */}
             <button

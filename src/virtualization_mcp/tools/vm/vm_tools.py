@@ -10,6 +10,8 @@ import logging
 import subprocess
 from typing import Any, Literal
 
+from virtualization_mcp.config import get_vbox_manage_path
+
 logger = logging.getLogger(__name__)
 
 # Type aliases
@@ -18,6 +20,9 @@ CloneMode = Literal["full", "linked", "all"]
 VMStartType = Literal["gui", "sdl", "headless", "separate"]
 
 LIST_VMS_MAX_LIMIT = 500
+
+# Resolve the VBoxManage executable once (honors VBOX_MANAGE_PATH / auto-detect).
+VBOX_MANAGE = str(get_vbox_manage_path())
 
 
 async def list_vms(
@@ -46,7 +51,7 @@ async def list_vms(
         - message: Error message if status is "error"
     """
     try:
-        cmd = ["VBoxManage", "list", "vms", "--long"]
+        cmd = [VBOX_MANAGE, "list", "vms", "--long"]
         if state_filter:
             cmd.extend(["--state", state_filter])
 
@@ -138,7 +143,7 @@ async def get_vm_info(vm_name: str) -> dict[str, Any]:
         return {"status": "error", "message": "VM name must be a non-empty string", "vm_info": None}
 
     try:
-        cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
+        cmd = [VBOX_MANAGE, "showvminfo", vm_name, "--machinereadable"]
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         info = {}
@@ -218,21 +223,21 @@ async def create_vm(
 
     try:
         # Create VM
-        create_cmd = ["VBoxManage", "createvm", "--name", name, "--ostype", ostype, "--register"]
+        create_cmd = [VBOX_MANAGE, "createvm", "--name", name, "--ostype", ostype, "--register"]
 
         await asyncio.to_thread(subprocess.run, create_cmd, capture_output=True, text=True, check=True)
 
         # Configure basic settings
         modify_cmds = [
-            ["VBoxManage", "modifyvm", name, "--memory", str(memory_mb)],
-            ["VBoxManage", "modifyvm", name, "--cpus", str(cpu_count)],
-            ["VBoxManage", "modifyvm", name, "--graphicscontroller", "vmsvga"],
-            ["VBoxManage", "modifyvm", name, "--vram", "128"],
+            [VBOX_MANAGE, "modifyvm", name, "--memory", str(memory_mb)],
+            [VBOX_MANAGE, "modifyvm", name, "--cpus", str(cpu_count)],
+            [VBOX_MANAGE, "modifyvm", name, "--graphicscontroller", "vmsvga"],
+            [VBOX_MANAGE, "modifyvm", name, "--vram", "128"],
         ]
 
         # Add network configuration if not 'none'
         if net_type != "none":
-            modify_cmds.append(["VBoxManage", "modifyvm", name, "--nic1", net_type])
+            modify_cmds.append([VBOX_MANAGE, "modifyvm", name, "--nic1", net_type])
 
         for cmd in modify_cmds:
             await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
@@ -241,7 +246,7 @@ async def create_vm(
         disk_path = f"{name}_disk.vdi"
         if disk_size_gb > 0:
             create_disk_cmd = [
-                "VBoxManage",
+                VBOX_MANAGE,
                 "createhd",
                 "--filename",
                 disk_path,
@@ -255,9 +260,9 @@ async def create_vm(
 
             # Attach storage controller and disk
             storage_cmds = [
-                ["VBoxManage", "storagectl", name, "--name", "SATA", "--add", "sata"],
+                [VBOX_MANAGE, "storagectl", name, "--name", "SATA", "--add", "sata"],
                 [
-                    "VBoxManage",
+                    VBOX_MANAGE,
                     "storageattach",
                     name,
                     "--storagectl",
@@ -321,7 +326,7 @@ async def start_vm(vm_name: str, start_type: VMStartType = "headless") -> dict[s
         }
 
     try:
-        cmd = ["VBoxManage", "startvm", vm_name, "--type", start_type]
+        cmd = [VBOX_MANAGE, "startvm", vm_name, "--type", start_type]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -360,7 +365,7 @@ async def stop_vm(vm_name: str, force: bool = False, timeout: int = 30) -> dict[
         if force:
             # First try to gracefully shut down the VM
             try:
-                cmd = ["VBoxManage", "controlvm", vm_name, "acpipowerbutton"]
+                cmd = [VBOX_MANAGE, "controlvm", vm_name, "acpipowerbutton"]
 
                 await asyncio.to_thread(
                     subprocess.run, cmd, capture_output=True, text=True, check=True, timeout=timeout
@@ -370,7 +375,7 @@ async def stop_vm(vm_name: str, force: bool = False, timeout: int = 30) -> dict[
 
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
                 # If graceful shutdown fails or times out, force power off
-                cmd = ["VBoxManage", "controlvm", vm_name, "poweroff"]
+                cmd = [VBOX_MANAGE, "controlvm", vm_name, "poweroff"]
 
                 await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -378,7 +383,7 @@ async def stop_vm(vm_name: str, force: bool = False, timeout: int = 30) -> dict[
 
         else:
             # Just send ACPI power button event
-            cmd = ["VBoxManage", "controlvm", vm_name, "acpipowerbutton"]
+            cmd = [VBOX_MANAGE, "controlvm", vm_name, "acpipowerbutton"]
 
             await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -423,7 +428,7 @@ async def delete_vm(vm_name: str, delete_files: bool = True) -> dict[str, Any]:
             logger.warning(f"Could not stop VM {vm_name} before deletion: {e!s}")
 
         # Build the unregister command
-        cmd = ["VBoxManage", "unregistervm", vm_name]
+        cmd = [VBOX_MANAGE, "unregistervm", vm_name]
 
         if delete_files:
             cmd.append("--delete")
@@ -491,7 +496,7 @@ async def clone_vm(
         }
 
     try:
-        cmd = ["VBoxManage", "clonevm", source_vm, "--name", new_name, "--register"]
+        cmd = [VBOX_MANAGE, "clonevm", source_vm, "--name", new_name, "--register"]
 
         if snapshot:
             cmd.extend(["--snapshot", snapshot])
@@ -587,7 +592,7 @@ async def modify_vm(
 
     try:
         # Build the base command
-        cmd = ["VBoxManage", "modifyvm", vm_name]
+        cmd = [VBOX_MANAGE, "modifyvm", vm_name]
 
         # Handle memory
         if memory_mb is not None:
@@ -733,7 +738,7 @@ async def modify_vm(
                 cmd.extend([f"--{key}", str(value)])
 
         # Only run the command if there are changes to make
-        if len(cmd) > 3:  # More than just ["VBoxManage", "modifyvm", vm_name]
+        if len(cmd) > 3:  # More than just [VBOX_MANAGE, "modifyvm", vm_name]
             result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
             return {
@@ -774,7 +779,7 @@ async def pause_vm(vm_name: str) -> dict[str, Any]:
         return {"status": "error", "message": "VM name must be a non-empty string"}
 
     try:
-        cmd = ["VBoxManage", "controlvm", vm_name, "pause"]
+        cmd = [VBOX_MANAGE, "controlvm", vm_name, "pause"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -804,7 +809,7 @@ async def resume_vm(vm_name: str) -> dict[str, Any]:
         return {"status": "error", "message": "VM name must be a non-empty string"}
 
     try:
-        cmd = ["VBoxManage", "controlvm", vm_name, "resume"]
+        cmd = [VBOX_MANAGE, "controlvm", vm_name, "resume"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -841,9 +846,9 @@ async def reset_vm(vm_name: str, reset_type: str = "hard") -> dict[str, Any]:
 
     try:
         if reset_type == "hard":
-            cmd = ["VBoxManage", "controlvm", vm_name, "reset"]
+            cmd = [VBOX_MANAGE, "controlvm", vm_name, "reset"]
         else:
-            cmd = ["VBoxManage", "controlvm", vm_name, "acpisleepbutton"]
+            cmd = [VBOX_MANAGE, "controlvm", vm_name, "acpisleepbutton"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 

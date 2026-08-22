@@ -24,7 +24,7 @@ except ImportError:
         debug: bool = False
         log_level: str = "INFO"
         host: str = "0.0.0.0"  # noqa: S104
-        port: int = 10702
+        port: int = 16000
 
 
 # Set up logging

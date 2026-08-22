@@ -15,25 +15,28 @@ if defined CONSUMER_INSTALL_CLAUDE (
     echo [%date% %time%] CONSUMER_INSTALL_CLAUDE=%CONSUMER_INSTALL_CLAUDE% >> "%LOG%"
 )
 
-if exist "C:\Assets\Run-Consumer.cmd" (
-    echo [%date% %time%] C:\Assets mapped OK >> "%LOG%"
-) else (
-    echo [%date% %time%] C:\Assets NOT MAPPED >> "%LOG%"
-)
-dir "C:\Assets" >> "%LOG%" 2>&1
-
-echo [%date% %time%] Waiting 5s for folder to stabilize... >> "%LOG%"
-ping -n 6 127.0.0.1 >nul
-
+set "RETRY_COUNT=0"
+:wait_assets_loop
 if exist "C:\Assets\Setup-ConsumerSandbox.ps1" (
-    echo [%date% %time%] Starting Setup-ConsumerSandbox.ps1 >> "%LOG%"
-    echo Running consumer setup (winget bootstrap only)...
-    powershell.exe -NoLogo -NoProfile -WindowStyle Normal -ExecutionPolicy Bypass -File "C:\Assets\Setup-ConsumerSandbox.ps1" >> "%LOG%" 2>&1
-    echo [%date% %time%] powershell exit %ERRORLEVEL% >> "%LOG%"
-) else (
-    echo [%date% %time%] ERROR: Setup-ConsumerSandbox.ps1 NOT FOUND >> "%LOG%"
-    echo ERROR: Setup script not found in mapped folder!
+    echo [%date% %time%] C:\Assets mapped and setup script found >> "%LOG%"
+    goto assets_ready
 )
+set /a RETRY_COUNT+=1
+if %RETRY_COUNT% gtr 15 (
+    echo [%date% %time%] ERROR: C:\Assets\Setup-ConsumerSandbox.ps1 NOT FOUND after 30s >> "%LOG%"
+    echo ERROR: Setup script not found in mapped folder within 30s!
+    goto assets_failed
+)
+echo [%date% %time%] Waiting for C:\Assets folder mount (attempt %RETRY_COUNT%/15)... >> "%LOG%"
+ping -n 3 127.0.0.1 >nul
+goto wait_assets_loop
+
+:assets_ready
+echo [%date% %time%] Starting Setup-ConsumerSandbox.ps1 >> "%LOG%"
+echo Running consumer setup (winget bootstrap only)...
+powershell.exe -NoLogo -NoProfile -WindowStyle Normal -ExecutionPolicy Bypass -File "C:\Assets\Setup-ConsumerSandbox.ps1" >> "%LOG%" 2>&1
+echo [%date% %time%] powershell exit %ERRORLEVEL% >> "%LOG%"
+:assets_failed
 
 echo.
 echo ========================================

@@ -60,7 +60,7 @@ class TestCreateVM:
 
     def test_create_vm_bad_template(self, ops):
         vm_ops, _mock_run = ops
-        with pytest.raises(VBoxManagerError, match="Template.*not found"):
+        with pytest.raises(VBoxManagerError, match=r"Template.*not found"):
             vm_ops.create_vm(name="test-vm", template="nonexistent")
 
     def test_create_vm_with_overrides(self, ops):

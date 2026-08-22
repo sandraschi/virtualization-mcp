@@ -29,6 +29,13 @@ if (-not (Test-Path -LiteralPath $sandboxExe)) {
   throw 'WindowsSandbox.exe not found. Enable the Windows Sandbox optional feature.'
 }
 
+$existingProcs = Get-Process -Name 'WindowsSandboxClient', 'WindowsSandbox' -ErrorAction SilentlyContinue
+if ($existingProcs) {
+  Write-Host 'Terminating active Windows Sandbox instance (singleton constraint)...' -ForegroundColor Yellow
+  $existingProcs | Stop-Process -Force -ErrorAction SilentlyContinue
+  Start-Sleep -Seconds 2
+}
+
 $escapedHost = [System.Security.SecurityElement]::Escape($hostAssets)
 $stamp = Get-Date -Format 'yyyyMMddHHmmss'
 $tempWsb = Join-Path $env:TEMP ("virtualization-mcp-DevInfra-{0}.wsb" -f $stamp)

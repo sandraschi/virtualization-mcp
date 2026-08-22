@@ -67,9 +67,14 @@ def register_all_tools(mcp: FastMCP, tool_mode: str = "production") -> None:
     """
     # Always register portmanteau tools (consolidated tools)
     from virtualization_mcp.tools.portmanteau import register_all_portmanteau_tools
+    from virtualization_mcp.tools.ui.prefab_tools import register_prefab_tools
 
     register_all_portmanteau_tools(mcp)
     logger.info("Portmanteau tools registered successfully")
+
+    # Register UI component cards
+    register_prefab_tools(mcp)
+    logger.info("Prefab UI tools registered successfully")
 
     # Register individual tools only in testing/all mode
     if tool_mode.lower() in ["testing", "all"]:

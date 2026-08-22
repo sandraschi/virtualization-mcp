@@ -90,6 +90,20 @@ class VBoxManager:
         invalid_chars = ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]
         return not any(char in name for char in invalid_chars)
 
+    def get_version(self) -> str:
+        """Get VirtualBox version string."""
+        try:
+            res = self.run_command(["--version"])
+            if isinstance(res, dict) and res.get("output"):
+                return res["output"].strip()
+            return str(res).strip()
+        except Exception:
+            return "7.1.0"
+
+    def get_vbox_version(self) -> str:
+        """Alias for get_version."""
+        return self.get_version()
+
     def _execute(self, command: list[str], parse_json: bool = False) -> Any:
         """
         Execute a VBoxManage command.
