@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sandraschi/virtualization-mcp",
+  "description": "Manage VirtualBox and Hyper-V VMs: snapshots, networking, storage, sandboxes, Windows Sandbox",
+  "version": "1.4.0",
+  "repository": {
+    "url": "https://github.com/sandraschi/virtualization-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/sandraschi/virtualization-mcp/releases/download/v1.4.0/virtualization-mcp-v1.4.0.mcpb",
+      "fileSha256": "d774cde7ca1dbb18c3be1fa242718493333d0ace896bbf676823671c1ceae613",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

@@ -1,53 +1,32 @@
-# Exclude build artifacts and large binaries – NSIS installer will provide them
-build/
-dist/
-target/
-assets/vbox/
-
-# Exclude native binaries
-native/
-
-# Keep required icon
-!assets/icon.png
-
-# Virtual environments (large)
+# Logic/Dev Bloat
 .venv/
-venv/
-env/
-.env/
-
-# Python cache and compiled files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Cache directories
-.ruff_cache/
-.mypy_cache/
-.pytest_cache/
-
-# Node modules (if any)
 node_modules/
-webapp/node_modules/
-web_sota/node_modules/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+tests/
 
-# IDE/editor junk
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Git metadata (already excluded but explicit)
+# Discovery & Fleet Metadata
+glama.json
+llms.txt
+llms-full.txt
 .git/
-.gitignore
-.gitattributes
-
-# CI/CD config
 .github/
+.vscode/
 
-# Documentation – keep only README and LICENSE
-!README.md
-!LICENSE
+# Build Artifacts
+dist/
+build/
+*.mcpb
+
+# Non-MCP components (webapp, native, scripts)
+native/
+web_sota/
+scripts/
+
+# Editor / tooling backups (sneak-in specialists) - incl timestamped .bak_*
+*.bak
+*.bak.*
+*.bak*
+*.orig
+*.rej
