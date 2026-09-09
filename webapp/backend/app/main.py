@@ -1,4 +1,4 @@
-# ruff: noqa: S105,S110,S310,S602,B904,F821,RUF005,F841,S104
+# ruff: noqa: S105, S602, B904, F821, RUF005, F841, S104
 # ^ intentional: S105(password defaults), S110(cleanup excepts),
 #   S310(LLM/ISO URL fetch), S602(start fleet app),
 #   B904(HTTPException re-raises), F821(C# string literal),
@@ -32,7 +32,7 @@ with warnings.catch_warnings():
         genai = None  # type: ignore[assignment]
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("virtualization_backend")
 
 # Add src directory to sys.path to import virtualization_mcp
@@ -68,14 +68,14 @@ service_manager = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global mcp, service_manager
-    logger.info("Virtualization Backend Starting...")
+    logger.debug("Virtualization Backend Starting...")
     from virtualization_mcp.services.service_manager import service_manager as sm
 
     # Initialize service_manager first so /api/v1/vms and /api/v1/host/info work even if MCP fails
     try:
         sm.initialize_services()
         service_manager = sm
-        logger.info("Service manager initialized (VMs, host info available)")
+        logger.debug("Service manager initialized (VMs, host info available)")
     except Exception as e:
         logger.error("Service manager init failed: %s", e, exc_info=True)
         service_manager = None
@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI):
 
         mcp = start_mcp_server()
         if mcp:
-            logger.info("MCP Server: %s", mcp.name)
+            logger.debug("MCP Server: %s", mcp.name)
     except Exception as e:
         logger.error("MCP server init failed: %s", e, exc_info=True)
         mcp = None
@@ -116,9 +116,9 @@ if genai and GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
     chat_model = genai.GenerativeModel("gemini-3.5-flash")
 elif not genai:
-    logger.warning("google-generativeai not installed. Chat will be disabled.")
+    logger.debug("google-generativeai not installed. Chat will be disabled.")
 elif not GOOGLE_API_KEY:
-    logger.warning("GOOGLE_API_KEY not found; chat will be in limited mode.")
+    logger.debug("GOOGLE_API_KEY not found; chat will be in limited mode.")
 
 app = FastAPI(title="Virtualization MCP Backend", lifespan=lifespan)
 chat_service = ChatService()
@@ -2138,7 +2138,7 @@ async def launch_sandbox(request: SandboxLaunchRequest):
             tmp.write(config_xml)
             tmp_path = tmp.name
 
-        logger.info("Launching sandbox with config: %s", tmp_path)
+        logger.debug("Launching sandbox with config: %s", tmp_path)
         wsb_exe = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "WindowsSandbox.exe")
         if os.path.isfile(wsb_exe):
             await asyncio.create_subprocess_exec(
@@ -2530,6 +2530,158 @@ async def fleet_install_run(request: FleetInstallRunRequest):
         "run_dir": run_dir,
         "hint": "Copy script into consumer sandbox mapped folder and run via Run-Consumer extension or manual PS",
     }
+
+
+class NakedTestRequest(BaseModel):
+    repo: str  # owner/name or https URL
+    branch: str = "main"
+    observe_sec: int = 90
+    health_url: str = ""
+    memory_in_mb: int | None = 8192
+
+
+NAKED_TEST_FILES = (
+    "Run-NakedTest.cmd",
+    "Invoke-NakedTest.ps1",
+    "lib\\Winget-Bootstrap.ps1",
+)
+
+_JOB_ID_RE = None
+
+
+def _valid_job_id(job_id: str) -> bool:
+    global _JOB_ID_RE
+    if _JOB_ID_RE is None:
+        import re as _re
+
+        _JOB_ID_RE = _re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+    return bool(_JOB_ID_RE.match(job_id or ""))
+
+
+def _build_sandbox_xml_naked(
+    assets_folder: str,
+    job_folder: str,
+    memory_mb: int = 8192,
+    vgpu: bool = True,
+    networking: bool = True,
+) -> str:
+    """WSB: naked-test - maps payloads to C:\\Assets and job dir to C:\\Job,
+    runs Run-NakedTest.cmd at logon. Sandbox writes RESULT.json to C:\\Job."""
+    import xml.sax.saxutils as sax
+
+    assets_escaped = sax.escape(assets_folder)
+    job_escaped = sax.escape(job_folder)
+    return f"""<Configuration>
+<MappedFolders>
+<MappedFolder>
+<HostFolder>{assets_escaped}</HostFolder>
+<SandboxFolder>C:\\Assets</SandboxFolder>
+<ReadOnly>false</ReadOnly>
+</MappedFolder>
+<MappedFolder>
+<HostFolder>{job_escaped}</HostFolder>
+<SandboxFolder>C:\\Job</SandboxFolder>
+<ReadOnly>false</ReadOnly>
+</MappedFolder>
+</MappedFolders>
+<VGpu>{"Enable" if vgpu else "Disable"}</VGpu>
+<Networking>{"Enable" if networking else "Disable"}</Networking>
+<MemoryInMB>{memory_mb}</MemoryInMB>
+<LogonCommand>
+<Command>C:\\Assets\\Run-NakedTest.cmd</Command>
+</LogonCommand>
+</Configuration>"""
+
+
+@app.post("/api/v1/fleet/naked-test")
+async def fleet_naked_test(request: NakedTestRequest):
+    """Start an automated naked-install test: repo name in, RESULT.json out.
+
+    Body: {repo: owner/name or URL, branch, observe_sec, health_url}.
+    Creates a job dir, writes spec.json, launches a consumer sandbox whose
+    logon payload clones, smoke-gates (just --list) and observes start.bat.
+    Poll GET /api/v1/fleet/naked-test/{job_id} for progress.
+    """
+    repo = (request.repo or "").strip()
+    if not repo:
+        raise HTTPException(status_code=400, detail="repo is required (owner/name or https URL)")
+    if repo.startswith("http"):
+        repo_url = repo
+    elif "/" in repo and " " not in repo:
+        repo_url = f"https://github.com/{repo}.git"
+    else:
+        raise HTTPException(status_code=400, detail="repo must be owner/name or an https URL")
+    branch = (request.branch or "main").strip() or "main"
+    observe = max(15, min(int(request.observe_sec or 90), 1200))
+
+    host_folder = ASSETS_SANDBOX
+    if not os.path.isdir(host_folder):
+        raise HTTPException(status_code=500, detail=f"Sandbox assets missing: {host_folder}")
+    for required in NAKED_TEST_FILES:
+        rp = os.path.join(host_folder, required.replace("\\", os.sep))
+        if not os.path.isfile(rp):
+            raise HTTPException(status_code=500, detail=f"Missing {required} in {host_folder}")
+
+    stamp = __import__("datetime").datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    safe_repo = "".join(c if c.isalnum() or c in "-_" else "-" for c in repo_url.split("/")[-1].replace(".git", ""))
+    job_id = f"naked-{safe_repo}-{stamp}"
+    job_dir = os.path.join(_SANDBOX_RUNS_ROOT, job_id)
+    os.makedirs(job_dir, exist_ok=True)
+    with open(os.path.join(job_dir, "spec.json"), "w", encoding="utf-8") as f:
+        json.dump(
+            {"repo_url": repo_url, "branch": branch, "observe_sec": observe, "health_url": request.health_url or ""},
+            f,
+            indent=2,
+        )
+
+    mem = request.memory_in_mb if request.memory_in_mb is not None else 8192
+    config_xml = _build_sandbox_xml_naked(host_folder, job_dir, memory_mb=mem)
+    try:
+        with tempfile.NamedTemporaryFile(
+            suffix=".wsb", delete=False, mode="w", encoding="utf-8", newline="\r\n"
+        ) as tmp:
+            tmp.write(config_xml)
+            tmp_path = tmp.name
+        wsb_exe = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "WindowsSandbox.exe")
+        if os.path.isfile(wsb_exe):
+            await asyncio.create_subprocess_exec(
+                wsb_exe, tmp_path, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
+            )
+        else:
+            await asyncio.create_subprocess_shell(
+                f'start "" "{tmp_path}"', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+        return {"success": True, "job_id": job_id, "repo": repo_url, "branch": branch, "run_dir": job_dir}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error launching naked test: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/api/v1/fleet/naked-test/{job_id}")
+async def fleet_naked_test_status(job_id: str):
+    """Poll a naked-test job. Running until C:\\Job\\RESULT.json appears."""
+    if not _valid_job_id(job_id):
+        raise HTTPException(status_code=400, detail="invalid job_id")
+    job_dir = os.path.join(_SANDBOX_RUNS_ROOT, job_id)
+    if not os.path.isdir(job_dir):
+        raise HTTPException(status_code=404, detail=f"unknown job: {job_id}")
+    result_path = os.path.join(job_dir, "RESULT.json")
+    try:
+        files = sorted(os.listdir(job_dir))
+    except Exception:
+        files = []
+    if not os.path.isfile(result_path):
+        return {"success": True, "job_id": job_id, "status": "running", "files": files, "run_dir": job_dir}
+    try:
+        with open(result_path, encoding="utf-8-sig") as f:
+            result = json.load(f)
+    except Exception as e:
+        return {"success": False, "job_id": job_id, "status": "error", "error": f"RESULT.json unreadable: {e}"}
+    result.setdefault("status", "finished")
+    result["job_id"] = job_id
+    return result
 
 
 @app.post("/api/v1/chat")
