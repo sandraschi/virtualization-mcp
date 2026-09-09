@@ -10,7 +10,7 @@ import {
   Save,
   Wrench,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "../api/config";
 
 type WsbPreviewTab = "basic" | "devInfra" | "consumer" | "fullDev";
@@ -58,6 +58,23 @@ export default function Sandbox() {
   >("idle");
   const [consumerError, setConsumerError] = useState<string | null>(null);
   const [consumerInstallClaude, setConsumerInstallClaude] = useState(true);
+  const [ntRepo, setNtRepo] = useState("");
+  const [ntBranch, setNtBranch] = useState("main");
+  const [ntObserve, setNtObserve] = useState(90);
+  const [ntHealth, setNtHealth] = useState("");
+  const [ntJobId, setNtJobId] = useState<string | null>(null);
+  const [ntPhase, setNtPhase] = useState<
+    "idle" | "running" | "finished" | "error" | "stale"
+  >("idle");
+  const [ntSteps, setNtSteps] = useState<
+    Array<{ name: string; exit: number; ms: number; note: string }>
+  >([]);
+  const [ntLogTail, setNtLogTail] = useState<string[]>([]);
+  const [ntPass, setNtPass] = useState<boolean | null>(null);
+  const [ntFailedStep, setNtFailedStep] = useState("");
+  const [ntNote, setNtNote] = useState("");
+  const [ntError, setNtError] = useState<string | null>(null);
+  const ntPollRef = useRef<number | undefined>(undefined);
   const [previewTab, setPreviewTab] = useState<WsbPreviewTab>("devInfra");
   const [previewXml, setPreviewXml] = useState<string | null>(null);
   const [previewFilename, setPreviewFilename] = useState("DevInfra.wsb");
@@ -370,6 +387,123 @@ export default function Sandbox() {
     }
   };
 
+  const NT_STEP_NAMES = ["rig", "clone", "just-list", "start"];
+
+  const stopNtPoll = useCallback(() => {
+    if (ntPollRef.current !== undefined) {
+      window.clearInterval(ntPollRef.current);
+      ntPollRef.current = undefined;
+    }
+  }, []);
+
+  useEffect(() => stopNtPoll, [stopNtPoll]);
+
+  const handleStartNakedTest = async () => {
+    if (!ntRepo.trim()) {
+      setNtError("Enter a repo (owner/name or https URL)");
+      return;
+    }
+    if (!(await checkSandboxRunning())) return;
+    stopNtPoll();
+    setNtError(null);
+    setNtSteps([]);
+    setNtLogTail([]);
+    setNtPass(null);
+    setNtFailedStep("");
+    setNtNote("");
+    setNtPhase("running");
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/fleet/naked-test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          repo: ntRepo.trim(),
+          branch: ntBranch.trim() || "main",
+          observe_sec: ntObserve,
+          health_url: ntHealth.trim(),
+        }),
+      });
+      const text = await response.text();
+      if (!response.ok) {
+        let msg = text;
+        try {
+          const j = JSON.parse(text);
+          if (j.detail)
+            msg =
+              typeof j.detail === "string"
+                ? j.detail
+                : JSON.stringify(j.detail);
+        } catch {
+          /* keep raw */
+        }
+        throw new Error(msg);
+      }
+      const data = JSON.parse(text);
+      const jobId = data.job_id as string;
+      setNtJobId(jobId);
+      const deadline = Date.now() + (ntObserve + 600) * 1000;
+      ntPollRef.current = window.setInterval(() => {
+        void (async () => {
+          if (Date.now() > deadline) {
+            stopNtPoll();
+            setNtPhase("stale");
+            setNtError("Poll timeout - sandbox may have been closed by hand.");
+            return;
+          }
+          try {
+            const res = await fetch(
+              `${API_BASE}/api/v1/fleet/naked-test/${encodeURIComponent(jobId)}`,
+            );
+            const body = await res.text();
+            if (!res.ok) throw new Error(body || "poll failed");
+            const st = JSON.parse(body);
+            if (st.status === "finished") {
+              stopNtPoll();
+              setNtSteps(st.steps || []);
+              setNtLogTail(st.log_tail || []);
+              setNtPass(st.pass ?? null);
+              setNtFailedStep(st.failed_step || "");
+              setNtNote(st.note || "");
+              setNtPhase("finished");
+            } else if (st.status === "error") {
+              throw new Error(st.error || "job error");
+            }
+            /* running: keep polling */
+          } catch (e: unknown) {
+            stopNtPoll();
+            setNtPhase("error");
+            setNtError(e instanceof Error ? e.message : "poll failed");
+          }
+        })();
+      }, 5000);
+    } catch (e: unknown) {
+      setNtPhase("error");
+      setNtError(e instanceof Error ? e.message : "start failed");
+    }
+  };
+
+  const handleDownloadNtResult = async () => {
+    if (!ntJobId) return;
+    const res = await fetch(
+      `${API_BASE}/api/v1/fleet/naked-test/${encodeURIComponent(ntJobId)}`,
+    );
+    const blob = new Blob([await res.text()], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${ntJobId}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const ntStepState = (name: string): "pass" | "fail" | "active" | "idle" => {
+    const hit = ntSteps.find((s) => s.name === name);
+    if (hit) return hit.exit === 0 ? "pass" : "fail";
+    if (ntPhase !== "running") return "idle";
+    const idx = NT_STEP_NAMES.indexOf(name);
+    const doneCount = ntSteps.length;
+    return idx === doneCount ? "active" : "idle";
+  };
+
   const handleDownloadCurrentWsb = () => {
     const xml = previewTab === "basic" ? getXmlPreview() : previewXml;
     if (previewTab !== "basic" && !xml) {
@@ -674,6 +808,152 @@ export default function Sandbox() {
                   : "Launch consumer sandbox"}
             </button>
           </div>
+        </div>
+
+        {/* Naked install test: repo name in, RESULT.json out */}
+        <div className="p-6 rounded-xl border border-violet-500/20 bg-violet-500/5 backdrop-blur-sm space-y-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            Naked install test (automatic)
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Drop a repo name in. A consumer sandbox boots, installs the rig (git
+            + just only), clones, runs the{" "}
+            <code className="text-foreground/80">just --list</code> smoke gate,
+            then observes <code className="text-foreground/80">start.bat</code>.
+            Progress reports here - no manual steps inside the box.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              value={ntRepo}
+              onChange={(e) => setNtRepo(e.target.value)}
+              placeholder="owner/name or https URL"
+              aria-label="Target repo"
+              className="col-span-2 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+            />
+            <input
+              type="text"
+              value={ntBranch}
+              onChange={(e) => setNtBranch(e.target.value)}
+              placeholder="main"
+              aria-label="Branch"
+              className="bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+            />
+            <input
+              type="number"
+              value={ntObserve}
+              onChange={(e) => setNtObserve(parseInt(e.target.value, 10) || 90)}
+              aria-label="Observe seconds"
+              title="Observe seconds"
+              className="bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+            />
+            <input
+              type="text"
+              value={ntHealth}
+              onChange={(e) => setNtHealth(e.target.value)}
+              placeholder="health URL (optional)"
+              aria-label="Health URL"
+              className="col-span-2 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+            />
+          </div>
+          {ntError && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {ntError}
+            </div>
+          )}
+          {ntPhase === "finished" && (
+            <div
+              className={`p-3 rounded-lg border text-sm flex items-center gap-2 ${
+                ntPass
+                  ? "bg-green-600/10 border-green-600/20 text-green-500"
+                  : "bg-red-500/10 border-red-500/20 text-red-500"
+              }`}
+            >
+              {ntPass ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              {ntPass
+                ? `PASS${ntNote ? ` - ${ntNote}` : ""}`
+                : `FAIL at ${ntFailedStep || "unknown step"}${ntNote ? ` - ${ntNote}` : ""}`}
+            </div>
+          )}
+          {(ntPhase === "running" || ntPhase === "finished") && (
+            <div className="space-y-1.5">
+              {NT_STEP_NAMES.map((name) => {
+                const st = ntStepState(name);
+                const hit = ntSteps.find((s) => s.name === name);
+                return (
+                  <div
+                    key={name}
+                    className="flex items-center gap-2 font-mono text-sm"
+                  >
+                    {st === "pass" ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : st === "fail" ? (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    ) : st === "active" ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+                    ) : (
+                      <span className="w-4 h-4 rounded-full border border-white/20 inline-block" />
+                    )}
+                    <span className="text-foreground/90">{name}</span>
+                    {hit && (
+                      <span className="text-xs text-muted-foreground">
+                        exit {hit.exit} - {hit.ms}ms
+                        {hit.note ? ` - ${hit.note}` : ""}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {ntLogTail.length > 0 && (
+            <pre className="font-mono text-xs text-muted-foreground bg-black/40 rounded-lg p-3 max-h-40 overflow-auto whitespace-pre-wrap">
+              {ntLogTail.join("\n")}
+            </pre>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={ntPhase === "running"}
+              onClick={handleStartNakedTest}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${
+                ntPhase === "running"
+                  ? "bg-white/10 text-muted-foreground"
+                  : "bg-violet-600 text-white hover:bg-violet-700"
+              }`}
+            >
+              {ntPhase === "running" ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Play className="w-5 h-5" />
+              )}
+              {ntPhase === "running"
+                ? `Testing${ntJobId ? ` ${ntJobId}` : ""}...`
+                : "Start naked test"}
+            </button>
+            {ntPhase === "finished" && (
+              <button
+                type="button"
+                onClick={handleDownloadNtResult}
+                title="Download RESULT.json"
+                aria-label="Download RESULT.json"
+                className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          {ntPhase === "stale" && (
+            <p className="text-xs text-amber-400">
+              Poll timeout - the sandbox was probably closed by hand.
+            </p>
+          )}
         </div>
 
         {/* Full dev setup */}
