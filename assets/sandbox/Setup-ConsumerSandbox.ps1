@@ -35,9 +35,12 @@ function Write-ConsumerChecklist {
         ''
         'Option A: GitHub Releases -> download .mcpb -> drag into Claude Desktop'
         'Option B: winget install OpenJS.NodeJS -> reopen terminal -> npx @anthropic-ai/mcpb install ...'
-        'Option C: winget uv + git -> clone -> uv sync -> claude_desktop_config.json'
+        'Option C: winget uv + git -> clone -> start.bat (Require-Command chain installs the rest)'
         ''
-        'Fleet standard: mcp-central-docs/standards/NAKED_INSTALL_TESTING.md'
+        'Smoke gate (run first, before start.bat): cd <repo> ; just --list'
+        'If just --list fails, STOP and file the issue - do not let your agent improvise.'
+        ''
+        'Fleet standard: mcp-central-docs/standards/NAKED_PC_INSTALL_STANDARD.md (sections 1-7b)'
     )
     $dest = Join-Path $DesktopPath 'consumer-install-test-checklist.txt'
     Set-Content -LiteralPath $dest -Value $lines -Encoding UTF8
