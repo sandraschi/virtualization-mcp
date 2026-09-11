@@ -84,3 +84,34 @@ async def test_sandbox_management_win_launch_devinfra():
         assert res["success"] is True
         assert res["action"] == "win_sandbox_launch_devinfra"
         mock_popen.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_sandbox_management_win_naked_test():
+    with patch("subprocess.Popen") as mock_popen:
+        res = await sandbox_management(
+            action="win_sandbox_naked_test",
+            repo="sandraschi/virtualization-mcp",
+            branch="main",
+            observe_sec=45,
+        )
+        assert res["success"] is True
+        assert res["action"] == "win_sandbox_naked_test"
+        assert "job_id" in res
+        assert "naked-virtualization-mcp-" in res["job_id"]
+        mock_popen.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_sandbox_management_win_naked_test_status():
+    res = await sandbox_management(action="win_sandbox_naked_test_status", job_id="nonexistent-job-xyz")
+    assert res["success"] is False
+    assert "Unknown job" in res["error"]
+
+
+@pytest.mark.asyncio
+async def test_sandbox_management_win_naked_test_list():
+    res = await sandbox_management(action="win_sandbox_naked_test_list")
+    assert res["success"] is True
+    assert "jobs" in res
+

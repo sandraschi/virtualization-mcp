@@ -12,14 +12,15 @@ Spin up VMs, sandboxes, and dev environments from Claude Desktop, Cursor, or the
 
 - **VirtualBox & Hyper-V** — create, start, stop, snapshot, clone VMs
 - **Libvirt / KVM / QEMU** — native Linux and WSL2 hypervisor management
-- **Windows Sandbox & MCP Tools** — consumer (nearly naked) and dev-infra bringups with direct MCP tool triggers (`win_sandbox_launch_consumer`, `win_sandbox_launch_devinfra`, `win_sandbox_terminate`) and singleton auto-cleanup
+- **Automated Naked Install Testing** — zero-touch verification on clean Windows Sandbox (`just naked-test`, REST endpoints, and `win_sandbox_naked_test` FastMCP tools) enforcing NAKED_PC_INSTALL_STANDARD with 4 fail-loud gates
+- **Windows Sandbox & MCP Tools** — consumer (nearly naked) and dev-infra bringups with direct MCP tool triggers (`win_sandbox_launch_consumer`, `win_sandbox_launch_devinfra`, `win_sandbox_terminate`, `win_sandbox_naked_test`) and singleton auto-cleanup
 - **ResourceGuard Safety** — physical host CPU & RAM quota enforcement (default 95% threshold) to protect host stability
 - **Prefab UI Cards** — interactive FastMCP UI cards (`show_vm_card`, `show_hypervisor_health_card`, `show_sandbox_status_card`)
 - **Cloud-Init ISO Generator** — create non-interactive Linux VM seed ISOs (`user-data` & `meta-data`)
 - **ISO pipeline** — download Ubuntu, Debian, Windows ISOs into `assets/vbox`
 - **noVNC console** — browser VM console from the webapp
-- **Modular Webapp Backend** — structured FastAPI routers (`/api/vms`, `/api/snapshots`, `/api/system`)
-- **Fleet dashboard** — health-check and launch registered MCP webapps
+- **Modular Webapp Backend** — structured FastAPI routers (`/api/vms`, `/api/snapshots`, `/api/system`, `/api/v1/fleet`)
+- **Fleet dashboard** — health-check, past test runs history, and launch registered MCP webapps
 
 ## A Brief History of Virtual Machines
 

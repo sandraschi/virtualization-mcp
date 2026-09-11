@@ -17,12 +17,27 @@ llms-full.txt
 # Build Artifacts
 dist/
 build/
+target/
+src-tauri/
 *.mcpb
+coverage.xml
+.coverage
 
-# Non-MCP components (webapp, native, scripts)
+# Non-MCP components (webapp, native, scripts, assets, VMs)
 native/
 web_sota/
+webapp/
 scripts/
+assets/
+VMs/
+.vbox/
+backups/
+quarantine/
+logs/
+*.vdi
+*.iso
+*.ova
+*.img
 
 # Editor / tooling backups (sneak-in specialists) - incl timestamped .bak_*
 *.bak

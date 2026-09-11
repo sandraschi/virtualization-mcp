@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-09-11
+
+### Added
+- **Automated Naked Install Testing Engine**:
+  - Implemented single-command CLI recipe `just naked-test repo=<name> branch=<branch> observe=<sec> health=<url>` via `scripts/just/naked-test.ps1`.
+  - Windows Sandbox bringup running the 4-gate verification protocol (`rig` -> `clone` -> `just-list` -> `start` + `/health` probe) writing `RESULT.json`.
+  - Enforced fail-loud doctrine: failure at the smoke gate halts execution immediately with non-zero exit code and error diagnostics.
+- **FastMCP Agent Actions (`sandbox_management`)**:
+  - `win_sandbox_naked_test`: launch automated naked install test for any repository.
+  - `win_sandbox_naked_test_status`: check progress and retrieve `RESULT.json` with step durations and log tail.
+  - `win_sandbox_naked_test_list`: list past test jobs with pass/fail summary.
+- **FastAPI REST Endpoints**:
+  - `GET /api/v1/fleet/naked-test`: returns history of test runs stored in `_sandbox_runs`.
+  - `GET /api/v1/fleet/naked-test-repos`: discovers candidate fleet repos with `start.bat` or `justfile`.
+- **Webapp UI / UX Polish (`sandbox.tsx`)**:
+  - Quick-pick repo chips (`virtualization-mcp`, `calibre-mcp`, `speech-mcp`, `on-ai-takeover`, etc.) for zero-typing test kickoff.
+  - Recent Runs history panel showing past jobs with color-coded status badges (`PASS`, `FAIL`, `RUNNING`), duration, and instant 1-click loading of log tail and step details.
+
 ## [1.3.2] - 2026-08-17
 
 ### Fixed

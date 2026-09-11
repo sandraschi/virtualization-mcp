@@ -2684,6 +2684,108 @@ async def fleet_naked_test_status(job_id: str):
     return result
 
 
+@app.get("/api/v1/fleet/naked-test")
+async def list_fleet_naked_tests(limit: int = 20):
+    """List recent naked test runs with summary statuses."""
+    if not os.path.isdir(_SANDBOX_RUNS_ROOT):
+        return {"success": True, "jobs": []}
+
+    jobs = []
+    try:
+        entries = sorted(os.listdir(_SANDBOX_RUNS_ROOT), reverse=True)
+    except Exception as e:
+        logger.error(f"Error listing sandbox runs root: {e}")
+        return {"success": False, "error": str(e), "jobs": []}
+
+    for entry in entries:
+        if not entry.startswith("naked-"):
+            continue
+        job_dir = os.path.join(_SANDBOX_RUNS_ROOT, entry)
+        if not os.path.isdir(job_dir):
+            continue
+
+        spec = {}
+        spec_file = os.path.join(job_dir, "spec.json")
+        if os.path.isfile(spec_file):
+            try:
+                with open(spec_file, encoding="utf-8") as sf:
+                    spec = json.load(sf)
+            except Exception:
+                pass
+
+        result = None
+        result_file = os.path.join(job_dir, "RESULT.json")
+        status = "running"
+        if os.path.isfile(result_file):
+            try:
+                with open(result_file, encoding="utf-8-sig") as rf:
+                    result = json.load(rf)
+                status = "finished"
+            except Exception:
+                status = "error"
+
+        jobs.append(
+            {
+                "job_id": entry,
+                "status": status,
+                "repo": spec.get("repo_url", ""),
+                "branch": spec.get("branch", "main"),
+                "observe_sec": spec.get("observe_sec", 90),
+                "pass": result.get("pass") if result else None,
+                "failed_step": result.get("failed_step", "") if result else "",
+                "note": result.get("note", "") if result else "",
+                "finished_utc": result.get("finished_utc") if result else None,
+                "created_time": os.path.getctime(job_dir),
+            }
+        )
+        if len(jobs) >= limit:
+            break
+
+    return {"success": True, "jobs": jobs}
+
+
+@app.get("/api/v1/fleet/naked-test-repos")
+async def list_fleet_candidate_repos():
+    """List fleet repositories in the workspace suitable for naked install testing."""
+    repos_root = os.path.normpath(os.path.join(_repo_root, ".."))
+    fleet = []
+    default_candidates = [
+        {
+            "name": "virtualization-mcp",
+            "repo": "sandraschi/virtualization-mcp",
+            "description": "VM & Sandbox fleet harness (this repo)",
+        },
+        {"name": "calibre-mcp", "repo": "sandraschi/calibre-mcp", "description": "E-book management FastMCP server"},
+        {"name": "speech-mcp", "repo": "sandraschi/speech-mcp", "description": "Speech & voice synthesis service"},
+        {
+            "name": "on-ai-takeover",
+            "repo": "sandraschi/on-ai-takeover",
+            "description": "Fail-loud benchmark (no start.bat)",
+        },
+    ]
+    if os.path.isdir(repos_root):
+        try:
+            for item in sorted(os.listdir(repos_root)):
+                item_path = os.path.join(repos_root, item)
+                if os.path.isdir(item_path) and not item.startswith(".") and not item.startswith("_"):
+                    if os.path.isfile(os.path.join(item_path, "start.bat")) or os.path.isfile(
+                        os.path.join(item_path, "justfile")
+                    ):
+                        fleet.append(
+                            {
+                                "name": item,
+                                "repo": f"sandraschi/{item}",
+                                "has_start_bat": os.path.isfile(os.path.join(item_path, "start.bat")),
+                            }
+                        )
+        except Exception as e:
+            logger.warning(f"Error scanning repos directory: {e}")
+
+    if not fleet:
+        fleet = default_candidates
+    return {"success": True, "repos": fleet}
+
+
 @app.post("/api/v1/chat")
 async def chat_interaction(request: ChatRequest):
     """Handle AI chat using local LLM (Ollama/LM Studio) or Gemini fallback."""

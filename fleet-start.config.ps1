@@ -5,10 +5,12 @@
     BackendPort  = 10701
     FrontendPort = 10700
     HealthPath   = '/api/v1/health'
-    WebRoot      = 'D:\Dev\repos\virtualization-mcp\webapp'
+    WebRoot      = 'webapp\frontend'
     Backend = @{
         Kind          = 'uvicorn'
         UvicornTarget = 'virtualization_mcp.web.app:app'
+        WorkDir       = 'webapp\backend'
+        PythonPath    = 'webapp\backend;src'
         Env           = @{ WEB_PORT = '10701' }
     }
     Frontend = @{

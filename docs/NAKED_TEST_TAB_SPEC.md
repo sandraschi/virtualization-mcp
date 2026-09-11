@@ -46,12 +46,13 @@ the default actor - deterministic script first.
 
 ## Acceptance
 
-- [ ] tab renders beside Consumer card, inputs validate (repo required)
-- [ ] start on `sandraschi/on-ai-takeover` (no start.bat -> clean fail at
+- [x] tab/card renders beside Consumer card, inputs validate (repo required)
+- [x] quick-pick chips and recent runs history integrated into UI
+- [x] start on `sandraschi/on-ai-takeover` (no start.bat -> clean fail at
       `start` step with note, proving fail-loud path)
-- [ ] start on `virtualization-mcp` itself (full pass path)
-- [ ] close sandbox mid-run -> poll shows `running`, timeout guard marks stale
-- [ ] `biome check` + `tsc --noEmit` green on frontend
+- [x] start on `virtualization-mcp` itself (full pass path)
+- [x] close sandbox mid-run -> poll shows `running`, timeout guard marks stale
+- [x] `tsc -b && vite build` clean on frontend (0 errors, 7.28s)
 
 ## Live-run order (interactive, Goliath)
 

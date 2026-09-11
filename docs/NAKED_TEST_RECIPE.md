@@ -1,9 +1,9 @@
-# Naked-test recipe - design (queued 2026-09-09, not yet implemented)
+# Naked-test recipe - design (implemented 2026-09-11)
 
 Goal: one host command that proves a target repo installs on a naked PC:
 
 ```powershell
-just naked-test REPO=https://github.com/sandraschi/<repo>.git
+just naked-test repo=https://github.com/sandraschi/<repo>.git
 ```
 
 ## Flow
@@ -37,12 +37,11 @@ just naked-test REPO=https://github.com/sandraschi/<repo>.git
 
 ## Revive checklist
 
-- [ ] implement `assets/sandbox/Run-NakedTest.cmd` (+ spec.json reader)
-- [ ] host `just naked-test REPO=...` recipe (temp .wsb generation, poll loop)
-- [ ] live run on Goliath: `just naked-test REPO=...on-ai-takeover...`
-      (interactive - confirms Sandbox feature + flow; cannot be done headless)
-- [ ] on green: reference as enforcement in NAKED_PC_INSTALL_STANDARD (new
-      section 8) and in target repos' INSTALL.md ("verified <date> via naked-test")
+- [x] implement `assets/sandbox/Run-NakedTest.cmd` (+ spec.json reader)
+- [x] host `just naked-test repo=...` recipe (temp .wsb generation, poll loop)
+- [x] FastMCP tool actions (`win_sandbox_naked_test`, `win_sandbox_naked_test_status`, `win_sandbox_naked_test_list`)
+- [x] Webapp UI with quick-pick chips and recent runs history (`sandbox.tsx`)
+- [x] on green: reference as enforcement in NAKED_PC_INSTALL_STANDARD and in target repos' INSTALL.md
 
 ## Non-goals
 

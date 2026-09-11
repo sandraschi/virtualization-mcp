@@ -506,6 +506,7 @@ function Resolve-FleetPortConflict {
         }
         Write-Host "[$Label] ERROR: port(s) held by Windows/NSSM service and health check failed: $($svcBlockers -join '; ')" -ForegroundColor Red
         Write-Host "Fix the service (services.msc / nssm restart), do not kill from dev scripts." -ForegroundColor Yellow
+        Write-Host "  If $Label desktop app (Tauri) is running, quit it from system tray - it holds the same :backend/:frontend ports as dev." -ForegroundColor Yellow
         return [pscustomobject]@{ Action = 'Blocked'; Reuse = $false }
     }
 

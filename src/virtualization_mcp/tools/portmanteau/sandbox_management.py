@@ -8,6 +8,7 @@ Requires Docker Desktop running on the host.
 
 import logging
 import subprocess
+from datetime import UTC
 from pathlib import Path
 from typing import Any, Literal
 
@@ -43,6 +44,9 @@ SANDBOX_ACTIONS = {
     "win_sandbox_launch_devinfra": "Launch dev-infra Windows Sandbox (git, python, node, just, biome)",
     "win_sandbox_status": "Check if Windows Sandbox is running and read launch log status",
     "win_sandbox_terminate": "Terminate active singleton Windows Sandbox instance",
+    "win_sandbox_naked_test": "Launch automated naked install test in Windows Sandbox (repo in, RESULT.json out)",
+    "win_sandbox_naked_test_status": "Poll or retrieve RESULT.json from a naked install test job",
+    "win_sandbox_naked_test_list": "List recent naked install test jobs with pass/fail summary",
 }
 
 
@@ -60,6 +64,9 @@ async def sandbox_management(
         "win_sandbox_launch_devinfra",
         "win_sandbox_status",
         "win_sandbox_terminate",
+        "win_sandbox_naked_test",
+        "win_sandbox_naked_test_status",
+        "win_sandbox_naked_test_list",
     ],
     code: str | None = None,
     language: Literal["python", "javascript", "bash"] = "python",
@@ -74,6 +81,12 @@ async def sandbox_management(
     content: str | None = None,
     install_claude_desktop: bool = False,
     plain: bool = False,
+    repo: str | None = None,
+    branch: str = "main",
+    observe_sec: int = 90,
+    health_url: str | None = None,
+    job_id: str | None = None,
+    memory_in_mb: int = 8192,
 ) -> dict[str, Any]:
     """Docker & Windows Sandbox code execution and bringup tool."""
     try:
@@ -183,6 +196,167 @@ async def sandbox_management(
                 "script": str(ps_script),
                 "message": "Launched dev-infra sandbox script asynchronously.",
             }
+
+        if action == "win_sandbox_naked_test":
+            if not repo:
+                return {"success": False, "error": "repo is required (owner/name or https URL)"}
+            repo_clean = repo.strip()
+            if repo_clean.startswith("http"):
+                repo_url = repo_clean
+            elif "/" in repo_clean and " " not in repo_clean:
+                repo_url = f"https://github.com/{repo_clean}.git"
+            else:
+                return {"success": False, "error": "repo must be owner/name or an https URL"}
+
+            repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+            assets_folder = repo_root / "assets" / "sandbox"
+            if not assets_folder.is_dir():
+                return {"success": False, "error": f"Sandbox assets missing: {assets_folder}"}
+
+            runs_root = repo_root.parent / "_sandbox_runs"
+            runs_root.mkdir(parents=True, exist_ok=True)
+
+            import json
+            import tempfile
+            import xml.sax.saxutils as sax
+            from datetime import datetime
+
+            stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+            safe_repo = "".join(
+                c if c.isalnum() or c in "-_" else "-" for c in repo_url.split("/")[-1].replace(".git", "")
+            )
+            jid = f"naked-{safe_repo}-{stamp}"
+            job_dir = runs_root / jid
+            job_dir.mkdir(parents=True, exist_ok=True)
+
+            spec_path = job_dir / "spec.json"
+            spec_path.write_text(
+                json.dumps(
+                    {
+                        "repo_url": repo_url,
+                        "branch": branch or "main",
+                        "observe_sec": observe_sec or 90,
+                        "health_url": health_url or "",
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            assets_escaped = sax.escape(str(assets_folder))
+            job_escaped = sax.escape(str(job_dir))
+            wsb_xml = f"""<Configuration>
+<MappedFolders>
+<MappedFolder>
+<HostFolder>{assets_escaped}</HostFolder>
+<SandboxFolder>C:\\Assets</SandboxFolder>
+<ReadOnly>false</ReadOnly>
+</MappedFolder>
+<MappedFolder>
+<HostFolder>{job_escaped}</HostFolder>
+<SandboxFolder>C:\\Job</SandboxFolder>
+<ReadOnly>false</ReadOnly>
+</MappedFolder>
+</MappedFolders>
+<VGpu>Enable</VGpu>
+<Networking>Enable</Networking>
+<MemoryInMB>{memory_in_mb or 8192}</MemoryInMB>
+<LogonCommand>
+<Command>C:\\Assets\\Run-NakedTest.cmd</Command>
+</LogonCommand>
+</Configuration>"""
+
+            tmp_wsb = Path(tempfile.gettempdir()) / f"{jid}.wsb"
+            tmp_wsb.write_text(wsb_xml, encoding="utf-8")
+
+            import os
+
+            wsb_exe = Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "WindowsSandbox.exe"
+            if wsb_exe.exists():
+                subprocess.Popen([str(wsb_exe), str(tmp_wsb)])
+            else:
+                subprocess.Popen(["cmd.exe", "/c", "start", "", str(tmp_wsb)])
+
+            return {
+                "success": True,
+                "action": "win_sandbox_naked_test",
+                "job_id": jid,
+                "repo": repo_url,
+                "branch": branch,
+                "run_dir": str(job_dir),
+                "message": f"Launched automated naked install test for {repo_url} in Windows Sandbox.",
+            }
+
+        if action == "win_sandbox_naked_test_status":
+            if not job_id:
+                return {"success": False, "error": "job_id is required for win_sandbox_naked_test_status"}
+            repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+            runs_root = repo_root.parent / "_sandbox_runs"
+            job_dir = runs_root / job_id
+            if not job_dir.is_dir():
+                return {"success": False, "error": f"Unknown job: {job_id}"}
+            result_path = job_dir / "RESULT.json"
+            if not result_path.is_file():
+                return {
+                    "success": True,
+                    "action": "win_sandbox_naked_test_status",
+                    "job_id": job_id,
+                    "status": "running",
+                    "message": "Test is still running in Windows Sandbox...",
+                }
+            import json
+
+            try:
+                result_data = json.loads(result_path.read_text(encoding="utf-8-sig"))
+                result_data.setdefault("status", "finished")
+                result_data["success"] = True
+                result_data["action"] = "win_sandbox_naked_test_status"
+                result_data["job_id"] = job_id
+                return result_data
+            except Exception as e:
+                return {"success": False, "job_id": job_id, "status": "error", "error": f"RESULT.json unreadable: {e}"}
+
+        if action == "win_sandbox_naked_test_list":
+            repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+            runs_root = repo_root.parent / "_sandbox_runs"
+            if not runs_root.is_dir():
+                return {"success": True, "action": "win_sandbox_naked_test_list", "jobs": []}
+            import json
+
+            jobs = []
+            for d in sorted(runs_root.iterdir(), reverse=True):
+                if d.is_dir() and d.name.startswith("naked-"):
+                    spec_file = d / "spec.json"
+                    spec = {}
+                    if spec_file.is_file():
+                        try:
+                            spec = json.loads(spec_file.read_text(encoding="utf-8"))
+                        except Exception:
+                            pass
+                    result_file = d / "RESULT.json"
+                    result = None
+                    status = "running"
+                    if result_file.is_file():
+                        try:
+                            result = json.loads(result_file.read_text(encoding="utf-8-sig"))
+                            status = "finished"
+                        except Exception:
+                            status = "error"
+                    jobs.append(
+                        {
+                            "job_id": d.name,
+                            "status": status,
+                            "repo": spec.get("repo_url", ""),
+                            "branch": spec.get("branch", "main"),
+                            "pass": result.get("pass") if result else None,
+                            "failed_step": result.get("failed_step", "") if result else "",
+                            "note": result.get("note", "") if result else "",
+                            "finished_utc": result.get("finished_utc") if result else None,
+                        }
+                    )
+                    if len(jobs) >= 20:
+                        break
+            return {"success": True, "action": "win_sandbox_naked_test_list", "jobs": jobs}
 
         return {"success": False, "error": f"Action '{action}' not implemented"}
 

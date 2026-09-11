@@ -4,9 +4,11 @@ import {
   Code,
   Download,
   ExternalLink,
+  History,
   Loader2,
   Package,
   Play,
+  RotateCcw,
   Save,
   Wrench,
 } from "lucide-react";
@@ -93,6 +95,74 @@ export default function Sandbox() {
   const [airgap, setAirgap] = useState(false);
   const [useHostOllama, setUseHostOllama] = useState(false);
 
+  type PastNakedJob = {
+    job_id: string;
+    status: string;
+    repo: string;
+    branch: string;
+    pass: boolean | null;
+    failed_step: string;
+    note: string;
+    finished_utc: string | null;
+    created_time?: number;
+  };
+  const [pastJobs, setPastJobs] = useState<PastNakedJob[]>([]);
+  const [fleetRepos, setFleetRepos] = useState<
+    Array<{ name: string; repo: string; description?: string }>
+  >([]);
+
+  const loadPastJobs = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/fleet/naked-test`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.jobs) setPastJobs(data.jobs);
+      }
+    } catch {
+      // silent
+    }
+  }, []);
+
+  const loadFleetRepos = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/fleet/naked-test-repos`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.repos) setFleetRepos(data.repos);
+      }
+    } catch {
+      // silent
+    }
+  }, []);
+
+  const handleSelectPastJob = async (jobId: string) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/fleet/naked-test/${encodeURIComponent(jobId)}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setNtJobId(jobId);
+        setNtRepo(data.repo || "");
+        setNtBranch(data.branch || "main");
+        setNtSteps(data.steps || []);
+        setNtLogTail(data.log_tail || []);
+        setNtPass(data.pass ?? null);
+        setNtFailedStep(data.failed_step || "");
+        setNtNote(data.note || "");
+        setNtPhase(
+          data.status === "running"
+            ? "running"
+            : data.status === "finished"
+              ? "finished"
+              : "error",
+        );
+      }
+    } catch (e: unknown) {
+      setNtError(e instanceof Error ? e.message : "Failed to load past job");
+    }
+  };
+
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/assets/paths`)
       .then((r) => (r.ok ? r.json() : null))
@@ -103,7 +173,9 @@ export default function Sandbox() {
         }
       })
       .catch(() => {});
-  }, []);
+    loadPastJobs();
+    loadFleetRepos();
+  }, [loadPastJobs, loadFleetRepos]);
 
   const fetchWsbPreview = useCallback(async () => {
     if (previewTab === "basic") {
@@ -465,6 +537,7 @@ export default function Sandbox() {
               setNtFailedStep(st.failed_step || "");
               setNtNote(st.note || "");
               setNtPhase("finished");
+              loadPastJobs();
             } else if (st.status === "error") {
               throw new Error(st.error || "job error");
             }
@@ -823,6 +896,34 @@ export default function Sandbox() {
             then observes <code className="text-foreground/80">start.bat</code>.
             Progress reports here - no manual steps inside the box.
           </p>
+          {/* Quick-pick fleet repos */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-muted-foreground mr-1">Quick pick:</span>
+            {(fleetRepos.length > 0
+              ? fleetRepos
+              : [
+                  { name: "virtualization-mcp", repo: "sandraschi/virtualization-mcp" },
+                  { name: "calibre-mcp", repo: "sandraschi/calibre-mcp" },
+                  { name: "speech-mcp", repo: "sandraschi/speech-mcp" },
+                  { name: "on-ai-takeover", repo: "sandraschi/on-ai-takeover" },
+                ]
+            )
+              .slice(0, 6)
+              .map((r) => (
+                <button
+                  key={r.repo}
+                  type="button"
+                  onClick={() => {
+                    setNtRepo(r.repo);
+                    setNtBranch("main");
+                  }}
+                  className="px-2 py-0.5 text-xs rounded-md bg-white/5 hover:bg-violet-500/20 hover:text-violet-300 border border-white/10 transition-colors"
+                >
+                  {r.name}
+                </button>
+              ))}
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <input
               type="text"
@@ -953,6 +1054,62 @@ export default function Sandbox() {
             <p className="text-xs text-amber-400">
               Poll timeout - the sandbox was probably closed by hand.
             </p>
+          )}
+
+          {/* Past Test Runs */}
+          {pastJobs.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <History className="w-3.5 h-3.5" /> Recent Runs ({pastJobs.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={loadPastJobs}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  title="Refresh test runs"
+                >
+                  <RotateCcw className="w-3 h-3" /> Refresh
+                </button>
+              </div>
+              <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                {pastJobs.map((j) => (
+                  <div
+                    key={j.job_id}
+                    onClick={() => handleSelectPastJob(j.job_id)}
+                    className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                      ntJobId === j.job_id
+                        ? "bg-violet-500/20 border border-violet-500/40"
+                        : "bg-white/5 hover:bg-white/10 border border-white/5"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      {j.status === "running" ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
+                      ) : j.pass === true ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                      )}
+                      <span className="font-mono truncate font-medium text-foreground">
+                        {j.repo.split("/").pop()?.replace(".git", "") || j.job_id}
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">[{j.branch}]</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
+                      {j.pass !== null && (
+                        <span className={j.pass ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
+                          {j.pass ? "PASS" : `FAIL (${j.failed_step || "start"})`}
+                        </span>
+                      )}
+                      <span>
+                        {j.finished_utc ? new Date(j.finished_utc).toLocaleTimeString() : j.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
