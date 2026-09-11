@@ -72,12 +72,15 @@ class WindowsSandboxHelper:
     @staticmethod
     def is_sandbox_running() -> bool:
         """Check if Windows Sandbox OS process is currently running."""
+        sandbox_procs = {
+            "windowssandbox.exe",
+            "windowssandboxclient.exe",
+            "windowssandboxserver.exe",
+            "windowssandboxremotesession.exe",
+        }
         for proc in psutil.process_iter(["name"]):
             try:
-                if proc.info["name"] and proc.info["name"].lower() in [
-                    "windowssandbox.exe",
-                    "windowssandboxclient.exe",
-                ]:
+                if proc.info["name"] and proc.info["name"].lower() in sandbox_procs:
                     return True
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
@@ -90,13 +93,16 @@ class WindowsSandboxHelper:
         Returns:
             True if an active instance was terminated.
         """
+        sandbox_procs = {
+            "windowssandbox.exe",
+            "windowssandboxclient.exe",
+            "windowssandboxserver.exe",
+            "windowssandboxremotesession.exe",
+        }
         terminated = False
         for proc in psutil.process_iter(["pid", "name"]):
             try:
-                if proc.info["name"] and proc.info["name"].lower() in [
-                    "windowssandbox.exe",
-                    "windowssandboxclient.exe",
-                ]:
+                if proc.info["name"] and proc.info["name"].lower() in sandbox_procs:
                     proc.terminate()
                     terminated = True
             except (psutil.NoSuchProcess, psutil.AccessDenied):

@@ -2588,7 +2588,7 @@ def _build_sandbox_xml_naked(
 <Networking>{"Enable" if networking else "Disable"}</Networking>
 <MemoryInMB>{memory_mb}</MemoryInMB>
 <LogonCommand>
-<Command>C:\\Assets\\Run-NakedTest.cmd</Command>
+<Command>cmd.exe /c C:\\Assets\\Run-NakedTest.cmd</Command>
 </LogonCommand>
 </Configuration>"""
 
@@ -2605,13 +2605,46 @@ async def fleet_naked_test(request: NakedTestRequest):
     repo = (request.repo or "").strip()
     if not repo:
         raise HTTPException(status_code=400, detail="repo is required (owner/name or https URL)")
-    if repo.startswith("http"):
-        repo_url = repo
-    elif "/" in repo and " " not in repo:
-        repo_url = f"https://github.com/{repo}.git"
-    else:
-        raise HTTPException(status_code=400, detail="repo must be owner/name or an https URL")
+
+    repos_root = os.path.normpath(os.path.join(_repo_root, ".."))
+    local_repo = os.path.join(repos_root, repo)
+    repo_url = ""
     branch = (request.branch or "main").strip() or "main"
+    health_url = request.health_url or ""
+
+    if os.path.isfile(os.path.join(local_repo, ".git", "config")):
+        try:
+            with open(os.path.join(local_repo, ".git", "config"), encoding="utf-8") as gf:
+                gc = gf.read()
+            m = re.search(r"url\s*=\s*([^\r\n]+)", gc)
+            if m:
+                repo_url = m.group(1).strip()
+            if branch == "main":
+                mb = re.search(r'\[branch\s+"([^"]+)"\]', gc)
+                if mb:
+                    branch = mb.group(1).strip()
+        except Exception:
+            pass
+
+    if not repo_url:
+        if repo.startswith("http"):
+            repo_url = repo
+        elif "/" in repo and " " not in repo:
+            repo_url = f"https://github.com/{repo}.git"
+        else:
+            repo_url = f"https://github.com/sandraschi/{repo}.git"
+
+    if not health_url and os.path.isfile(os.path.join(local_repo, "fleet-start.config.ps1")):
+        try:
+            with open(os.path.join(local_repo, "fleet-start.config.ps1"), encoding="utf-8") as fcf:
+                fc = fcf.read()
+            mb_port = re.search(r"BackendPort\s*=\s*(\d+)", fc)
+            mb_path = re.search(r"HealthPath\s*=\s*['\"]([^'\"]+)['\"]", fc)
+            if mb_port and mb_path:
+                health_url = f"http://127.0.0.1:{mb_port.group(1)}{mb_path.group(1)}"
+        except Exception:
+            pass
+
     observe = max(15, min(int(request.observe_sec or 90), 1200))
 
     host_folder = ASSETS_SANDBOX
@@ -2627,9 +2660,30 @@ async def fleet_naked_test(request: NakedTestRequest):
     job_id = f"naked-{safe_repo}-{stamp}"
     job_dir = os.path.join(_SANDBOX_RUNS_ROOT, job_id)
     os.makedirs(job_dir, exist_ok=True)
+
+    local_repo_in_sandbox = ""
+    if os.path.isdir(os.path.join(local_repo, ".git")):
+        bare_git_path = os.path.join(job_dir, "repo.git")
+        try:
+            subprocess.run(
+                ["git", "clone", "--bare", "--no-local", local_repo, bare_git_path],
+                check=True,
+                capture_output=True,
+            )
+            if os.path.isdir(bare_git_path):
+                local_repo_in_sandbox = r"C:\Job\repo.git"
+        except Exception:
+            pass
+
     with open(os.path.join(job_dir, "spec.json"), "w", encoding="utf-8") as f:
         json.dump(
-            {"repo_url": repo_url, "branch": branch, "observe_sec": observe, "health_url": request.health_url or ""},
+            {
+                "repo_url": repo_url,
+                "local_repo": local_repo_in_sandbox,
+                "branch": branch,
+                "observe_sec": observe,
+                "health_url": health_url,
+            },
             f,
             indent=2,
         )
@@ -2643,6 +2697,7 @@ async def fleet_naked_test(request: NakedTestRequest):
             tmp.write(config_xml)
             tmp_path = tmp.name
         wsb_exe = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "WindowsSandbox.exe")
+        WindowsSandboxHelper.terminate_active_sandbox()
         if os.path.isfile(wsb_exe):
             await asyncio.create_subprocess_exec(
                 wsb_exe, tmp_path, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
@@ -2771,10 +2826,29 @@ async def list_fleet_candidate_repos():
                     if os.path.isfile(os.path.join(item_path, "start.bat")) or os.path.isfile(
                         os.path.join(item_path, "justfile")
                     ):
+                        actual_repo = f"sandraschi/{item}"
+                        branch = "main"
+                        git_cfg_path = os.path.join(item_path, ".git", "config")
+                        if os.path.isfile(git_cfg_path):
+                            try:
+                                with open(git_cfg_path, encoding="utf-8") as gcf:
+                                    gct = gcf.read()
+                                m_url = re.search(
+                                    r"url\s*=\s*(?:https?://github\.com/|git@github\.com:)([^/\s]+/[^/\s\.]+)", gct
+                                )
+                                if m_url:
+                                    actual_repo = m_url.group(1).strip()
+                                m_br = re.search(r'\[branch\s+"([^"]+)"\]', gct)
+                                if m_br:
+                                    branch = m_br.group(1).strip()
+                            except Exception:
+                                pass
+
                         fleet.append(
                             {
                                 "name": item,
-                                "repo": f"sandraschi/{item}",
+                                "repo": actual_repo,
+                                "branch": branch,
                                 "has_start_bat": os.path.isfile(os.path.join(item_path, "start.bat")),
                             }
                         )

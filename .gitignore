@@ -125,6 +125,7 @@ assets/sandbox/*.msixbundle
 assets/sandbox/*.msix
 assets/sandbox/DesktopAppInstaller_Dependencies.zip
 assets/sandbox/Setup-DevSandbox.ps1
+assets/sandbox/cache/
 
 # VirtualBox VM media (ISOs, OVA/OVF – store here for reuse; do not commit)
 assets/vbox/*.iso

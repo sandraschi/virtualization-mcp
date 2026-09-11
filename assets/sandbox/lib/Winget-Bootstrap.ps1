@@ -37,35 +37,69 @@ function Invoke-WsbWingetExe {
 }
 
 function Install-WsbWingetViaMsix {
-    Write-WsbStep 'Installing winget (Desktop App Installer) from GitHub release'
+    Write-WsbStep 'Installing winget (Desktop App Installer)'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 
-    $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
-    $null = New-Item -ItemType Directory -Path $work -Force
-
-    $release = $null
-    for ($retry = 1; $retry -le 3; $retry++) {
-        try {
-            $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing -ErrorAction Stop
-            break
-        } catch {
-            if ($retry -eq 3) { throw $_ }
-            Write-Warning "GitHub release query failed (attempt $retry). Retrying in 3s..."
-            Start-Sleep -Seconds 3
+    # Fast path: check local cache in C:\Assets\cache\winget
+    $cacheDir = 'C:\Assets\cache\winget'
+    $bundlePath = $null
+    $depsDir = $null
+    if (Test-Path -LiteralPath $cacheDir) {
+        $cachedBundle = Get-ChildItem -Path $cacheDir -Filter 'Microsoft.DesktopAppInstaller_*.msixbundle' | Select-Object -First 1
+        if ($cachedBundle) {
+            $bundlePath = $cachedBundle.FullName
+        }
+        if (Test-Path -LiteralPath (Join-Path $cacheDir 'deps')) {
+            $depsDir = Join-Path $cacheDir 'deps'
         }
     }
 
-    Write-WsbStep 'Downloading dependencies bundle'
-    $depsAsset = $null
-    foreach ($a in $release.assets) {
-        if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') { $depsAsset = $a; break }
+    if (-not $bundlePath -or -not $depsDir) {
+        Write-WsbStep 'Fetching winget from GitHub release (cache miss)'
+        $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
+        $null = New-Item -ItemType Directory -Path $work -Force
+
+        $release = $null
+        for ($retry = 1; $retry -le 3; $retry++) {
+            try {
+                $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing -ErrorAction Stop
+                break
+            } catch {
+                if ($retry -eq 3) { throw $_ }
+                Write-Warning "GitHub release query failed (attempt $retry). Retrying in 3s..."
+                Start-Sleep -Seconds 3
+            }
+        }
+
+        Write-WsbStep 'Downloading dependencies bundle'
+        $depsAsset = $null
+        foreach ($a in $release.assets) {
+            if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') { $depsAsset = $a; break }
+        }
+        if ($null -eq $depsAsset) { throw 'Could not find DesktopAppInstaller_Dependencies.zip in release.' }
+        $depsPath = Join-Path $work $depsAsset.name
+        Invoke-WebRequest -Uri $depsAsset.browser_download_url -OutFile $depsPath -UseBasicParsing
+        $depsDir = Join-Path $work 'deps'
+        Expand-Archive -Path $depsPath -DestinationPath $depsDir -Force
+        Write-Host "Extracted $($depsAsset.name)" -ForegroundColor Green
+
+        $bundleName = $null
+        foreach ($a in $release.assets) {
+            if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') { $bundleName = $a.name; break }
+        }
+        if ([string]::IsNullOrWhiteSpace($bundleName)) {
+            throw 'Could not find Microsoft.DesktopAppInstaller msixbundle in release.'
+        }
+        foreach ($a in $release.assets) {
+            if ($a.name -eq $bundleName) {
+                $bundlePath = Join-Path $work $a.name
+                Invoke-WebRequest -Uri $a.browser_download_url -OutFile $bundlePath -UseBasicParsing
+                break
+            }
+        }
+    } else {
+        Write-Host "Using cached winget packages from $cacheDir" -ForegroundColor Green
     }
-    if ($null -eq $depsAsset) { throw 'Could not find DesktopAppInstaller_Dependencies.zip in release.' }
-    $depsPath = Join-Path $work $depsAsset.name
-    Invoke-WebRequest -Uri $depsAsset.browser_download_url -OutFile $depsPath -UseBasicParsing
-    $depsDir = Join-Path $work 'deps'
-    Expand-Archive -Path $depsPath -DestinationPath $depsDir -Force
-    Write-Host "Extracted $($depsAsset.name)" -ForegroundColor Green
 
     Write-WsbStep 'Installing dependencies (VCLibs, UI.Xaml, WindowsAppRuntime)'
     $depFiles = Get-ChildItem -Path $depsDir -Include '*.appx', '*.msix', '*.msixbundle' -Recurse | Sort-Object Name
@@ -78,23 +112,9 @@ function Install-WsbWingetViaMsix {
         }
     }
 
-    Write-WsbStep 'Installing App Installer bundle'
-    $bundleName = $null
-    foreach ($a in $release.assets) {
-        if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') { $bundleName = $a.name; break }
-    }
-    if ([string]::IsNullOrWhiteSpace($bundleName)) {
-        throw 'Could not find Microsoft.DesktopAppInstaller msixbundle in release.'
-    }
-    foreach ($a in $release.assets) {
-        if ($a.name -eq $bundleName) {
-            $bundlePath = Join-Path $work $a.name
-            Invoke-WebRequest -Uri $a.browser_download_url -OutFile $bundlePath -UseBasicParsing
-            Add-AppxPackage -Path $bundlePath
-            Write-Host "  Installed: $(Split-Path $a.name -Leaf)" -ForegroundColor Green
-            break
-        }
-    }
+    Write-WsbStep "Installing App Installer bundle: $(Split-Path $bundlePath -Leaf)"
+    Add-AppxPackage -Path $bundlePath
+    Write-Host "  Installed winget bundle successfully" -ForegroundColor Green
 
     Sync-WsbPathFromRegistry
 }

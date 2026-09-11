@@ -33,9 +33,16 @@ function Write-Result {
     param([array]$Steps, [bool]$Pass, [string]$FailedStep, [string]$Note)
     $tail = @()
     try {
-        $log = Join-Path ([Environment]::GetFolderPath('Desktop')) 'naked-test-launch.log'
-        if (Test-Path -LiteralPath $log) {
-            $tail = @(Get-Content -LiteralPath $log -Tail 40)
+        $logCandidates = @(
+            "$JobDir\start-bat.log",
+            "$JobDir\naked-test-launch.log",
+            "$env:USERPROFILE\Desktop\naked-test-launch.log"
+        )
+        foreach ($cand in $logCandidates) {
+            if (Test-Path -LiteralPath $cand) {
+                $tail = @(Get-Content -LiteralPath $cand -Tail 50 | ForEach-Object { "$_" })
+                break
+            }
         }
     } catch { }
     $result = [ordered]@{
@@ -54,18 +61,36 @@ function Write-Result {
 function Add-Step {
     param([System.Collections.ArrayList]$Steps, [string]$Name, [int]$Exit, [long]$Ms, [string]$Note = '')
     $null = $Steps.Add([ordered]@{ name = $Name; exit = $Exit; ms = $Ms; note = $Note })
+    try {
+        $prog = [ordered]@{
+            repo        = $script:Spec.repo_url
+            branch      = $script:Spec.branch
+            last_step   = $Name
+            steps       = $Steps
+            updated_utc = (Get-Date).ToUniversalTime().ToString('o')
+        }
+        $prog | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $JobDir 'PROGRESS.json') -Encoding UTF8
+    } catch { }
 }
 
 $steps = New-Object System.Collections.ArrayList
 
+$specPath = Join-Path $JobDir 'spec.json'
+$deadlineSpec = (Get-Date).AddSeconds(45)
+while ((Get-Date) -lt $deadlineSpec -and -not (Test-Path -LiteralPath $specPath)) {
+    Start-Sleep -Milliseconds 500
+}
+
 try {
-    $script:Spec = Get-Content -LiteralPath (Join-Path $JobDir 'spec.json') -Raw | ConvertFrom-Json
+    $script:Spec = Get-Content -LiteralPath $specPath -Raw | ConvertFrom-Json
 } catch {
     Write-Host "ERROR: cannot read C:\Job\spec.json : $($_.Exception.Message)" -ForegroundColor Red
+    Write-Result $steps $false 'spec' "Cannot read spec.json: $($_.Exception.Message)"
     exit 2
 }
 if ([string]::IsNullOrWhiteSpace($script:Spec.repo_url)) {
     Write-Host 'ERROR: spec.json has no repo_url' -ForegroundColor Red
+    Write-Result $steps $false 'spec' 'spec.json has no repo_url'
     exit 2
 }
 $branch = if ($script:Spec.branch) { $script:Spec.branch } else { 'main' }
@@ -78,32 +103,72 @@ if (-not (Test-Path -LiteralPath $lib)) { throw "Missing winget bootstrap librar
 
 # ---- step 1: rig (git + just are harness, like CI) ----
 Write-Step 'rig: winget -> git + just'
-$sw = [Diagnostics.Stopwatch]::StartNew
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
 Ensure-WsbWingetAvailable
 Sync-WsbPathFromRegistry
 foreach ($pkg in @('Git.Git', 'Casey.Just')) {
-    Invoke-WsbWingetExe @('install', '--id', $pkg, '--silent',
-        '--accept-source-agreements', '--accept-package-agreements')
+    Write-Step "rig: installing $pkg via winget"
+    try {
+        Invoke-WsbWingetExe @('install', '--id', $pkg, '--source', 'winget', '--silent',
+            '--accept-source-agreements', '--accept-package-agreements', '--disable-interactivity')
+    } catch {
+        Write-Warning "winget install $pkg error: $($_.Exception.Message)"
+    }
 }
 Sync-WsbPathFromRegistry
+$extraPaths = @(
+    'C:\Program Files\Git\cmd',
+    'C:\Program Files\Git\bin',
+    "$env:LOCALAPPDATA\Microsoft\WinGet\Links",
+    "$env:LOCALAPPDATA\Programs\Just",
+    'C:\Program Files\Just'
+)
+foreach ($ep in $extraPaths) {
+    if ((Test-Path -LiteralPath $ep) -and ($env:Path -notlike "*$ep*")) {
+        $env:Path = "$ep;$($env:Path)"
+    }
+}
 $sw.Stop()
 $rigOk = (Test-WsbCommandExists 'git') -and (Test-WsbCommandExists 'just')
-Add-Step $steps 'rig' ($rigOk ? 0 : 1) $sw.ElapsedMilliseconds 'git + just via winget'
+Write-Host "Rig check: git=$(Test-WsbCommandExists 'git'), just=$(Test-WsbCommandExists 'just')" -ForegroundColor Cyan
+$rigExit = if ($rigOk) { 0 } else { 1 }
+Add-Step $steps 'rig' $rigExit $sw.ElapsedMilliseconds 'git + just via winget'
 if (-not $rigOk) {
     Write-Result $steps $false 'rig' 'Harness installs failed - host/winget problem, not target repo.'
     exit 10
 }
 
 # ---- step 2: clone ----
-Write-Step "clone $($script:Spec.repo_url) [$branch]"
+$targetSource = if ($script:Spec.local_repo -and (Test-Path -LiteralPath $script:Spec.local_repo)) {
+    $script:Spec.local_repo
+} else {
+    $script:Spec.repo_url
+}
+Write-Step "clone $targetSource [$branch]"
 $sw.Restart()
 if (-not (Test-Path -LiteralPath $TestRoot)) {
     $null = New-Item -ItemType Directory -Path $TestRoot -Force
 }
 $cloneName = ($script:Spec.repo_url -split '/')[-1] -replace '\.git$', ''
 $cloneDir = Join-Path $TestRoot $cloneName
-& git clone --branch $branch --depth 1 $script:Spec.repo_url $cloneDir 2>&1 | Write-Host
+
+$cloneArgs = @('clone')
+if ($targetSource -like 'http*') {
+    $cloneArgs += @('--depth', '1')
+}
+$cloneArgs += @('--branch', $branch, $targetSource, $cloneDir)
+& git @cloneArgs 2>&1 | Write-Host
 $cloneExit = $LASTEXITCODE
+if ($cloneExit -ne 0) {
+    Write-Host "Branch '$branch' not found or clone failed. Retrying with default branch..." -ForegroundColor Yellow
+    $fallbackArgs = @('clone')
+    if ($targetSource -like 'http*') {
+        $fallbackArgs += @('--depth', '1')
+    }
+    $fallbackArgs += @($targetSource, $cloneDir)
+    & git @fallbackArgs 2>&1 | Write-Host
+    $cloneExit = $LASTEXITCODE
+}
 $sw.Stop()
 Add-Step $steps 'clone' $cloneExit $sw.ElapsedMilliseconds $cloneDir
 if ($cloneExit -ne 0) {
@@ -133,26 +198,34 @@ if (-not (Test-Path -LiteralPath $startBat)) {
     exit 13
 }
 Write-Step "observe start.bat for ${observeSec}s"
+$startLog = Join-Path $JobDir 'start-bat.log'
 $sw.Restart()
-$proc = Start-Process -FilePath 'cmd.exe' -ArgumentList "/c `"$startBat`"" `
+$proc = Start-Process -FilePath 'cmd.exe' -ArgumentList "/c `"`"$startBat`" >> `"$startLog`" 2>&1`"" `
     -WorkingDirectory $cloneDir -PassThru -WindowStyle Minimized
 $deadline = (Get-Date).AddSeconds($observeSec)
 $healthOk = $false
 while ((Get-Date) -lt $deadline) {
-    if ($proc.HasExited) { break }
     if ($healthUrl) {
         try {
             $r = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 5
             if ([int]$r.StatusCode -eq 200) { $healthOk = $true; break }
         } catch { }
+    } else {
+        if ($proc.HasExited) { break }
     }
-    Start-Sleep -Seconds 5
+    Start-Sleep -Seconds 3
 }
 $sw.Stop()
-if ($healthUrl -and $healthOk) {
-    Add-Step $steps 'start' 0 $sw.ElapsedMilliseconds "health 200 at $healthUrl"
-    Write-Result $steps $true '' "Servers healthy within ${observeSec}s window."
-    exit 0
+if ($healthUrl) {
+    if ($healthOk) {
+        Add-Step $steps 'start' 0 $sw.ElapsedMilliseconds "health 200 at $healthUrl"
+        Write-Result $steps $true '' "Servers healthy within ${observeSec}s window."
+        exit 0
+    } else {
+        Add-Step $steps 'start' 1 $sw.ElapsedMilliseconds "health check failed at $healthUrl"
+        Write-Result $steps $false 'start' "Health check did not return 200 within ${observeSec}s window."
+        exit 14
+    }
 }
 if ($proc.HasExited -and $proc.ExitCode -eq 0) {
     Add-Step $steps 'start' 0 $sw.ElapsedMilliseconds 'start.bat exited 0 (script-style repo)'

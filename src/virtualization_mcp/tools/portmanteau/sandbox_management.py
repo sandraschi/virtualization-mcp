@@ -201,14 +201,46 @@ async def sandbox_management(
             if not repo:
                 return {"success": False, "error": "repo is required (owner/name or https URL)"}
             repo_clean = repo.strip()
-            if repo_clean.startswith("http"):
-                repo_url = repo_clean
-            elif "/" in repo_clean and " " not in repo_clean:
-                repo_url = f"https://github.com/{repo_clean}.git"
-            else:
-                return {"success": False, "error": "repo must be owner/name or an https URL"}
-
             repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+            repo_url = ""
+
+            # Check if repo exists locally in workspace
+            local_cand = repo_root.parent / repo_clean
+            if (local_cand / ".git" / "config").is_file():
+                try:
+                    import re
+
+                    cfg_txt = (local_cand / ".git" / "config").read_text(encoding="utf-8")
+                    m = re.search(r"url\s*=\s*([^\r\n]+)", cfg_txt)
+                    if m:
+                        repo_url = m.group(1).strip()
+                    if not branch:
+                        mb = re.search(r'\[branch\s+"([^"]+)"\]', cfg_txt)
+                        if mb:
+                            branch = mb.group(1).strip()
+                except Exception:
+                    pass
+
+            if not repo_url:
+                if repo_clean.startswith("http"):
+                    repo_url = repo_clean
+                elif "/" in repo_clean and " " not in repo_clean:
+                    repo_url = f"https://github.com/{repo_clean}.git"
+                else:
+                    repo_url = f"https://github.com/sandraschi/{repo_clean}.git"
+
+            if not health_url and (local_cand / "fleet-start.config.ps1").is_file():
+                try:
+                    import re
+
+                    fcfg = (local_cand / "fleet-start.config.ps1").read_text(encoding="utf-8")
+                    mb_port = re.search(r"BackendPort\s*=\s*(\d+)", fcfg)
+                    mb_path = re.search(r"HealthPath\s*=\s*['\"]([^'\"]+)['\"]", fcfg)
+                    if mb_port and mb_path:
+                        health_url = f"http://127.0.0.1:{mb_port.group(1)}{mb_path.group(1)}"
+                except Exception:
+                    pass
+
             assets_folder = repo_root / "assets" / "sandbox"
             if not assets_folder.is_dir():
                 return {"success": False, "error": f"Sandbox assets missing: {assets_folder}"}
@@ -229,11 +261,26 @@ async def sandbox_management(
             job_dir = runs_root / jid
             job_dir.mkdir(parents=True, exist_ok=True)
 
+            local_repo_in_sandbox = ""
+            if (local_cand / ".git").exists():
+                bare_git_path = job_dir / "repo.git"
+                try:
+                    subprocess.run(
+                        ["git", "clone", "--bare", "--no-local", str(local_cand), str(bare_git_path)],
+                        check=True,
+                        capture_output=True,
+                    )
+                    if bare_git_path.exists():
+                        local_repo_in_sandbox = r"C:\Job\repo.git"
+                except Exception:
+                    pass
+
             spec_path = job_dir / "spec.json"
             spec_path.write_text(
                 json.dumps(
                     {
                         "repo_url": repo_url,
+                        "local_repo": local_repo_in_sandbox,
                         "branch": branch or "main",
                         "observe_sec": observe_sec or 90,
                         "health_url": health_url or "",
@@ -262,7 +309,7 @@ async def sandbox_management(
 <Networking>Enable</Networking>
 <MemoryInMB>{memory_in_mb or 8192}</MemoryInMB>
 <LogonCommand>
-<Command>C:\\Assets\\Run-NakedTest.cmd</Command>
+<Command>cmd.exe /c C:\\Assets\\Run-NakedTest.cmd</Command>
 </LogonCommand>
 </Configuration>"""
 
@@ -270,6 +317,8 @@ async def sandbox_management(
             tmp_wsb.write_text(wsb_xml, encoding="utf-8")
 
             import os
+
+            WindowsSandboxHelper.terminate_active_sandbox()
 
             wsb_exe = Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "WindowsSandbox.exe"
             if wsb_exe.exists():
