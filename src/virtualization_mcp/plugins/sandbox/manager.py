@@ -686,7 +686,7 @@ class WindowsSandboxHelper:
                     # Copy to staging folder with original filename
                     filename = Path(source).name
                     staging_path = str(Path(staging_folder) / filename)
-                    shutil.copy2(source, staging_path)
+                    await asyncio.to_thread(shutil.copy2, source, staging_path)
                     logger.info(f"Copied {source} to staging: {staging_path}")
 
                 # Map staging folder to sandbox Desktop for easy access

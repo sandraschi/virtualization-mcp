@@ -104,7 +104,7 @@ class BackupPlugin(BasePlugin):
                 )
 
             try:
-                shutil.rmtree(backup_path)
+                await asyncio.to_thread(shutil.rmtree, backup_path)
                 return {"status": "deleted", "backup_name": backup_name}
             except Exception as e:
                 raise HTTPException(
@@ -218,7 +218,7 @@ class BackupPlugin(BasePlugin):
                 age = (now - created_at).days
                 if age >= self.retention_days:
                     try:
-                        shutil.rmtree(backup_dir)
+                        await asyncio.to_thread(shutil.rmtree, backup_dir)
                         logger.info(f"Removed old backup: {backup_dir.name}")
                         removed += 1
                     except Exception as e:

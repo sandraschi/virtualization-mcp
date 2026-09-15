@@ -2665,7 +2665,8 @@ async def fleet_naked_test(request: NakedTestRequest):
     if os.path.isdir(os.path.join(local_repo, ".git")):
         bare_git_path = os.path.join(job_dir, "repo.git")
         try:
-            subprocess.run(
+            await asyncio.to_thread(
+                subprocess.run,
                 ["git", "clone", "--bare", "--no-local", local_repo, bare_git_path],
                 check=True,
                 capture_output=True,

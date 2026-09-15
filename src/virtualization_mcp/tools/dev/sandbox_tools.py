@@ -340,7 +340,7 @@ class SandboxTester:
                 # Clean up on failure
                 try:
                     if sandbox_dir.exists() and not persistent_storage:
-                        shutil.rmtree(sandbox_dir)
+                        await asyncio.to_thread(shutil.rmtree, sandbox_dir)
                 except Exception as cleanup_error:
                     logger.warning(f"Error cleaning up failed sandbox: {cleanup_error}")
 
@@ -530,7 +530,7 @@ class SandboxTester:
                         logger.info(f"Skipping removal of persistent sandbox '{name}'. Use force=True to remove.")
                         return False
 
-                    shutil.rmtree(sandbox_dir, ignore_errors=True)
+                    await asyncio.to_thread(shutil.rmtree, sandbox_dir, ignore_errors=True)
 
                 # Clean up references
                 if name in self._active_sandboxes:

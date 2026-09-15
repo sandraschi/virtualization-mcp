@@ -6,6 +6,7 @@ Supports ephemeral (fire-and-forget) and stateful (session-based) execution.
 Requires Docker Desktop running on the host.
 """
 
+import asyncio
 import logging
 import subprocess
 from datetime import UTC
@@ -265,7 +266,8 @@ async def sandbox_management(
             if (local_cand / ".git").exists():
                 bare_git_path = job_dir / "repo.git"
                 try:
-                    subprocess.run(
+                    await asyncio.to_thread(
+                        subprocess.run,
                         ["git", "clone", "--bare", "--no-local", str(local_cand), str(bare_git_path)],
                         check=True,
                         capture_output=True,

@@ -100,7 +100,7 @@ class BackupManager:
             return {"status": "error", "error": f"Backup '{backup_name}' not found"}
 
         try:
-            shutil.rmtree(backup_path)
+            await asyncio.to_thread(shutil.rmtree, backup_path)
             return {"status": "success", "name": backup_name}
         except Exception as e:
             return {"status": "error", "error": f"Failed to delete backup: {e!s}"}

@@ -284,7 +284,7 @@ class WindowsSandboxHelper:
         temp_dir.mkdir(exist_ok=True, parents=True)
 
         temp_file = temp_dir / source_path.name
-        shutil.copy2(source_path, temp_file)
+        await asyncio.to_thread(shutil.copy2, source_path, temp_file)
 
         # Move the file to the destination using a command
         move_cmd = f'move /Y "C:\\shared\\{source_path.name}" "{destination_path}"'
@@ -341,7 +341,7 @@ class WindowsSandboxHelper:
         if not temp_file.exists():
             raise FileNotFoundError(f"File not found in shared folder: {temp_file}")
 
-        shutil.copy2(temp_file, destination_path)
+        await asyncio.to_thread(shutil.copy2, temp_file, destination_path)
 
         # Clean up
         temp_file.unlink(missing_ok=True)
@@ -433,7 +433,7 @@ class WindowsSandboxHelper:
             sandbox_dir = process_info.get("sandbox_dir")
             if sandbox_dir and sandbox_dir.exists():
                 try:
-                    shutil.rmtree(sandbox_dir, ignore_errors=True)
+                    await asyncio.to_thread(shutil.rmtree, sandbox_dir, ignore_errors=True)
                 except Exception as e:
                     logger.warning(f"Failed to clean up sandbox directory {sandbox_dir}: {e}")
 

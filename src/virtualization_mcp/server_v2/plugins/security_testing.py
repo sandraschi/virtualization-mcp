@@ -69,7 +69,7 @@ class SecurityTestingPlugin(BasePlugin):
 
         # Clean up temporary files
         try:
-            shutil.rmtree(self.temp_dir, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, self.temp_dir, ignore_errors=True)
         except Exception as e:
             logger.warning(f"Failed to clean up temp directory: {e}")
 
