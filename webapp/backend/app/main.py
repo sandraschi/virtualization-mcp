@@ -2698,6 +2698,12 @@ async def fleet_naked_test(request: NakedTestRequest):
             tmp.write(config_xml)
             tmp_path = tmp.name
         wsb_exe = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "WindowsSandbox.exe")
+        # Imported locally: this module is otherwise import-light at startup, and the
+        # name was previously used here without any import at all, so every call to
+        # /api/v1/fleet/naked-test failed with NameError -- which is why the naked-PC
+        # harness had never actually been run.
+        from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
+
         WindowsSandboxHelper.terminate_active_sandbox()
         if os.path.isfile(wsb_exe):
             await asyncio.create_subprocess_exec(
