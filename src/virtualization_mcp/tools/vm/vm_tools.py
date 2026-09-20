@@ -22,7 +22,22 @@ VMStartType = Literal["gui", "sdl", "headless", "separate"]
 LIST_VMS_MAX_LIMIT = 500
 
 # Resolve the VBoxManage executable once (honors VBOX_MANAGE_PATH / auto-detect).
-VBOX_MANAGE = str(get_vbox_manage_path())
+# Fail-soft: a VBox-less host (naked PC, sandbox) must still import - VM ops
+# report a friendly error via _require_vbox() only when actually called.
+try:
+    VBOX_MANAGE = str(get_vbox_manage_path())
+except Exception as _e:
+    logger.warning("VBoxManage not found at import (%s); VM operations will error when called.", _e)
+    VBOX_MANAGE = ""
+
+
+def _require_vbox() -> str:
+    """VBoxManage path, or a friendly error (first line inside every VM op's try)."""
+    if not VBOX_MANAGE:
+        raise RuntimeError(
+            "VirtualBox (VBoxManage) is not installed on this host. Install VirtualBox or set VBOX_MANAGE_PATH."
+        )
+    return VBOX_MANAGE
 
 
 async def list_vms(
@@ -51,6 +66,7 @@ async def list_vms(
         - message: Error message if status is "error"
     """
     try:
+        _require_vbox()
         cmd = [VBOX_MANAGE, "list", "vms", "--long"]
         if state_filter:
             cmd.extend(["--state", state_filter])
@@ -143,6 +159,7 @@ async def get_vm_info(vm_name: str) -> dict[str, Any]:
         return {"status": "error", "message": "VM name must be a non-empty string", "vm_info": None}
 
     try:
+        _require_vbox()
         cmd = [VBOX_MANAGE, "showvminfo", vm_name, "--machinereadable"]
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -222,6 +239,7 @@ async def create_vm(
         }
 
     try:
+        _require_vbox()
         # Create VM
         create_cmd = [VBOX_MANAGE, "createvm", "--name", name, "--ostype", ostype, "--register"]
 
@@ -326,6 +344,7 @@ async def start_vm(vm_name: str, start_type: VMStartType = "headless") -> dict[s
         }
 
     try:
+        _require_vbox()
         cmd = [VBOX_MANAGE, "startvm", vm_name, "--type", start_type]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
@@ -362,6 +381,7 @@ async def stop_vm(vm_name: str, force: bool = False, timeout: int = 30) -> dict[
         return {"status": "error", "message": "VM name must be a non-empty string"}
 
     try:
+        _require_vbox()
         if force:
             # First try to gracefully shut down the VM
             try:
@@ -421,6 +441,7 @@ async def delete_vm(vm_name: str, delete_files: bool = True) -> dict[str, Any]:
         return {"status": "error", "message": "VM name must be a non-empty string"}
 
     try:
+        _require_vbox()
         # First try to stop the VM if it's running
         try:
             await stop_vm(vm_name, force=True)
@@ -496,6 +517,7 @@ async def clone_vm(
         }
 
     try:
+        _require_vbox()
         cmd = [VBOX_MANAGE, "clonevm", source_vm, "--name", new_name, "--register"]
 
         if snapshot:
@@ -591,6 +613,7 @@ async def modify_vm(
     changes = []
 
     try:
+        _require_vbox()
         # Build the base command
         cmd = [VBOX_MANAGE, "modifyvm", vm_name]
 
@@ -779,6 +802,7 @@ async def pause_vm(vm_name: str) -> dict[str, Any]:
         return {"status": "error", "message": "VM name must be a non-empty string"}
 
     try:
+        _require_vbox()
         cmd = [VBOX_MANAGE, "controlvm", vm_name, "pause"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
@@ -809,6 +833,7 @@ async def resume_vm(vm_name: str) -> dict[str, Any]:
         return {"status": "error", "message": "VM name must be a non-empty string"}
 
     try:
+        _require_vbox()
         cmd = [VBOX_MANAGE, "controlvm", vm_name, "resume"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
@@ -845,6 +870,7 @@ async def reset_vm(vm_name: str, reset_type: str = "hard") -> dict[str, Any]:
         return {"status": "error", "message": "Invalid reset type. Must be 'hard' or 'soft'"}
 
     try:
+        _require_vbox()
         if reset_type == "hard":
             cmd = [VBOX_MANAGE, "controlvm", vm_name, "reset"]
         else:
