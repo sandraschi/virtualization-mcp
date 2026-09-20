@@ -2755,6 +2755,17 @@ async def fleet_naked_test(request: NakedTestRequest):
         except Exception:
             pass
 
+    frontend_url = ""
+    if os.path.isfile(os.path.join(local_repo, "fleet-start.config.ps1")):
+        try:
+            with open(os.path.join(local_repo, "fleet-start.config.ps1"), encoding="utf-8") as fcf2:
+                fc2 = fcf2.read()
+            mb_front = re.search(r"FrontendPort\s*=\s*(\d+)", fc2)
+            if mb_front:
+                frontend_url = f"http://127.0.0.1:{mb_front.group(1)}/"
+        except Exception:
+            pass
+
     observe = max(15, min(int(request.observe_sec or 90), 1200))
 
     host_folder = ASSETS_SANDBOX
@@ -2797,6 +2808,7 @@ async def fleet_naked_test(request: NakedTestRequest):
                 "branch": branch,
                 "observe_sec": observe,
                 "health_url": health_url,
+                "frontend_url": frontend_url,
             },
             f,
             indent=2,

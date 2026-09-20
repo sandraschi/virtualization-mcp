@@ -234,6 +234,16 @@ $sw.Stop()
 if ($healthUrl) {
     if ($healthOk) {
         Add-Step $steps 'start' 0 $sw.ElapsedMilliseconds "health 200 at $healthUrl"
+        # Show the webapp: Edge by executable path. A bare Start-Process URL
+        # pops the http-association dialog on fresh sandboxes instead.
+        try {
+            $frontUrl = $script:Spec.frontend_url
+            $edgeExe = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+            if ($frontUrl -and (Test-Path -LiteralPath $edgeExe)) {
+                Write-Host "Opening webapp at $frontUrl ..." -ForegroundColor Green
+                Start-Process -FilePath $edgeExe -ArgumentList $frontUrl
+            }
+        } catch { }
         Write-Result $steps $true '' "Servers healthy within ${observeSec}s window."
         exit 0
     } else {
