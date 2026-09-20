@@ -202,15 +202,18 @@ $startLog = Join-Path $JobDir 'start-bat.log'
 $sw.Restart()
 # Headless launch: pass only switches the target's start.ps1 actually
 # declares (fleet template has -NoBrowser/-Headless; minimal scripts may
-# have neither - unrecognized switches would fail the run). This keeps
-# dashboard auto-open popups (http association dialog) out of the sandbox.
+# have neither - unrecognized switches would fail the run). Prefer
+# -NoBrowser: it suppresses the dashboard popup while keeping stdio
+# attached so start-bat.log stays informative. -Headless only as
+# fallback - several launchers relaunch hidden on -Headless, which
+# detaches stdout into the void.
 $startFlags = @()
 try {
     $startPs1 = Join-Path $cloneDir 'start.ps1'
     if (Test-Path -LiteralPath $startPs1) {
         $startPs1Text = Get-Content -LiteralPath $startPs1 -Raw
         if ($startPs1Text -match '\$NoBrowser') { $startFlags += '-NoBrowser' }
-        if ($startPs1Text -match '\$Headless') { $startFlags += '-Headless' }
+        elseif ($startPs1Text -match '\$Headless') { $startFlags += '-Headless' }
     }
 } catch { }
 $flagStr = ($startFlags -join ' ').Trim()

@@ -1,7 +1,11 @@
 param([switch]$Headless)
 
 # --- SOTA Headless Standard ---
-if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
+# Skip the hidden relaunch when stdout is redirected (sandbox harness /
+# log capture): detaching would send all output into the void.
+$redirected = $false
+try { $redirected = [Console]::IsOutputRedirected } catch { }
+if ($Headless -and -not $redirected -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
     Start-Process powershell -ArgumentList '-NoProfile', '-File', $PSCommandPath, '-Headless' -WindowStyle Hidden
     exit
 }
