@@ -200,7 +200,22 @@ if (-not (Test-Path -LiteralPath $startBat)) {
 Write-Step "observe start.bat for ${observeSec}s"
 $startLog = Join-Path $JobDir 'start-bat.log'
 $sw.Restart()
-$proc = Start-Process -FilePath 'cmd.exe' -ArgumentList "/c `"`"$startBat`" >> `"$startLog`" 2>&1`"" `
+# Headless launch: pass only switches the target's start.ps1 actually
+# declares (fleet template has -NoBrowser/-Headless; minimal scripts may
+# have neither - unrecognized switches would fail the run). This keeps
+# dashboard auto-open popups (http association dialog) out of the sandbox.
+$startFlags = @()
+try {
+    $startPs1 = Join-Path $cloneDir 'start.ps1'
+    if (Test-Path -LiteralPath $startPs1) {
+        $startPs1Text = Get-Content -LiteralPath $startPs1 -Raw
+        if ($startPs1Text -match '\$NoBrowser') { $startFlags += '-NoBrowser' }
+        if ($startPs1Text -match '\$Headless') { $startFlags += '-Headless' }
+    }
+} catch { }
+$flagStr = ($startFlags -join ' ').Trim()
+if ($flagStr) { Write-Host "start flags: $flagStr" -ForegroundColor DarkGray }
+$proc = Start-Process -FilePath 'cmd.exe' -ArgumentList "/c `"`"$startBat`" $flagStr >> `"$startLog`" 2>&1`"" `
     -WorkingDirectory $cloneDir -PassThru -WindowStyle Minimized
 $deadline = (Get-Date).AddSeconds($observeSec)
 $healthOk = $false
