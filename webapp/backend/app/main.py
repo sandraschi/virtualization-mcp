@@ -8,6 +8,8 @@ import asyncio
 import json
 import logging
 import os
+import re
+import subprocess
 import sys
 import tempfile
 import threading
@@ -2558,6 +2560,110 @@ def _valid_job_id(job_id: str) -> bool:
     return bool(_JOB_ID_RE.match(job_id or ""))
 
 
+# Singleton lifecycle budgets for naked-test dispatch. WindowsSandbox.exe
+# returns as soon as the new instance is *requested*; the old VM keeps
+# shutting down asynchronously, and a relaunch into that window wedges
+# with zero LogonCommand output (fleet 2026-09-20: back-to-back matrix
+# dispatches timed out fleet-wide with empty steps/log_tail). So: wait
+# for teardown, verify boot via job-dir markers, retry once, then fail
+# loud with a harness RESULT instead of a forever-running ghost.
+NAKED_BOOT_VERIFY_SEC = 240
+NAKED_TEARDOWN_WAIT_SEC = 60
+
+# Background naked-test lifecycles (kept to avoid GC of asyncio Tasks).
+_NAKED_TASKS: set = set()
+
+
+def _naked_launch_markers(job_dir: str) -> bool:
+    for name in ("RESULT.json", "PROGRESS.json", "naked-test-launch.log", "start-bat.log"):
+        try:
+            if os.path.isfile(os.path.join(job_dir, name)):
+                return True
+        except OSError:
+            pass
+    return False
+
+
+async def _naked_wait_gone(timeout_sec: float) -> bool:
+    from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
+
+    deadline = time.monotonic() + timeout_sec
+    while time.monotonic() < deadline:
+        try:
+            if not WindowsSandboxHelper.is_sandbox_running():
+                return True
+        except Exception:
+            pass
+        await asyncio.sleep(2)
+    try:
+        return not WindowsSandboxHelper.is_sandbox_running()
+    except Exception:
+        return False
+
+
+async def _naked_launch_once(config_xml: str) -> None:
+    wsb_exe = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "WindowsSandbox.exe")
+    with tempfile.NamedTemporaryFile(suffix=".wsb", delete=False, mode="w", encoding="utf-8", newline="\r\n") as tmp:
+        tmp.write(config_xml)
+        tmp_path = tmp.name
+    if os.path.isfile(wsb_exe):
+        await asyncio.create_subprocess_exec(
+            wsb_exe, tmp_path, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
+        )
+    else:
+        await asyncio.create_subprocess_shell(
+            f'start "" "{tmp_path}"', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+
+
+async def _naked_dispatch_lifecycle(job_id: str, job_dir: str, config_xml: str) -> None:
+    from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
+
+    try:
+        WindowsSandboxHelper.terminate_active_sandbox()
+    except Exception:
+        pass
+    if not await _naked_wait_gone(NAKED_TEARDOWN_WAIT_SEC):
+        logger.warning(f"naked-test {job_id}: previous sandbox still present after teardown wait")
+    for attempt in (1, 2):
+        try:
+            await _naked_launch_once(config_xml)
+        except Exception as e:
+            logger.warning(f"naked-test {job_id}: launch attempt {attempt} failed: {e}")
+            await asyncio.sleep(10)
+            continue
+        deadline = time.monotonic() + NAKED_BOOT_VERIFY_SEC
+        while time.monotonic() < deadline:
+            if _naked_launch_markers(job_dir):
+                logger.info(f"naked-test {job_id}: boot verified on attempt {attempt}")
+                return
+            await asyncio.sleep(5)
+        logger.warning(f"naked-test {job_id}: no boot markers after attempt {attempt}, retrying once")
+        try:
+            WindowsSandboxHelper.terminate_active_sandbox()
+        except Exception:
+            pass
+        await _naked_wait_gone(NAKED_TEARDOWN_WAIT_SEC)
+    try:
+        with open(os.path.join(job_dir, "RESULT.json"), "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "finished_utc": __import__("datetime").datetime.now(__import__("datetime").UTC).isoformat(),
+                    "repo": "",
+                    "branch": "",
+                    "pass": False,
+                    "failed_step": "harness",
+                    "note": "Sandbox never booted twice in a row (singleton wedge).",
+                    "steps": [],
+                    "log_tail": [],
+                },
+                f,
+                indent=2,
+            )
+    except OSError:
+        pass
+
+
 def _build_sandbox_xml_naked(
     assets_folder: str,
     job_folder: str,
@@ -2616,7 +2722,11 @@ async def fleet_naked_test(request: NakedTestRequest):
         try:
             with open(os.path.join(local_repo, ".git", "config"), encoding="utf-8") as gf:
                 gc = gf.read()
-            m = re.search(r"url\s*=\s*([^\r\n]+)", gc)
+            # Prefer [remote "origin"] url: first-url-wins would grab a
+            # submodule file:// url listed above the remote.
+            m = re.search(r'\[remote\s+"origin"\][^\[]*?url\s*=\s*([^\r\n]+)', gc)
+            if not m:
+                m = re.search(r"url\s*=\s*([^\r\n]+)", gc)
             if m:
                 repo_url = m.group(1).strip()
             if branch == "main":
@@ -2665,16 +2775,19 @@ async def fleet_naked_test(request: NakedTestRequest):
     if os.path.isdir(os.path.join(local_repo, ".git")):
         bare_git_path = os.path.join(job_dir, "repo.git")
         try:
+            # Fleet standard (AGENTS.md): full git path, never bare "git".
+            git_full = r"C:\Program Files\Git\cmd\git.exe"
+            git_exe = git_full if os.path.isfile(git_full) else "git"
             await asyncio.to_thread(
                 subprocess.run,
-                ["git", "clone", "--bare", "--no-local", local_repo, bare_git_path],
+                [git_exe, "clone", "--bare", "--no-local", local_repo, bare_git_path],
                 check=True,
                 capture_output=True,
             )
             if os.path.isdir(bare_git_path):
                 local_repo_in_sandbox = r"C:\Job\repo.git"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"naked-test {job_id}: local bare clone failed, using URL: {e}")
 
     with open(os.path.join(job_dir, "spec.json"), "w", encoding="utf-8") as f:
         json.dump(
@@ -2692,27 +2805,12 @@ async def fleet_naked_test(request: NakedTestRequest):
     mem = request.memory_in_mb if request.memory_in_mb is not None else 8192
     config_xml = _build_sandbox_xml_naked(host_folder, job_dir, memory_mb=mem)
     try:
-        with tempfile.NamedTemporaryFile(
-            suffix=".wsb", delete=False, mode="w", encoding="utf-8", newline="\r\n"
-        ) as tmp:
-            tmp.write(config_xml)
-            tmp_path = tmp.name
-        wsb_exe = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "WindowsSandbox.exe")
-        # Imported locally: this module is otherwise import-light at startup, and the
-        # name was previously used here without any import at all, so every call to
-        # /api/v1/fleet/naked-test failed with NameError -- which is why the naked-PC
-        # harness had never actually been run.
-        from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
-
-        WindowsSandboxHelper.terminate_active_sandbox()
-        if os.path.isfile(wsb_exe):
-            await asyncio.create_subprocess_exec(
-                wsb_exe, tmp_path, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
-            )
-        else:
-            await asyncio.create_subprocess_shell(
-                f'start "" "{tmp_path}"', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
+        # Hand the singleton lifecycle (teardown wait, launch, boot
+        # verification, one retry) to a background task so dispatch
+        # stays fast for the matrix poller.
+        task = asyncio.create_task(_naked_dispatch_lifecycle(job_id, job_dir, config_xml))
+        _NAKED_TASKS.add(task)
+        task.add_done_callback(_NAKED_TASKS.discard)
         return {"success": True, "job_id": job_id, "repo": repo_url, "branch": branch, "run_dir": job_dir}
     except HTTPException:
         raise
