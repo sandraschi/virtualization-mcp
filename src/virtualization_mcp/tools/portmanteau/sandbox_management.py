@@ -385,9 +385,16 @@ async def sandbox_management(
             if (local_cand / ".git").exists():
                 bare_git_path = job_dir / "repo.git"
                 try:
+                    # Fleet standard (AGENTS.md): full git path, never bare
+                    # "git" (scoop shim swallows stdout, PATH unreliable
+                    # in service/daemon sessions - backend had no git).
+                    import shutil
+
+                    git_full = r"C:\Program Files\Git\cmd\git.exe"
+                    git_exe = git_full if Path(git_full).is_file() else (shutil.which("git") or "git")
                     await asyncio.to_thread(
                         subprocess.run,
-                        ["git", "clone", "--bare", "--no-local", str(local_cand), str(bare_git_path)],
+                        [git_exe, "clone", "--bare", "--no-local", str(local_cand), str(bare_git_path)],
                         check=True,
                         capture_output=True,
                     )
