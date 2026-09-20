@@ -237,18 +237,71 @@ $sw.Stop()
 if ($healthUrl) {
     if ($healthOk) {
         Add-Step $steps 'start' 0 $sw.ElapsedMilliseconds "health 200 at $healthUrl"
-        # Show the webapp: Edge by executable path. A bare Start-Process URL
-        # pops the http-association dialog on fresh sandboxes instead.
+        $e2eRequested = $false
+        try { $e2eRequested = [bool]$script:Spec.e2e_click } catch { }
+        if (-not $e2eRequested) {
+            # Show the webapp: Edge by executable path. A bare Start-Process URL
+            # pops the http-association dialog on fresh sandboxes instead.
+            try {
+                $frontUrl = $script:Spec.frontend_url
+                $edgeExe = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+                if ($frontUrl -and (Test-Path -LiteralPath $edgeExe)) {
+                    Write-Host "Opening webapp at $frontUrl ..." -ForegroundColor Green
+                    Start-Process -FilePath $edgeExe -ArgumentList $frontUrl
+                }
+            } catch { }
+            Write-Result $steps $true '' "Servers healthy within ${observeSec}s window."
+            exit 0
+        }
+        # --- E2E: full-stack webapp clickthrough (CUA, UIA, no OCR) ---
+        Write-Step "e2e full-stack webapp clickthrough"
+        $e2eSw = [System.Diagnostics.Stopwatch]::StartNew()
+        $webappStart = Join-Path $cloneDir 'webapp\start.ps1'
+        if (-not (Test-Path -LiteralPath $webappStart)) {
+            Add-Step $steps 'e2e' 1 0 'no webapp\start.ps1 in repo'
+            Write-Result $steps $false 'e2e' 'e2e requested but repo has no webapp\start.ps1.'
+            exit 15
+        }
+        $webFlags = @()
         try {
-            $frontUrl = $script:Spec.frontend_url
-            $edgeExe = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
-            if ($frontUrl -and (Test-Path -LiteralPath $edgeExe)) {
-                Write-Host "Opening webapp at $frontUrl ..." -ForegroundColor Green
-                Start-Process -FilePath $edgeExe -ArgumentList $frontUrl
-            }
+            $webText = Get-Content -LiteralPath $webappStart -Raw
+            if ($webText -match '\$NoBrowser') { $webFlags += '-NoBrowser' }
+            elseif ($webText -match '\$Headless') { $webFlags += '-Headless' }
         } catch { }
-        Write-Result $steps $true '' "Servers healthy within ${observeSec}s window."
-        exit 0
+        $webFlagStr = ($webFlags -join ' ').Trim()
+        $webLog = Join-Path $JobDir 'webapp-start.log'
+        Start-Process -FilePath 'cmd.exe' -ArgumentList "/c `"powershell -NoProfile -ExecutionPolicy Bypass -File `"$webappStart`" $webFlagStr >> `"$webLog`" 2>&1`"" -WorkingDirectory (Join-Path $cloneDir 'webapp') -WindowStyle Minimized
+        # Wait for the frontend (npm install + vite cold start are slow).
+        $frontUrl = $script:Spec.frontend_url
+        $e2eOk = $false
+        if ($frontUrl) {
+            $fDeadline = (Get-Date).AddSeconds(300)
+            while ((Get-Date) -lt $fDeadline) {
+                try {
+                    $fr = Invoke-WebRequest -Uri $frontUrl -UseBasicParsing -TimeoutSec 5
+                    if ([int]$fr.StatusCode -eq 200) { break }
+                } catch { }
+                Start-Sleep -Seconds 5
+            }
+            # Refresh PATH: winget installs from rig/start landed in the
+            # registry after this session began, so uv may not resolve yet.
+            $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + `
+                        [System.Environment]::GetEnvironmentVariable("PATH","User")
+            try {
+                & uv run --with pywinauto --with pillow 'C:\Assets\Invoke-E2EClick.py' --frontend-url $frontUrl --job-dir $JobDir
+                $e2eOk = ($LASTEXITCODE -eq 0)
+            } catch { $e2eOk = $false }
+        }
+        $e2eSw.Stop()
+        if ($e2eOk) {
+            Add-Step $steps 'e2e' 0 $e2eSw.ElapsedMilliseconds "clickthrough passed at $frontUrl"
+            Write-Result $steps $true '' "Servers healthy within ${observeSec}s window + e2e clickthrough passed."
+            exit 0
+        } else {
+            Add-Step $steps 'e2e' 1 $e2eSw.ElapsedMilliseconds "clickthrough failed at $frontUrl"
+            Write-Result $steps $false 'e2e' "E2E webapp clickthrough failed (see E2E.json + e2e-*.png)."
+            exit 15
+        }
     } else {
         Add-Step $steps 'start' 1 $sw.ElapsedMilliseconds "health check failed at $healthUrl"
         Write-Result $steps $false 'start' "Health check did not return 200 within ${observeSec}s window."

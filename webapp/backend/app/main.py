@@ -2540,11 +2540,13 @@ class NakedTestRequest(BaseModel):
     observe_sec: int = 90
     health_url: str = ""
     memory_in_mb: int | None = 8192
+    e2e_click: bool = False  # full-stack webapp CUA clickthrough after the start gate
 
 
 NAKED_TEST_FILES = (
     "Run-NakedTest.cmd",
     "Invoke-NakedTest.ps1",
+    "Invoke-E2EClick.py",
     "lib\\Winget-Bootstrap.ps1",
 )
 
@@ -2809,6 +2811,7 @@ async def fleet_naked_test(request: NakedTestRequest):
                 "observe_sec": observe,
                 "health_url": health_url,
                 "frontend_url": frontend_url,
+                "e2e_click": bool(request.e2e_click),
             },
             f,
             indent=2,
