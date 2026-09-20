@@ -58,6 +58,9 @@ dev = [
     "pre-commit>=3.6.0",
     "pyinstaller",
     "pywin32",
+    "pywinauto>=0.6.9",
+    "pillow>=12.3.0",
+    "pytesseract>=0.3.13",
 ]
 
 [project.urls]
