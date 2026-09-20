@@ -3,6 +3,20 @@
 Running record for Tauri/NSIS builds (fleet NSIS Build Gate requires this file).
 Newest entry first.
 
+## 2026-09-20 ~20:30 +02:00 — v1.6.0 release build (SHIPPED)
+
+**Trigger:** Fail-soft VBox init fix + version bump for release.
+**Build:** `native/build.ps1` exit 0 after killing stale `virtualization-mcp.exe`
+holders (uv-lock os error 32 on first attempt - same gremlin as the backend
+restart). Output: `Virtualization MCP_1.6.0_x64-setup.exe` (42.2 MB).
+**MCPB:** `dist/virtualization-mcp-v1.6.0.mcpb` (3.3 MB, fresh src twin).
+**Release:** tag `v1.6.0` pushed; GitHub release with both assets:
+https://github.com/sandraschi/virtualization-mcp/releases/tag/v1.6.0
+**Sandbox proof for this release:** VBox-less guest imports clean, all tools
+register, server banner (job `naked-virtualization-mcp-20260920_180101`).
+Matrix health verdict stays red by architecture (root entry serves MCP, not
+the `:10701` dashboard) - entry-point decision still open.
+
 ## 2026-09-20 19:15 +02:00 — v1.5.0 NSIS rebuild + CUA smoke (PASS with notes)
 
 **Trigger:** Full session overhaul (sandbox lifecycle, naked-test harness, MCP
