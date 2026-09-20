@@ -53,7 +53,11 @@ $localRepoPath = Join-Path (Split-Path -Parent $repoRoot) $repoClean
 if (Test-Path -LiteralPath (Join-Path $localRepoPath ".git\config")) {
     try {
         $gitConfig = Get-Content -LiteralPath (Join-Path $localRepoPath ".git\config") -Raw
-        if ($gitConfig -match 'url\s*=\s*([^\r\n]+)') {
+        # Prefer [remote "origin"] url: first-url-wins would grab a submodule
+        # file:// url when one is listed above the remote (e.g. virtualization-mcp).
+        if ($gitConfig -match '\[remote\s+"origin"\][^\[]*?url\s*=\s*([^\r\n]+)') {
+            $repoUrl = $matches[1].Trim()
+        } elseif ($gitConfig -match 'url\s*=\s*([^\r\n]+)') {
             $repoUrl = $matches[1].Trim()
         }
         if ($Branch -eq "main" -and $gitConfig -match '\[branch\s+"([^"]+)"\]') {

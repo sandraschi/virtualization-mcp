@@ -327,7 +327,11 @@ async def sandbox_management(
                     import re
 
                     cfg_txt = (local_cand / ".git" / "config").read_text(encoding="utf-8")
-                    m = re.search(r"url\s*=\s*([^\r\n]+)", cfg_txt)
+                    # Prefer [remote "origin"] url: first-url-wins would grab a
+                    # submodule file:// url listed above the remote.
+                    m = re.search(r'\[remote\s+"origin"\][^\[]*?url\s*=\s*([^\r\n]+)', cfg_txt)
+                    if not m:
+                        m = re.search(r"url\s*=\s*([^\r\n]+)", cfg_txt)
                     if m:
                         repo_url = m.group(1).strip()
                     if not branch:
