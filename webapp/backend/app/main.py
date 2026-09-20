@@ -155,8 +155,122 @@ app.add_middleware(
 )
 
 # MCP protocol (Streamable HTTP) at /mcp for MCP clients. Fail-soft:
-# importing the tool tree requires VBoxManage on some hosts; the REST
-# backend must stay up regardless.
+# (mounted AFTER the /mcp/tools* bridge routes below: Starlette matches
+# in registration order and a mount would otherwise swallow them.)
+
+
+def _require_fleet_mcp():
+    if "_fleet_mcp" not in globals() or globals()["_fleet_mcp"] is None:
+        raise HTTPException(status_code=503, detail="MCP tool tree unavailable (mount skipped)")
+    return globals()["_fleet_mcp"]
+
+
+def _mcp_result_to_json(result):
+    """CallToolResult -> JSON-safe payload (structured first, else text)."""
+    try:
+        sc = getattr(result, "structured_content", None)
+        if sc is not None:
+            return sc
+        parts = []
+        for block in getattr(result, "content", []) or []:
+            text = getattr(block, "text", None)
+            if text is not None:
+                parts.append(text)
+            else:
+                data = getattr(block, "data", None)
+                parts.append(data if data is not None else str(block))
+        if not parts:
+            return str(result)
+        if len(parts) == 1:
+            try:
+                return json.loads(parts[0])
+            except (ValueError, TypeError):
+                return parts[0]
+        return parts
+    except Exception:
+        return str(result)
+
+
+class McpToolsCallRequest(BaseModel):
+    name: str = ""
+    arguments: dict[str, Any] = {}
+
+
+class PortmanteauCallRequest(BaseModel):
+    tool: str = ""
+    action: str = ""
+    params: dict[str, Any] = {}
+
+
+@app.get("/mcp/tools")
+async def mcp_tools_list():
+    """Dashboard Tools Console: [{name, description, inputSchema}]."""
+    fleet_mcp = _require_fleet_mcp()
+    try:
+        tools = await fleet_mcp.list_tools()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"list_tools failed: {e}") from e
+    out = []
+    for t in tools or []:
+        out.append(
+            {
+                "name": getattr(t, "name", str(t)),
+                "description": getattr(t, "description", "") or "",
+                "inputSchema": getattr(t, "parameters", None) or getattr(t, "inputSchema", {}) or {},
+            }
+        )
+    return {"tools": out}
+
+
+@app.post("/mcp/tools/call")
+async def mcp_tools_call(request: McpToolsCallRequest):
+    """Dashboard Tools Console execute: {name, arguments} -> {result}."""
+    fleet_mcp = _require_fleet_mcp()
+    if not request.name:
+        raise HTTPException(status_code=400, detail="tool name is required")
+    try:
+        result = await fleet_mcp.call_tool(request.name, request.arguments or {})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"call_tool failed: {e}") from e
+    return {"result": _mcp_result_to_json(result), "isError": bool(getattr(result, "is_error", False))}
+
+
+@app.post("/api/mcp/tool")
+async def api_mcp_tool(request: PortmanteauCallRequest):
+    """Portmanteau bridge for dashboard helpers: {tool, action, params}."""
+    fleet_mcp = _require_fleet_mcp()
+    if not request.tool or not request.action:
+        raise HTTPException(status_code=400, detail="tool and action are required")
+    args = {"action": request.action}
+    if isinstance(request.params, dict):
+        args.update(request.params)
+    try:
+        result = await fleet_mcp.call_tool(request.tool, args)
+    except Exception as e:
+        return {"success": False, "action": request.action, "error": str(e)}
+    payload = _mcp_result_to_json(result)
+    # Portmanteau tools return {success, message, ...}: surface honestly.
+    if isinstance(payload, dict) and "success" in payload:
+        body = {"success": bool(payload.get("success")), "action": request.action, "data": payload}
+        if payload.get("error"):
+            body["error"] = payload.get("error")
+        return body
+    body: dict[str, Any] = {
+        "success": not bool(getattr(result, "is_error", False)),
+        "action": request.action,
+        "data": payload,
+    }
+    if isinstance(payload, (list, dict)):
+        try:
+            body["count"] = len(payload)
+        except TypeError:
+            pass
+    return body
+
+
+# Mount AFTER the /mcp/tools* bridge routes above (Starlette matches in
+# registration order). Fail-soft: importing the tool tree requires
+# VBoxManage on some hosts; the REST backend must stay up regardless.
 _mcp_http_app = None
 try:
     from virtualization_mcp.all_tools_server import mcp as _fleet_mcp
