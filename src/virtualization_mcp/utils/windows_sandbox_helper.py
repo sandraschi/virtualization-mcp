@@ -77,6 +77,11 @@ class WindowsSandboxHelper:
             "windowssandboxclient.exe",
             "windowssandboxserver.exe",
             "windowssandboxremotesession.exe",
+            # Hyper-V worker backing the sandbox VM. It outlives the
+            # user-mode processes after a kill; relaunching while it
+            # still holds the partition wedges with zero LogonCommand
+            # output (fleet 2026-09-20).
+            "vmmemwindowssandbox.exe",
         }
         for proc in psutil.process_iter(["name"]):
             try:
@@ -98,6 +103,7 @@ class WindowsSandboxHelper:
             "windowssandboxclient.exe",
             "windowssandboxserver.exe",
             "windowssandboxremotesession.exe",
+            "vmmemwindowssandbox.exe",
         }
         terminated = False
         for proc in psutil.process_iter(["pid", "name"]):
