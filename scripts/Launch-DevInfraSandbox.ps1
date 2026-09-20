@@ -33,7 +33,19 @@ $existingProcs = Get-Process -Name 'WindowsSandboxClient', 'WindowsSandbox' -Err
 if ($existingProcs) {
   Write-Host 'Terminating active Windows Sandbox instance (singleton constraint)...' -ForegroundColor Yellow
   $existingProcs | Stop-Process -Force -ErrorAction SilentlyContinue
-  Start-Sleep -Seconds 2
+  # HARDENED 2026-09-17: was a blind Start-Sleep -Seconds 2 - Windows Sandbox
+  # teardown (tearing down its VM) can genuinely exceed 2s, and launching a new
+  # sandbox while the old one is still shutting down violates the singleton
+  # constraint this code exists to enforce (TRAPS_AND_PITFALLS.md #36). Poll.
+  $sandboxKillWaitSec = 20
+  $sandboxKillElapsed = 0
+  while ($sandboxKillElapsed -lt $sandboxKillWaitSec -and (Get-Process -Name 'WindowsSandboxClient', 'WindowsSandbox' -ErrorAction SilentlyContinue)) {
+    Start-Sleep -Milliseconds 500
+    $sandboxKillElapsed += 0.5
+  }
+  if (Get-Process -Name 'WindowsSandboxClient', 'WindowsSandbox' -ErrorAction SilentlyContinue) {
+    Write-Host "  WARNING: old Windows Sandbox still alive after ${sandboxKillWaitSec}s" -ForegroundColor DarkYellow
+  }
 }
 
 $escapedHost = [System.Security.SecurityElement]::Escape($hostAssets)
