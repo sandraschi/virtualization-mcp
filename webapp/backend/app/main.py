@@ -93,8 +93,24 @@ async def lifespan(app: FastAPI):
         logger.error("MCP server init failed: %s", e, exc_info=True)
         mcp = None
 
+    # Enter the mounted FastMCP HTTP app's lifespan so /mcp requests
+    # have an initialized session manager (else every call 500s).
+    mcp_stack = None
+    if _mcp_http_app is not None:
+        try:
+            mcp_stack = _mcp_http_app.lifespan(app)
+            await mcp_stack.__aenter__()
+        except Exception as e:
+            logger.error("MCP HTTP lifespan init failed: %s", e, exc_info=True)
+            mcp_stack = None
+
     yield
     logger.info("Virtualization Backend Stopping...")
+    if mcp_stack is not None:
+        try:
+            await mcp_stack.__aexit__(None, None, None)
+        except Exception:
+            pass
 
 
 # Registry Path (optional — may not exist in PyInstaller or on other machines)
@@ -137,6 +153,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# MCP protocol (Streamable HTTP) at /mcp for MCP clients. Fail-soft:
+# importing the tool tree requires VBoxManage on some hosts; the REST
+# backend must stay up regardless.
+_mcp_http_app = None
+try:
+    from virtualization_mcp.all_tools_server import mcp as _fleet_mcp
+
+    # path="/": FastMCP defaults its endpoint to /mcp/ internally, so
+    # mounting at /mcp with the default would serve /mcp/mcp/ instead.
+    _mcp_http_app = _fleet_mcp.http_app(path="/")
+    app.mount("/mcp", _mcp_http_app)
+    logger.info("Mounted FastMCP HTTP app at /mcp")
+except Exception as e:
+    logger.warning(f"FastMCP /mcp mount skipped: {e}")
 
 
 # Full dev setup: winget package IDs + optional download-and-run (max automatic)
