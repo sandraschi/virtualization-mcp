@@ -1,5 +1,6 @@
 """Entry point for PyInstaller-bundled web dashboard backend."""
 
+import _datetime  # noqa: F401 -- PyInstaller must bundle this eagerly
 import _strptime  # noqa: F401 -- PyInstaller must bundle this eagerly
 import os
 import sys

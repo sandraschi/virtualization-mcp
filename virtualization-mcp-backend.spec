@@ -50,6 +50,12 @@ hiddenimports = [
     "prefab_ui",
     "rich",
     "loguru",
+    "joserfc",
+    "joserfc.jwk",
+    "joserfc.jwt",
+    "cachetools",
+    "beartype",
+    "_datetime",
     "_strptime",
 ]
 
@@ -57,11 +63,11 @@ a = Analysis(
     ["run_server.py"],
     pathex=["src", "."],
     binaries=[],
-    
+
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
-    
+
     hooksconfig={},
     runtime_hooks=[],
     excludes=["tkinter", "matplotlib", "pandas", "scipy", "torch", "tensorflow"],
@@ -77,7 +83,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    
+
     name="virtualization-mcp-backend",
     debug=False,
     bootloader_ignore_signals=False,
@@ -89,15 +95,3 @@ exe = EXE(
     disable_windowed_traceback=False,
     argv_emulation=False,
 )
-
-
-
-
-
-
-
-
-
-
-
-
