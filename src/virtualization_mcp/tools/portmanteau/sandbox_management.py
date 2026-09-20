@@ -29,6 +29,17 @@ from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
 
 logger = logging.getLogger(__name__)
 
+# Boot-verification budget for a naked-test sandbox. Run-NakedTest.cmd writes
+# naked-test-launch.log almost immediately when the LogonCommand fires; if
+# nothing appears within this window the instance is wedged (fleet 2026-09-20:
+# ~50% of launches under overlap produced zero output forever).
+NAKED_BOOT_VERIFY_SEC = 240
+NAKED_TEARDOWN_WAIT_SEC = 60
+
+# Background naked-test lifecycles. Kept to avoid GC of asyncio Tasks (RUF006)
+# and so dispatch stays fast while teardown/boot/verify runs.
+_NAKED_TASKS: set[asyncio.Task[None]] = set()
+
 SANDBOX_ACTIONS = {
     # Ephemeral Docker
     "execute_code": "Run a code snippet in a throwaway container (auto-removed after run)",
@@ -49,6 +60,110 @@ SANDBOX_ACTIONS = {
     "win_sandbox_naked_test_status": "Poll or retrieve RESULT.json from a naked install test job",
     "win_sandbox_naked_test_list": "List recent naked install test jobs with pass/fail summary",
 }
+
+
+async def _wait_until_no_sandbox(timeout_sec: float) -> bool:
+    """Poll until the singleton sandbox is gone (teardown is async)."""
+    import time
+
+    deadline = time.monotonic() + timeout_sec
+    while time.monotonic() < deadline:
+        try:
+            if not WindowsSandboxHelper.is_sandbox_running():
+                return True
+        except Exception:
+            return True
+        await asyncio.sleep(3)
+    try:
+        return not WindowsSandboxHelper.is_sandbox_running()
+    except Exception:
+        return True
+
+
+def _launch_naked_wsb(tmp_wsb: Path) -> None:
+    import os
+
+    wsb_exe = Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "WindowsSandbox.exe"
+    if wsb_exe.exists():
+        subprocess.Popen([str(wsb_exe), str(tmp_wsb)])
+    else:
+        subprocess.Popen(["cmd.exe", "/c", "start", "", str(tmp_wsb)])
+
+
+async def _naked_boot_verified(job_dir: Path, timeout_sec: float) -> bool:
+    """True once the sandbox LogonCommand shows any sign of life."""
+    import time
+
+    def _signalled() -> bool:
+        return (
+            (job_dir / "naked-test-launch.log").is_file()
+            or (job_dir / "PROGRESS.json").is_file()
+            or (job_dir / "RESULT.json").is_file()
+        )
+
+    deadline = time.monotonic() + timeout_sec
+    while time.monotonic() < deadline:
+        if _signalled():
+            return True
+        await asyncio.sleep(10)
+    return _signalled()
+
+
+async def _naked_test_lifecycle(jid: str, job_dir: Path, wsb_xml: str, tmp_wsb: Path) -> None:
+    """Own the singleton across terminate -> boot -> verify -> retry-once.
+
+    Runs as a background task so dispatch stays fast. If the sandbox never
+    boots twice in a row, writes a harness-failure RESULT.json so pollers
+    stop waiting and the failure is attributed to the host, not the repo.
+    """
+    import json as _json
+    from datetime import datetime as _dt
+
+    try:
+        WindowsSandboxHelper.terminate_active_sandbox()
+    except Exception as e:
+        logger.warning(f"naked-test {jid}: terminate failed: {e}")
+    await _wait_until_no_sandbox(NAKED_TEARDOWN_WAIT_SEC)
+
+    for attempt in (1, 2):
+        try:
+            tmp_wsb.write_text(wsb_xml, encoding="utf-8")
+            _launch_naked_wsb(tmp_wsb)
+        except Exception as e:
+            logger.warning(f"naked-test {jid}: launch attempt {attempt} failed: {e}")
+            continue
+        logger.info(f"naked-test {jid}: launched (attempt {attempt} via {tmp_wsb}), verifying boot...")
+        if await _naked_boot_verified(job_dir, NAKED_BOOT_VERIFY_SEC):
+            return
+        logger.warning(f"naked-test {jid}: no boot signal after {NAKED_BOOT_VERIFY_SEC}s (attempt {attempt})")
+        try:
+            WindowsSandboxHelper.terminate_active_sandbox()
+        except Exception:
+            pass
+        await _wait_until_no_sandbox(NAKED_TEARDOWN_WAIT_SEC)
+
+    try:
+        (job_dir / "RESULT.json").write_text(
+            _json.dumps(
+                {
+                    "finished_utc": _dt.now(UTC).isoformat(),
+                    "repo": "",
+                    "branch": "",
+                    "pass": False,
+                    "failed_step": "harness",
+                    "note": (
+                        "Sandbox never booted twice in a row (no LogonCommand output"
+                        f" within {NAKED_BOOT_VERIFY_SEC}s). Host/sandbox issue, not the repo."
+                    ),
+                    "steps": [],
+                    "log_tail": [],
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    except Exception as e:
+        logger.warning(f"naked-test {jid}: could not write harness RESULT: {e}")
 
 
 async def sandbox_management(
@@ -274,8 +389,8 @@ async def sandbox_management(
                     )
                     if bare_git_path.exists():
                         local_repo_in_sandbox = r"C:\Job\repo.git"
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"naked-test {jid}: local bare clone failed, using URL: {e}")
 
             spec_path = job_dir / "spec.json"
             spec_path.write_text(
@@ -316,17 +431,13 @@ async def sandbox_management(
 </Configuration>"""
 
             tmp_wsb = Path(tempfile.gettempdir()) / f"{jid}.wsb"
-            tmp_wsb.write_text(wsb_xml, encoding="utf-8")
 
-            import os
-
-            WindowsSandboxHelper.terminate_active_sandbox()
-
-            wsb_exe = Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "WindowsSandbox.exe"
-            if wsb_exe.exists():
-                subprocess.Popen([str(wsb_exe), str(tmp_wsb)])
-            else:
-                subprocess.Popen(["cmd.exe", "/c", "start", "", str(tmp_wsb)])
+            # Hand the singleton lifecycle (teardown wait, launch, boot
+            # verification, one retry) to a background task so dispatch
+            # stays fast for the poller.
+            _naked_task = asyncio.create_task(_naked_test_lifecycle(jid, job_dir, wsb_xml, tmp_wsb))
+            _NAKED_TASKS.add(_naked_task)
+            _naked_task.add_done_callback(_NAKED_TASKS.discard)
 
             return {
                 "success": True,
@@ -335,6 +446,7 @@ async def sandbox_management(
                 "repo": repo_url,
                 "branch": branch,
                 "run_dir": str(job_dir),
+                "status": "running",
                 "message": f"Launched automated naked install test for {repo_url} in Windows Sandbox.",
             }
 
