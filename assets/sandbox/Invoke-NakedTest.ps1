@@ -152,6 +152,12 @@ if (-not (Test-Path -LiteralPath $TestRoot)) {
 $cloneName = ($script:Spec.repo_url -split '/')[-1] -replace '\.git$', ''
 $cloneDir = Join-Path $TestRoot $cloneName
 
+# Mapped folders arrive owned by the host user while we run as
+# WDAGUtilityAccount: without this, git refuses the local bare clone
+# with "detected dubious ownership" (exit 128). Ephemeral box: safe.
+& git config --global --add safe.directory 'C:/Job/repo.git' 2>&1 | Out-Null
+& git config --global --add safe.directory 'C:/Test' 2>&1 | Out-Null
+
 $cloneArgs = @('clone')
 if ($targetSource -like 'http*') {
     $cloneArgs += @('--depth', '1')
