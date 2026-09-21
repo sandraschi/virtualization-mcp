@@ -185,7 +185,10 @@ if ($sbProcs) {
 }
 
 Write-Host "Starting Windows Sandbox instance [$jobId]..." -ForegroundColor Cyan
-& cmd.exe /c "`"$sandboxExe`" `"$tempWsb`""
+# NOTE: do NOT launch via cmd.exe /c with two quoted paths -- cmd's quote
+# stripping silently eats the trailing quote and the sandbox never boots
+# (zero output, harness times out). Start-Process is proven reliable.
+Start-Process -FilePath $sandboxExe -ArgumentList $tempWsb
 
 Write-Host "Waiting for Sandbox to boot and report progress..." -ForegroundColor DarkGray
 
