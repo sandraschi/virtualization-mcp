@@ -9,6 +9,7 @@
     Backend = @{
         Kind          = 'uvicorn'
         UvicornTarget = 'virtualization_mcp.web.app:app'
+        LogLevel      = 'warning'
         WorkDir       = 'webapp\backend'
         PythonPath    = 'webapp\backend;src'
         Env           = @{ WEB_PORT = '10701' }
