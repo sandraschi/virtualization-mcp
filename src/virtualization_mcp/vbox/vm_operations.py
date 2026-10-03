@@ -38,7 +38,7 @@ class VMOperations:
         # Handle templates path resolution
         if templates_path is None:
             # Default to config directory in the package
-            self.templates_path = Path(__file__).parent.parent.parent / "config" / "vm_templates.yaml"
+            self.templates_path = Path(__file__).parent.parent / "config" / "vm_templates.yaml"
         else:
             self.templates_path = Path(templates_path)
 
