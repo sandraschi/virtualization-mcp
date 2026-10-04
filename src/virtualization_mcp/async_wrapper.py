@@ -9,16 +9,22 @@ allowing it to work with FastMCP 2.10's stdio transport without major refactorin
 import asyncio
 import functools
 import logging
+import os
 import sys
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Any, TypeVar
+
+# Absolute log path: a bare filename lands in the host's cwd (BUG-063)
+LOG_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "virtualization-mcp" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("virtualization-mcp_async.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler(LOG_DIR / "virtualization-mcp_async.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger("virtualization-mcp_async")
 

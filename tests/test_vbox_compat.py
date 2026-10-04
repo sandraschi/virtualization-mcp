@@ -6,6 +6,7 @@ including VM lifecycle operations and snapshot management.
 """
 
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -19,11 +20,15 @@ if project_root not in sys.path:
 
 from virtualization_mcp.vbox.compat_adapter import get_vbox_manager
 
+# Absolute log path: a bare filename lands in the host's cwd (BUG-063)
+LOG_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "virtualization-mcp" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(), logging.FileHandler("test_vbox_compat.log")],
+    handlers=[logging.StreamHandler(), logging.FileHandler(LOG_DIR / "test_vbox_compat.log")],
 )
 
 logger = logging.getLogger(__name__)

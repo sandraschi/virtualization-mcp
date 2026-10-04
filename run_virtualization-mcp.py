@@ -4,6 +4,7 @@ Run the virtualization-mcp server with proper Python path and error handling.
 
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -12,13 +13,17 @@ src_dir = str(Path(__file__).parent / "src")
 if src_dir not in sys.path:
     sys.path.insert(0, src_dir)
 
+# Absolute log path: a bare filename lands in the host's cwd (BUG-063)
+LOG_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "virtualization-mcp" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 # Set up logging
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("virtualization_mcp.log", mode="w", encoding="utf-8"),
+        logging.FileHandler(LOG_DIR / "virtualization_mcp.log", mode="w", encoding="utf-8"),
     ],
 )
 logger = logging.getLogger(__name__)
