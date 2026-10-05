@@ -993,6 +993,7 @@ class ChatRequest(BaseModel):
     history: list[dict[str, str]] = []
     model: str | None = None
     personality: str | None = None
+    custom_prompt: str = ""
     session_id: str | None = None
 
 

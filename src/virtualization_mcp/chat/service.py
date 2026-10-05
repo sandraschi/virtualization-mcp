@@ -35,7 +35,7 @@ class ChatService:
     def _load_llm_settings(self) -> dict[str, Any]:
         return {"endpoint": os.environ.get("OLLAMA_HOST", "http://localhost:11434"), "model": "gemma4:e4b"}
 
-    def _build_system_prompt(self, personality: str | None) -> str:
+    def _build_system_prompt(self, personality: str | None, custom_prompt: str = "") -> str:
         base = "You are the SOTA Virtualization Assistant. You help manage VMs, Sandboxes, and the MCP Fleet."
         personality_instructions = {
             "professional": "",
@@ -46,6 +46,8 @@ class ChatService:
         instr = personality_instructions.get(personality or "professional", "")
         if instr:
             base += f"\n\n{instr}"
+        if (custom_prompt or "").strip():
+            base += f"\n\nExtra user instructions: {(custom_prompt or '').strip()}"
         # Load optional skill content (virtualization‑expert) if present.
         try:
             skills_dir = self._get_skills_dir()
@@ -70,7 +72,7 @@ class ChatService:
         return candidate if os.path.isdir(candidate) else None
 
     def _build_messages(self, request: Any) -> list[dict[str, str]]:
-        system_prompt = self._build_system_prompt(request.personality)
+        system_prompt = self._build_system_prompt(request.personality, getattr(request, "custom_prompt", ""))
         session_id = request.session_id or "default"
         history = self.memory.get_messages(session_id)
         messages = [{"role": h["role"], "content": h["content"]} for h in history]
