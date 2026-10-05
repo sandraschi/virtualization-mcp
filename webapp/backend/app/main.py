@@ -17,8 +17,10 @@ import time
 import urllib.request
 import warnings
 from contextlib import asynccontextmanager
+from datetime import date
 from typing import Any
 
+import aiohttp
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -266,6 +268,370 @@ async def api_mcp_tool(request: PortmanteauCallRequest):
         except TypeError:
             pass
     return body
+
+
+# ---------------------------------------------------------------------------
+# Skills surface (fleet chat standard SSOT 1.2 / S5): the canonical list +
+# content endpoints already exist at /api/v1/skills[/{skill_id}] below.
+# This thin /skill/{name} alias matches the standard contract exactly
+# (raw SKILL.md, or the string "not found").
+# ---------------------------------------------------------------------------
+_SKILL_NAME = "virtualization-expert"
+
+
+def _read_skill_content(name: str) -> str | None:
+    """Raw SKILL.md via the existing _get_skills_dir() (fixed allowlist)."""
+    if name != _SKILL_NAME:
+        return None
+    try:
+        skills_dir = _get_skills_dir()
+    except NameError:
+        return None
+    if not skills_dir:
+        return None
+    # _get_skills_dir() returns a pathlib.Path in this backend.
+    path = skills_dir / name / "SKILL.md"
+    try:
+        if not path.is_file():
+            return None
+        return path.read_text(encoding="utf-8")
+    except Exception:
+        return None
+
+
+@app.get("/skill/{skill_name}")
+async def get_skill(skill_name: str):
+    """Raw SKILL.md content (standard contract: 'not found' when missing)."""
+    content = _read_skill_content(skill_name)
+    if content is None:
+        return "not found"
+    return content
+
+
+# ---------------------------------------------------------------------------
+# Agentic chat: Ollama native tool loop against the live virtualization
+# estate (fleet chat standard S9.4, ported from gtfs-mcp).
+#
+# The plain /api/v1/chat proxy sends the model zero context and no tools, so
+# small models free-associate VM names and states. This endpoint injects the
+# skill + a live VM-inventory prefetch into the system prompt and lets the
+# model call a fixed allowlist of READ-ONLY estate tools, executed
+# in-process through the fleet MCP object (no HTTP-to-self). Max 6 turns.
+# Destructive actions (create/start/stop/delete/launch/terminate/...) are
+# deliberately NOT exposed: the agent observes and advises; the user acts.
+# ---------------------------------------------------------------------------
+_AGENT_MODEL_FALLBACK = "gemma4:e4b"
+_AGENT_NUM_CTX = 16384
+_AGENT_MAX_TURNS = 6
+_AGENT_OLLAMA_BASE = "http://localhost:11434"
+
+_AGENT_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "list_vms",
+            "description": "List all VMs (VirtualBox + Hyper-V) with name and state. Call first when unsure which VM the user means.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "vm_info",
+            "description": "Memory, CPUs, state, disks for one VM. Always resolve a prose VM name with this before advising on it.",
+            "parameters": {
+                "type": "object",
+                "properties": {"vm_name": {"type": "string", "description": "Exact VM name from list_vms"}},
+                "required": ["vm_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "host_info",
+            "description": "Host CPU, RAM, disk, OS baseline.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "vbox_status",
+            "description": "Installed VirtualBox version.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_snapshots",
+            "description": "Existing snapshots for one VM.",
+            "parameters": {
+                "type": "object",
+                "properties": {"vm_name": {"type": "string", "description": "Exact VM name from list_vms"}},
+                "required": ["vm_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_disks",
+            "description": "Virtual disks with sizes and formats.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_networks",
+            "description": "Host-only networks on the host.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "sandbox_status",
+            "description": "Whether Windows Sandbox is usable right now.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+]
+
+# Agent tool -> (portmanteau tool, fixed action, allowed params).
+_AGENT_TOOLMAP = {
+    "list_vms": ("vm_management", "list", ()),
+    "vm_info": ("vm_management", "info", ("vm_name",)),
+    "host_info": ("system_management", "host_info", ()),
+    "vbox_status": ("system_management", "vbox_version", ()),
+    "list_snapshots": ("snapshot_management", "list", ("vm_name",)),
+    "list_disks": ("storage_management", "list_disks", ()),
+    "list_networks": ("network_management", "list_networks", ()),
+    "sandbox_status": ("sandbox_management", "win_sandbox_status", ()),
+}
+
+
+def _agent_system(personality: str, custom_prompt: str = "") -> str:
+    """System prompt: role + date + skill content (grounding data injected per-turn)."""
+    skill = _read_skill_content(_SKILL_NAME) or ""
+    # Strip YAML frontmatter for the model context.
+    if skill.startswith("---"):
+        end = skill.find("---", 3)
+        if end != -1:
+            skill = skill[end + 3 :].strip()
+    base = (
+        "You are the SOTA Virtualization Assistant for virtualization-mcp, "
+        "a live VirtualBox/Hyper-V/Sandbox manager. "
+        f"Today is {date.today().isoformat()}. "
+        "MANDATORY PROCEDURE, no exceptions: (1) for any VM question call "
+        "list_vms first unless live inventory is already in context; "
+        "(2) resolve a prose VM name with vm_info before advising on it; "
+        "(3) answer ONLY from tool results. Never state a VM name, state, "
+        "snapshot, disk size, or version you did not receive from a tool - "
+        "a guess is always wrong. If tools return nothing, say what you "
+        "checked and stop. "
+        "Call data tools only when the user's question needs them - never "
+        "fetch estate data unprompted. Answer only what was asked. "
+        "You are read-only: you observe and advise, you never change "
+        "anything. For actions (start/stop/snapshot/...) tell the user "
+        "exactly which dashboard control or tool call to use. "
+        "Your visible reply is always plain sentences - never JSON, code "
+        "blocks, or tool-call syntax."
+    )
+    if personality and personality not in ("professional", "Professional"):
+        base += f" Style: {personality}."
+    if (custom_prompt or "").strip():
+        base += f" Extra user instructions: {(custom_prompt or '').strip()}"
+    return f"{base}\n\n--- skill: {_SKILL_NAME} ---\n{skill}"
+
+
+def _agent_trace_summary(name: str, result: dict) -> str:
+    """One-line human summary of a tool result for the chat trace display."""
+    if not isinstance(result, dict) or not result.get("success", False):
+        err = result.get("error", "unknown error") if isinstance(result, dict) else "error"
+        return f"failed: {err}"[:160]
+    data = result.get("data", result)
+    if name == "list_vms":
+        vms = data.get("vms", data if isinstance(data, list) else []) if isinstance(data, dict) else []
+        first = ""
+        if isinstance(vms, list) and vms:
+            first = str(vms[0].get("name", "")) if isinstance(vms[0], dict) else str(vms[0])
+        return f"{len(vms) if isinstance(vms, list) else '?'} VM(s)" + (f" - first: {first}" if first else "")
+    if name == "vm_info":
+        info = data if isinstance(data, dict) else {}
+        return str(info.get("state", info.get("status", "ok")))
+    return "ok"
+
+
+async def _exec_agent_tool(name: str, args: dict) -> dict:
+    """Execute one allowlisted agent tool in-process via the fleet MCP object."""
+    mapping = _AGENT_TOOLMAP.get(name)
+    if mapping is None:
+        return {"success": False, "message": f"unknown tool: {name}", "error": f"unknown tool: {name}"}
+    tool, action, allowed = mapping
+    params = {k: v for k, v in (args or {}).items() if k in allowed}
+    call_args = {"action": action}
+    call_args.update(params)
+    try:
+        fleet_mcp = _require_fleet_mcp()
+        result = await fleet_mcp.call_tool(tool, call_args)
+    except Exception as e:
+        logger.exception("agent tool %s failed", name)
+        return {"success": False, "message": f"{name} failed: {e!s}", "error": f"{name} failed: {e!s}"}
+    payload = _mcp_result_to_json(result)
+    if isinstance(payload, dict) and "success" in payload:
+        return payload
+    return {"success": not bool(getattr(result, "is_error", False)), "data": payload}
+
+
+async def _ollama_agent_turn(
+    session: Any, model: str, system: str, messages: list[dict], with_tools: bool = True
+) -> dict:
+    """One non-streaming Ollama chat call, optionally with tools attached."""
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "system": system,
+        "options": {"num_ctx": _AGENT_NUM_CTX},
+    }
+    if with_tools:
+        payload["tools"] = _AGENT_TOOLS
+    async with session.post(
+        f"{_AGENT_OLLAMA_BASE}/api/chat",
+        json=payload,
+        timeout=aiohttp.ClientTimeout(total=180),
+    ) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"Ollama HTTP {resp.status}: {(await resp.text())[:200]}")
+        data = await resp.json()
+        message = data.get("message", {})
+        return message if isinstance(message, dict) else {}
+
+
+def _looks_like_tool_leak(text: str) -> bool:
+    """Detect raw pseudo-tool syntax leaking into the visible reply."""
+    t = text or ""
+    return "[TOOL_CALLS]" in t or ("```" in t and "tool" in t.lower()) or ('"vms"' in t and t.strip().startswith("{"))
+
+
+async def _ensure_plain_text(session: Any, model: str, system: str, messages: list[dict], content: str) -> str:
+    """One no-tools restate turn when the model leaks tool syntax."""
+    if not _looks_like_tool_leak(content):
+        return content
+    try:
+        retry = [
+            *messages,
+            {
+                "role": "user",
+                "content": "Restate that as plain sentences for a virtualization admin. "
+                "No JSON, no code blocks, no tool syntax, no bracket tags.",
+            },
+        ]
+        msg = await _ollama_agent_turn(session, model, system, retry, with_tools=False)
+        text = (msg.get("content") or "").strip()
+        return text if text and not _looks_like_tool_leak(text) else content
+    except Exception:
+        return content
+
+
+class AgentRequest(BaseModel):
+    model: str = ""
+    messages: list[dict] = []
+    personality: str = "professional"
+    custom_prompt: str = ""
+
+
+async def _prefetch_vm_inventory() -> dict | None:
+    """Deterministic grounding: live VM list up front, so answers stay
+    grounded even when the model fumbles the tool chain."""
+    try:
+        result = await _exec_agent_tool("list_vms", {})
+        if not isinstance(result, dict) or not result.get("success", False):
+            return None
+        return result
+    except Exception:
+        logger.exception("VM inventory prefetch failed")
+        return None
+
+
+@app.post("/api/llm/chat-agent")
+async def chat_agent(req: AgentRequest):
+    """Agentic chat: model + read-only estate tools loop, final reply + trace."""
+    settings = _load_llm_settings()
+    model = req.model or settings.get("model", "") or _AGENT_MODEL_FALLBACK
+    system = _agent_system(req.personality, req.custom_prompt)
+    messages = [
+        {"role": m.get("role", "user"), "content": str(m.get("content", ""))}
+        for m in req.messages[-20:]
+        if m.get("role") in ("user", "assistant")
+    ]
+    trace: list[dict] = []
+    data_calls = 0
+    nudges = 0
+    # Deterministic grounding first: live inventory in context even if the
+    # model never manages a correct tool call.
+    prefetched = await _prefetch_vm_inventory()
+    if prefetched:
+        messages.append(
+            {
+                "role": "user",
+                "content": "[Live estate data - summarize exactly this, invent nothing. "
+                "Answer in plain sentences, no JSON, no tool syntax. "
+                f"{json.dumps(prefetched, default=str)[:6000]}]",
+            }
+        )
+        trace.append({"tool": "estate-prefetch", "ok": True, "summary": _agent_trace_summary("list_vms", prefetched)})
+        data_calls += 1
+    try:
+        async with aiohttp.ClientSession() as session:
+            for _ in range(_AGENT_MAX_TURNS):
+                message = await _ollama_agent_turn(session, model, system, messages)
+                calls = message.get("tool_calls") or []
+                content = message.get("content") or ""
+                messages.append({"role": "assistant", "content": content})
+                if not calls:
+                    # Model tried to answer from thin air: send it back to fetch data.
+                    if data_calls == 0 and nudges < 2:
+                        nudges += 1
+                        messages.append(
+                            {
+                                "role": "user",
+                                "content": (
+                                    "(System reminder, not the user: you have not called "
+                                    "any data tool yet. Call list_vms and vm_info "
+                                    "now - do not answer without tool results.)"
+                                ),
+                            }
+                        )
+                        continue
+                    reply = await _ensure_plain_text(session, model, system, messages, content)
+                    return {"success": True, "reply": reply, "trace": trace}
+                for call in calls:
+                    func = call.get("function", {}) if isinstance(call, dict) else {}
+                    name = str(func.get("name", ""))
+                    raw_args = func.get("arguments", {})
+                    if isinstance(raw_args, str):
+                        try:
+                            raw_args = json.loads(raw_args)
+                        except json.JSONDecodeError:
+                            raw_args = {}
+                    result = await _exec_agent_tool(name, raw_args if isinstance(raw_args, dict) else {})
+                    ok = bool(result.get("success", False))
+                    if ok and name in ("list_vms", "vm_info", "list_snapshots"):
+                        data_calls += 1
+                    trace.append({"tool": name, "ok": ok, "summary": _agent_trace_summary(name, result)})
+                    messages.append({"role": "tool", "content": json.dumps(result, default=str)[:8000]})
+            return {
+                "success": True,
+                "reply": "I ran out of steps before finishing - try a more specific question.",
+                "trace": trace,
+            }
+    except Exception as e:
+        logger.exception("chat-agent failed")
+        return {"success": False, "message": str(e), "error": str(e), "trace": trace}
 
 
 # Mount AFTER the /mcp/tools* bridge routes above (Starlette matches in
