@@ -557,11 +557,45 @@ async def _prefetch_vm_inventory() -> dict | None:
         return None
 
 
+async def _resolve_agent_model(session: Any, requested: str) -> str:
+    """Resolve the agent model against what Ollama actually has.
+
+    Fleet rule (chat standard S1.7): resident-first - a loaded model answers
+    immediately, while a wrong name 404s and a cold model costs a ~30s load.
+    Falls back to the requested name when Ollama is unreachable (clear 404
+    downstream instead of a guess).
+    """
+    req = (requested or "").strip()
+    try:
+        async with session.get(f"{_AGENT_OLLAMA_BASE}/api/tags", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+            installed = []
+            if resp.status == 200:
+                data = await resp.json()
+                installed = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+    except Exception:
+        return req or _AGENT_MODEL_FALLBACK
+    if req and req in installed:
+        return req
+    # Resident-first: prefer an already-loaded model.
+    try:
+        async with session.get(f"{_AGENT_OLLAMA_BASE}/api/ps", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                loaded = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+                if loaded:
+                    return loaded[0]
+    except Exception:
+        pass
+    if installed:
+        return installed[0]
+    return req or _AGENT_MODEL_FALLBACK
+
+
 @app.post("/api/llm/chat-agent")
 async def chat_agent(req: AgentRequest):
     """Agentic chat: model + read-only estate tools loop, final reply + trace."""
     settings = _load_llm_settings()
-    model = req.model or settings.get("model", "") or _AGENT_MODEL_FALLBACK
+    requested_model = req.model or settings.get("model", "") or _AGENT_MODEL_FALLBACK
     system = _agent_system(req.personality, req.custom_prompt)
     messages = [
         {"role": m.get("role", "user"), "content": str(m.get("content", ""))}
@@ -574,7 +608,7 @@ async def chat_agent(req: AgentRequest):
     # Deterministic grounding first: live inventory in context even if the
     # model never manages a correct tool call.
     prefetched = await _prefetch_vm_inventory()
-    if prefetched:
+    if prefetched and prefetched.get("success", False):
         messages.append(
             {
                 "role": "user",
@@ -587,6 +621,7 @@ async def chat_agent(req: AgentRequest):
         data_calls += 1
     try:
         async with aiohttp.ClientSession() as session:
+            model = await _resolve_agent_model(session, requested_model)
             for _ in range(_AGENT_MAX_TURNS):
                 message = await _ollama_agent_turn(session, model, system, messages)
                 calls = message.get("tool_calls") or []
