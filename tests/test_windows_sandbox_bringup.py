@@ -1,7 +1,7 @@
 """Comprehensive unit & integration tests for Windows Sandbox bringup paths and sandbox_management tools."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -88,7 +88,15 @@ async def test_sandbox_management_win_launch_devinfra():
 
 @pytest.mark.asyncio
 async def test_sandbox_management_win_naked_test():
-    with patch("subprocess.Popen") as mock_popen:
+    # Dispatch is fire-and-forget by design: the action validates, creates
+    # the job dir, and hands the lifecycle to a background task. Patch the
+    # lifecycle (not subprocess.Popen) so no real Sandbox ever boots here.
+    import asyncio
+    import shutil
+
+    import virtualization_mcp.tools.portmanteau.sandbox_management as sm
+
+    with patch.object(sm, "_naked_test_lifecycle", new=AsyncMock()) as mock_lifecycle:
         res = await sandbox_management(
             action="win_sandbox_naked_test",
             repo="sandraschi/virtualization-mcp",
@@ -99,7 +107,12 @@ async def test_sandbox_management_win_naked_test():
         assert res["action"] == "win_sandbox_naked_test"
         assert "job_id" in res
         assert "naked-virtualization-mcp-" in res["job_id"]
-        mock_popen.assert_called_once()
+        mock_lifecycle.assert_called_once()
+        await asyncio.sleep(0)  # let the background task run the stub
+        mock_lifecycle.assert_awaited_once()
+        awaited_jid = mock_lifecycle.await_args.args[0]
+        assert awaited_jid == res["job_id"]
+    shutil.rmtree(res.get("run_dir", ""), ignore_errors=True)
 
 
 @pytest.mark.asyncio
@@ -114,4 +127,3 @@ async def test_sandbox_management_win_naked_test_list():
     res = await sandbox_management(action="win_sandbox_naked_test_list")
     assert res["success"] is True
     assert "jobs" in res
-

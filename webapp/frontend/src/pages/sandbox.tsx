@@ -898,11 +898,16 @@ export default function Sandbox() {
           </p>
           {/* Quick-pick fleet repos */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-muted-foreground mr-1">Quick pick:</span>
+            <span className="text-xs text-muted-foreground mr-1">
+              Quick pick:
+            </span>
             {(fleetRepos.length > 0
               ? fleetRepos
               : [
-                  { name: "virtualization-mcp", repo: "sandraschi/virtualization-mcp" },
+                  {
+                    name: "virtualization-mcp",
+                    repo: "sandraschi/virtualization-mcp",
+                  },
                   { name: "calibre-mcp", repo: "sandraschi/calibre-mcp" },
                   { name: "speech-mcp", repo: "sandraschi/speech-mcp" },
                   { name: "on-ai-takeover", repo: "sandraschi/on-ai-takeover" },
@@ -1061,7 +1066,8 @@ export default function Sandbox() {
             <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <History className="w-3.5 h-3.5" /> Recent Runs ({pastJobs.length})
+                  <History className="w-3.5 h-3.5" /> Recent Runs (
+                  {pastJobs.length})
                 </span>
                 <button
                   type="button"
@@ -1092,18 +1098,31 @@ export default function Sandbox() {
                         <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
                       )}
                       <span className="font-mono truncate font-medium text-foreground">
-                        {j.repo.split("/").pop()?.replace(".git", "") || j.job_id}
+                        {j.repo.split("/").pop()?.replace(".git", "") ||
+                          j.job_id}
                       </span>
-                      <span className="text-muted-foreground text-[10px]">[{j.branch}]</span>
+                      <span className="text-muted-foreground text-[10px]">
+                        [{j.branch}]
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
                       {j.pass !== null && (
-                        <span className={j.pass ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
-                          {j.pass ? "PASS" : `FAIL (${j.failed_step || "start"})`}
+                        <span
+                          className={
+                            j.pass
+                              ? "text-green-400 font-semibold"
+                              : "text-red-400 font-semibold"
+                          }
+                        >
+                          {j.pass
+                            ? "PASS"
+                            : `FAIL (${j.failed_step || "start"})`}
                         </span>
                       )}
                       <span>
-                        {j.finished_utc ? new Date(j.finished_utc).toLocaleTimeString() : j.status}
+                        {j.finished_utc
+                          ? new Date(j.finished_utc).toLocaleTimeString()
+                          : j.status}
                       </span>
                     </div>
                   </div>
