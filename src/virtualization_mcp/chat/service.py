@@ -64,8 +64,9 @@ class ChatService:
         return base
 
     def _get_skills_dir(self) -> str | None:
-        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        candidate = os.path.join(repo_root, "skills")
+        # service.py lives at src/virtualization_mcp/chat/service.py;
+        # skills ship at src/virtualization_mcp/skills/.
+        candidate = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "skills"))
         return candidate if os.path.isdir(candidate) else None
 
     def _build_messages(self, request: Any) -> list[dict[str, str]]:
