@@ -19,6 +19,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stdio entry. No VirtualBox install (kernel modules cannot load in a build
   sandbox). `hadolint` clean.
 
+## [1.6.0] - 2026-09-20
+
+### Added
+- **Naked-test e2e webapp clickthrough stage** (opt-in): in-sandbox Edge
+  open + click verification with RESULT.json, singleton lifecycle, boot
+  verify and one retry.
+- **Dashboard REST bridge** for the tools console and helpers; FastMCP
+  HTTP app mounted at `/mcp` (kills 404/500).
+- **Chat skill-first endpoints**: `GET /skill/{name}` (fleet SSOT contract),
+  `POST /api/llm/chat-agent` (Ollama native tools, read-only allowlist,
+  6-turn guards).
+
+### Fixed
+- **NSIS**: joserfc/_datetime hiddenimports per the Tauri pitfalls gate.
+- **VirtualBox**: fail-soft init when VBoxManage is missing (naked-PC
+  import crash).
+- **Naked-test lifecycle batch**: stdio attached, NoBrowser over Headless,
+  full-path git/fleet resolution, origin URL preference, arg forwarding,
+  missing imports, boot lifecycle.
+- **Start**: Require-Command uv bootstrap per NAKED_PC_INSTALL_STANDARD.
+
+### Docs
+- BUILD_LOG for the v1.5.0 NSIS rebuild, mcpb system prompt to 3000+ words,
+  naked-test lifecycle/modes documentation.
+
 ## [1.5.0] - 2026-09-11
 
 ### Added
