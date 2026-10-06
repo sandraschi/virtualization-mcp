@@ -13,6 +13,8 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from virtualization_mcp import __version__
+
 # Import settings with fallback
 try:
     from .settings import BaseSettings
@@ -51,7 +53,7 @@ class Settings(BaseSettings):
 
     # Application settings
     APP_NAME: str = "virtualization_mcp"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = __version__
     DEBUG: bool = False
 
     # Server configuration (MCP HTTP/SSE: use 10700-10800 per SOTA; 10702 avoids webapp 10700/10701)
