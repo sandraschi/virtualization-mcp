@@ -1,57 +1,30 @@
-# Use Python 3.13 slim image
+# Glama build image. Must build AND start headless on stock Debian slim.
+# Deliberately NO VirtualBox install: kernel modules cannot load in a build
+# sandbox, and apt-key / lsb_release are gone from modern Debian (both broke
+# the previous Dockerfile). The server degrades gracefully without a
+# hypervisor. Fixed 2026-10-06 after Glama "Build failed" (Sep 22), which
+# traced to: missing requirements.txt in COPY, `apt-key` removed, missing
+# lsb_release, and `python -m virtualization-mcp` (hyphen is not importable).
 FROM python:3.13-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    gnupg2 \
-    software-properties-common \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install VirtualBox (for Linux containers)
-# Note: This is a simplified version - in production you might want to use a different approach
-RUN wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add - \
-    && echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list \
-    && apt-get update \
-    && apt-get install -y virtualbox-7.0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better caching
-COPY requirements.txt requirements-dev.txt ./
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy source code
+# Project metadata first for layer caching (all three exist at repo root)
+COPY pyproject.toml README.md ./
 COPY src/ ./src/
-COPY pyproject.toml ./
-COPY README.md ./
 
-# Install the package
-RUN pip install -e .
+# Install the package; runtime deps come from pyproject (requires-python >=3.12)
+RUN pip install --no-cache-dir -e .
 
-# Create non-root user
-RUN useradd -m -u 1000 virtualization-mcp && chown -R virtualization-mcp:virtualization-mcp /app
-USER virtualization-mcp
+# Non-root runtime user
+RUN useradd -m -u 1000 mcp && chown -R mcp:mcp /app
+USER mcp
 
-# Expose port (if needed for HTTP mode)
-EXPOSE 8000
-
-# Set environment variables
 ENV PYTHONPATH=/app/src
-ENV VBOX_INSTALL_PATH=/usr/bin
 ENV DEBUG=false
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import virtualization-mcp; print('virtualization-mcp is healthy')" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import virtualization_mcp" || exit 1
 
-# Default command
-CMD ["python", "-m", "virtualization-mcp"]
-
-
-
+# MCP stdio server (src/virtualization_mcp/__main__.py)
+CMD ["python", "-m", "virtualization_mcp"]
