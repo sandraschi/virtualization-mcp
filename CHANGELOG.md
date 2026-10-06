@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.1] - 2026-10-06
+
+### Fixed
+- **Glama-buildable Dockerfile**: the Sep-22 Glama "Build failed" traced to
+  four fatal defects - `COPY` of nonexistent `requirements.txt`, `apt-key`
+  (removed from modern Debian), `lsb_release` without the package, and
+  `python -m virtualization-mcp` (hyphen is not importable). Rewritten around
+  `pyproject/README/src` layers, `pip install -e .`, valid
+  `import virtualization_mcp` healthcheck, `python -m virtualization_mcp`
+  stdio entry. No VirtualBox install (kernel modules cannot load in a build
+  sandbox). `hadolint` clean.
+
 ## [1.5.0] - 2026-09-11
 
 ### Added
