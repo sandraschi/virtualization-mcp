@@ -166,9 +166,19 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
+def app_data_dir(name: str) -> Path:
+    """Return a user-writable per-app data dir (never CWD-relative, see BUG-063).
+
+    MCP hosts (Claude Desktop) spawn the server with CWD=C:\\Windows\\System32,
+    where relative dirs like ``./logs`` raise PermissionError at import time.
+    """
+    base = os.environ.get("LOCALAPPDATA") or str(Path.home() / ".local" / "share")
+    return Path(base) / "virtualization-mcp" / name
+
+
 def get_logs_dir() -> Path:
     """Get the directory for log files."""
-    log_dir = Path("logs")
+    log_dir = Path(os.environ.get("VIRTUALIZATION_MCP_LOG_DIR") or app_data_dir("logs"))
     log_dir.mkdir(exist_ok=True, parents=True)
     return log_dir
 

@@ -9,6 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from virtualization_mcp.config import app_data_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +67,7 @@ class AISecurityAnalyzer:
         self.config = config or {}
         self.openai_api_key = self.config.get("openai_api_key")
         self.openai_model = self.config.get("model", "gpt-4")
-        self.reports_dir = Path(self.config.get("reports_dir", "./security_reports"))
+        self.reports_dir = Path(self.config.get("reports_dir") or app_data_dir("security_reports"))
         self.reports_dir.mkdir(parents=True, exist_ok=True)
 
         # In-memory storage for reports

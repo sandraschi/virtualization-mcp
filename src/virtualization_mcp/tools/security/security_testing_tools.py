@@ -17,6 +17,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from virtualization_mcp.config import app_data_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -90,8 +92,8 @@ class SecurityTester:
                 - temp_dir: Directory for temporary files (default: system temp dir)
         """
         config = config or {}
-        self.reports_dir = Path(config.get("reports_dir", "./security_reports"))
-        self.tools_dir = Path(config.get("tools_dir", "./security_tools"))
+        self.reports_dir = Path(config.get("reports_dir") or app_data_dir("security_reports"))
+        self.tools_dir = Path(config.get("tools_dir") or app_data_dir("security_tools"))
         self.temp_dir = Path(config.get("temp_dir", tempfile.gettempdir()))
 
         # Ensure directories exist

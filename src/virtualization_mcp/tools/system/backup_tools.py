@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from virtualization_mcp.tools.backup.backup_tools import get_backup_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +19,8 @@ class BackupManager:
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the backup manager."""
         self.config = config or {}
-        self.backup_dir = Path(self.config.get("backup_dir", "./backups"))
+        # Never CWD-relative: MCP hosts spawn us with CWD=C:\Windows\System32
+        self.backup_dir = Path(self.config.get("backup_dir") or get_backup_dir())
         self.retention_days = self.config.get("retention_days", 30)
         self.max_backups = self.config.get("max_backups", 10)
 
