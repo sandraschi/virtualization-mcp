@@ -14,7 +14,7 @@ $WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
 
 $env:FASTMCP_LOG_LEVEL = 'WARNING'
 
-# NAKED_PC_INSTALL_STANDARD §1: prereq guard via winget.
+# NAKED_PC_INSTALL_STANDARD sec. 1: prereq guard via winget.
 # uv covers Python implicitly (auto-fetched); never bare-call it.
 function Require-Command {
     param([string]$Cmd, [string]$WingetId, [string]$Label)
