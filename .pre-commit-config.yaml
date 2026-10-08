@@ -22,6 +22,14 @@ repos:
         pass_filenames: false
         require_serial: true
 
+      - id: ps1-ascii-only
+        name: powershell files must be ASCII (PS 5.1 reads BOM-less as ANSI)
+        # Any non-ASCII byte fails; a leading UTF-8 BOM is allowed. pygrep
+        # matches raw bytes per line, so \A is line start (BOM = line 1).
+        entry: '[\x80-\xff](?<!\A\xef)(?<!\A\xef\xbb)(?<!\A\xef\xbb\xbf)'
+        language: pygrep
+        files: \.(ps1|psm1|psd1)$
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
