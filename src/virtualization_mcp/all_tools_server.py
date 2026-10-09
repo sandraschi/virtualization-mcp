@@ -7,6 +7,7 @@ Registers all portmanteau tools and runs stdio transport.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Annotated, Any
@@ -121,7 +122,16 @@ def main() -> int:
     )
     parser.add_argument("--host", default="0.0.0.0", help="HTTP host")  # noqa: S104
     parser.add_argument("--port", type=int, default=10702, help="HTTP port (fleet registry: MCP HTTP/SSE)")
-    args = parser.parse_args()
+    # Fleet dual-transport contract (see AGENTS.md): honor MCP_TRANSPORT/MCP_PORT
+    # when the caller did not pass explicit transport flags (pack smoke check,
+    # Tauri sidecar, `MCP_TRANSPORT=http` launcher path).
+    argv = sys.argv[1:]
+    if not any(a == "--transport" or a == "--http" or a.startswith("--transport=") for a in argv):
+        if os.environ.get("MCP_TRANSPORT", "").lower() == "http":
+            argv = ["--transport", "http", *argv]
+            if not any(a == "--port" or a.startswith("--port=") for a in argv):
+                argv += ["--port", os.environ.get("MCP_PORT", "10702")]
+    args = parser.parse_args(argv)
 
     try:
         if args.transport == "http":

@@ -19,11 +19,38 @@
   "license": "MIT",
   "keywords": ["mcp", "virtualbox", "hyperv", "vm", "virtualization", "sandbox", "docker", "windows-sandbox", "fastmcp"],
   "icon": "assets/icon.png",
-  "prompts": {
-    "system": "prompts/system.md",
-    "user": "prompts/user.md",
-    "examples": "prompts/examples.json"
-  },
+  "prompts": [
+    {
+      "name": "create_vm_guided",
+      "description": "Get guided help for creating a virtual machine based on your use case",
+      "arguments": ["use_case", "os_type"],
+      "text": "I need help creating a virtual machine for my use case. Recommend appropriate configuration (memory, CPU, disk, network) and guide me through the setup process."
+    },
+    {
+      "name": "troubleshoot_vm",
+      "description": "Get help diagnosing and fixing virtual machine issues",
+      "arguments": ["vm_name", "problem_type"],
+      "text": "I need help diagnosing a virtual machine issue. Walk through diagnosis step by step and provide troubleshooting guidance."
+    },
+    {
+      "name": "setup_network",
+      "description": "Get guidance on network configuration for your use case",
+      "arguments": ["network_type", "use_case"],
+      "text": "I need help configuring virtual networking. Explain the configuration options and guide me through the setup process."
+    },
+    {
+      "name": "snapshot_best_practices",
+      "description": "Get recommendations for snapshot management strategy",
+      "arguments": ["vm_name"],
+      "text": "I need snapshot management recommendations: when to create snapshots, naming conventions, and cleanup strategy."
+    },
+    {
+      "name": "multi_vm_deployment",
+      "description": "Get guidance for deploying multi-VM architectures",
+      "arguments": ["deployment_type"],
+      "text": "I need guidance deploying a multi-VM architecture: VM configuration, network topology, and step-by-step deployment."
+    }
+  ],
   "screenshots": [
     "assets/screenshots/main-interface.png",
     "assets/screenshots/vm-management.png"
