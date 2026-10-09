@@ -85,7 +85,7 @@ def main() -> int:
         "--http", action="store_const", const="http", dest="transport", help="Alias for --transport http"
     )
     parser.add_argument("--host", default="0.0.0.0", help="HTTP host")  # noqa: S104
-    parser.add_argument("--port", type=int, default=16000, help="HTTP port")
+    parser.add_argument("--port", type=int, default=10702, help="HTTP port (fleet registry: MCP HTTP/SSE)")
     args = parser.parse_args()
 
     try:
@@ -94,9 +94,24 @@ def main() -> int:
             app = mcp.http_app()
             from fastapi.middleware.cors import CORSMiddleware
 
+            # Fleet CORS standard: explicit origins + unconditional regex
+            # (Tailscale MagicDNS + LAN). Never allow_origins=["*"] (see C4).
             app.add_middleware(
                 CORSMiddleware,
-                allow_origins=["*"],
+                allow_origins=[
+                    "http://localhost:10700",
+                    "http://127.0.0.1:10700",
+                    "http://goliath:10700",
+                    "http://localhost:10701",
+                    "http://127.0.0.1:10701",
+                    "http://goliath:10701",
+                    "http://localhost:10702",
+                    "http://127.0.0.1:10702",
+                    "tauri://localhost",
+                    "http://tauri.localhost",
+                    "https://tauri.localhost",
+                ],
+                allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|goliath|[a-z0-9-]+\.ts\.net|100\.\d+\.\d+\.\d+)(:\d+)?",
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],

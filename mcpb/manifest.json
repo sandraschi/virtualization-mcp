@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "virtualization_mcp",
-  "version": "1.2.0",
+  "version": "1.6.1",
   "description": "VirtualBox & Hyper-V VM management, Docker sandbox execution, Windows Sandbox bringup, snapshots, networking, storage, and fleet install testing via FastMCP 3.4",
   "long_description": "Virtualization MCP is a production-ready FastMCP 3.4 server providing comprehensive VM management (VirtualBox + Hyper-V), Docker sandbox environments (ephemeral and stateful), Windows Sandbox bringup, snapshot management, networking, storage, system diagnostics, ISO download pipeline, and fleet app install testing. 8 portmanteau tools with 60+ operations.",
   "author": {
@@ -74,39 +74,10 @@
     {"name": "system_management", "description": "Portmanteau: host info, VBox version, OS types, metrics, screenshot"},
     {"name": "sandbox_management", "description": "Portmanteau: ephemeral code exec, stateful sessions, file I/O"},
     {"name": "hyperv_management", "description": "Portmanteau: list, get, start, stop Hyper-V VMs"},
+    {"name": "libvirt_management", "description": "Portmanteau: KVM/QEMU domain lifecycle (Linux/WSL2)"},
+    {"name": "proxmox_management", "description": "Portmanteau: Proxmox VE VMs, snapshots, node status via REST"},
+    {"name": "discovery_management", "description": "Portmanteau: list_tools, tool_info, tool_schema, help"},
     {"name": "agentic_tools", "description": "LLM sampling: suggest_config, sandbox_workflow, workflow"}
-  ],
-  "prompts": [
-    {
-      "name": "create_vm_guided",
-      "description": "Get guided help for creating a virtual machine based on your use case",
-      "arguments": ["use_case", "os_type"],
-      "text": "I need help creating a ${arguments.os_type} virtual machine for ${arguments.use_case}. Please recommend appropriate configuration (memory, CPU, disk, network) and guide me through the setup process."
-    },
-    {
-      "name": "troubleshoot_vm",
-      "description": "Get help diagnosing and fixing virtual machine issues",
-      "arguments": ["vm_name", "problem_type"],
-      "text": "I'm having ${arguments.problem_type} issues with virtual machine ${arguments.vm_name}. Please help me diagnose the problem and provide step-by-step troubleshooting guidance."
-    },
-    {
-      "name": "setup_network",
-      "description": "Get guidance on network configuration for your use case",
-      "arguments": ["network_type", "use_case"],
-      "text": "I need to configure ${arguments.network_type} networking for ${arguments.use_case}. Please explain the configuration and guide me through the setup process."
-    },
-    {
-      "name": "snapshot_best_practices",
-      "description": "Get recommendations for snapshot management strategy",
-      "arguments": ["vm_name"],
-      "text": "I need help with snapshot management for ${arguments.vm_name}. Please recommend a snapshot strategy including when to create snapshots, naming conventions, and cleanup policies."
-    },
-    {
-      "name": "multi_vm_deployment",
-      "description": "Get guidance for deploying multi-VM architectures",
-      "arguments": ["deployment_type"],
-      "text": "I want to deploy a ${arguments.deployment_type} multi-VM architecture. Please recommend the VM configuration, network topology, and guide me through the deployment process step by step."
-    }
   ],
   "tools_generated": true,
   "prompts_generated": false,

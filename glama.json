@@ -5,8 +5,8 @@
   "description": "FastMCP 3.4 server for VirtualBox & Hyper-V VM management, Docker sandbox execution, Windows Sandbox bringup, snapshots, networking, storage, and fleet app install testing. 8 portmanteau tools with 60+ operations. Production status.",
   "type": "mcp_server",
   "status": "stable",
-  "framework": "FastMCP 3.4.2",
-  "tools": 8,
+  "framework": "FastMCP 3.4.4",
+  "tools": 12,
   "transport": ["stdio", "http"],
   "keywords": [
     "virtualbox",
@@ -39,4 +39,3 @@
     }
   }
 }
-
