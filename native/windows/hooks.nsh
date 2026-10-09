@@ -1,4 +1,8 @@
 ; Kill UI + backend before install/uninstall (backend locks resources/*.exe).
+; Fleet AI-client registration (canonical include, see mcp-central-docs/scripts/nsis/).
+!define MCP_REG_NAME "virtualization-mcp"
+!define MCP_REG_EXE "virtualization-mcp-backend.exe"
+!include "mcp-clients.nsh"
 !macro KillVirtualizationProcesses
   DetailPrint "Stopping Virtualization MCP processes..."
   ExecWait 'taskkill /F /IM "virtualization-mcp-backend.exe" /T' $0
@@ -23,9 +27,11 @@
 
 !macro NSIS_HOOK_PREUNINSTALL
   !insertmacro KillVirtualizationProcesses
+  !insertmacro McpClientsUnregister
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
+  !insertmacro McpClientsRegister
   ; Optional: register MCP in Cursor / Claude Desktop
   IfFileExists "$INSTDIR\resources\install-mcp-clients.ps1" 0 mcp_hook_done
     DetailPrint "Optional: register Virtualization MCP in Cursor / Claude Desktop"
