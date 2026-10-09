@@ -333,6 +333,22 @@ def get_virtualbox() -> VBoxManage:
     return vbox
 
 
+_resolved_vboxmanage: str | None = None
+
+
+def resolve_vboxmanage() -> str:
+    """Canonical resolved VBoxManage path (cached).
+
+    Never invoke bare 'VBoxManage' - MCP server processes do not reliably
+    inherit PATH (WinError 2 in production, BUG-069). Reuses the singleton's
+    resolver: common install paths first, PATH fallback last.
+    """
+    global _resolved_vboxmanage
+    if _resolved_vboxmanage is None:
+        _resolved_vboxmanage = get_virtualbox().vbox_manage
+    return _resolved_vboxmanage
+
+
 # Example usage
 if __name__ == "__main__":
     # Set up logging

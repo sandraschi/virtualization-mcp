@@ -11,6 +11,8 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+from virtualization_mcp.vbox_compat import resolve_vboxmanage
+
 # Storage Controller Management
 
 
@@ -25,7 +27,7 @@ async def list_storage_controllers(vm_name: str) -> dict[str, Any]:
         Dictionary containing the list of storage controllers
     """
     try:
-        cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
+        cmd = [resolve_vboxmanage(), "showvminfo", vm_name, "--machinereadable"]
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         controllers = []
@@ -87,7 +89,7 @@ async def create_storage_controller(
     try:
         # Add the storage controller
         cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "storagectl",
             vm_name,
             "--name",
@@ -130,7 +132,7 @@ async def remove_storage_controller(vm_name: str, controller_name: str) -> dict[
         Dictionary with controller removal status
     """
     try:
-        cmd = ["VBoxManage", "storagectl", vm_name, "--name", controller_name, "--remove"]
+        cmd = [resolve_vboxmanage(), "storagectl", vm_name, "--name", controller_name, "--remove"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -173,7 +175,7 @@ async def attach_disk(
     """
     try:
         cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "storageattach",
             vm_name,
             "--storagectl",
@@ -249,7 +251,7 @@ async def mount_iso(
     """
     try:
         # First, check if there's already a disk in the specified location
-        check_cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
+        check_cmd = [resolve_vboxmanage(), "showvminfo", vm_name, "--machinereadable"]
 
         result = await asyncio.to_thread(subprocess.run, check_cmd, capture_output=True, text=True, check=True)
 
@@ -268,7 +270,7 @@ async def mount_iso(
 
         # Mount the ISO
         mount_cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "storageattach",
             vm_name,
             "--storagectl",
@@ -322,7 +324,7 @@ async def unmount_iso(
     """
     try:
         cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "storageattach",
             vm_name,
             "--storagectl",
@@ -373,7 +375,7 @@ async def list_disks(vm_name: str) -> dict[str, Any]:
             controller_name = controller["name"]
 
             # Get storage controller details
-            cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
+            cmd = [resolve_vboxmanage(), "showvminfo", vm_name, "--machinereadable"]
             result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
             # Parse the output to find attached disks
@@ -442,7 +444,7 @@ async def create_disk(
 
         # Create the disk
         cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "createmedium",
             "disk",
             "--filename",
@@ -492,7 +494,7 @@ async def get_disk_info(disk_identifier: str) -> dict[str, Any]:
         Dictionary containing disk information
     """
     try:
-        cmd = ["VBoxManage", "showmediuminfo", disk_identifier]
+        cmd = [resolve_vboxmanage(), "showmediuminfo", disk_identifier]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -548,7 +550,7 @@ async def resize_disk(disk_identifier: str, new_size_mb: int) -> dict[str, Any]:
             return {"status": "error", "message": "Cannot resize a disk that is in use"}
 
         # Resize the disk
-        cmd = ["VBoxManage", "modifymedium", "disk", disk_identifier, "--resize", str(new_size_mb)]
+        cmd = [resolve_vboxmanage(), "modifymedium", "disk", disk_identifier, "--resize", str(new_size_mb)]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -591,7 +593,7 @@ async def clone_disk(source_disk: str, target_disk: str, disk_format: str = "", 
 
         # Build the clone command
         cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "clonemedium",
             "disk",
             source_disk,
@@ -645,7 +647,7 @@ async def delete_disk(disk_identifier: str, force: bool = False) -> dict[str, An
             }
 
         # Delete the disk
-        cmd = ["VBoxManage", "closemedium", "disk", disk_identifier, "--delete"]
+        cmd = [resolve_vboxmanage(), "closemedium", "disk", disk_identifier, "--delete"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 

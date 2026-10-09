@@ -13,7 +13,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from ....vbox.vm_operations import VMOperations
+from virtualization_mcp.vbox.vm_operations import VMOperations
+from virtualization_mcp.vbox_compat import resolve_vboxmanage
 
 
 class VMSandboxManager:
@@ -198,7 +199,7 @@ class VMSandboxManager:
         try:
             # Clone the VM
             clone_cmd = [
-                "VBoxManage",
+                resolve_vboxmanage(),
                 "clonevm",
                 source_vm,
                 "--name",
@@ -220,7 +221,7 @@ class VMSandboxManager:
             subprocess.run(clone_cmd, check=True, capture_output=True, text=True)
 
             # Get VM info
-            info_cmd = ["VBoxManage", "showvminfo", "--machinereadable", clone_name]
+            info_cmd = [resolve_vboxmanage(), "showvminfo", "--machinereadable", clone_name]
             result = subprocess.run(info_cmd, capture_output=True, text=True, check=True)
 
             # Parse VM info
@@ -341,12 +342,12 @@ class VMSandboxManager:
             internal_net_name = f"vboxnet_{vm_name}"
 
             # Create a host-only network
-            subprocess.run(["VBoxManage", "hostonlyif", "create"], check=True, capture_output=True)
+            subprocess.run([resolve_vboxmanage(), "hostonlyif", "create"], check=True, capture_output=True)
 
             # Add a host-only adapter
             subprocess.run(
                 [
-                    "VBoxManage",
+                    resolve_vboxmanage(),
                     "modifyvm",
                     vm_name,
                     "--nic1",
@@ -360,7 +361,7 @@ class VMSandboxManager:
 
             # Disable DHCP server
             subprocess.run(
-                ["VBoxManage", "dhcpserver", "remove", "--netname", internal_net_name],
+                [resolve_vboxmanage(), "dhcpserver", "remove", "--netname", internal_net_name],
                 stderr=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
             )
@@ -407,7 +408,7 @@ class VMSandboxManager:
             # Set CPU count if specified
             if "cpus" in limits:
                 subprocess.run(
-                    ["VBoxManage", "modifyvm", vm_name, "--cpus", str(limits["cpus"])],
+                    [resolve_vboxmanage(), "modifyvm", vm_name, "--cpus", str(limits["cpus"])],
                     check=True,
                     capture_output=True,
                 )
@@ -415,7 +416,7 @@ class VMSandboxManager:
             # Set memory limit if specified
             if "memory_mb" in limits:
                 subprocess.run(
-                    ["VBoxManage", "modifyvm", vm_name, "--memory", str(limits["memory_mb"])],
+                    [resolve_vboxmanage(), "modifyvm", vm_name, "--memory", str(limits["memory_mb"])],
                     check=True,
                     capture_output=True,
                 )
@@ -424,7 +425,7 @@ class VMSandboxManager:
             if "cpu_cap" in limits:
                 cap = max(1, min(100, int(limits["cpu_cap"])))
                 subprocess.run(
-                    ["VBoxManage", "modifyvm", vm_name, "--cpuexecutioncap", str(cap)],
+                    [resolve_vboxmanage(), "modifyvm", vm_name, "--cpuexecutioncap", str(cap)],
                     check=True,
                     capture_output=True,
                 )
@@ -473,13 +474,13 @@ class VMSandboxManager:
         try:
             # Power off the VM if it's running
             subprocess.run(
-                ["VBoxManage", "controlvm", vm_name, "poweroff"],
+                [resolve_vboxmanage(), "controlvm", vm_name, "poweroff"],
                 stderr=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
             )
 
             # Unregister and delete the VM
-            subprocess.run(["VBoxManage", "unregistervm", vm_name, "--delete"], check=True, capture_output=True)
+            subprocess.run([resolve_vboxmanage(), "unregistervm", vm_name, "--delete"], check=True, capture_output=True)
 
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Failed to delete VM in VirtualBox: {e.stderr}") from e

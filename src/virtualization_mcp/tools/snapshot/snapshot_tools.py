@@ -11,6 +11,8 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+from virtualization_mcp.vbox_compat import resolve_vboxmanage
+
 
 async def create_snapshot(
     vm_name: str, snapshot_name: str, description: str = "", live: bool = False
@@ -28,7 +30,7 @@ async def create_snapshot(
         Dictionary with snapshot creation status
     """
     try:
-        cmd = ["VBoxManage", "snapshot", vm_name, "take", snapshot_name]
+        cmd = [resolve_vboxmanage(), "snapshot", vm_name, "take", snapshot_name]
 
         if description:
             cmd.extend(["--description", description])
@@ -76,7 +78,7 @@ async def restore_snapshot(vm_name: str, snapshot_name: str, start_vm: bool = Fa
         Dictionary with snapshot restore status
     """
     try:
-        cmd = ["VBoxManage", "snapshot", vm_name, "restore", snapshot_name]
+        cmd = [resolve_vboxmanage(), "snapshot", vm_name, "restore", snapshot_name]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -129,7 +131,7 @@ async def list_snapshots(vm_name: str) -> dict[str, Any]:
         Dictionary containing the list of snapshots
     """
     try:
-        cmd = ["VBoxManage", "snapshot", vm_name, "list", "--machinereadable"]
+        cmd = [resolve_vboxmanage(), "snapshot", vm_name, "list", "--machinereadable"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -198,7 +200,7 @@ async def get_snapshot_info(vm_name: str, snapshot_name: str) -> dict[str, Any]:
             return {"status": "error", "message": f"Snapshot '{snapshot_name}' not found"}
 
         # Get detailed information about the snapshot
-        cmd = ["VBoxManage", "snapshot", vm_name, "showvminfo", target_snapshot["uuid"]]
+        cmd = [resolve_vboxmanage(), "snapshot", vm_name, "showvminfo", target_snapshot["uuid"]]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -241,7 +243,7 @@ async def delete_snapshot(vm_name: str, snapshot_name: str) -> dict[str, Any]:
         Dictionary with snapshot deletion status
     """
     try:
-        cmd = ["VBoxManage", "snapshot", vm_name, "delete", snapshot_name]
+        cmd = [resolve_vboxmanage(), "snapshot", vm_name, "delete", snapshot_name]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -264,7 +266,7 @@ async def restore_current_snapshot(vm_name: str, start_vm: bool = False) -> dict
         Dictionary with restore status
     """
     try:
-        cmd = ["VBoxManage", "snapshot", vm_name, "restorecurrent"]
+        cmd = [resolve_vboxmanage(), "snapshot", vm_name, "restorecurrent"]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 

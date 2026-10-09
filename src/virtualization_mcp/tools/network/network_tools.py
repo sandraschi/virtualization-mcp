@@ -11,6 +11,8 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+from virtualization_mcp.vbox_compat import resolve_vboxmanage
+
 
 async def list_network_adapters(vm_name: str) -> dict[str, Any]:
     """
@@ -23,7 +25,7 @@ async def list_network_adapters(vm_name: str) -> dict[str, Any]:
         Dictionary containing adapter entries for slots 1..4.
     """
     try:
-        cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
+        cmd = [resolve_vboxmanage(), "showvminfo", vm_name, "--machinereadable"]
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
         parsed: dict[str, str] = {}
@@ -98,7 +100,7 @@ async def configure_network_adapter(
             }
 
         # Build the base command
-        cmd = ["VBoxManage", "modifyvm", vm_name]
+        cmd = [resolve_vboxmanage(), "modifyvm", vm_name]
 
         # Enable/disable the adapter
         if enabled:
@@ -136,7 +138,7 @@ async def list_host_network_interfaces() -> dict[str, Any]:
         Dictionary containing the list of network interfaces
     """
     try:
-        cmd = ["VBoxManage", "list", "bridgedifs"]
+        cmd = [resolve_vboxmanage(), "list", "bridgedifs"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -190,7 +192,7 @@ async def create_nat_network(
     try:
         # Create the NAT network
         cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "natnetwork",
             "add",
             "--netname",
@@ -205,7 +207,7 @@ async def create_nat_network(
         # Configure DHCP if enabled
         if enable_dhcp and dhcp_lower and dhcp_upper:
             dhcp_cmd = [
-                "VBoxManage",
+                resolve_vboxmanage(),
                 "natnetwork",
                 "modify",
                 "--netname",
@@ -251,7 +253,7 @@ async def remove_nat_network(network_name: str) -> dict[str, Any]:
         Dictionary with NAT network removal status
     """
     try:
-        cmd = ["VBoxManage", "natnetwork", "remove", "--netname", network_name]
+        cmd = [resolve_vboxmanage(), "natnetwork", "remove", "--netname", network_name]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -273,7 +275,7 @@ async def list_nat_networks() -> dict[str, Any]:
         Dictionary containing the list of NAT networks
     """
     try:
-        cmd = ["VBoxManage", "list", "natnetworks"]
+        cmd = [resolve_vboxmanage(), "list", "natnetworks"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -340,7 +342,7 @@ async def add_port_forwarding(
 
         # Add the port forwarding rule
         cmd = [
-            "VBoxManage",
+            resolve_vboxmanage(),
             "modifyvm",
             vm_name,
             f"--natpf{adapter_id}",
@@ -385,7 +387,7 @@ async def remove_port_forwarding(vm_name: str, rule_name: str, adapter_id: int =
             return {"status": "error", "message": "Adapter ID must be between 1 and 4"}
 
         # Remove the port forwarding rule
-        cmd = ["VBoxManage", "modifyvm", vm_name, f"--natpf{adapter_id}", "delete", rule_name]
+        cmd = [resolve_vboxmanage(), "modifyvm", vm_name, f"--natpf{adapter_id}", "delete", rule_name]
 
         await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -412,7 +414,7 @@ async def list_port_forwarding_rules(vm_name: str, adapter_id: int = 1) -> dict[
     """
     try:
         # Get VM info
-        cmd = ["VBoxManage", "showvminfo", vm_name, "--machinereadable"]
+        cmd = [resolve_vboxmanage(), "showvminfo", vm_name, "--machinereadable"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -459,7 +461,7 @@ async def list_hostonly_networks() -> dict[str, Any]:
     """
     try:
         result = await asyncio.create_subprocess_shell(
-            "VBoxManage list hostonlyifs",
+            f'"{resolve_vboxmanage()}" list hostonlyifs',
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -504,7 +506,7 @@ async def create_hostonly_network(network_name: str, ip: str, netmask: str = "25
     try:
         # Create the host-only interface
         result = await asyncio.create_subprocess_shell(
-            "VBoxManage hostonlyif create",
+            f'"{resolve_vboxmanage()}" hostonlyif create',
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -518,7 +520,7 @@ async def create_hostonly_network(network_name: str, ip: str, netmask: str = "25
 
         # Configure the interface
         result = await asyncio.create_subprocess_shell(
-            f"VBoxManage hostonlyif ipconfig {interface} --ip {ip} --netmask {netmask}",
+            f'"{resolve_vboxmanage()}" hostonlyif ipconfig {interface} --ip {ip} --netmask {netmask}',
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -547,7 +549,7 @@ async def remove_hostonly_network(interface: str) -> dict[str, Any]:
     try:
         # Remove the host-only interface
         result = await asyncio.create_subprocess_shell(
-            f"VBoxManage hostonlyif remove {interface}",
+            f'"{resolve_vboxmanage()}" hostonlyif remove {interface}',
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
