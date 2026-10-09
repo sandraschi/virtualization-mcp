@@ -196,7 +196,7 @@ class DocumentationManager:
         """
         # Update generated timestamp
         self.documentation.generated_at = datetime.now(UTC).isoformat()
-        return self.documentation.dict()
+        return self.documentation.model_dump()
 
     def generate_openapi_schema(self) -> dict[str, Any]:
         """Generate an OpenAPI schema from the documentation.

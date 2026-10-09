@@ -181,7 +181,7 @@ class NetworkAnalyzer:
         return {
             "total_alerts": len(self.alerts),
             "alert_counts": self.alert_counters,
-            "last_alert": self.alerts[-1].dict() if self.alerts else None,
+            "last_alert": self.alerts[-1].model_dump() if self.alerts else None,
         }
 
     async def _notify_websockets(self, alert: TrafficAlert) -> None:
@@ -189,7 +189,7 @@ class NetworkAnalyzer:
         if not self.websockets:
             return
 
-        message = alert.dict()
+        message = alert.model_dump()
         message["type"] = "alert"
 
         for websocket in list(self.websockets):

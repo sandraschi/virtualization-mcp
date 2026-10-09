@@ -769,7 +769,7 @@ class WindowsSandboxHelper:
             return {
                 "status": "started",
                 "sandbox_id": f"sandbox-{id(config)}",
-                "config": config.dict(),
+                "config": config.model_dump(),
                 "wsx_path": wsx_path,
             }
 
