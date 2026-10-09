@@ -10,11 +10,11 @@
     "build",
     "dist"
   ],
-  "venvPath": "C:\\Users\\sandr\\AppData\\Local\\Programs\\Python\\Python310",
-  "venv": ".",
+  "venvPath": ".",
+  "venv": ".venv",
   "reportMissingImports": "none",
   "reportMissingTypeStubs": false,
-  "pythonVersion": "3.10",
+  "pythonVersion": "3.12",
   "pythonPlatform": "Windows",
   "typeCheckingMode": "basic",
   "executionEnvironments": [
@@ -27,7 +27,3 @@
     }
   ]
 }
-
-
-
-

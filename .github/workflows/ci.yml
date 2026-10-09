@@ -50,3 +50,11 @@ jobs:
       - name: Biome check
         run: npm run biome:ci
         working-directory: webapp/frontend
+
+      - name: Typecheck web (tsc via build)
+        run: npm run build
+        working-directory: webapp/frontend
+
+      - name: Pyright (Python types, non-blocking until typing debt cleared)
+        run: npx -y pyright@1.1.390 src/
+        continue-on-error: true
