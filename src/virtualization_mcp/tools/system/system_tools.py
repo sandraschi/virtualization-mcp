@@ -15,6 +15,19 @@ from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
+_VBOXMANAGE: str | None = None
+
+
+def _vbox_exe() -> str:
+    """Resolved VBoxManage path. Never invoke bare 'VBoxManage' - the MCP
+    server process PATH is not guaranteed (WinError 2 in production)."""
+    global _VBOXMANAGE
+    if _VBOXMANAGE is None:
+        from virtualization_mcp.vbox_compat import get_virtualbox
+
+        _VBOXMANAGE = get_virtualbox().vbox_manage
+    return _VBOXMANAGE
+
 
 async def get_system_info() -> dict[str, Any]:
     """
@@ -97,7 +110,7 @@ async def check_vbox_installation() -> dict[str, Any]:
     """
     try:
         # Check if VBoxManage is in PATH
-        cmd = ["VBoxManage", "--version"]
+        cmd = [_vbox_exe(), "--version"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True)
 
@@ -141,7 +154,7 @@ async def list_ostypes() -> dict[str, Any]:
         Dictionary containing the list of supported OS types
     """
     try:
-        cmd = ["VBoxManage", "list", "ostypes", "--long"]
+        cmd = [_vbox_exe(), "list", "ostypes", "--long"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -180,7 +193,7 @@ async def list_extpacks() -> dict[str, Any]:
         Dictionary containing the list of installed extension packs
     """
     try:
-        cmd = ["VBoxManage", "list", "extpacks", "--long"]
+        cmd = [_vbox_exe(), "list", "extpacks", "--long"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -273,7 +286,7 @@ async def get_vm_metrics(vm_name: str) -> dict[str, Any]:
     """
     try:
         setup_cmd = [
-            "VBoxManage",
+            _vbox_exe(),
             "metrics",
             "setup",
             vm_name,
@@ -285,7 +298,7 @@ async def get_vm_metrics(vm_name: str) -> dict[str, Any]:
         ]
         await asyncio.to_thread(subprocess.run, setup_cmd, capture_output=True, text=True, check=True)
 
-        query_cmd = ["VBoxManage", "metrics", "query", vm_name]
+        query_cmd = [_vbox_exe(), "metrics", "query", vm_name]
         result = await asyncio.to_thread(subprocess.run, query_cmd, capture_output=True, text=True, check=True)
 
         metrics: list[dict[str, Any]] = []
@@ -330,7 +343,7 @@ async def take_vm_screenshot(
         )
         target.parent.mkdir(parents=True, exist_ok=True)
 
-        cmd = ["VBoxManage", "controlvm", vm_name, "screenshotpng", str(target)]
+        cmd = [_vbox_exe(), "controlvm", vm_name, "screenshotpng", str(target)]
         if width is not None and height is not None:
             cmd.extend(["--width", str(width), "--height", str(height)])
 
@@ -348,7 +361,7 @@ async def take_vm_screenshot(
 async def _get_vbox_version() -> dict[str, Any]:
     """Get VirtualBox version information."""
     try:
-        cmd = ["VBoxManage", "--version"]
+        cmd = [_vbox_exe(), "--version"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -372,7 +385,7 @@ async def _get_vbox_version() -> dict[str, Any]:
 async def _get_system_properties() -> dict[str, Any]:
     """Get VirtualBox system properties."""
     try:
-        cmd = ["VBoxManage", "list", "systemproperties"]
+        cmd = [_vbox_exe(), "list", "systemproperties"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
@@ -393,7 +406,7 @@ async def _get_system_properties() -> dict[str, Any]:
 async def _get_host_info() -> dict[str, Any]:
     """Get host information."""
     try:
-        cmd = ["VBoxManage", "list", "hostinfo"]
+        cmd = [_vbox_exe(), "list", "hostinfo"]
 
         result = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, text=True, check=True)
 
