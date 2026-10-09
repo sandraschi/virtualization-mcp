@@ -8,9 +8,10 @@ Exposes rich, interactive UI cards via `prefab-ui` for MCP client interfaces:
 """
 
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 from virtualization_mcp.utils.resource_guard import ResourceGuard
 from virtualization_mcp.vbox.compat_adapter import VBoxManager
@@ -18,14 +19,19 @@ from virtualization_mcp.vbox.compat_adapter import VBoxManager
 logger = logging.getLogger(__name__)
 
 
-async def show_vm_card(vm_name: str) -> dict[str, Any]:
+async def show_vm_card(vm_name: Annotated[str, Field(description="VM name or UUID to display.")]) -> dict[str, Any]:
     """Display an interactive Prefab UI card for a single Virtual Machine.
 
-    Args:
-        vm_name: The name or UUID of the virtual machine.
+    ## Return Format
 
-    Returns:
-        Structured Prefab UI card payload containing status badge, hardware specs, and actions.
+    Structured Prefab UI card payload with status badge, hardware specs, and
+    quick lifecycle actions. Error states carry `status: "error"` plus `error`.
+
+    ## Examples
+
+    ```python
+    await show_vm_card("Ubuntu-Dev")
+    ```
     """
     try:
         mgr = VBoxManager()
@@ -63,7 +69,7 @@ async def show_vm_card(vm_name: str) -> dict[str, Any]:
             },
         }
     except Exception as e:
-        logger.error(f"Failed to generate VM card for '{vm_name}': {e}")
+        logger.exception(f"Failed to generate VM card for '{vm_name}': {e}")
         return {
             "type": "prefab_card",
             "component": "VMDetailsCard",
@@ -78,8 +84,16 @@ async def show_vm_card(vm_name: str) -> dict[str, Any]:
 async def show_hypervisor_health_card() -> dict[str, Any]:
     """Display an interactive Prefab UI dashboard card for hypervisor host health and VM inventory.
 
-    Returns:
-        Structured Prefab UI dashboard payload with host CPU/RAM utilization and VM counts.
+    ## Return Format
+
+    Structured Prefab UI dashboard payload with host CPU/RAM utilization and VM counts.
+    Error states carry `status: "error"` plus `error`.
+
+    ## Examples
+
+    ```python
+    await show_hypervisor_health_card()
+    ```
     """
     try:
         resource_status = ResourceGuard.get_system_resource_status()
@@ -108,7 +122,7 @@ async def show_hypervisor_health_card() -> dict[str, Any]:
             },
         }
     except Exception as e:
-        logger.error(f"Failed to generate hypervisor health card: {e}")
+        logger.exception(f"Failed to generate hypervisor health card: {e}")
         return {
             "type": "prefab_card",
             "component": "HypervisorHealthDashboard",
@@ -119,8 +133,15 @@ async def show_hypervisor_health_card() -> dict[str, Any]:
 async def show_sandbox_status_card() -> dict[str, Any]:
     """Display an interactive Prefab UI card for Docker and Windows Sandbox status.
 
-    Returns:
-        Structured Prefab UI sandbox status card payload.
+    ## Return Format
+
+    Structured Prefab UI sandbox status card payload.
+
+    ## Examples
+
+    ```python
+    await show_sandbox_status_card()
+    ```
     """
     return {
         "type": "prefab_card",

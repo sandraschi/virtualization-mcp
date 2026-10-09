@@ -8,6 +8,18 @@
   "diagnostics_path": "/api/v1/diagnostics",
   "feature_smoke_path": "/api/v1/status",
   "window_title_re": "Virtualization MCP",
+  "nav_routes": [
+    {"label": "Dashboard", "path": "/"},
+    {"label": "VirtualBox", "path": "/virtualbox"},
+    {"label": "Hyper-V", "path": "/hyperv"},
+    {"label": "Proxmox", "path": "/proxmox"},
+    {"label": "Sandbox", "path": "/sandbox"},
+    {"label": "Tools", "path": "/tools"},
+    {"label": "Chat", "path": "/chat"},
+    {"label": "Settings", "path": "/settings"},
+    {"label": "Logs", "path": "/logs"},
+    {"label": "Help", "path": "/help"}
+  ],
   "nsis_glob": "native/target/release/bundle/nsis/Virtualization MCP_*_x64-setup.exe",
   "bridge_ok_text": "API reachable",
   "uninstall_registry_filter": "*Virtualization*"

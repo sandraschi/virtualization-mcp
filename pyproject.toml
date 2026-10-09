@@ -107,8 +107,14 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "PTH", "A"]
-ignore = ["S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S112", "S310", "RUF002", "RUF003", "S106", "S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S101", "B008", "E501", "S603", "S607", "PTH", "S110", "S112", "S310", "RUF002", "RUF003", "S106", "RUF012", "S310", "RUF002", "RUF003", "S324", "E402", "S310", "RUF002", "RUF003"]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "PTH", "A", "T20"]
+ignore = ["S101", "B008", "E501", "S603", "S607", "PTH", "S310", "RUF002", "RUF003", "S106", "RUF012", "S324", "E402"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["T20", "S101"]
+"scripts/**/*" = ["T20"]
+"run_*.py" = ["T20"]
+"remove_description_params.py" = ["T20"]
 
 [tool.ruff.format]
 quote-style = "double"
