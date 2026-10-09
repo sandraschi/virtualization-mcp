@@ -1,1 +1,11 @@
-{"timestamp":"2026-07-13","repos":["virtualization-mcp"],"fixes":["ruff install","MCPB icon field removed"],"msg":"Minor fixes — repo was already standards-compliant"}
+{
+  "commit": "05cce839615c5f0b5c3d6794b2cc5800d531b7c8",
+  "deferred": "M10 (M2,M3,M4,M9,M10,M11,M14,M15,M16,M20)",
+  "repo": "virtualization-mcp",
+  "timestamp": "2026-10-09T14:53:01.7092425+02:00",
+  "fixed": "C4 H14 M10 L9",
+  "score_before": 0,
+  "report": "docs/assess-reports/2026-10-09.md",
+  "score_after": 60,
+  "host": "GOLIATH"
+}
