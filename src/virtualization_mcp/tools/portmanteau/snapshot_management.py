@@ -173,7 +173,7 @@ async def _handle_create_snapshot(
         }
 
     try:
-        result = await create_snapshot(vm_name=vm_name, snapshot_name=snapshot_name, description=description)
+        result = await create_snapshot(vm_name=vm_name, snapshot_name=snapshot_name, description=description or "")
         return {
             "success": isinstance(result, dict) and result.get("status") == "success",
             "action": "create",

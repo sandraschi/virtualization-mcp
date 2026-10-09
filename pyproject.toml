@@ -113,6 +113,9 @@ ignore = ["S101", "B008", "E501", "S603", "S607", "PTH", "S310", "RUF002", "RUF0
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = ["T20", "S101"]
 "scripts/**/*" = ["T20"]
+"assets/**/*" = ["T20", "S110", "S112"]
+"examples/**/*" = ["T20", "S110", "S112"]
+"hooks/**/*" = ["T20", "S110", "S112"]
 "run_*.py" = ["T20"]
 "remove_description_params.py" = ["T20"]
 
