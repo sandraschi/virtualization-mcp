@@ -139,8 +139,8 @@ async def _naked_test_lifecycle(jid: str, job_dir: Path, wsb_xml: str, tmp_wsb: 
         logger.warning(f"naked-test {jid}: no boot signal after {NAKED_BOOT_VERIFY_SEC}s (attempt {attempt})")
         try:
             WindowsSandboxHelper.terminate_active_sandbox()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"naked-test {jid}: teardown terminate best-effort failed: {e}")
         await _wait_until_no_sandbox(NAKED_TEARDOWN_WAIT_SEC)
 
     try:
@@ -363,10 +363,10 @@ async def sandbox_management(
                         repo_url = m.group(1).strip()
                     if not branch:
                         mb = re.search(r'\[branch\s+"([^"]+)"\]', cfg_txt)
-                        if mb:
-                            branch = mb.group(1).strip()
-                except Exception:
-                    pass
+                    if mb:
+                        branch = mb.group(1).strip()
+                except Exception as e:
+                    logger.debug(f"naked-test: git branch scan best-effort failed: {e}")
 
             if not repo_url:
                 if repo_clean.startswith("http"):
@@ -385,8 +385,8 @@ async def sandbox_management(
                     mb_path = re.search(r"HealthPath\s*=\s*['\"]([^'\"]+)['\"]", fcfg)
                     if mb_port and mb_path:
                         health_url = f"http://127.0.0.1:{mb_port.group(1)}{mb_path.group(1)}"
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"naked-test: fleet-start health scan best-effort failed: {e}")
 
             assets_folder = repo_root / "assets" / "sandbox"
             if not assets_folder.is_dir():
@@ -532,8 +532,8 @@ async def sandbox_management(
                     if spec_file.is_file():
                         try:
                             spec = json.loads(spec_file.read_text(encoding="utf-8"))
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug(f"naked-test list: unreadable spec {spec_file}: {e}")
                     result_file = d / "RESULT.json"
                     result = None
                     status = "running"

@@ -2,11 +2,14 @@
 """Chat service for virtualization-mcp backend."""
 
 import json as _json
+import logging
 import os
 import urllib.request as _req
 from typing import Any
 
 from .memory import ChatMemory
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -61,8 +64,8 @@ class ChatService:
                         if end != -1:
                             skill_content = skill_content[end + 3 :].strip()
                     base += f"\n\nUse the following skill guidelines when helping the user:\n{skill_content}"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Optional skill content skipped: {e}")
         return base
 
     def _get_skills_dir(self) -> str | None:
@@ -86,8 +89,8 @@ class ChatService:
             try:
                 with open(keys_file) as f:
                     return _json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Ignoring unreadable keys file {keys_file}: {e}")
         return {}
 
     # ---------------------------------------------------------------------
@@ -148,7 +151,8 @@ class ChatService:
                         if reply:
                             self.memory.append(session_id, "assistant", reply)
                             return {"reply": reply, "provider": f"ollama ({_preferred})"}
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"Ollama provider attempt failed, trying next: {e}")
                         continue
 
                 # OpenAI compatible provider
@@ -179,7 +183,8 @@ class ChatService:
                         if reply:
                             self.memory.append(session_id, "assistant", reply)
                             return {"reply": reply, "provider": f"openai compatible ({preferred_model})"}
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"OpenAI-compatible provider attempt failed, trying next: {e}")
                         continue
 
                 # DeepSeek provider
@@ -212,7 +217,8 @@ class ChatService:
                         if reply:
                             self.memory.append(session_id, "assistant", reply)
                             return {"reply": reply, "provider": f"deepseek ({preferred_model})"}
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"DeepSeek provider attempt failed, trying next: {e}")
                         continue
 
                 # Anthropic provider
@@ -242,7 +248,8 @@ class ChatService:
                         if reply:
                             self.memory.append(session_id, "assistant", reply)
                             return {"reply": reply, "provider": f"anthropic ({preferred_model})"}
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"Anthropic provider attempt failed, trying next: {e}")
                         continue
 
                 # LM Studio provider (OpenAI compatible)
@@ -265,7 +272,8 @@ class ChatService:
                         if reply:
                             self.memory.append(session_id, "assistant", reply)
                             return {"reply": reply, "provider": f"lmstudio ({preferred_model})"}
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"LM Studio provider attempt failed, trying next: {e}")
                         continue
 
             # Fallback echo provider

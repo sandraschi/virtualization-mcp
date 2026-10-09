@@ -8,9 +8,10 @@ and the sandbox-for-dangerous-work pattern (spin up → work → tear down).
 from __future__ import annotations
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import Context, FastMCP
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -20,26 +21,36 @@ def register_agentic_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def vm_agentic_workflow(
-        action: Literal["suggest_config", "sandbox_workflow", "workflow"],
-        goal: str | None = None,
-        use_case: str | None = None,
-        vm_name: str | None = None,
+        action: Annotated[
+            Literal["suggest_config", "sandbox_workflow", "workflow"],
+            Field(description="Agentic operation to perform."),
+        ],
+        goal: Annotated[str | None, Field(description="Objective (sandbox_workflow, workflow).")] = None,
+        use_case: Annotated[
+            str | None, Field(description="Use case (suggest_config): CI runner, malware sandbox, dev environment.")
+        ] = None,
+        vm_name: Annotated[str | None, Field(description="Base VM (sandbox_workflow).")] = None,
         ctx: Context | None = None,
     ) -> dict[str, Any]:
-        """
-        Sampling-backed agentic operations for virtualization.
+        """Sampling-backed agentic operations for virtualization.
 
-        Actions:
-        - suggest_config: Suggest VirtualBox VM settings for a use case via LLM sampling.
-          Optional: use_case (e.g. 'CI runner', 'malware sandbox', 'dev environment')
-        - sandbox_workflow: Generate a step-by-step plan for the
-          spin-up → work → snapshot → tear-down safety pattern.
-          Requires: goal (what dangerous/experimental work to do)
-        - workflow: Autonomous multi-step VM orchestration goal.
-          Requires: goal (natural language objective)
+        - suggest_config: VirtualBox VM settings for a use case via LLM sampling.
+        - sandbox_workflow: spin-up → work → snapshot → tear-down safety plan.
+        - workflow: autonomous multi-step VM orchestration goal.
+        All actions use ctx.sample() when available, else sensible defaults.
 
-        All actions use ctx.sample() when available; fall back to
-        sensible defaults otherwise.
+        ## Return Format
+
+        Dict with `success` (bool), human-readable `message` or `error`, the `action`
+        performed, and operation data (`suggestion`, `plan`, `steps`).
+
+        ## Examples
+
+        ```python
+        await vm_agentic_workflow(action="suggest_config", use_case="CI runner")
+        await vm_agentic_workflow(action="sandbox_workflow", goal="test unsigned installer")
+        await vm_agentic_workflow(action="workflow", goal="clone base, snapshot, update, verify")
+        ```
         """
         if action == "suggest_config":
             return await _suggest_config(use_case=use_case, ctx=ctx)

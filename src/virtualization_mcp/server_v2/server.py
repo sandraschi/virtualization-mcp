@@ -268,7 +268,7 @@ def main():
         asyncio.run(server.start())
 
     except KeyboardInterrupt:
-        print("\nShutting down virtualization-mcp server...")
+        logging.getLogger(__name__).info("Shutting down virtualization-mcp server...")
     except Exception as e:
         logging.critical(f"Fatal error in virtualization-mcp server: {e}", exc_info=True)
         sys.exit(1)
