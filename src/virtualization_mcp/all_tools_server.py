@@ -9,9 +9,11 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
 from fastmcp.server.providers.skills import SkillsDirectoryProvider
+from pydantic import Field
 
 from virtualization_mcp.config import configure_logging, settings
 from virtualization_mcp.tools.register_tools import register_all_tools
@@ -53,6 +55,39 @@ except ImportError:
 # Tools
 register_all_tools(mcp)
 logger.info("All portmanteau tools registered")
+
+
+@mcp.tool()
+async def virtualization_shutdown(
+    reason: Annotated[str, Field(description="Why the server is being shut down.")] = "agent request",
+) -> dict[str, Any]:
+    """Shut down the virtualization-mcp server gracefully.
+
+    Lets an agent stop the server (e.g. before upgrades or restarts) without
+    killing the process from the outside.
+
+    ## Return Format
+
+    Dict with `success`, human-readable `message`, and the shutdown `reason`.
+    The process exits after responding.
+
+    ## Examples
+
+    ```python
+    await virtualization_shutdown(reason="upgrading to 1.7.0")
+    ```
+    """
+    logger.warning(f"virtualization-mcp shutting down: {reason}")
+    import threading
+
+    def _exit() -> None:
+        import time
+
+        time.sleep(0.5)
+        sys.exit(0)
+
+    threading.Thread(target=_exit, daemon=True).start()
+    return {"success": True, "message": f"virtualization-mcp shutting down: {reason}", "reason": reason}
 
 
 def start_mcp_server(host: str | None = None, port: int | None = None) -> FastMCP:
@@ -117,9 +152,12 @@ def main() -> int:
                 allow_headers=["*"],
             )
 
-            @app.get("/health")
+            from starlette.routing import Route
+
             async def health():
                 return {"status": "ok", "server": settings.APP_NAME}
+
+            app.router.routes.append(Route("/health", health))
 
             mcp.run(transport="http", host=args.host, port=args.port)
         else:

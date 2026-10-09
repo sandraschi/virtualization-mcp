@@ -130,12 +130,12 @@ class DocumentationPlugin(BasePlugin):
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Plugin '{plugin_name}' not found",
                 )
-            return self.documentation.plugins[plugin_name].dict()
+            return self.documentation.plugins[plugin_name].model_dump()
 
     def generate_documentation(self) -> dict[str, Any]:
         """Generate complete API documentation."""
         # This would be populated by scanning registered routes and plugins
-        return self.documentation.dict()
+        return self.documentation.model_dump()
 
     def generate_openapi_spec(self) -> dict[str, Any]:
         """Generate OpenAPI specification."""

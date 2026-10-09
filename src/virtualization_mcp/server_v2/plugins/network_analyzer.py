@@ -77,7 +77,7 @@ class NetworkAnalyzerPlugin(BasePlugin):
         @self.router.get("/alerts")
         async def get_alerts(limit: int = 100) -> list[dict[str, Any]]:
             """Get recent traffic alerts."""
-            return [alert.dict() for alert in list(self.alerts)[-limit:]]
+            return [alert.model_dump() for alert in list(self.alerts)[-limit:]]
 
         @self.router.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):

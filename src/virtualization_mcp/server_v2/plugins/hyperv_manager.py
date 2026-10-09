@@ -289,7 +289,7 @@ class HyperVManagerPlugin(BasePlugin):
                     detail=f"Virtual machine '{vm_name}' not found",
                 )
 
-            return [s.dict() for s in self.virtual_machines[vm_name].snapshots]
+            return [s.model_dump() for s in self.virtual_machines[vm_name].snapshots]
 
         @self.router.post("/vms/{vm_name}/restore")
         async def restore_snapshot(vm_name: str, snapshot_id: str, wait: bool = False) -> dict[str, Any]:

@@ -111,8 +111,8 @@ async def lifespan(app: FastAPI):
     if mcp_stack is not None:
         try:
             await mcp_stack.__aexit__(None, None, None)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"MCP stack shutdown best-effort failed: {e}")
 
 
 # Registry Path (optional — may not exist in PyInstaller or on other machines)
@@ -584,8 +584,8 @@ async def _resolve_agent_model(session: Any, requested: str) -> str:
                 loaded = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
                 if loaded:
                     return loaded[0]
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Ollama model probe best-effort failed: {e}")
     if installed:
         return installed[0]
     return req or _AGENT_MODEL_FALLBACK
@@ -1093,8 +1093,8 @@ def _load_templates() -> dict[str, Any]:
         if os.path.isfile(TEMPLATES_FILE):
             with open(TEMPLATES_FILE) as f:
                 return json.load(f)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Ignoring unreadable templates file {TEMPLATES_FILE}: {e}")
     return {}
 
 
@@ -1121,6 +1121,45 @@ async def health_check():
     }
 
 
+@app.get("/api/v1/diagnostics")
+async def diagnostics():
+    """Full diagnostics for CUA-NSIS smoke testing: tool list, system info, errors."""
+    tools: list[str] = []
+    errors: list[str] = []
+    try:
+        if mcp is not None:
+            tools = sorted({t.name for t in await mcp.list_tools()})
+    except Exception as e:
+        errors.append(f"mcp.list_tools failed: {e}")
+    system: dict = {}
+    try:
+        if service_manager is not None:
+            system = await asyncio.to_thread(service_manager.vm_service.get_system_info) or {}
+    except Exception as e:
+        errors.append(f"system info failed: {e}")
+    return {
+        "status": "ok" if not errors else "degraded",
+        "tools": tools,
+        "tool_count": len(tools),
+        "system": system,
+        "errors": errors,
+    }
+
+
+@app.post("/api/shutdown")
+async def shutdown():
+    """Orderly exit for fleet launcher restarts (respond 200, then exit)."""
+    import threading
+    import time
+
+    def _exit() -> None:
+        time.sleep(0.5)
+        os._exit(0)
+
+    threading.Thread(target=_exit, daemon=True).start()
+    return {"status": "shutting down"}
+
+
 @app.get("/api/v1/dashboard")
 async def dashboard():
     """Aggregated dashboard data: host info, VMs, VBox status, sandbox."""
@@ -1140,8 +1179,9 @@ async def dashboard():
                 if isinstance(vms_result, dict)
                 else []
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Dashboard VM list best-effort failed: {e}")
+            vms = []
         running = sum(1 for v in vms if v.get("state") == "running")
         stopped = sum(1 for v in vms if v.get("state") == "poweroff")
         paused = sum(1 for v in vms if v.get("state") == "paused")
@@ -1164,8 +1204,8 @@ def _load_keys() -> dict[str, str]:
         if os.path.isfile(KEYS_FILE):
             with open(KEYS_FILE) as f:
                 return json.load(f)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Ignoring unreadable keys file {KEYS_FILE}: {e}")
     return {}
 
 
@@ -1489,8 +1529,8 @@ def _load_llm_settings() -> dict[str, Any]:
                         data["endpoint"] = "http://localhost:1234"
 
                 return data
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"LLM settings load best-effort failed, using defaults: {e}")
     return {
         "provider": "ollama",
         "endpoint": "http://localhost:11434",
@@ -1755,8 +1795,8 @@ def _download_iso_worker(task_id: str, url: str, dest: str) -> None:
         try:
             if os.path.exists(dest):
                 os.remove(dest)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Partial download cleanup best-effort failed for {dest}: {e}")
 
 
 def _human_bytes(n: int) -> str:
@@ -2371,8 +2411,8 @@ async def list_skills():
                                 if line.startswith("description:"):
                                     desc = line.split(":", 1)[1].strip().strip('"')
                                     break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Skill description parse best-effort failed: {e}")
                 out.append({"id": path.name, "name": name, "description": desc or name})
     return {"skills": out}
 
@@ -2571,8 +2611,8 @@ async def sandbox_status():
             timeout=5,
         )
         running = "WindowsSandbox.exe" in r.stdout
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Sandbox tasklist probe best-effort failed: {e}")
     return {"running": running}
 
 
@@ -3141,8 +3181,8 @@ async def _naked_wait_gone(timeout_sec: float) -> bool:
         try:
             if not WindowsSandboxHelper.is_sandbox_running():
                 return True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Sandbox running check best-effort failed: {e}")
         await asyncio.sleep(2)
     try:
         return not WindowsSandboxHelper.is_sandbox_running()
@@ -3170,8 +3210,8 @@ async def _naked_dispatch_lifecycle(job_id: str, job_dir: str, config_xml: str) 
 
     try:
         WindowsSandboxHelper.terminate_active_sandbox()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Pre-test teardown terminate best-effort failed: {e}")
     if not await _naked_wait_gone(NAKED_TEARDOWN_WAIT_SEC):
         logger.warning(f"naked-test {job_id}: previous sandbox still present after teardown wait")
     for attempt in (1, 2):
@@ -3190,8 +3230,8 @@ async def _naked_dispatch_lifecycle(job_id: str, job_dir: str, config_xml: str) 
         logger.warning(f"naked-test {job_id}: no boot markers after attempt {attempt}, retrying once")
         try:
             WindowsSandboxHelper.terminate_active_sandbox()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Sandbox terminate best-effort failed: {e}")
         await _naked_wait_gone(NAKED_TEARDOWN_WAIT_SEC)
     try:
         with open(os.path.join(job_dir, "RESULT.json"), "w", encoding="utf-8") as f:
@@ -3282,8 +3322,8 @@ async def fleet_naked_test(request: NakedTestRequest):
                 mb = re.search(r'\[branch\s+"([^"]+)"\]', gc)
                 if mb:
                     branch = mb.group(1).strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"naked-test git branch scan best-effort failed: {e}")
 
     if not repo_url:
         if repo.startswith("http"):
@@ -3301,8 +3341,8 @@ async def fleet_naked_test(request: NakedTestRequest):
             mb_path = re.search(r"HealthPath\s*=\s*['\"]([^'\"]+)['\"]", fc)
             if mb_port and mb_path:
                 health_url = f"http://127.0.0.1:{mb_port.group(1)}{mb_path.group(1)}"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"naked-test fleet-start health scan best-effort failed: {e}")
 
     frontend_url = ""
     if os.path.isfile(os.path.join(local_repo, "fleet-start.config.ps1")):
@@ -3312,8 +3352,8 @@ async def fleet_naked_test(request: NakedTestRequest):
             mb_front = re.search(r"FrontendPort\s*=\s*(\d+)", fc2)
             if mb_front:
                 frontend_url = f"http://127.0.0.1:{mb_front.group(1)}/"
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"naked-test frontend port scan best-effort failed: {e}")
 
     observe = max(15, min(int(request.observe_sec or 90), 1200))
 
@@ -3432,8 +3472,8 @@ async def list_fleet_naked_tests(limit: int = 20):
             try:
                 with open(spec_file, encoding="utf-8") as sf:
                     spec = json.load(sf)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"naked-test list: unreadable spec {spec_file}: {e}")
 
         result = None
         result_file = os.path.join(job_dir, "RESULT.json")
@@ -3508,8 +3548,8 @@ async def list_fleet_candidate_repos():
                                 m_br = re.search(r'\[branch\s+"([^"]+)"\]', gct)
                                 if m_br:
                                     branch = m_br.group(1).strip()
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                logger.debug(f"fleet naked-test repos branch scan best-effort failed: {e}")
 
                         fleet.append(
                             {
@@ -3636,8 +3676,8 @@ async def chat_interaction(request: ChatRequest):
                 reply = data.get("message", {}).get("content", "")
                 if reply:
                     return {"reply": reply, "provider": f"ollama ({_preferred})"}
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Backend ollama chat attempt failed: {e}")
 
     if provider == "openai":
         try:
@@ -4306,8 +4346,8 @@ async def vm_vnc_websocket(websocket: WebSocket, name: str):
             if line.startswith("vrdeport="):
                 port = int(line.split("=", 1)[1].strip('"'))
                 break
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"VRDE port scan best-effort failed: {e}")
     try:
         reader, writer = await asyncio.open_connection("127.0.0.1", port)
     except ConnectionRefusedError:
@@ -4325,13 +4365,13 @@ async def vm_vnc_websocket(websocket: WebSocket, name: str):
                 data = await websocket.receive_bytes()
                 writer.write(data)
                 await writer.drain()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"VNC ws_to_tcp ended: {e}")
         finally:
             try:
                 writer.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"VNC writer close best-effort failed: {e}")
 
     async def tcp_to_ws():
         try:
@@ -4340,16 +4380,16 @@ async def vm_vnc_websocket(websocket: WebSocket, name: str):
                 if not data:
                     break
                 await websocket.send_bytes(data)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"VNC tcp_to_ws ended: {e}")
         finally:
             try:
                 writer.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"VNC writer close best-effort failed: {e}")
 
     await asyncio.gather(ws_to_tcp(), tcp_to_ws())
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=10761, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=10701, reload=True)
