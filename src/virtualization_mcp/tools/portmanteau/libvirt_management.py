@@ -5,9 +5,10 @@ Consolidates QEMU/KVM domain operations into an action-based FastMCP tool.
 """
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 from virtualization_mcp.plugins.libvirt.manager import LibvirtManager
 
@@ -21,17 +22,29 @@ def register_libvirt_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def libvirt_management(
-        action: Literal["list", "start", "stop", "status"],
-        domain_name: str | None = None,
+        action: Annotated[
+            Literal["list", "start", "stop", "status"], Field(description="Domain operation to perform.")
+        ],
+        domain_name: Annotated[str | None, Field(description="Domain name or UUID (start, stop, status).")] = None,
     ) -> dict[str, Any]:
         """Manage libvirt / QEMU / KVM virtual machine domains.
 
-        Args:
-            action: Domain operation ('list', 'start', 'stop', 'status').
-            domain_name: Optional domain name or UUID for start/stop/status actions.
+        Native Linux and WSL2 hypervisor backend via `virsh`.
 
-        Returns:
-            Structured action response dict.
+        ## Return Format
+
+        Dict with `success` (bool), human-readable `message`, the `action` performed,
+        and operation data (`domains`, `result`, `available`). Failures carry a
+        human-readable `error`.
+
+        ## Examples
+
+        ```python
+        await libvirt_management(action="list")
+        await libvirt_management(action="status")
+        await libvirt_management(action="start", domain_name="my-vm")
+        await libvirt_management(action="stop", domain_name="my-vm")
+        ```
         """
         mgr = LibvirtManager()
 

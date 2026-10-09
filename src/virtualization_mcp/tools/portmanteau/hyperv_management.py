@@ -6,9 +6,10 @@ Provides Windows Hyper-V VM management capabilities.
 """
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -26,68 +27,31 @@ def register_hyperv_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def hyperv_management(
-        action: Literal["list", "get", "start", "stop"],
-        vm_name: str | None = None,
-        force: bool = False,
-        wait: bool = False,
+        action: Annotated[Literal["list", "get", "start", "stop"], Field(description="Hyper-V operation to perform.")],
+        vm_name: Annotated[str | None, Field(description="Hyper-V VM name (get, start, stop).")] = None,
+        force: Annotated[bool, Field(description="Force stop without graceful shutdown (stop only).")] = False,
+        wait: Annotated[bool, Field(description="Wait for completion (start, stop).")] = False,
     ) -> dict[str, Any]:
-        """
-        Comprehensive Hyper-V management portmanteau tool (Windows only).
+        """Comprehensive Hyper-V management portmanteau tool (Windows only).
 
-        This tool consolidates all Hyper-V virtual machine operations into a single interface.
-        Use the 'action' parameter to specify which operation to perform. This tool only works
-        on Windows systems with Hyper-V enabled.
+        Consolidates all Hyper-V virtual machine operations into a single interface.
+        Only works on Windows systems with Hyper-V enabled.
 
-        Args:
-            action (required): The operation to perform. Must be one of:
-                - "list": List all Hyper-V virtual machines (no vm_name required)
-                - "get": Get detailed information about a Hyper-V VM (requires: vm_name)
-                - "start": Start a Hyper-V virtual machine (requires: vm_name)
-                - "stop": Stop a Hyper-V virtual machine (requires: vm_name)
+        ## Return Format
 
-            vm_name: Name of the Hyper-V virtual machine (required for get, start, stop actions)
-            force: Force stop without graceful shutdown (optional, for stop action only, default: False)
-            wait: Wait for operation to complete before returning (optional, for start/stop actions, default: False)
+        Dict with `success` (bool), human-readable `message`, the `action` performed,
+        `vm_name`, and operation data (`vms`, `vm_info`, `result`). Failures carry
+        a human-readable `error`.
 
-        Returns:
-            Dict containing:
-                - success: Boolean indicating if operation succeeded
-                - action: The action that was performed
-                - vm_name: The VM name (for get/start/stop actions)
-                - vms/vm_info/result: Operation-specific result data
-                - count: Number of VMs (for list action)
-                - error: Error message if success is False
+        ## Examples
 
-        Examples:
-            # List all Hyper-V VMs - simplest usage, no other parameters needed
-            result = await hyperv_management(action="list")
-
-            # Get VM information - requires vm_name
-            result = await hyperv_management(
-                action="get",
-                vm_name="MyHyperVVM"
-            )
-
-            # Start a VM - requires vm_name, optionally wait for completion
-            result = await hyperv_management(
-                action="start",
-                vm_name="MyHyperVVM",
-                wait=True
-            )
-
-            # Stop a VM gracefully - requires vm_name, optionally wait for completion
-            result = await hyperv_management(
-                action="stop",
-                vm_name="MyHyperVVM",
-                wait=True
-            )
-
-            # Force stop a VM - requires vm_name, use force=True
-            result = await hyperv_management(
-                action="stop",
-                vm_name="MyHyperVVM",
-                force=True
-            )
+        ```python
+        await hyperv_management(action="list")
+        await hyperv_management(action="get", vm_name="MyHyperVVM")
+        await hyperv_management(action="start", vm_name="MyHyperVVM", wait=True)
+        await hyperv_management(action="stop", vm_name="MyHyperVVM", wait=True)
+        await hyperv_management(action="stop", vm_name="MyHyperVVM", force=True)
+        ```
         """
         try:
             # Validate action

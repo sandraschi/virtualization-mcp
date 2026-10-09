@@ -11,9 +11,10 @@ import logging
 import subprocess
 from datetime import UTC
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 from virtualization_mcp.tools.sandbox.sandbox_backend import (
     execute_code,
@@ -167,44 +168,70 @@ async def _naked_test_lifecycle(jid: str, job_dir: Path, wsb_xml: str, tmp_wsb: 
 
 
 async def sandbox_management(
-    action: Literal[
-        "execute_code",
-        "execute_file",
-        "session_create",
-        "session_run",
-        "session_write_file",
-        "session_read_file",
-        "session_list",
-        "session_destroy",
-        "win_sandbox_launch_consumer",
-        "win_sandbox_launch_devinfra",
-        "win_sandbox_status",
-        "win_sandbox_terminate",
-        "win_sandbox_naked_test",
-        "win_sandbox_naked_test_status",
-        "win_sandbox_naked_test_list",
+    action: Annotated[
+        Literal[
+            "execute_code",
+            "execute_file",
+            "session_create",
+            "session_run",
+            "session_write_file",
+            "session_read_file",
+            "session_list",
+            "session_destroy",
+            "win_sandbox_launch_consumer",
+            "win_sandbox_launch_devinfra",
+            "win_sandbox_status",
+            "win_sandbox_terminate",
+            "win_sandbox_naked_test",
+            "win_sandbox_naked_test_status",
+            "win_sandbox_naked_test_list",
+        ],
+        Field(description="Sandbox operation to perform."),
     ],
-    code: str | None = None,
-    language: Literal["python", "javascript", "bash"] = "python",
-    host_path: str | None = None,
-    timeout: int = 30,
-    network_enabled: bool = False,
-    sandbox_id: str | None = None,
-    image: str = "python:3.13-slim",
-    sandbox_name: str | None = None,
-    command: str | None = None,
-    container_path: str | None = None,
-    content: str | None = None,
-    install_claude_desktop: bool = False,
-    plain: bool = False,
-    repo: str | None = None,
-    branch: str = "main",
-    observe_sec: int = 90,
-    health_url: str | None = None,
-    job_id: str | None = None,
-    memory_in_mb: int = 8192,
+    code: Annotated[str | None, Field(description="Code to run (execute_code).")] = None,
+    language: Annotated[
+        Literal["python", "javascript", "bash"], Field(description="Code language (execute_code).")
+    ] = "python",
+    host_path: Annotated[str | None, Field(description="Host script path (execute_file).")] = None,
+    timeout: Annotated[int, Field(description="Execution timeout in seconds.")] = 30,
+    network_enabled: Annotated[bool, Field(description="Allow container network access.")] = False,
+    sandbox_id: Annotated[str | None, Field(description="Session container id (session_*).")] = None,
+    image: Annotated[str, Field(description="Container image (session_create).")] = "python:3.13-slim",
+    sandbox_name: Annotated[str | None, Field(description="Session name (session_create).")] = None,
+    command: Annotated[str | None, Field(description="Command to run (session_run).")] = None,
+    container_path: Annotated[
+        str | None, Field(description="In-container file path (session_write/read_file).")
+    ] = None,
+    content: Annotated[str | None, Field(description="File content (session_write_file).")] = None,
+    install_claude_desktop: Annotated[bool, Field(description="Install Claude Desktop in Windows Sandbox.")] = False,
+    plain: Annotated[bool, Field(description="Plain output without formatting.")] = False,
+    repo: Annotated[str | None, Field(description="Fleet repo for naked-test.")] = None,
+    branch: Annotated[str, Field(description="Repo branch for naked-test.")] = "main",
+    observe_sec: Annotated[int, Field(description="Observation window for naked-test.")] = 90,
+    health_url: Annotated[str | None, Field(description="Health URL for naked-test.")] = None,
+    job_id: Annotated[str | None, Field(description="Naked-test job id (status).")] = None,
+    memory_in_mb: Annotated[int, Field(description="Sandbox memory in MB.")] = 8192,
 ) -> dict[str, Any]:
-    """Docker & Windows Sandbox code execution and bringup tool."""
+    """Docker and Windows Sandbox code execution and bringup tool.
+
+    Ephemeral containers, stateful sessions, Windows Sandbox launch/status, and
+    automated naked-install testing for fleet repos.
+
+    ## Return Format
+
+    Dict with `success` (bool), human-readable `message`, the `action` performed,
+    and operation data (`result`, `sessions`, `job`). Failures carry a
+    human-readable `error`.
+
+    ## Examples
+
+    ```python
+    await sandbox_management(action="execute_code", code="print('hi')", language="python")
+    await sandbox_management(action="session_create", sandbox_name="dev")
+    await sandbox_management(action="win_sandbox_status")
+    await sandbox_management(action="win_sandbox_naked_test", repo="plex-mcp")
+    ```
+    """
     try:
         if action not in SANDBOX_ACTIONS:
             return {
