@@ -284,6 +284,8 @@ Other methods: **[INSTALL.md](INSTALL.md)** — first-timers start with
 | Doc | Contents |
 |-----|----------|
 | [Installation](INSTALL.md) | Options A–D, sandbox launchers |
+| [Onboarding](docs/ONBOARDING.md) | First-timer wrappee install + sanity check |
+| [Tools](docs/TOOLS.md) | Portmanteau tool table |
 | [Configuration](docs/CONFIGURATION.md) | Env vars, VirtualBox paths |
 | [Development](docs/DEVELOPMENT.md) | `just`, tests, mcpb build |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Common errors |

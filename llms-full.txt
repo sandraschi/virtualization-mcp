@@ -98,6 +98,19 @@ FastMCP 3.2 server with modular plugin architecture. VirtualBox operations via V
 - `sandbox_workflow` — Step-by-step plan for spin-up → work → snapshot → tear-down
 - `workflow` — Autonomous multi-step VM orchestration
 
+### virtualization_shutdown
+
+- Graceful self-termination for agents (reason param, exits after responding).
+
+## REST Endpoints (webapp backend, port 10701)
+
+- `GET /api/v1/health`, `GET /health` — liveness probes
+- `GET /api/v1/diagnostics` — tool list, system info, errors (CUA-NSIS smoke)
+- `POST /api/shutdown` — orderly exit (responds 200, exits after 500 ms)
+- `GET /api/v1/dashboard`, `/api/v1/status`, `/api/v1/skills`, `/api/v1/chat`,
+  `/api/llm/*` (providers, models, chat proxy), `/api/v1/sandbox/*`,
+  `/api/v1/fleet/naked-test*`, `/api/v1/vms*` (incl. VRDE/VNC), `/mcp/tools`
+
 ## Error Handling
 
 All tools return `{"success": bool, "action": str, "data": {...}}` or `{"success": false, "error": str}`. VBoxManage errors propagated directly. Async operations use thread pool — never block event loop.
