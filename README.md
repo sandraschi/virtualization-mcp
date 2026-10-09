@@ -262,7 +262,14 @@ This project manages VMs (VirtualBox, Hyper-V) and sandboxes (Windows Sandbox). 
 1. Download **`virtualization-mcp-*.mcpb`** from [Releases](https://github.com/sandraschi/virtualization-mcp/releases/latest)
 2. Drag into **Claude Desktop**
 
-Other methods: **[INSTALL.md](INSTALL.md)**
+One-liner (Claude Desktop, Windows PowerShell):
+
+```powershell
+powershell -c "irm https://github.com/sandraschi/virtualization-mcp/releases/latest/download/install.ps1 | iex"
+```
+
+Other methods: **[INSTALL.md](INSTALL.md)** — first-timers start with
+**[docs/ONBOARDING.md](docs/ONBOARDING.md)** (wrappee install, sanity check).
 
 ## What You Can Do
 

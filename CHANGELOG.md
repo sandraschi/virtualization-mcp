@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] - 2026-10-09
+
+### Fixed (assfix pass)
+- **Security**: CORS `allow_origins=["*"]` replaced with explicit fleet origins + Tailscale/LAN regex.
+- **Webapp**: `API_BASE` is same-origin by default, absolute only inside Tauri (LAN-tab CORS fix).
+- **Packaging**: root `manifest.json` uses `${__dirname}` + stdio `python -m virtualization_mcp` entry;
+  `mcpb/manifest.json` bumped to 1.6.1, duplicate prompts key removed, tool list completed.
+- **Lint**: ruff enforces `T20`, `S110`/`S112` no longer ignored; silent swallows now logged.
+- **Docs**: added `docs/TOOLS.md`, `docs/ONBOARDING.md`, session-context channels (Cursor, Windsurf,
+  Claude Code plugin, Copilot, OpenCode, Antigravity), `renovate.json`.
+- **Hygiene**: 14 tracked `.bak` files removed; `reports/` + `*.bak*` gitignored.
+
 ## [1.6.1] - 2026-10-06
 
 ### Fixed
