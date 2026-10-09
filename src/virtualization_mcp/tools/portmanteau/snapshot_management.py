@@ -6,9 +6,10 @@ Replaces 4 individual snapshot tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 # Import existing snapshot tools
 from virtualization_mcp.tools.snapshot.snapshot_tools import (
@@ -34,68 +35,34 @@ def register_snapshot_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def snapshot_management(
-        action: Literal["list", "create", "restore", "delete"],
-        vm_name: str,
-        snapshot_name: str | None = None,
-        description: str | None = None,
-        limit: int = 100,
-        offset: int = 0,
+        action: Annotated[
+            Literal["list", "create", "restore", "delete"], Field(description="Snapshot operation to perform.")
+        ],
+        vm_name: Annotated[str, Field(description="Virtual machine name (all actions).")],
+        snapshot_name: Annotated[str | None, Field(description="Snapshot name (create, restore, delete).")] = None,
+        description: Annotated[str | None, Field(description="Optional description (create only).")] = None,
+        limit: Annotated[int, Field(description="Max items for list.")] = 100,
+        offset: Annotated[int, Field(description="Offset for list pagination.")] = 0,
     ) -> dict[str, Any]:
-        """
-        Comprehensive snapshot management portmanteau tool.
+        """Comprehensive snapshot management portmanteau tool.
 
-        This tool consolidates all VM snapshot operations into a single interface. Use the 'action' parameter
-        to specify which operation to perform. All actions require vm_name, and most require snapshot_name.
+        Consolidates all VM snapshot operations into a single interface. All actions
+        require `vm_name`; create/restore/delete also require `snapshot_name`.
 
-        Args:
-            action (required): The operation to perform. Must be one of:
-                - "list": List all snapshots for a VM (requires: vm_name)
-                - "create": Create a snapshot of a VM (requires: vm_name, snapshot_name)
-                - "restore": Restore a VM to a snapshot (requires: vm_name, snapshot_name)
-                - "delete": Delete a snapshot from a VM (requires: vm_name, snapshot_name)
+        ## Return Format
 
-            vm_name (required): Name of the virtual machine (required for all actions)
-            snapshot_name: Name of the snapshot (required for create, restore, delete actions)
-            description: Optional description for the snapshot (only used for create action)
+        Dict with `success` (bool), human-readable `message`, the `action` performed,
+        `vm_name`, `snapshot_name`, and operation data. Failures carry a
+        human-readable `error`.
 
-        Returns:
-            Dict containing:
-                - success: Boolean indicating if operation succeeded
-                - action: The action that was performed
-                - vm_name: The VM name
-                - snapshot_name: The snapshot name (for create/restore/delete)
-                - data: Operation-specific result data
-                - error: Error message if success is False
-                - count: Number of snapshots (for list action)
+        ## Examples
 
-        Examples:
-            # List all snapshots for a VM - requires vm_name only
-            result = await snapshot_management(
-                action="list",
-                vm_name="MyVM"
-            )
-
-            # Create a snapshot - requires vm_name and snapshot_name
-            result = await snapshot_management(
-                action="create",
-                vm_name="MyVM",
-                snapshot_name="BeforeUpdate",
-                description="Snapshot before system update"
-            )
-
-            # Restore to a snapshot - requires vm_name and snapshot_name
-            result = await snapshot_management(
-                action="restore",
-                vm_name="MyVM",
-                snapshot_name="BeforeUpdate"
-            )
-
-            # Delete a snapshot - requires vm_name and snapshot_name
-            result = await snapshot_management(
-                action="delete",
-                vm_name="MyVM",
-                snapshot_name="OldSnapshot"
-            )
+        ```python
+        await snapshot_management(action="list", vm_name="MyVM")
+        await snapshot_management(action="create", vm_name="MyVM", snapshot_name="BeforeUpdate", description="Before system update")
+        await snapshot_management(action="restore", vm_name="MyVM", snapshot_name="BeforeUpdate")
+        await snapshot_management(action="delete", vm_name="MyVM", snapshot_name="BeforeUpdate")
+        ```
         """
         try:
             # Validate action

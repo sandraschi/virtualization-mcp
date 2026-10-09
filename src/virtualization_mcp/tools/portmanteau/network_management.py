@@ -6,9 +6,10 @@ Replaces 5 individual network tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 # Import existing network tools
 from virtualization_mcp.tools.network.network_tools import (
@@ -36,78 +37,46 @@ def register_network_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def network_management(
-        action: Literal["list_networks", "create_network", "remove_network", "list_adapters", "configure_adapter"],
-        network_name: str | None = None,
-        vm_name: str | None = None,
-        adapter_slot: int | None = None,
-        network_type: str | None = None,
-        ip_address: str | None = None,
-        netmask: str | None = None,
-        limit: int = 100,
-        offset: int = 0,
+        action: Annotated[
+            Literal["list_networks", "create_network", "remove_network", "list_adapters", "configure_adapter"],
+            Field(description="Network operation to perform."),
+        ],
+        network_name: Annotated[
+            str | None, Field(description="Host-only network name (create_network, remove_network, configure_adapter).")
+        ] = None,
+        vm_name: Annotated[str | None, Field(description="VM name (list_adapters, configure_adapter).")] = None,
+        adapter_slot: Annotated[int | None, Field(description="Adapter slot 0-3 (configure_adapter).")] = None,
+        network_type: Annotated[
+            str | None,
+            Field(
+                description="Attachment type (configure_adapter): nat, bridged, hostonly, internal, generic, natnetwork."
+            ),
+        ] = None,
+        ip_address: Annotated[str | None, Field(description="IP address (create_network, optional).")] = None,
+        netmask: Annotated[str | None, Field(description="Netmask (create_network, optional).")] = None,
+        limit: Annotated[int, Field(description="Max items for list actions.")] = 100,
+        offset: Annotated[int, Field(description="Offset for list pagination.")] = 0,
     ) -> dict[str, Any]:
-        """
-        Comprehensive network management portmanteau tool.
+        """Comprehensive network management portmanteau tool.
 
-        This tool consolidates all network operations into a single interface. Use the 'action' parameter
-        to specify which operation to perform. Different actions require different parameters.
+        Consolidates all network operations into a single interface. Use the `action`
+        parameter to specify which operation to perform.
 
-        Args:
-            action (required): The operation to perform. Must be one of:
-                - "list_networks": List all host-only networks (no other parameters required)
-                - "create_network": Create a host-only network (requires: network_name)
-                - "remove_network": Remove a host-only network (requires: network_name)
-                - "list_adapters": List network adapters for a VM (requires: vm_name)
-                - "configure_adapter": Configure network adapter for a VM (requires: vm_name, adapter_slot, network_type)
+        ## Return Format
 
-            network_name: Name of the host-only network (required for create_network, remove_network, configure_adapter)
-            vm_name: Name of the virtual machine (required for list_adapters, configure_adapter)
-            adapter_slot: Network adapter slot number 0-3 (required for configure_adapter)
-            network_type: Network type for adapter configuration (required for configure_adapter).
-                          Valid values: "nat", "bridged", "hostonly", "internal", "generic", "natnetwork"
-            ip_address: IP address for network configuration (optional for create_network)
-            netmask: Network mask for network configuration (optional for create_network)
+        Dict with `success` (bool), human-readable `message`, the `action` performed,
+        and operation data (`networks`, `adapters`, `result`). Failures carry a
+        human-readable `error`.
 
-        Returns:
-            Dict containing:
-                - success: Boolean indicating if operation succeeded
-                - action: The action that was performed
-                - data: Operation-specific result data
-                - error: Error message if success is False
-                - count: Number of networks/adapters (for list actions)
+        ## Examples
 
-        Examples:
-            # List all host-only networks - simplest usage, no other parameters needed
-            result = await network_management(action="list_networks")
-
-            # Create a host-only network - requires network_name
-            result = await network_management(
-                action="create_network",
-                network_name="MyNetwork",
-                ip_address="192.168.56.1",
-                netmask="255.255.255.0"
-            )
-
-            # List VM network adapters - requires vm_name
-            result = await network_management(
-                action="list_adapters",
-                vm_name="MyVM"
-            )
-
-            # Configure network adapter - requires vm_name, adapter_slot, network_type
-            result = await network_management(
-                action="configure_adapter",
-                vm_name="MyVM",
-                adapter_slot=0,
-                network_type="hostonly",
-                network_name="MyNetwork"
-            )
-
-            # Remove a network - requires network_name
-            result = await network_management(
-                action="remove_network",
-                network_name="MyNetwork"
-            )
+        ```python
+        await network_management(action="list_networks")
+        await network_management(action="create_network", network_name="MyNetwork", ip_address="192.168.56.1", netmask="255.255.255.0")
+        await network_management(action="list_adapters", vm_name="MyVM")
+        await network_management(action="configure_adapter", vm_name="MyVM", adapter_slot=0, network_type="hostonly", network_name="MyNetwork")
+        await network_management(action="remove_network", network_name="MyNetwork")
+        ```
         """
         try:
             # Validate action

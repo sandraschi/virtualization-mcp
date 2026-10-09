@@ -6,9 +6,10 @@ Replaces 6 individual storage tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 from virtualization_mcp.schemas.vbox_types import STORAGE_CONTROLLER_TYPE
 
@@ -44,83 +45,51 @@ def register_storage_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def storage_management(
-        action: Literal[
-            "list_controllers", "create_controller", "remove_controller", "list_disks", "create_disk", "attach_disk"
+        action: Annotated[
+            Literal[
+                "list_controllers", "create_controller", "remove_controller", "list_disks", "create_disk", "attach_disk"
+            ],
+            Field(description="Storage operation to perform."),
         ],
-        vm_name: str | None = None,
-        controller_name: str | None = None,
-        controller_type: STORAGE_CONTROLLER_TYPE | None = None,
-        disk_name: str | None = None,
-        disk_size_gb: int | None = None,
-        disk_path: str | None = None,
-        limit: int = 100,
-        offset: int = 0,
+        vm_name: Annotated[
+            str | None,
+            Field(
+                description="VM name (list_controllers, create_controller, remove_controller, list_disks, attach_disk)."
+            ),
+        ] = None,
+        controller_name: Annotated[
+            str | None, Field(description="Controller name (create_controller, remove_controller).")
+        ] = None,
+        controller_type: Annotated[
+            STORAGE_CONTROLLER_TYPE | None,
+            Field(description="Controller type (create_controller): ide|sata|scsi|sas|usb|pcie."),
+        ] = None,
+        disk_name: Annotated[str | None, Field(description="Disk file name (create_disk).")] = None,
+        disk_size_gb: Annotated[int | None, Field(description="Disk size in GB (create_disk).")] = None,
+        disk_path: Annotated[str | None, Field(description="Disk file path (attach_disk).")] = None,
+        limit: Annotated[int, Field(description="Max items for list actions.")] = 100,
+        offset: Annotated[int, Field(description="Offset for list pagination.")] = 0,
     ) -> dict[str, Any]:
-        """
-        Comprehensive storage management portmanteau tool.
+        """Comprehensive storage management portmanteau tool.
 
-        This tool consolidates all storage operations into a single interface. Use the 'action' parameter
-        to specify which operation to perform. Different actions require different parameters.
+        Consolidates all storage operations into a single interface. Use the `action`
+        parameter to specify which operation to perform.
 
-        Args:
-            action (required): The operation to perform. Must be one of:
-                - "list_controllers": List storage controllers for a VM (requires: vm_name)
-                - "create_controller": Create a storage controller for a VM (requires: vm_name, controller_name, controller_type)
-                - "remove_controller": Remove a storage controller from a VM (requires: vm_name, controller_name)
-                - "list_disks": List virtual disks for a VM (requires: vm_name)
-                - "create_disk": Create a new virtual disk (requires: disk_name, disk_size_gb)
-                - "attach_disk": Attach a disk to a virtual machine (requires: vm_name, disk_path)
+        ## Return Format
 
-            vm_name: Name of the virtual machine (required for list_controllers, create_controller, remove_controller, list_disks, attach_disk)
-            controller_name: Name of the storage controller (required for create_controller, remove_controller)
-            controller_type: Type of storage controller (required for create_controller): ide|sata|scsi|sas|usb|pcie
-            disk_name: Name of the virtual disk file (required for create_disk)
-            disk_size_gb: Size of the disk in GB (required for create_disk)
-            disk_path: Path to the disk file (required for attach_disk)
+        Dict with `success` (bool), human-readable `message`, the `action` performed,
+        and operation data (`controllers`, `disks`, `result`). Failures carry a
+        human-readable `error`.
 
-        Returns:
-            Dict containing:
-                - success: Boolean indicating if operation succeeded
-                - action: The action that was performed
-                - data: Operation-specific result data
-                - error: Error message if success is False
-                - count: Number of controllers/disks (for list actions)
+        ## Examples
 
-        Examples:
-            # List storage controllers for a VM - requires vm_name
-            result = await storage_management(
-                action="list_controllers",
-                vm_name="MyVM"
-            )
-
-            # Create storage controller - requires vm_name, controller_name, controller_type
-            result = await storage_management(
-                action="create_controller",
-                vm_name="MyVM",
-                controller_name="SATA Controller",
-                controller_type="sata"
-            )
-
-            # Create virtual disk - requires disk_name and disk_size_gb
-            result = await storage_management(
-                action="create_disk",
-                disk_name="MyDisk.vdi",
-                disk_size_gb=50
-            )
-
-            # Attach disk to VM - requires vm_name and disk_path
-            result = await storage_management(
-                action="attach_disk",
-                vm_name="MyVM",
-                disk_path="/path/to/MyDisk.vdi"
-            )
-
-            # Remove storage controller - requires vm_name and controller_name
-            result = await storage_management(
-                action="remove_controller",
-                vm_name="MyVM",
-                controller_name="SATA Controller"
-            )
+        ```python
+        await storage_management(action="list_controllers", vm_name="MyVM")
+        await storage_management(action="create_controller", vm_name="MyVM", controller_name="SATA Controller", controller_type="sata")
+        await storage_management(action="create_disk", disk_name="MyDisk.vdi", disk_size_gb=50)
+        await storage_management(action="attach_disk", vm_name="MyVM", disk_path="/path/to/MyDisk.vdi")
+        await storage_management(action="remove_controller", vm_name="MyVM", controller_name="SATA Controller")
+        ```
         """
         try:
             # Validate action

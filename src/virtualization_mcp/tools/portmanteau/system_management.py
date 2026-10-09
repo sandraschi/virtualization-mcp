@@ -6,9 +6,10 @@ Replaces 5 individual system tools with one comprehensive tool.
 """
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 # Import existing system tools
 from virtualization_mcp.tools.system.system_tools import (
@@ -36,60 +37,35 @@ def register_system_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def system_management(
-        action: Literal["host_info", "vbox_version", "ostypes", "metrics", "screenshot"],
-        vm_name: str | None = None,
-        output_file: str | None = None,
-        width: int | None = None,
-        height: int | None = None,
+        action: Annotated[
+            Literal["host_info", "vbox_version", "ostypes", "metrics", "screenshot"],
+            Field(description="System operation to perform."),
+        ],
+        vm_name: Annotated[str | None, Field(description="VM name (metrics and screenshot only).")] = None,
+        output_file: Annotated[str | None, Field(description="Screenshot output path (screenshot).")] = None,
+        width: Annotated[int | None, Field(description="Screenshot width (screenshot).")] = None,
+        height: Annotated[int | None, Field(description="Screenshot height (screenshot).")] = None,
     ) -> dict[str, Any]:
-        """
-        Comprehensive system management portmanteau tool.
+        """Comprehensive system management portmanteau tool.
 
-        This tool consolidates system information and diagnostics operations into a single interface.
-        Use the 'action' parameter to specify which operation to perform. Most actions don't require vm_name.
+        Consolidates system information and diagnostics operations into a single
+        interface. Most actions need no `vm_name`.
 
-        Args:
-            action (required): The operation to perform. Must be one of:
-                - "host_info": Get host system information (no vm_name required)
-                - "vbox_version": Get VirtualBox version information (no vm_name required)
-                - "ostypes": List available OS types for VM creation (no vm_name required)
-                - "metrics": Get VM performance metrics (requires: vm_name)
-                - "screenshot": Take a screenshot of a running VM (requires: vm_name)
+        ## Return Format
 
-            vm_name: Name of the virtual machine (required only for metrics and screenshot actions)
-            output_file: Optional screenshot output path for action="screenshot"
-            width: Optional screenshot width for action="screenshot"
-            height: Optional screenshot height for action="screenshot"
+        Dict with `success` (bool), human-readable `message`, the `action` performed,
+        and operation data (system info, version, OS types, metrics, screenshot path).
+        Failures carry a human-readable `error`.
 
-        Returns:
-            Dict containing:
-                - success: Boolean indicating if operation succeeded
-                - action: The action that was performed
-                - data: Operation-specific result data (system info, version, OS types, metrics, screenshot path)
-                - error: Error message if success is False
-                - count: Number of OS types (for ostypes action)
+        ## Examples
 
-        Examples:
-            # Get host system information - no parameters needed
-            result = await system_management(action="host_info")
-
-            # Get VirtualBox version - no parameters needed
-            result = await system_management(action="vbox_version")
-
-            # List available OS types - no parameters needed
-            result = await system_management(action="ostypes")
-
-            # Get VM performance metrics - requires vm_name
-            result = await system_management(
-                action="metrics",
-                vm_name="MyVM"
-            )
-
-            # Take VM screenshot - requires vm_name
-            result = await system_management(
-                action="screenshot",
-                vm_name="MyVM"
-            )
+        ```python
+        await system_management(action="host_info")
+        await system_management(action="vbox_version")
+        await system_management(action="ostypes")
+        await system_management(action="metrics", vm_name="MyVM")
+        await system_management(action="screenshot", vm_name="MyVM")
+        ```
         """
         try:
             # Validate action

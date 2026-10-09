@@ -7,9 +7,10 @@ FastMCP 3.1: optional Context for progress reporting and agentic workflows.
 """
 
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import Context, FastMCP
+from pydantic import Field
 
 from virtualization_mcp.schemas.vbox_types import VBoxGuestOSType
 from virtualization_mcp.tools.vm.vm_tools import (
@@ -48,39 +49,58 @@ def register_vm_management_tool(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def vm_management(
-        action: Literal[
-            "list",
-            "create",
-            "start",
-            "stop",
-            "delete",
-            "clone",
-            "reset",
-            "pause",
-            "resume",
-            "info",
+        action: Annotated[
+            Literal[
+                "list",
+                "create",
+                "start",
+                "stop",
+                "delete",
+                "clone",
+                "reset",
+                "pause",
+                "resume",
+                "info",
+            ],
+            Field(description="VM lifecycle operation to perform."),
         ],
-        vm_name: str | None = None,
-        source_vm: str | None = None,
-        new_vm_name: str | None = None,
-        os_type: VBoxGuestOSType | None = None,
-        memory_mb: int | None = None,
-        disk_size_gb: int | None = None,
-        use_case: str | None = None,  # removed — use vm_agentic_workflow(action='suggest_config') instead
-        limit: int = 100,
-        offset: int = 0,
+        vm_name: Annotated[
+            str | None, Field(description="VM name. Required for all actions except list and clone.")
+        ] = None,
+        source_vm: Annotated[str | None, Field(description="Source VM name. Required for clone.")] = None,
+        new_vm_name: Annotated[str | None, Field(description="New VM name. Required for clone.")] = None,
+        os_type: Annotated[
+            VBoxGuestOSType | None,
+            Field(description="Guest OS type for create. Use system_management(action='ostypes') for valid values."),
+        ] = None,
+        memory_mb: Annotated[int | None, Field(description="RAM in MB for create.")] = None,
+        disk_size_gb: Annotated[int | None, Field(description="Disk size in GB for create.")] = None,
+        use_case: Annotated[
+            str | None, Field(description="Deprecated. Use vm_agentic_workflow(action='suggest_config') instead.")
+        ] = None,
+        limit: Annotated[int, Field(description="Max items for list.")] = 100,
+        offset: Annotated[int, Field(description="Offset for list pagination.")] = 0,
         ctx: Context | None = None,
     ) -> dict[str, Any]:
-        """
-        Virtual machine lifecycle management.
+        """Virtual machine lifecycle management.
 
         Actions: list, create, start, stop, delete, clone, reset, pause, resume, info.
         For LLM config suggestions or sandbox workflow planning use vm_agentic_workflow.
 
-        vm_name: required for all actions except list and clone.
-        source_vm + new_vm_name: required for clone.
-        os_type, memory_mb, disk_size_gb: required for create.
-        Use system_management(action='ostypes') for valid os_type values.
+        ## Return Format
+
+        Dict with `success` (bool), human-readable `message`, the `action` performed,
+        and operation data (`vms`, `vm_info`, `result`). Failures carry a
+        human-readable `error`.
+
+        ## Examples
+
+        ```python
+        await vm_management(action="list")
+        await vm_management(action="info", vm_name="Ubuntu-Dev")
+        await vm_management(action="create", vm_name="NewVM", os_type="Ubuntu_64", memory_mb=4096, disk_size_gb=40)
+        await vm_management(action="start", vm_name="NewVM")
+        ```
         """
         try:
             # Validate action
