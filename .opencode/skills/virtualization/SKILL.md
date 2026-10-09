@@ -1,0 +1,9 @@
+---
+name: virtualization
+description: Manage VirtualBox/Hyper-V VMs, snapshots, and sandboxes via virtualization-mcp tools
+---
+
+# virtualization-mcp
+
+Before starting work: call `vm_management(action="list")` to ground VM names and states.
+At end of work: run `ruff check src/` and `pytest tests/ -q`, then update CHANGELOG.md.
