@@ -138,6 +138,12 @@ target/
 
 # Backup / temp files
 *.bak
+*.bak.*
+*.bak-*
+*.bak_*
 pytest_full_output.txt
+
+# Assess reports (regenerable snapshots, not source — see SOP repo-assess-and-fix §1R)
+reports/
 
 _dashboard/
