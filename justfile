@@ -19,44 +19,38 @@ bootstrap: install
 
 # Install just the Python backend
 install-py:
-    cd {{justfile_directory()}}
-    uv sync
+    cd {{justfile_directory()}}; uv sync
 
 # Install just the frontend
 install-frontend:
-    cd {{justfile_directory()}}\\webapp\\frontend
-    npm install
+    cd {{justfile_directory()}}\webapp\frontend; npm install
 
 # --- Run ---
 
 # Start the web dashboard (backend + frontend)
 start:
-    cd {{justfile_directory()}}\\webapp
-    .\\start.ps1
+    cd {{justfile_directory()}}\webapp; .\start.ps1
+
+# Fleet alias for start
+serve: start
 
 # Start just the backend API (port 10701)
 start-backend:
-    cd {{justfile_directory()}}
-    uv run uvicorn virtualization_mcp.web.app:app --reload --port 10701 --host 0.0.0.0
+    cd {{justfile_directory()}}; uv run uvicorn virtualization_mcp.web.app:app --reload --port 10701 --host 0.0.0.0
 
 # Start just the frontend dev server (port 10700)
 start-frontend:
-    cd {{justfile_directory()}}\\webapp\\frontend
-    bun run dev
+    cd {{justfile_directory()}}\webapp\frontend; bun run dev
 
 # --- Test ---
 
 # Run all core tests (62 tests, mock-only, no VBox needed)
 test:
-    cd {{justfile_directory()}}
-    $env:PYTHONPATH = "src"
-    uv run pytest tests/ -v --tb=short -o "addopts="
+    cd {{justfile_directory()}}; $env:PYTHONPATH = "src"; uv run pytest tests/ -v --tb=short -o "addopts="
 
 # Run specific test file
 test-file file:
-    cd {{justfile_directory()}}
-    $env:PYTHONPATH = "src"
-    uv run pytest {{file}} -v --tb=short -o "addopts="
+    cd {{justfile_directory()}}; $env:PYTHONPATH = "src"; uv run pytest {{file}} -v --tb=short -o "addopts="
 
 # Run automated naked install test in Windows Sandbox (e.g. just naked-test winrar-mcp)
 naked-test repo branch="main" observe="90" health="":
@@ -71,6 +65,10 @@ lint:
 fix:
     powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/fix.ps1"
 
+# Fleet alias for fix (format sources)
+fmt:
+    powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/fix.ps1"
+
 check-unicode:
     powershell.exe -NoProfile -File '{{justfile_directory()}}\\scripts\\check-unicode-safe.ps1'
 
@@ -78,8 +76,12 @@ check-unicode:
 
 # Build frontend for production
 build:
-    cd {{justfile_directory()}}\\webapp\\frontend
-    bun run build
+    cd {{justfile_directory()}}\webapp\frontend; bun run build
+
+# Fleet gates: lint + typecheck + tests (all must pass)
+certify:
+    powershell.exe -NoProfile -File "{{justfile_directory()}}/scripts/lint.ps1"
+    cd {{justfile_directory()}}; uv run pytest tests/ -q -o "addopts="
 
 # --- Clean ---
 
@@ -90,14 +92,11 @@ clean:
 
 # Build Tauri native desktop app (full pipeline: frontend + PyInstaller + NSIS)
 build-native:
-    cd {{justfile_directory()}}\\native
-    .\\build.ps1
+    cd {{justfile_directory()}}\native; .\build.ps1
 
 # Build Tauri native (debug, skip PyInstaller)
 build-native-debug:
-    cd {{justfile_directory()}}\\native
-    $env:Path = "$env:USERPROFILE\\.cargo\\bin;$env:Path"
-    npx @tauri-apps/cli build --debug
+    cd {{justfile_directory()}}\native; $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; npx @tauri-apps/cli build --debug
 
 # --- Playwright E2E ---
 
