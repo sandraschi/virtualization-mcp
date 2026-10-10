@@ -670,679 +670,666 @@ export default function Sandbox() {
         : previewXml || "Loading preview…";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)] md:h-[calc(100vh-4.5rem)]">
+    <div className="space-y-6 pb-8">
       {/* Configuration Form */}
-      <div className="space-y-6">
-        <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-xs text-muted-foreground">
-          <strong>Requirement:</strong> Windows Sandbox is only available on{" "}
-          <strong>Windows 11 Pro, Enterprise, or Education</strong>. It is not
-          available on Windows Home edition.
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Windows Sandbox</h2>
-          <p className="text-muted-foreground mt-1">
-            Configure and launch ephemeral Windows instances
-          </p>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Sandbox is a singleton with no guest-control channel: automated runs
-            boot a fresh ephemeral instance (mapped folder + LogonCommand) and
-            terminate it after collecting real output. Terminate a running box
-            before starting a one-shot run.
-          </p>
-        </div>
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-xs text-muted-foreground">
+        <strong>Requirement:</strong> Windows Sandbox is only available on{" "}
+        <strong>Windows 11 Pro, Enterprise, or Education</strong>. It is not
+        available on Windows Home edition.
+      </div>
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Windows Sandbox</h2>
+        <p className="text-muted-foreground mt-1">
+          Configure and launch ephemeral Windows instances
+        </p>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Sandbox is a singleton with no guest-control channel: automated runs
+          boot a fresh ephemeral instance (mapped folder + LogonCommand) and
+          terminate it after collecting real output. Terminate a running box
+          before starting a one-shot run.
+        </p>
+      </div>
 
-        <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-6">
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Hardware</h3>
-            <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
-              <div>
-                <span className="font-medium block">vGPU Support</span>
-                <span className="text-xs text-muted-foreground">
-                  Enable virtualized graphics
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                title="vGPU Support"
-                aria-label="vGPU Support"
-                checked={config.vGPU}
-                onChange={(e) =>
-                  setConfig({ ...config, vGPU: e.target.checked })
-                }
-                className="w-5 h-5 rounded border-input bg-background/50 text-primary focus:ring-primary"
-              />
+      <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-6">
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg">Hardware</h3>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
+            <div>
+              <span className="font-medium block">vGPU Support</span>
+              <span className="text-xs text-muted-foreground">
+                Enable virtualized graphics
+              </span>
             </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
-              <div>
-                <span className="font-medium block">Memory (MB)</span>
-                <span className="text-xs text-muted-foreground">
-                  Allocated RAM
-                </span>
-              </div>
-              <input
-                type="number"
-                title="Memory in MB"
-                aria-label="Memory in MB"
-                value={config.memoryInMB}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    memoryInMB: parseInt(e.target.value, 10),
-                  })
-                }
-                className="bg-transparent border border-input rounded px-2 py-1 w-24 text-right"
-              />
-            </div>
+            <input
+              type="checkbox"
+              title="vGPU Support"
+              aria-label="vGPU Support"
+              checked={config.vGPU}
+              onChange={(e) => setConfig({ ...config, vGPU: e.target.checked })}
+              className="w-5 h-5 rounded border-input bg-background/50 text-primary focus:ring-primary"
+            />
           </div>
 
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Features</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: "Networking", key: "networking" },
-                { label: "Audio Input", key: "audioInput" },
-                { label: "Video Input", key: "videoInput" },
-                { label: "Clipboard", key: "clipboardRedirection" },
-              ].map((feature) => (
-                <button
-                  key={feature.key}
-                  onClick={() =>
-                    setConfig({
-                      ...config,
-                      [feature.key]:
-                        !config[feature.key as keyof typeof config],
-                    })
-                  }
-                  className={`p-4 rounded-lg border text-left transition-all ${
-                    config[feature.key as keyof typeof config]
-                      ? "bg-primary/10 border-primary/20 text-primary"
-                      : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10"
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
+            <div>
+              <span className="font-medium block">Memory (MB)</span>
+              <span className="text-xs text-muted-foreground">
+                Allocated RAM
+              </span>
+            </div>
+            <input
+              type="number"
+              title="Memory in MB"
+              aria-label="Memory in MB"
+              value={config.memoryInMB}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  memoryInMB: parseInt(e.target.value, 10),
+                })
+              }
+              className="bg-transparent border border-input rounded px-2 py-1 w-24 text-right"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg">Features</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: "Networking", key: "networking" },
+              { label: "Audio Input", key: "audioInput" },
+              { label: "Video Input", key: "videoInput" },
+              { label: "Clipboard", key: "clipboardRedirection" },
+            ].map((feature) => (
+              <button
+                key={feature.key}
+                onClick={() =>
+                  setConfig({
+                    ...config,
+                    [feature.key]: !config[feature.key as keyof typeof config],
+                  })
+                }
+                className={`p-4 rounded-lg border text-left transition-all ${
+                  config[feature.key as keyof typeof config]
+                    ? "bg-primary/10 border-primary/20 text-primary"
+                    : "bg-white/5 border-white/5 text-muted-foreground hover:bg-white/10"
+                }`}
+              >
+                <span className="font-medium text-sm">{feature.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {error}
+          </div>
+        )}
+
+        <div className="pt-4 flex gap-3">
+          <button
+            disabled={status === "loading"}
+            onClick={handleLaunch}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all transform active:scale-95 ${
+              status === "success"
+                ? "bg-green-600 text-white"
+                : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+            }`}
+          >
+            {status === "loading" ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : status === "success" ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <Play className="w-5 h-5" />
+            )}
+            {status === "loading"
+              ? "Launching..."
+              : status === "success"
+                ? "Launched"
+                : "Launch Sandbox"}
+          </button>
+          <button
+            title="Save Configuration"
+            aria-label="Save Configuration"
+            className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <Save className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* WSB: online dev infra (repo script + winget from network) */}
+      <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Package className="w-5 h-5" />
+          WSB: Dev infra (online)
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Launches Windows Sandbox with{" "}
+          <code className="text-foreground/80">assets/sandbox</code> mapped to{" "}
+          <code className="text-foreground/80">C:\Assets</code> and runs{" "}
+          <code className="text-foreground/80">Run-DevInfra.cmd</code> at logon
+          (short wait, then{" "}
+          <code className="text-foreground/80">Setup-DevInfraSandbox.ps1</code>
+          ). That script installs winget from GitHub, then winget installs: Git,
+          GitHub CLI, Node LTS (npm), Python 3.12, ruff, just, Biome, Notepad++.
+          Requires outbound HTTPS. If nothing happens, a second PowerShell
+          window opens with the tail of{" "}
+          <code className="text-foreground/80">
+            Desktop\dev-infra-launch.log
+          </code>{" "}
+          (Notepad is often missing in Sandbox).
+        </p>
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Host folder (Setup-DevInfraSandbox.ps1, Run-DevInfra.cmd,
+            Show-DevInfraLog.ps1)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={devInfraFolder}
+              onChange={(e) => setDevInfraFolder(e.target.value)}
+              placeholder="Defaults to repo assets/sandbox from API"
+              className="flex-1 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                fetch(`${API_BASE}/api/v1/assets/paths`)
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then(
+                    (d) =>
+                      d?.assets_sandbox && setDevInfraFolder(d.assets_sandbox),
+                  )
+              }
+              className="px-3 py-2 rounded-lg border border-border bg-white/5 hover:bg-white/10 text-sm whitespace-nowrap"
+            >
+              Use repo assets
+            </button>
+          </div>
+        </div>
+        {devInfraError && (
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {devInfraError}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={devInfraStatus === "loading"}
+            onClick={handleLaunchDevInfra}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${devInfraStatus === "success" ? "bg-green-600 text-white" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+          >
+            {devInfraStatus === "loading" ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : devInfraStatus === "success" ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <Play className="w-5 h-5" />
+            )}
+            {devInfraStatus === "loading"
+              ? "Launching…"
+              : devInfraStatus === "success"
+                ? "Launched"
+                : "Launch dev infra sandbox"}
+          </button>
+        </div>
+      </div>
+
+      {/* WSB: consumer / nearly-naked install test */}
+      <div className="p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-sm space-y-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Package className="w-5 h-5" />
+          WSB: Consumer (nearly naked)
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Validates fleet <code className="text-foreground/80">INSTALL.md</code>{" "}
+          Options A–C. Bootstraps winget only — does <strong>not</strong>{" "}
+          install git, uv, node, just, ruff, or biome. Optional Claude Desktop
+          MSIX for Option A drag-and-drop tests. Checklist on Desktop:{" "}
+          <code className="text-foreground/80">
+            consumer-install-test-checklist.txt
+          </code>
+          .
+        </p>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={consumerInstallClaude}
+            onChange={(e) => setConsumerInstallClaude(e.target.checked)}
+            className="rounded border-input bg-background/50 text-primary"
+          />
+          <span className="text-sm">
+            Install Claude Desktop MSIX at logon (Option A fixture)
+          </span>
+        </label>
+        <p className="text-xs text-muted-foreground">
+          Host script:{" "}
+          <code className="text-foreground/80">
+            scripts/Launch-ConsumerSandbox.ps1
+          </code>{" "}
+          (same assets folder as dev infra below)
+        </p>
+        {consumerError && (
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {consumerError}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={consumerStatus === "loading"}
+            onClick={handleLaunchConsumer}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${consumerStatus === "success" ? "bg-green-600 text-white" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}
+          >
+            {consumerStatus === "loading" ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : consumerStatus === "success" ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <Play className="w-5 h-5" />
+            )}
+            {consumerStatus === "loading"
+              ? "Launching…"
+              : consumerStatus === "success"
+                ? "Launched"
+                : "Launch consumer sandbox"}
+          </button>
+        </div>
+      </div>
+
+      {/* Naked install test: repo name in, RESULT.json out */}
+      <div className="p-6 rounded-xl border border-violet-500/20 bg-violet-500/5 backdrop-blur-sm space-y-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Package className="w-5 h-5" />
+          Naked install test (automatic)
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Drop a repo name in. A consumer sandbox boots, installs the rig (git +
+          just only), clones, runs the{" "}
+          <code className="text-foreground/80">just --list</code> smoke gate,
+          then observes <code className="text-foreground/80">start.bat</code>.
+          Progress reports here - no manual steps inside the box.
+        </p>
+        {/* Quick-pick fleet repos */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-muted-foreground mr-1">
+            Quick pick:
+          </span>
+          {(fleetRepos.length > 0
+            ? fleetRepos
+            : [
+                {
+                  name: "virtualization-mcp",
+                  repo: "sandraschi/virtualization-mcp",
+                },
+                { name: "calibre-mcp", repo: "sandraschi/calibre-mcp" },
+                { name: "speech-mcp", repo: "sandraschi/speech-mcp" },
+                { name: "on-ai-takeover", repo: "sandraschi/on-ai-takeover" },
+              ]
+          )
+            .slice(0, 6)
+            .map((r) => (
+              <button
+                key={r.repo}
+                type="button"
+                onClick={() => {
+                  setNtRepo(r.repo);
+                  setNtBranch("main");
+                }}
+                className="px-2 py-0.5 text-xs rounded-md bg-white/5 hover:bg-violet-500/20 hover:text-violet-300 border border-white/10 transition-colors"
+              >
+                {r.name}
+              </button>
+            ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="text"
+            value={ntRepo}
+            onChange={(e) => setNtRepo(e.target.value)}
+            placeholder="owner/name or https URL"
+            aria-label="Target repo"
+            className="col-span-2 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+          />
+          <input
+            type="text"
+            value={ntBranch}
+            onChange={(e) => setNtBranch(e.target.value)}
+            placeholder="main"
+            aria-label="Branch"
+            className="bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+          />
+          <input
+            type="number"
+            value={ntObserve}
+            onChange={(e) => setNtObserve(parseInt(e.target.value, 10) || 90)}
+            aria-label="Observe seconds"
+            title="Observe seconds"
+            className="bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+          />
+          <input
+            type="text"
+            value={ntHealth}
+            onChange={(e) => setNtHealth(e.target.value)}
+            placeholder="health URL (optional)"
+            aria-label="Health URL"
+            className="col-span-2 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+          />
+        </div>
+        {ntError && (
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {ntError}
+          </div>
+        )}
+        {ntPhase === "finished" && (
+          <div
+            className={`p-3 rounded-lg border text-sm flex items-center gap-2 ${
+              ntPass
+                ? "bg-green-600/10 border-green-600/20 text-green-500"
+                : "bg-red-500/10 border-red-500/20 text-red-500"
+            }`}
+          >
+            {ntPass ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            {ntPass
+              ? `PASS${ntNote ? ` - ${ntNote}` : ""}`
+              : `FAIL at ${ntFailedStep || "unknown step"}${ntNote ? ` - ${ntNote}` : ""}`}
+          </div>
+        )}
+        {(ntPhase === "running" || ntPhase === "finished") && (
+          <div className="space-y-1.5">
+            {NT_STEP_NAMES.map((name) => {
+              const st = ntStepState(name);
+              const hit = ntSteps.find((s) => s.name === name);
+              return (
+                <div
+                  key={name}
+                  className="flex items-center gap-2 font-mono text-sm"
+                >
+                  {st === "pass" ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  ) : st === "fail" ? (
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                  ) : st === "active" ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+                  ) : (
+                    <span className="w-4 h-4 rounded-full border border-white/20 inline-block" />
+                  )}
+                  <span className="text-foreground/90">{name}</span>
+                  {hit && (
+                    <span className="text-xs text-muted-foreground">
+                      exit {hit.exit} - {hit.ms}ms
+                      {hit.note ? ` - ${hit.note}` : ""}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {ntLogTail.length > 0 && (
+          <pre className="font-mono text-xs text-muted-foreground bg-black/40 rounded-lg p-3 max-h-40 overflow-auto whitespace-pre-wrap">
+            {ntLogTail.join("\n")}
+          </pre>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={ntPhase === "running"}
+            onClick={handleStartNakedTest}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${
+              ntPhase === "running"
+                ? "bg-white/10 text-muted-foreground"
+                : "bg-violet-600 text-white hover:bg-violet-700"
+            }`}
+          >
+            {ntPhase === "running" ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Play className="w-5 h-5" />
+            )}
+            {ntPhase === "running"
+              ? `Testing${ntJobId ? ` ${ntJobId}` : ""}...`
+              : "Start naked test"}
+          </button>
+          {ntPhase === "finished" && (
+            <button
+              type="button"
+              onClick={handleDownloadNtResult}
+              title="Download RESULT.json"
+              aria-label="Download RESULT.json"
+              className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+        {ntPhase === "stale" && (
+          <p className="text-xs text-amber-400">
+            Poll timeout - the sandbox was probably closed by hand.
+          </p>
+        )}
+
+        {/* Past Test Runs */}
+        {pastJobs.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <History className="w-3.5 h-3.5" /> Recent Runs (
+                {pastJobs.length})
+              </span>
+              <button
+                type="button"
+                onClick={loadPastJobs}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                title="Refresh test runs"
+              >
+                <RotateCcw className="w-3 h-3" /> Refresh
+              </button>
+            </div>
+            <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+              {pastJobs.map((j) => (
+                <div
+                  key={j.job_id}
+                  onClick={() => handleSelectPastJob(j.job_id)}
+                  className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                    ntJobId === j.job_id
+                      ? "bg-violet-500/20 border border-violet-500/40"
+                      : "bg-white/5 hover:bg-white/10 border border-white/5"
                   }`}
                 >
-                  <span className="font-medium text-sm">{feature.label}</span>
-                </button>
+                  <div className="flex items-center gap-2 truncate">
+                    {j.status === "running" ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
+                    ) : j.pass === true ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                    )}
+                    <span className="font-mono truncate font-medium text-foreground">
+                      {j.repo.split("/").pop()?.replace(".git", "") || j.job_id}
+                    </span>
+                    <span className="text-muted-foreground text-[10px]">
+                      [{j.branch}]
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
+                    {j.pass !== null && (
+                      <span
+                        className={
+                          j.pass
+                            ? "text-green-400 font-semibold"
+                            : "text-red-400 font-semibold"
+                        }
+                      >
+                        {j.pass ? "PASS" : `FAIL (${j.failed_step || "start"})`}
+                      </span>
+                    )}
+                    <span>
+                      {j.finished_utc
+                        ? new Date(j.finished_utc).toLocaleTimeString()
+                        : j.status}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
+        )}
+      </div>
 
-          {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
-            </div>
-          )}
-
-          <div className="pt-4 flex gap-3">
-            <button
-              disabled={status === "loading"}
-              onClick={handleLaunch}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all transform active:scale-95 ${
-                status === "success"
-                  ? "bg-green-600 text-white"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
-              }`}
-            >
-              {status === "loading" ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : status === "success" ? (
-                <CheckCircle2 className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
-              {status === "loading"
-                ? "Launching..."
-                : status === "success"
-                  ? "Launched"
-                  : "Launch Sandbox"}
-            </button>
-            <button
-              title="Save Configuration"
-              aria-label="Save Configuration"
-              className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
-            >
-              <Save className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* WSB: online dev infra (repo script + winget from network) */}
-        <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            WSB: Dev infra (online)
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Launches Windows Sandbox with{" "}
-            <code className="text-foreground/80">assets/sandbox</code> mapped to{" "}
-            <code className="text-foreground/80">C:\Assets</code> and runs{" "}
-            <code className="text-foreground/80">Run-DevInfra.cmd</code> at
-            logon (short wait, then{" "}
-            <code className="text-foreground/80">
-              Setup-DevInfraSandbox.ps1
-            </code>
-            ). That script installs winget from GitHub, then winget installs:
-            Git, GitHub CLI, Node LTS (npm), Python 3.12, ruff, just, Biome,
-            Notepad++. Requires outbound HTTPS. If nothing happens, a second
-            PowerShell window opens with the tail of{" "}
-            <code className="text-foreground/80">
-              Desktop\dev-infra-launch.log
-            </code>{" "}
-            (Notepad is often missing in Sandbox).
-          </p>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Host folder (Setup-DevInfraSandbox.ps1, Run-DevInfra.cmd,
-              Show-DevInfraLog.ps1)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={devInfraFolder}
-                onChange={(e) => setDevInfraFolder(e.target.value)}
-                placeholder="Defaults to repo assets/sandbox from API"
-                className="flex-1 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  fetch(`${API_BASE}/api/v1/assets/paths`)
-                    .then((r) => (r.ok ? r.json() : null))
-                    .then(
-                      (d) =>
-                        d?.assets_sandbox &&
-                        setDevInfraFolder(d.assets_sandbox),
-                    )
-                }
-                className="px-3 py-2 rounded-lg border border-border bg-white/5 hover:bg-white/10 text-sm whitespace-nowrap"
-              >
-                Use repo assets
-              </button>
-            </div>
-          </div>
-          {devInfraError && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {devInfraError}
-            </div>
-          )}
+      {/* Full dev setup */}
+      <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-4">
+        <h3 className="font-semibold text-lg flex items-center gap-2">
+          <Wrench className="w-5 h-5" />
+          Full dev setup
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Place{" "}
+          <code className="text-foreground/80">
+            DesktopAppInstaller_Dependencies.zip
+          </code>{" "}
+          and{" "}
+          <code className="text-foreground/80">
+            Microsoft.DesktopAppInstaller_*.msixbundle
+          </code>{" "}
+          in a folder, then launch. Script installs winget, then selected tools.
+        </p>
+        <a
+          href="https://github.com/microsoft/winget-cli/releases"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs flex items-center gap-1 text-primary hover:underline"
+        >
+          <ExternalLink className="w-3 h-3" />
+          winget-cli releases (Assets)
+        </a>
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Assets folder (host path)
+          </label>
           <div className="flex gap-2">
+            <input
+              type="text"
+              value={assetsFolder}
+              onChange={(e) => setAssetsFolder(e.target.value)}
+              placeholder="e.g. D:\Dev\repos\virtualization-mcp\assets\sandbox"
+              className="flex-1 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
+            />
             <button
               type="button"
-              disabled={devInfraStatus === "loading"}
-              onClick={handleLaunchDevInfra}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${devInfraStatus === "success" ? "bg-green-600 text-white" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+              onClick={() =>
+                fetch(`${API_BASE}/api/v1/assets/paths`)
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then(
+                    (d) =>
+                      d?.assets_sandbox && setAssetsFolder(d.assets_sandbox),
+                  )
+              }
+              className="px-3 py-2 rounded-lg border border-border bg-white/5 hover:bg-white/10 text-sm whitespace-nowrap"
             >
-              {devInfraStatus === "loading" ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : devInfraStatus === "success" ? (
-                <CheckCircle2 className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
-              {devInfraStatus === "loading"
-                ? "Launching…"
-                : devInfraStatus === "success"
-                  ? "Launched"
-                  : "Launch dev infra sandbox"}
+              Use repo assets
             </button>
           </div>
         </div>
-
-        {/* WSB: consumer / nearly-naked install test */}
-        <div className="p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-sm space-y-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            WSB: Consumer (nearly naked)
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Validates fleet{" "}
-            <code className="text-foreground/80">INSTALL.md</code> Options A–C.
-            Bootstraps winget only — does <strong>not</strong> install git, uv,
-            node, just, ruff, or biome. Optional Claude Desktop MSIX for Option
-            A drag-and-drop tests. Checklist on Desktop:{" "}
-            <code className="text-foreground/80">
-              consumer-install-test-checklist.txt
-            </code>
-            .
-          </p>
+        <div>
+          <span className="block text-sm font-medium mb-2">
+            Tools to install
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setDraftTools({ ...devTools });
+              setShowPicker(true);
+            }}
+            className="w-full text-left px-3 py-2 rounded-lg border border-input bg-background/50 hover:bg-white/10 text-sm"
+          >
+            <span className="text-primary font-medium">
+              Choose software ({selectedToolIds.length} selected)
+            </span>
+            <span className="block text-xs text-muted-foreground mt-1 truncate">
+              {selectedToolNames}
+            </span>
+          </button>
+        </div>
+        <div className="flex flex-col gap-3">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={consumerInstallClaude}
-              onChange={(e) => setConsumerInstallClaude(e.target.checked)}
+              checked={useHostOllama}
+              disabled={airgap}
+              onChange={(e) => setUseHostOllama(e.target.checked)}
               className="rounded border-input bg-background/50 text-primary"
             />
             <span className="text-sm">
-              Install Claude Desktop MSIX at logon (Option A fixture)
+              Use host Ollama (sandbox can reach Ollama on host at
+              gateway:11434)
             </span>
           </label>
-          <p className="text-xs text-muted-foreground">
-            Host script:{" "}
-            <code className="text-foreground/80">
-              scripts/Launch-ConsumerSandbox.ps1
-            </code>{" "}
-            (same assets folder as dev infra below)
-          </p>
-          {consumerError && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {consumerError}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={consumerStatus === "loading"}
-              onClick={handleLaunchConsumer}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${consumerStatus === "success" ? "bg-green-600 text-white" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}
-            >
-              {consumerStatus === "loading" ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : consumerStatus === "success" ? (
-                <CheckCircle2 className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
-              {consumerStatus === "loading"
-                ? "Launching…"
-                : consumerStatus === "success"
-                  ? "Launched"
-                  : "Launch consumer sandbox"}
-            </button>
-          </div>
-        </div>
-
-        {/* Naked install test: repo name in, RESULT.json out */}
-        <div className="p-6 rounded-xl border border-violet-500/20 bg-violet-500/5 backdrop-blur-sm space-y-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            Naked install test (automatic)
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Drop a repo name in. A consumer sandbox boots, installs the rig (git
-            + just only), clones, runs the{" "}
-            <code className="text-foreground/80">just --list</code> smoke gate,
-            then observes <code className="text-foreground/80">start.bat</code>.
-            Progress reports here - no manual steps inside the box.
-          </p>
-          {/* Quick-pick fleet repos */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-muted-foreground mr-1">
-              Quick pick:
-            </span>
-            {(fleetRepos.length > 0
-              ? fleetRepos
-              : [
-                  {
-                    name: "virtualization-mcp",
-                    repo: "sandraschi/virtualization-mcp",
-                  },
-                  { name: "calibre-mcp", repo: "sandraschi/calibre-mcp" },
-                  { name: "speech-mcp", repo: "sandraschi/speech-mcp" },
-                  { name: "on-ai-takeover", repo: "sandraschi/on-ai-takeover" },
-                ]
-            )
-              .slice(0, 6)
-              .map((r) => (
-                <button
-                  key={r.repo}
-                  type="button"
-                  onClick={() => {
-                    setNtRepo(r.repo);
-                    setNtBranch("main");
-                  }}
-                  className="px-2 py-0.5 text-xs rounded-md bg-white/5 hover:bg-violet-500/20 hover:text-violet-300 border border-white/10 transition-colors"
-                >
-                  {r.name}
-                </button>
-              ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="text"
-              value={ntRepo}
-              onChange={(e) => setNtRepo(e.target.value)}
-              placeholder="owner/name or https URL"
-              aria-label="Target repo"
-              className="col-span-2 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
-            />
-            <input
-              type="text"
-              value={ntBranch}
-              onChange={(e) => setNtBranch(e.target.value)}
-              placeholder="main"
-              aria-label="Branch"
-              className="bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
-            />
-            <input
-              type="number"
-              value={ntObserve}
-              onChange={(e) => setNtObserve(parseInt(e.target.value, 10) || 90)}
-              aria-label="Observe seconds"
-              title="Observe seconds"
-              className="bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
-            />
-            <input
-              type="text"
-              value={ntHealth}
-              onChange={(e) => setNtHealth(e.target.value)}
-              placeholder="health URL (optional)"
-              aria-label="Health URL"
-              className="col-span-2 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
-            />
-          </div>
-          {ntError && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {ntError}
-            </div>
-          )}
-          {ntPhase === "finished" && (
-            <div
-              className={`p-3 rounded-lg border text-sm flex items-center gap-2 ${
-                ntPass
-                  ? "bg-green-600/10 border-green-600/20 text-green-500"
-                  : "bg-red-500/10 border-red-500/20 text-red-500"
-              }`}
-            >
-              {ntPass ? (
-                <CheckCircle2 className="w-4 h-4" />
-              ) : (
-                <AlertCircle className="w-4 h-4" />
-              )}
-              {ntPass
-                ? `PASS${ntNote ? ` - ${ntNote}` : ""}`
-                : `FAIL at ${ntFailedStep || "unknown step"}${ntNote ? ` - ${ntNote}` : ""}`}
-            </div>
-          )}
-          {(ntPhase === "running" || ntPhase === "finished") && (
-            <div className="space-y-1.5">
-              {NT_STEP_NAMES.map((name) => {
-                const st = ntStepState(name);
-                const hit = ntSteps.find((s) => s.name === name);
-                return (
-                  <div
-                    key={name}
-                    className="flex items-center gap-2 font-mono text-sm"
-                  >
-                    {st === "pass" ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : st === "fail" ? (
-                      <AlertCircle className="w-4 h-4 text-red-500" />
-                    ) : st === "active" ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
-                    ) : (
-                      <span className="w-4 h-4 rounded-full border border-white/20 inline-block" />
-                    )}
-                    <span className="text-foreground/90">{name}</span>
-                    {hit && (
-                      <span className="text-xs text-muted-foreground">
-                        exit {hit.exit} - {hit.ms}ms
-                        {hit.note ? ` - ${hit.note}` : ""}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {ntLogTail.length > 0 && (
-            <pre className="font-mono text-xs text-muted-foreground bg-black/40 rounded-lg p-3 max-h-40 overflow-auto whitespace-pre-wrap">
-              {ntLogTail.join("\n")}
-            </pre>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={ntPhase === "running"}
-              onClick={handleStartNakedTest}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${
-                ntPhase === "running"
-                  ? "bg-white/10 text-muted-foreground"
-                  : "bg-violet-600 text-white hover:bg-violet-700"
-              }`}
-            >
-              {ntPhase === "running" ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
-              {ntPhase === "running"
-                ? `Testing${ntJobId ? ` ${ntJobId}` : ""}...`
-                : "Start naked test"}
-            </button>
-            {ntPhase === "finished" && (
-              <button
-                type="button"
-                onClick={handleDownloadNtResult}
-                title="Download RESULT.json"
-                aria-label="Download RESULT.json"
-                className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <Download className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-          {ntPhase === "stale" && (
-            <p className="text-xs text-amber-400">
-              Poll timeout - the sandbox was probably closed by hand.
+          <button
+            type="button"
+            onClick={() => setAirgap((a) => !a)}
+            className={`w-full py-4 rounded-xl font-bold text-lg uppercase tracking-widest border-2 transition-all ${
+              airgap
+                ? "bg-red-600 border-red-700 text-white hover:bg-red-700"
+                : "bg-transparent border-red-500/50 text-red-500 hover:bg-red-500/10"
+            }`}
+            title="Disable networking for this sandbox (100% air-gapped; use after initial install or with pre-installed assets)"
+          >
+            {airgap ? "🔒 Airgap on" : "AIRGAP"}
+          </button>
+          {airgap && (
+            <p className="text-xs text-muted-foreground">
+              Networking disabled. OpenClaw and other tools cannot reach the
+              internet. Run setup once with network, then launch with AIRGAP for
+              a safe session.
             </p>
           )}
-
-          {/* Past Test Runs */}
-          {pastJobs.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <History className="w-3.5 h-3.5" /> Recent Runs (
-                  {pastJobs.length})
-                </span>
-                <button
-                  type="button"
-                  onClick={loadPastJobs}
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                  title="Refresh test runs"
-                >
-                  <RotateCcw className="w-3 h-3" /> Refresh
-                </button>
-              </div>
-              <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
-                {pastJobs.map((j) => (
-                  <div
-                    key={j.job_id}
-                    onClick={() => handleSelectPastJob(j.job_id)}
-                    className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
-                      ntJobId === j.job_id
-                        ? "bg-violet-500/20 border border-violet-500/40"
-                        : "bg-white/5 hover:bg-white/10 border border-white/5"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      {j.status === "running" ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
-                      ) : j.pass === true ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
-                      ) : (
-                        <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                      )}
-                      <span className="font-mono truncate font-medium text-foreground">
-                        {j.repo.split("/").pop()?.replace(".git", "") ||
-                          j.job_id}
-                      </span>
-                      <span className="text-muted-foreground text-[10px]">
-                        [{j.branch}]
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
-                      {j.pass !== null && (
-                        <span
-                          className={
-                            j.pass
-                              ? "text-green-400 font-semibold"
-                              : "text-red-400 font-semibold"
-                          }
-                        >
-                          {j.pass
-                            ? "PASS"
-                            : `FAIL (${j.failed_step || "start"})`}
-                        </span>
-                      )}
-                      <span>
-                        {j.finished_utc
-                          ? new Date(j.finished_utc).toLocaleTimeString()
-                          : j.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* Full dev setup */}
-        <div className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm space-y-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Wrench className="w-5 h-5" />
-            Full dev setup
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Place{" "}
-            <code className="text-foreground/80">
-              DesktopAppInstaller_Dependencies.zip
-            </code>{" "}
-            and{" "}
-            <code className="text-foreground/80">
-              Microsoft.DesktopAppInstaller_*.msixbundle
-            </code>{" "}
-            in a folder, then launch. Script installs winget, then selected
-            tools.
-          </p>
-          <a
-            href="https://github.com/microsoft/winget-cli/releases"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs flex items-center gap-1 text-primary hover:underline"
+        {devError && (
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {devError}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadSetupScript}
+            className="px-4 py-2 rounded-lg border border-border bg-background/50 hover:bg-white/10 text-sm"
           >
-            <ExternalLink className="w-3 h-3" />
-            winget-cli releases (Assets)
-          </a>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Assets folder (host path)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={assetsFolder}
-                onChange={(e) => setAssetsFolder(e.target.value)}
-                placeholder="e.g. D:\Dev\repos\virtualization-mcp\assets\sandbox"
-                className="flex-1 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  fetch(`${API_BASE}/api/v1/assets/paths`)
-                    .then((r) => (r.ok ? r.json() : null))
-                    .then(
-                      (d) =>
-                        d?.assets_sandbox && setAssetsFolder(d.assets_sandbox),
-                    )
-                }
-                className="px-3 py-2 rounded-lg border border-border bg-white/5 hover:bg-white/10 text-sm whitespace-nowrap"
-              >
-                Use repo assets
-              </button>
-            </div>
-          </div>
-          <div>
-            <span className="block text-sm font-medium mb-2">
-              Tools to install
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setDraftTools({ ...devTools });
-                setShowPicker(true);
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg border border-input bg-background/50 hover:bg-white/10 text-sm"
-            >
-              <span className="text-primary font-medium">
-                Choose software ({selectedToolIds.length} selected)
-              </span>
-              <span className="block text-xs text-muted-foreground mt-1 truncate">
-                {selectedToolNames}
-              </span>
-            </button>
-          </div>
-          <div className="flex flex-col gap-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useHostOllama}
-                disabled={airgap}
-                onChange={(e) => setUseHostOllama(e.target.checked)}
-                className="rounded border-input bg-background/50 text-primary"
-              />
-              <span className="text-sm">
-                Use host Ollama (sandbox can reach Ollama on host at
-                gateway:11434)
-              </span>
-            </label>
-            <button
-              type="button"
-              onClick={() => setAirgap((a) => !a)}
-              className={`w-full py-4 rounded-xl font-bold text-lg uppercase tracking-widest border-2 transition-all ${
-                airgap
-                  ? "bg-red-600 border-red-700 text-white hover:bg-red-700"
-                  : "bg-transparent border-red-500/50 text-red-500 hover:bg-red-500/10"
-              }`}
-              title="Disable networking for this sandbox (100% air-gapped; use after initial install or with pre-installed assets)"
-            >
-              {airgap ? "🔒 Airgap on" : "AIRGAP"}
-            </button>
-            {airgap && (
-              <p className="text-xs text-muted-foreground">
-                Networking disabled. OpenClaw and other tools cannot reach the
-                internet. Run setup once with network, then launch with AIRGAP
-                for a safe session.
-              </p>
+            <Download className="w-4 h-4 inline mr-1" />
+            Download script
+          </button>
+          <button
+            disabled={devStatus === "loading"}
+            onClick={handleLaunchFullDev}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm ${devStatus === "success" ? "bg-green-600 text-white" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+          >
+            {devStatus === "loading" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Play className="w-4 h-4" />
             )}
-          </div>
-          {devError && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {devError}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleDownloadSetupScript}
-              className="px-4 py-2 rounded-lg border border-border bg-background/50 hover:bg-white/10 text-sm"
-            >
-              <Download className="w-4 h-4 inline mr-1" />
-              Download script
-            </button>
-            <button
-              disabled={devStatus === "loading"}
-              onClick={handleLaunchFullDev}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm ${devStatus === "success" ? "bg-green-600 text-white" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
-            >
-              {devStatus === "loading" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Play className="w-4 h-4" />
-              )}
-              {devStatus === "loading"
-                ? "Launching..."
-                : devStatus === "success"
-                  ? "Launched"
-                  : "Launch with full dev setup"}
-            </button>
-          </div>
+            {devStatus === "loading"
+              ? "Launching..."
+              : devStatus === "success"
+                ? "Launched"
+                : "Launch with full dev setup"}
+          </button>
         </div>
       </div>
 
@@ -1449,7 +1436,7 @@ export default function Sandbox() {
       )}
 
       {/* Preview */}
-      <div className="flex flex-col h-full rounded-xl border border-border bg-card/60 backdrop-blur-md overflow-hidden min-h-[24rem]">
+      <div className="flex flex-col rounded-xl border border-border bg-card/60 backdrop-blur-md overflow-hidden min-h-[24rem] max-h-[36rem]">
         <div className="p-4 border-b border-border bg-black/20 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-muted-foreground">
