@@ -15,6 +15,9 @@ import psutil
 
 logger = logging.getLogger(__name__)
 
+# Detached one-shot runs (wait=False). Kept to avoid GC of asyncio Tasks.
+_SANDBOX_ONE_SHOT_TASKS: set[asyncio.Task[dict[str, Any]]] = set()
+
 
 class WindowsSandboxError(Exception):
     """Base exception for Windows Sandbox operations."""
@@ -117,6 +120,145 @@ class WindowsSandboxHelper:
             time.sleep(1.5)
         return terminated
 
+    def _launch_wsb(self, wsb_path: Path) -> None:
+        """Launch a .wsb file in Windows Sandbox (returns immediately)."""
+        wsb_exe = Path(self.WSX_EXECUTABLE)
+        if wsb_exe.exists():
+            subprocess.Popen([str(wsb_exe), str(wsb_path)])
+        else:
+            subprocess.Popen(["cmd.exe", "/c", "start", "", str(wsb_path)])
+
+    async def _run_oneshot(
+        self,
+        command: str,
+        files: dict[str, bytes] | None = None,
+        memory_mb: int = 2048,
+        timeout: int = 120,
+        collect: str | None = None,
+    ) -> dict[str, Any]:
+        """Run a command in a fresh ephemeral sandbox and return real output.
+
+        Windows Sandbox exposes no guest-control channel: the only automation
+        vector is MappedFolders + LogonCommand at boot (same pattern the
+        naked-test pipeline uses). So this boots a throwaway instance whose
+        LogonCommand runs the command, polls the mapped job folder for the
+        result, then terminates the instance. Nothing is faked: stdout,
+        stderr and the exit code come from the guest.
+
+        Args:
+            command: Command line executed in the guest via cmd.exe.
+            files: Extra files staged into the job folder (guest: C:\\Job).
+            memory_mb: RAM for the throwaway instance.
+            timeout: Seconds to wait for boot + command completion.
+            collect: Optional job-folder file whose bytes are returned in
+                result["collected"] before cleanup (for download flows).
+
+        Returns:
+            Dict with status (completed|timeout), exit_code, stdout, stderr
+            and job_dir (kept on failure for debugging).
+        """
+        from datetime import datetime
+
+        if self.is_sandbox_running():
+            raise WindowsSandboxError(
+                "Windows Sandbox is already running (singleton). Terminate it first - a second instance cannot boot."
+            )
+
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        job_dir = self.sandbox_dir / f"oneshot-{stamp}"
+        job_dir.mkdir(parents=True, exist_ok=True)
+        for rel, data in (files or {}).items():
+            target = job_dir / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+
+        run_cmd = (
+            "@echo off\r\n"
+            "cd /d C:\\Job\r\n"
+            f"{command} > stdout.log 2> stderr.log\r\n"
+            "echo %ERRORLEVEL% > exitcode.txt\r\n"
+        )
+        (job_dir / "run.cmd").write_text(run_cmd, encoding="utf-8")
+
+        config = ET.Element("Configuration")
+        vgpu = ET.SubElement(config, "VGpu")
+        vgpu.text = "Disable"
+        networking = ET.SubElement(config, "Networking")
+        networking.text = "Default"
+        mem = ET.SubElement(config, "MemoryInMB")
+        mem.text = str(memory_mb)
+        mapped = ET.SubElement(config, "MappedFolders")
+        mf = ET.SubElement(mapped, "MappedFolder")
+        host = ET.SubElement(mf, "HostFolder")
+        host.text = str(job_dir.resolve())
+        guest = ET.SubElement(mf, "SandboxFolder")
+        guest.text = "C:\\Job"
+        ro = ET.SubElement(mf, "ReadOnly")
+        ro.text = "false"
+        logon = ET.SubElement(config, "LogonCommand")
+        cmd_el = ET.SubElement(logon, "Command")
+        cmd_el.text = "cmd.exe /c C:\\Job\\run.cmd"
+        wsb_path = job_dir / "oneshot.wsb"
+        ET.ElementTree(config).write(wsb_path, encoding="utf-8", xml_declaration=True)
+
+        self._launch_wsb(wsb_path)
+
+        exit_file = job_dir / "exitcode.txt"
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if exit_file.is_file():
+                break
+            await asyncio.sleep(2)
+
+        def _read(name: str) -> str:
+            try:
+                return (job_dir / name).read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                return ""
+
+        if not exit_file.is_file():
+            try:
+                self.terminate_active_sandbox()
+            except Exception as e:
+                logger.debug(f"one-shot teardown best-effort failed: {e}")
+            return {
+                "status": "timeout",
+                "exit_code": None,
+                "stdout": _read("stdout.log"),
+                "stderr": _read("stderr.log"),
+                "job_dir": str(job_dir),
+                "message": f"No result after {timeout}s (kept {job_dir}).",
+            }
+
+        await asyncio.sleep(1)  # let the log flush land
+        try:
+            exit_code = int(_read("exitcode.txt").strip())
+        except ValueError:
+            exit_code = 1
+        result = {
+            "status": "completed",
+            "exit_code": exit_code,
+            "stdout": _read("stdout.log").strip(),
+            "stderr": _read("stderr.log").strip(),
+            "job_dir": str(job_dir),
+        }
+        if collect:
+            try:
+                result["collected"] = (job_dir / collect).read_bytes()
+            except OSError as e:
+                logger.warning(f"one-shot collect {collect} failed: {e}")
+                result["collected"] = None
+        try:
+            self.terminate_active_sandbox()
+        except Exception as e:
+            logger.debug(f"one-shot teardown best-effort failed: {e}")
+        if result.get("collected") is None and collect:
+            pass  # keep job_dir for debugging when collection failed
+        else:
+            shutil.rmtree(job_dir, ignore_errors=True)
+            result.pop("job_dir", None)
+        return result
+
     async def create_sandbox(
         self,
         name: str,
@@ -191,119 +333,81 @@ class WindowsSandboxHelper:
         command: str,
         working_dir: str | None = None,
         wait: bool = True,
-        timeout: int = 60,
+        timeout: int = 120,
     ) -> dict[str, Any]:
-        """Execute a command in the sandbox.
+        """Execute a command in a fresh ephemeral Windows Sandbox.
+
+        Windows Sandbox is a singleton with no guest-control channel, so a
+        command cannot be injected into an already-running instance. This
+        boots a throwaway instance whose LogonCommand runs the command and
+        returns the real stdout/stderr/exit code. If a sandbox is already
+        running, an explicit busy error is returned instead of fake output.
 
         Args:
-            sandbox_name: Name of the sandbox
-            command: Command to execute
-            working_dir: Working directory for the command
-            wait: Whether to wait for command completion
-            timeout: Timeout in seconds
+            sandbox_name: Label for the run (ephemeral, not a live handle).
+            command: Command to execute in the guest.
+            working_dir: Guest working directory (prefixes the command).
+            wait: Wait for completion. False returns immediately and runs
+                detached (output is lost - prefer wait=True).
+            timeout: Seconds to wait for boot + completion.
 
         Returns:
-            Dictionary with command execution results
+            Dictionary with real command execution results.
         """
-        if sandbox_name not in self._sandbox_processes:
-            raise WindowsSandboxError(f"Sandbox '{sandbox_name}' not found")
-
-        # Create a temporary batch file in the sandbox
-        temp_bat = self._create_temp_file_in_sandbox(
-            sandbox_name,
-            f"@echo off\r\n{command}\r\necho %ERRORLEVEL% > %TEMP%\\cmd_exit_code.txt\r\n",
-            "cmd.bat",
-        )
-
-        # Create a command to run the batch file and capture output
-
-        # Execute the command
-        process = await asyncio.create_subprocess_exec(
-            "powershell.exe",
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            f'Start-Process -FilePath "{self.WSX_EXECUTABLE}" -ArgumentList "{self._sandbox_processes[sandbox_name]["wsb_path"]}" -Wait -NoNewWindow -PassThru | Wait-Process',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-        if wait:
-            try:
-                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
-                exit_code = process.returncode
-
-                # Get command output and exit code
-                output = stdout.decode("utf-8", errors="replace").strip()
-                error = stderr.decode("utf-8", errors="replace").strip()
-
-                # Clean up temporary files
-                self._delete_temp_file_in_sandbox(sandbox_name, temp_bat)
-
-                return {
-                    "status": "completed",
-                    "exit_code": exit_code,
-                    "stdout": output,
-                    "stderr": error,
-                }
-            except TimeoutError:
-                process.terminate()
-                return {
-                    "status": "timeout",
-                    "message": f"Command timed out after {timeout} seconds",
-                }
-        else:
-            return {"status": "started", "pid": process.pid}
+        full_command = f'cd /d "{working_dir}" && {command}' if working_dir else command
+        if not wait:
+            task = asyncio.create_task(self._run_oneshot(full_command, timeout=timeout))
+            _SANDBOX_ONE_SHOT_TASKS.add(task)
+            task.add_done_callback(_SANDBOX_ONE_SHOT_TASKS.discard)
+            return {"status": "started", "sandbox": sandbox_name, "command": command}
+        result = await self._run_oneshot(full_command, timeout=timeout)
+        result["sandbox"] = sandbox_name
+        result["command"] = command
+        return result
 
     async def upload_file(
         self,
         sandbox_name: str,
         source_path: str | Path,
         destination_path: str | Path | None = None,
+        timeout: int = 180,
     ) -> dict[str, Any]:
-        """Upload a file to the sandbox.
+        """Upload a host file into a fresh ephemeral Windows Sandbox.
+
+        The payload is staged into the mapped job folder and copied to its
+        guest destination by the LogonCommand. The copy really happens -
+        a non-zero guest exit code raises instead of reporting success.
 
         Args:
-            sandbox_name: Name of the sandbox
-            source_path: Path to the source file
-            destination_path: Destination path in the sandbox
+            sandbox_name: Label for the run.
+            source_path: Host file to upload.
+            destination_path: Guest destination (default: sandbox Desktop).
+            timeout: Seconds to wait for boot + copy.
 
         Returns:
-            Dictionary with upload results
+            Dictionary with upload results.
         """
-        if sandbox_name not in self._sandbox_processes:
-            raise WindowsSandboxError(f"Sandbox '{sandbox_name}' not found")
-
-        source_path = Path(source_path)
-        if not source_path.exists():
+        source = Path(source_path)
+        if not source.is_file():
             raise FileNotFoundError(f"Source file not found: {source_path}")
 
-        # Default destination is the sandbox's desktop
-        if not destination_path:
-            destination_path = Path("C:\\Users\\WDAGUtilityAccount\\Desktop") / source_path.name
-        else:
-            destination_path = Path(destination_path)
-
-        # Create a temporary file in the sandbox's shared folder
-        temp_dir = self.sandbox_dir / sandbox_name / "shared"
-        temp_dir.mkdir(exist_ok=True, parents=True)
-
-        temp_file = temp_dir / source_path.name
-        await asyncio.to_thread(shutil.copy2, source_path, temp_file)
-
-        # Move the file to the destination using a command
-        move_cmd = f'move /Y "C:\\shared\\{source_path.name}" "{destination_path}"'
-        result = await self.execute_command(sandbox_name, move_cmd)
-
-        if result.get("exit_code", 1) != 0:
-            raise WindowsSandboxError(f"Failed to move file in sandbox: {result.get('stderr', 'Unknown error')}")
+        dest = str(destination_path) if destination_path else f"C:\\Users\\WDAGUtilityAccount\\Desktop\\{source.name}"
+        staged = f"payload_{source.name}"
+        result = await self._run_oneshot(
+            f'copy /Y "C:\\Job\\{staged}" "{dest}"',
+            files={staged: source.read_bytes()},
+            timeout=timeout,
+        )
+        if result.get("status") != "completed" or result.get("exit_code", 1) != 0:
+            raise WindowsSandboxError(
+                f"Failed to copy file in sandbox: {result.get('stderr', result.get('message', 'Unknown error'))}"
+            )
 
         return {
             "status": "success",
-            "source_path": str(source_path),
-            "destination_path": str(destination_path),
-            "size": source_path.stat().st_size,
+            "source_path": str(source),
+            "destination_path": dest,
+            "size": source.stat().st_size,
         }
 
     async def download_file(
@@ -311,52 +415,46 @@ class WindowsSandboxHelper:
         sandbox_name: str,
         source_path: str | Path,
         destination_path: str | Path | None = None,
+        timeout: int = 180,
     ) -> dict[str, Any]:
-        """Download a file from the sandbox.
+        """Download a file out of a fresh ephemeral Windows Sandbox.
+
+        The guest copies the source into the mapped job folder and the host
+        reads it back - the bytes really cross the boundary. A missing guest
+        file raises instead of reporting success.
 
         Args:
-            sandbox_name: Name of the sandbox
-            source_path: Path to the source file in the sandbox
-            destination_path: Destination path on the host
+            sandbox_name: Label for the run.
+            source_path: Guest path of the file to download.
+            destination_path: Host destination (default: cwd + file name).
+            timeout: Seconds to wait for boot + copy.
 
         Returns:
-            Dictionary with download results
+            Dictionary with download results.
         """
-        if sandbox_name not in self._sandbox_processes:
-            raise WindowsSandboxError(f"Sandbox '{sandbox_name}' not found")
+        guest_src = str(source_path)
+        guest_name = guest_src.replace("/", "\\").split("\\")[-1] or "payload.bin"
+        dest = Path(destination_path) if destination_path else Path.cwd() / guest_name
 
-        source_path = Path(source_path)
-        if not destination_path:
-            destination_path = Path.cwd() / source_path.name
-        else:
-            destination_path = Path(destination_path)
-
-        # Create a temporary directory in the sandbox's shared folder
-        temp_dir = self.sandbox_dir / sandbox_name / "shared"
-        temp_dir.mkdir(exist_ok=True, parents=True)
-
-        # Copy the file to the shared folder
-        copy_cmd = f'copy /Y "{source_path}" C:\\shared\\'
-        result = await self.execute_command(sandbox_name, copy_cmd)
-
-        if result.get("exit_code", 1) != 0:
-            raise WindowsSandboxError(f"Failed to copy file to shared folder: {result.get('stderr', 'Unknown error')}")
-
-        # Copy from shared folder to destination
-        temp_file = temp_dir / source_path.name
-        if not temp_file.exists():
-            raise FileNotFoundError(f"File not found in shared folder: {temp_file}")
-
-        await asyncio.to_thread(shutil.copy2, temp_file, destination_path)
-
-        # Clean up
-        temp_file.unlink(missing_ok=True)
+        result = await self._run_oneshot(
+            f'copy /Y "{guest_src}" "C:\\Job\\payload.bin"',
+            timeout=timeout,
+            collect="payload.bin",
+        )
+        payload = result.get("collected")
+        if result.get("status") != "completed" or payload is None:
+            raise WindowsSandboxError(
+                f"Failed to download {guest_src} from sandbox: "
+                f"{result.get('stderr', result.get('message', 'Unknown error'))}"
+            )
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(payload)
 
         return {
             "status": "success",
-            "source_path": str(source_path),
-            "destination_path": str(destination_path),
-            "size": destination_path.stat().st_size,
+            "source_path": guest_src,
+            "destination_path": str(dest),
+            "size": dest.stat().st_size,
         }
 
     async def terminate_sandbox(self, sandbox_name: str, force: bool = False) -> dict[str, Any]:
@@ -391,28 +489,51 @@ class WindowsSandboxHelper:
             # Clean up
             await self._cleanup_sandbox(sandbox_name)
 
-            return {"status": "terminated", "sandbox": sandbox_name, "force": force}
+            # The registry only tracks the launcher stub (long exited). The
+            # real VM is the OS singleton - terminate it as well.
+            singleton = self.terminate_active_sandbox()
+
+            return {"status": "terminated", "sandbox": sandbox_name, "force": force, "singleton_terminated": singleton}
 
         except Exception as e:
             raise WindowsSandboxError(f"Failed to terminate sandbox: {e!s}") from e
 
     async def list_sandboxes(self) -> list[dict[str, Any]]:
-        """List all active sandboxes.
+        """List tracked sandboxes plus the live OS singleton state.
+
+        The registry only holds sandboxes this process launched; the
+        singleton_running flag reports the actual Windows Sandbox VM
+        regardless of who started it.
 
         Returns:
             List of dictionaries with sandbox information
         """
+        singleton_running = self.is_sandbox_running()
         result = []
         for name, info in self._sandbox_processes.items():
             process = info["process"]
+            alive = process.returncode is None
             result.append(
                 {
                     "name": name,
                     "pid": process.pid,
-                    "status": "running" if process.returncode is None else "exited",
+                    "status": "running" if alive and singleton_running else "exited",
                     "exit_code": process.returncode,
                     "wsb_path": str(info["wsb_path"]),
                     "start_time": info["start_time"],
+                    "singleton_running": singleton_running,
+                }
+            )
+        if singleton_running and not result:
+            result.append(
+                {
+                    "name": "<unmanaged-singleton>",
+                    "pid": None,
+                    "status": "running",
+                    "exit_code": None,
+                    "wsb_path": "",
+                    "start_time": 0.0,
+                    "singleton_running": True,
                 }
             )
         return result
@@ -449,6 +570,7 @@ class WindowsSandboxHelper:
         memory_mb: int,
         vcpu_count: int,
         shared_folders: list[dict[str, str]],
+        logon_command: str | None = None,
     ) -> None:
         """Create a Windows Sandbox configuration file.
 
@@ -457,6 +579,9 @@ class WindowsSandboxHelper:
             memory_mb: Memory in MB to allocate to the sandbox
             vcpu_count: Number of virtual CPUs to allocate
             shared_folders: List of folders to share with the sandbox
+            logon_command: Guest-side command run at logon (must reference
+                a guest path such as C:\\Job\\run.cmd - host paths do not
+                exist in the guest). Omitted when None.
         """
         # Create XML configuration
         config = ET.Element("Configuration")
@@ -490,82 +615,15 @@ class WindowsSandboxHelper:
             ro = ET.SubElement(mf, "ReadOnly")
             ro.text = "true" if read_only else "false"
 
-        # Add logon command to map network drives
-        logon_command = ET.SubElement(config, "LogonCommand")
-        command = ET.SubElement(logon_command, "Command")
-
-        # Create a batch file to map network drives
-        batch_commands = ["@echo off"]
-        for i, folder in enumerate(shared_folders):
-            if not folder.get("host_path"):
-                continue
-
-            drive_letter = folder.get("drive_letter")
-            if drive_letter and len(drive_letter) == 1 and drive_letter.isalpha():
-                drive_letter = f"{drive_letter.upper()}:\\"
-                sandbox_path = folder.get("sandbox_path", f"C:\\shared\\{i}")
-                batch_commands.append(f"net use {drive_letter} {sandbox_path}")
-
-        batch_commands.append("exit 0")
-        batch_content = "\r\n".join(batch_commands)
-
-        # Save batch file to a shared folder
-        batch_path = self.sandbox_dir / "startup.bat"
-        with Path(batch_path).open("w") as f:
-            f.write(batch_content)
-
-        command.text = f'C:\\Windows\\System32\\cmd.exe /c "{batch_path}"'
+        # Optional guest-side logon command (guest paths only).
+        if logon_command:
+            logon_el = ET.SubElement(config, "LogonCommand")
+            command = ET.SubElement(logon_el, "Command")
+            command.text = logon_command
 
         # Save the WSB file
         tree = ET.ElementTree(config)
         tree.write(wsb_path, encoding="utf-8", xml_declaration=True)
-
-    def _create_temp_file_in_sandbox(self, sandbox_name: str, content: str, filename: str) -> str:
-        """Create a temporary file in the sandbox's shared folder.
-
-        Args:
-            sandbox_name: Name of the sandbox
-            content: File content
-            filename: Name of the file
-
-        Returns:
-            Path to the created file in the sandbox
-        """
-        if sandbox_name not in self._sandbox_processes:
-            raise WindowsSandboxError(f"Sandbox '{sandbox_name}' not found")
-
-        sandbox_dir = self.sandbox_dir / sandbox_name
-        shared_dir = sandbox_dir / "shared"
-        shared_dir.mkdir(exist_ok=True, parents=True)
-
-        temp_file = shared_dir / filename
-        with Path(temp_file).open("w") as f:
-            f.write(content)
-
-        return f"C:\\shared\\{filename}"
-
-    def _delete_temp_file_in_sandbox(self, sandbox_name: str, filename: str) -> None:
-        """Delete a temporary file from the sandbox's shared folder.
-
-        Args:
-            sandbox_name: Name of the sandbox
-            filename: Name of the file to delete
-        """
-        if sandbox_name not in self._sandbox_processes:
-            return
-
-        sandbox_dir = self.sandbox_dir / sandbox_name
-        shared_dir = sandbox_dir / "shared"
-
-        if not shared_dir.exists():
-            return
-
-        temp_file = shared_dir / Path(filename).name
-        if temp_file.exists():
-            try:
-                temp_file.unlink()
-            except Exception as e:
-                logger.warning(f"Failed to delete temporary file {temp_file}: {e}")
 
     def _kill_process_tree(self, pid: int) -> None:
         """Kill a process and all its children.
@@ -607,35 +665,34 @@ class WindowsSandboxHelper:
         self,
         name: str,
         command: str,
-        timeout_seconds: int = 30,
+        timeout_seconds: int = 120,
     ) -> dict[str, Any]:
-        """Execute a shell command inside Windows Sandbox via shared folder watcher script.
+        """Execute a shell command in a fresh ephemeral Windows Sandbox.
+
+        Boots a throwaway instance whose LogonCommand runs the command and
+        returns the real stdout/stderr/exit code (same primitive the
+        naked-test pipeline uses). There is no shared-folder watcher -
+        the previous "scheduled_in_shared_folder" success never executed
+        anything. A busy singleton raises WindowsSandboxError.
 
         Args:
-            name: Sandbox instance name.
+            name: Label for the run.
             command: Shell command or script snippet to execute.
-            timeout_seconds: Maximum time in seconds to wait for script execution log.
+            timeout_seconds: Maximum time to wait for boot + execution.
 
         Returns:
-            Dict containing success status, command, and execution log paths.
+            Dict with success, exit_code, stdout, stderr.
         """
-        sandbox_dir = self.sandbox_dir / name
-        if not sandbox_dir.exists():
-            sandbox_dir.mkdir(parents=True, exist_ok=True)
-
-        script_path = sandbox_dir / "run_command.cmd"
-        log_path = sandbox_dir / "output.log"
-
-        script_content = f'@echo off\n{command} > "{log_path}" 2>&1\necho DONE >> "{log_path}"\n'
-        script_path.write_text(script_content, encoding="utf-8")
-
+        result = await self._run_oneshot(command, timeout=timeout_seconds)
         return {
-            "success": True,
+            "success": result.get("status") == "completed" and result.get("exit_code", 1) == 0,
             "sandbox_name": name,
             "command": command,
-            "script_path": str(script_path),
-            "log_path": str(log_path),
-            "status": "scheduled_in_shared_folder",
+            "status": result.get("status"),
+            "exit_code": result.get("exit_code"),
+            "stdout": result.get("stdout", ""),
+            "stderr": result.get("stderr", ""),
+            "job_dir": result.get("job_dir", ""),
         }
 
     def __del__(self):

@@ -615,9 +615,11 @@ export default function Sandbox() {
           <p className="text-muted-foreground mt-1">
             Configure and launch ephemeral Windows instances
           </p>
-          <p className="text-amber-400 mt-2 text-sm">
-            Under construction: some Sandbox automation paths are not
-            implemented yet and will return explicit errors.
+          <p className="text-muted-foreground mt-2 text-sm">
+            Sandbox is a singleton with no guest-control channel: automated runs
+            boot a fresh ephemeral instance (mapped folder + LogonCommand) and
+            terminate it after collecting real output. Terminate a running box
+            before starting a one-shot run.
           </p>
         </div>
 

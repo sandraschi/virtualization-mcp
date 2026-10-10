@@ -6,7 +6,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from virtualization_mcp.tools.portmanteau.sandbox_management import sandbox_management
-from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
+from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxError, WindowsSandboxHelper
+
+
+def _bare_helper(tmp_path):
+    helper = WindowsSandboxHelper.__new__(WindowsSandboxHelper)
+    helper.sandbox_dir = tmp_path
+    helper._sandbox_processes = {}
+    return helper
 
 
 def test_launch_scripts_exist():
@@ -41,14 +48,132 @@ def test_windows_sandbox_helper_terminate_active():
 
 @pytest.mark.asyncio
 async def test_windows_sandbox_execute_in_sandbox(tmp_path):
-    helper = WindowsSandboxHelper.__new__(WindowsSandboxHelper)
-    helper.sandbox_dir = tmp_path
-    helper._sandbox_processes = {}
-
-    res = await helper.execute_in_sandbox(name="test_sb", command="echo Hello Sandbox")
+    # Real behavior, mocked transport: no live Sandbox ever boots here.
+    helper = _bare_helper(tmp_path)
+    with patch.object(
+        helper,
+        "_run_oneshot",
+        new=AsyncMock(return_value={"status": "completed", "exit_code": 0, "stdout": "Hello Sandbox", "stderr": ""}),
+    ) as mock_run:
+        res = await helper.execute_in_sandbox(name="test_sb", command="echo Hello Sandbox")
     assert res["success"] is True
     assert res["command"] == "echo Hello Sandbox"
-    assert Path(res["script_path"]).exists()
+    assert res["stdout"] == "Hello Sandbox"
+    assert res["exit_code"] == 0
+    mock_run.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_execute_failing_exit(tmp_path):
+    helper = _bare_helper(tmp_path)
+    with patch.object(
+        helper,
+        "_run_oneshot",
+        new=AsyncMock(return_value={"status": "completed", "exit_code": 1, "stdout": "", "stderr": "boom"}),
+    ):
+        res = await helper.execute_in_sandbox(name="test_sb", command="exit 1")
+    assert res["success"] is False
+    assert res["exit_code"] == 1
+    assert res["stderr"] == "boom"
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_oneshot_busy_singleton(tmp_path):
+    # Singleton running -> explicit busy error before any launch attempt.
+    helper = _bare_helper(tmp_path)
+    with patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=True), \
+        patch.object(helper, "_launch_wsb") as mock_launch:
+        with pytest.raises(WindowsSandboxError, match="already running"):
+            await helper._run_oneshot("echo hi", timeout=5)
+        mock_launch.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_execute_command_detached(tmp_path):
+    import asyncio as _asyncio
+
+    helper = _bare_helper(tmp_path)
+    with patch.object(
+        helper,
+        "_run_oneshot",
+        new=AsyncMock(return_value={"status": "completed", "exit_code": 0, "stdout": "", "stderr": ""}),
+    ) as mock_run:
+        res = await helper.execute_command("job1", "echo hi", wait=False)
+        assert res["status"] == "started"
+        await _asyncio.sleep(0)  # let the detached task run the stub
+        mock_run.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_upload_missing_source(tmp_path):
+    helper = _bare_helper(tmp_path)
+    with pytest.raises(FileNotFoundError):
+        await helper.upload_file("job1", tmp_path / "nope.bin")
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_upload_success(tmp_path):
+    src = tmp_path / "payload.bin"
+    src.write_bytes(b"data")
+    helper = _bare_helper(tmp_path)
+    with patch.object(
+        helper,
+        "_run_oneshot",
+        new=AsyncMock(return_value={"status": "completed", "exit_code": 0, "stdout": "", "stderr": ""}),
+    ) as mock_run:
+        res = await helper.upload_file("job1", src)
+    assert res["status"] == "success"
+    assert res["size"] == 4
+    assert "Desktop" in res["destination_path"]
+    sent_files = mock_run.await_args.kwargs["files"]
+    assert sent_files[f"payload_{src.name}"] == b"data"
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_download_success(tmp_path):
+    helper = _bare_helper(tmp_path)
+    dest = tmp_path / "out.bin"
+    with patch.object(
+        helper,
+        "_run_oneshot",
+        new=AsyncMock(
+            return_value={"status": "completed", "exit_code": 0, "stdout": "", "stderr": "", "collected": b"guest-bytes"}
+        ),
+    ):
+        res = await helper.download_file("job1", r"C:\Job\result.bin", dest)
+    assert res["status"] == "success"
+    assert dest.read_bytes() == b"guest-bytes"
+    assert res["size"] == len(b"guest-bytes")
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_download_missing_guest_file(tmp_path):
+    helper = _bare_helper(tmp_path)
+    with patch.object(
+        helper,
+        "_run_oneshot",
+        new=AsyncMock(return_value={"status": "completed", "exit_code": 1, "stdout": "", "stderr": "not found", "collected": None}),
+    ):
+        with pytest.raises(WindowsSandboxError, match="Failed to download"):
+            await helper.download_file("job1", r"C:\missing.bin", tmp_path / "out.bin")
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_list_unmanaged_singleton(tmp_path):
+    helper = _bare_helper(tmp_path)
+    with patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=True):
+        items = await helper.list_sandboxes()
+    assert len(items) == 1
+    assert items[0]["status"] == "running"
+    assert items[0]["singleton_running"] is True
+
+
+@pytest.mark.asyncio
+async def test_windows_sandbox_terminate_unknown():
+    helper = WindowsSandboxHelper.__new__(WindowsSandboxHelper)
+    helper._sandbox_processes = {}
+    with pytest.raises(WindowsSandboxError, match="not found"):
+        await helper.terminate_sandbox("ghost")
 
 
 @pytest.mark.asyncio
