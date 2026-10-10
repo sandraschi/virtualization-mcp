@@ -170,7 +170,7 @@ export default function Sandbox() {
   };
   const [pastJobs, setPastJobs] = useState<PastNakedJob[]>([]);
   const [fleetRepos, setFleetRepos] = useState<
-    Array<{ name: string; repo: string; description?: string }>
+    Array<{ name: string; repo: string; description?: string; branch?: string }>
   >([]);
 
   const loadPastJobs = useCallback(async () => {
@@ -982,7 +982,7 @@ export default function Sandbox() {
                 type="button"
                 onClick={() => {
                   setNtRepo(r.repo);
-                  setNtBranch("main");
+                  setNtBranch(r.branch || "main");
                 }}
                 className="px-2 py-0.5 text-xs rounded-md bg-white/5 hover:bg-violet-500/20 hover:text-violet-300 border border-white/10 transition-colors"
               >

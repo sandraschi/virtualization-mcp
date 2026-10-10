@@ -3564,6 +3564,64 @@ NAKED_TEST_FILES = (
     "lib\\Winget-Bootstrap.ps1",
 )
 
+
+def _norm_origin_url(url: str) -> str:
+    """Normalize a git origin URL to owner/name (or bare name) lowercase."""
+    u = url.strip().lower().removesuffix(".git")
+    u = re.sub(r"^(https?://github\.com/|git@github\.com:)", "", u)
+    return u
+
+
+def _resolve_local_repo(repos_root: str, repo: str) -> str:
+    """Resolve a naked-test repo value to a local checkout dir (or "").
+
+    Accepts bare names (winrar-mcp), owner/name (sandraschi/winrar-mcp) and
+    https/ssh URLs. Matches by directory name first, then by .git/config
+    origin URL, so quick-pick owner/name values test the local checkout
+    instead of cloning from GitHub (auth doom for private fleet repos plus
+    a wrong default branch).
+    """
+    cands: list[str] = []
+    if repo.startswith("http"):
+        m = re.search(r"github\.com/([^/\s]+/[^/\s]+?)(?:\.git)?/?$", repo)
+        if m:
+            cands.append(m.group(1).split("/")[-1])
+    elif "@" in repo and ":" in repo and "/" in repo:  # git@github.com:owner/name(.git)
+        cands.append(repo.rsplit("/", 1)[-1].removesuffix(".git"))
+    elif "/" in repo and " " not in repo:
+        cands.append(repo.rsplit("/", 1)[-1])
+    else:
+        cands.append(repo)
+    cands.append(repo)
+    seen: set[str] = set()
+    for cand in cands:
+        if not cand or cand in seen:
+            continue
+        seen.add(cand)
+        direct = os.path.normpath(os.path.join(repos_root, cand))
+        if os.path.isdir(os.path.join(direct, ".git")):
+            return direct
+    want = _norm_origin_url(repo)
+    try:
+        for item in sorted(os.listdir(repos_root)):
+            cfg = os.path.join(repos_root, item, ".git", "config")
+            if not os.path.isfile(cfg):
+                continue
+            try:
+                with open(cfg, encoding="utf-8") as f:
+                    gc = f.read()
+            except Exception as e:
+                logger.debug(f"Skipping unreadable git config {cfg}: {e}")
+                continue
+            for mu in re.finditer(r"url\s*=\s*([^\r\n]+)", gc):
+                norm = _norm_origin_url(mu.group(1))
+                if norm == want or ("/" not in want and norm.endswith("/" + want)):
+                    return os.path.normpath(os.path.join(repos_root, item))
+    except Exception as e:
+        logger.debug(f"naked-test local repo scan failed: {e}")
+    return ""
+
+
 _JOB_ID_RE = None
 
 
@@ -3729,7 +3787,12 @@ async def fleet_naked_test(request: NakedTestRequest):
         raise HTTPException(status_code=400, detail="repo is required (owner/name or https URL)")
 
     repos_root = os.path.normpath(os.path.join(_repo_root, ".."))
-    local_repo = os.path.join(repos_root, repo)
+    local_repo = _resolve_local_repo(repos_root, repo)
+    if not local_repo and not repo.startswith("http"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"repo '{repo}' not found in workspace {repos_root} - paste a full https URL to test a remote repo",
+        )
     repo_url = ""
     branch = (request.branch or "main").strip() or "main"
     health_url = request.health_url or ""
@@ -3799,7 +3862,7 @@ async def fleet_naked_test(request: NakedTestRequest):
     os.makedirs(job_dir, exist_ok=True)
 
     local_repo_in_sandbox = ""
-    if os.path.isdir(os.path.join(local_repo, ".git")):
+    if local_repo and os.path.isdir(os.path.join(local_repo, ".git")):
         bare_git_path = os.path.join(job_dir, "repo.git")
         try:
             # Fleet standard (AGENTS.md): full git path, never bare "git".
@@ -3813,8 +3876,13 @@ async def fleet_naked_test(request: NakedTestRequest):
             )
             if os.path.isdir(bare_git_path):
                 local_repo_in_sandbox = r"C:\Job\repo.git"
+            else:
+                raise RuntimeError(f"bare clone produced no repo at {bare_git_path}")
         except Exception as e:
-            logger.warning(f"naked-test {job_id}: local bare clone failed, using URL: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"local bare clone of {local_repo} failed: {e} - refusing URL fallback for a local repo",
+            ) from e
 
     with open(os.path.join(job_dir, "spec.json"), "w", encoding="utf-8") as f:
         json.dump(
@@ -3840,7 +3908,14 @@ async def fleet_naked_test(request: NakedTestRequest):
         task = asyncio.create_task(_naked_dispatch_lifecycle(job_id, job_dir, config_xml))
         _NAKED_TASKS.add(task)
         task.add_done_callback(_NAKED_TASKS.discard)
-        return {"success": True, "job_id": job_id, "repo": repo_url, "branch": branch, "run_dir": job_dir}
+        return {
+            "success": True,
+            "job_id": job_id,
+            "repo": repo_url,
+            "branch": branch,
+            "run_dir": job_dir,
+            "local_source": bool(local_repo_in_sandbox),
+        }
     except HTTPException:
         raise
     except Exception as e:

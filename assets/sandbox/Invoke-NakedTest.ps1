@@ -19,6 +19,10 @@
 #>
 
 $ProgressPreference = 'SilentlyContinue'
+# Never prompt for credentials: a private-URL fallback must fail in seconds
+# with a clear error, not hang on an invisible GUI dialog (no RESULT.json).
+$env:GIT_TERMINAL_PROMPT = '0'
+$env:GCM_INTERACTIVE = 'never'
 $JobDir = 'C:\Job'
 $TestRoot = 'C:\Test'
 $ResultPath = Join-Path $JobDir 'RESULT.json'
@@ -163,8 +167,16 @@ if ($targetSource -like 'http*') {
     $cloneArgs += @('--depth', '1')
 }
 $cloneArgs += @('--branch', $branch, $targetSource, $cloneDir)
-& git @cloneArgs 2>&1 | Write-Host
+$cloneOut = (& git @cloneArgs 2>&1 | Out-String)
+$cloneOut | Write-Host
 $cloneExit = $LASTEXITCODE
+$authFailed = $cloneOut -match 'Authentication failed|could not read Username|Invalid username|Logon failed|Permission denied|credential.*denied'
+if ($cloneExit -ne 0 -and $authFailed) {
+    $sw.Stop()
+    Add-Step $steps 'clone' $cloneExit $sw.ElapsedMilliseconds $cloneDir
+    Write-Result $steps $false 'clone' 'git clone refused auth (private repo or credential required) - naked test needs the local checkout, not a URL.'
+    exit 11
+}
 if ($cloneExit -ne 0) {
     Write-Host "Branch '$branch' not found or clone failed. Retrying with default branch..." -ForegroundColor Yellow
     $fallbackArgs = @('clone')
