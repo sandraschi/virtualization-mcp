@@ -1,308 +1,177 @@
 """
-Hyper-V Management Tools for virtualization-mcp
+Hyper-V Management Tools for virtualization-mcp.
 
-This module provides tools for managing Hyper-V virtual machines.
+Thin MCP-facing wrappers. All PowerShell work lives in
+services/hyperv_manager.py (single source of truth); this module delegates
+so the MCP surface and the REST surface can never drift apart again.
 """
 
-import asyncio
 import logging
-from datetime import datetime, timedelta
-from enum import StrEnum
-from pathlib import Path
 from typing import Any
-
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
-class VMState(StrEnum):
-    """Enumeration of possible VM states."""
+def _svc():
+    from virtualization_mcp.services.hyperv_manager import hyperv_manager as svc
 
-    RUNNING = "Running"
-    OFF = "Off"
-    STARTING = "Starting"
-    STOPPING = "Stopping"
-    SAVED = "Saved"
-    PAUSED = "Paused"
-    ERROR = "Error"
+    return svc
 
 
-class VMSize(BaseModel):
-    """Configuration for VM size and resources."""
-
-    memory_startup: int = Field(2048, description="Startup memory in MB")
-    memory_minimum: int = Field(512, description="Minimum dynamic memory in MB")
-    memory_maximum: int = Field(8192, description="Maximum dynamic memory in MB")
-    processor_count: int = Field(2, description="Number of virtual processors")
-    dynamic_memory: bool = Field(True, description="Enable dynamic memory allocation")
-
-
-class VMDisk(BaseModel):
-    """Configuration for VM disks."""
-
-    path: str
-    size_gb: int
-    type: str = "VHDX"
-    controller_type: str = "SCSI"
-    controller_number: int = 0
-    controller_location: int = 0
-
-
-class VMSnapshot(BaseModel):
-    """Represents a VM snapshot."""
-
-    name: str
-    id: str
-    creation_time: datetime
-    parent_snapshot_id: str | None = None
-    notes: str | None = None
-    is_current: bool = False
-
-
-class VMNetworkAdapter(BaseModel):
-    """Configuration for VM network adapters."""
-
-    name: str
-    switch_name: str
-    mac_address: str | None = None
-    vlan_id: int | None = None
-    is_legacy: bool = False
-    static_mac_address: bool = False
-    device_naming: str = "On"
-    dhcp_guard: str = "Off"
-    router_guard: str = "Off"
-    port_mirroring: str = "None"
-    ieee_priority_tag: str = "Off"
-    vmmq_enabled: bool = False
-    vmmq_queue_pairs: int = 16
-    vmmq_weight: int = 100
-
-
-class VirtualMachine(BaseModel):
-    """Represents a Hyper-V virtual machine."""
-
-    name: str
-    id: str
-    state: VMState
-    status: str
-    cpu_usage: int = 0
-    memory_assigned: int = 0
-    uptime: timedelta | None = None
-    version: str = "9.0"
-    generation: int = 2
-    path: str
-    checkpoint_type: str = "Production"
-    automatic_start_action: str = "StartIfRunning"
-    automatic_stop_action: str = "Save"
-    smart_paging_file_path: str = ""
-    snapshot_file_location: str = ""
-    configuration_location: str = ""
-    notes: str = ""
-    creation_time: datetime | None = None
-    dynamic_memory_enabled: bool = True
-    secure_boot_enabled: bool = True
-    tpm_enabled: bool = False
-    nested_virtualization: bool = False
-    automatic_checkpoints_enabled: bool = True
-    checkpoint_id: str | None = None
-    computer_name: str | None = None
-    operating_system: str | None = None
-    size: VMSize = Field(default_factory=VMSize)
-    disks: list[VMDisk] = []
-    network_adapters: list[VMNetworkAdapter] = []
-
-
-class HyperVManager:
-    """Manager for Hyper-V virtual machines."""
-
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self):
-        if self._initialized:
-            return
-
-        # Default configuration
-        self.hyperv_host = "localhost"
-        self.vm_export_path = Path("C:\\HyperV\\Exports")
-        self.vm_import_path = Path("C:\\HyperV\\Imports")
-        self.backup_path = Path("C:\\HyperV\\Backups")
-        self.template_path = Path("C:\\HyperV\\Templates")
-
-        # Ensure directories exist
-        self.vm_export_path.mkdir(parents=True, exist_ok=True)
-        self.vm_import_path.mkdir(parents=True, exist_ok=True)
-        self.backup_path.mkdir(parents=True, exist_ok=True)
-        self.template_path.mkdir(parents=True, exist_ok=True)
-
-        # State
-        self.virtual_machines: dict[str, VirtualMachine] = {}
-        self.virtual_switches: list[dict[str, Any]] = []
-        self.background_tasks: dict[str, asyncio.Task] = {}
-
-        # Performance metrics
-        self.performance_metrics: dict[str, Any] = {
-            "cpu_usage": [],
-            "memory_usage": [],
-            "network_throughput": [],
-            "disk_io": [],
-        }
-
-        self._initialized = True
-
-        # Check if Hyper-V module is available
-        self._check_hyperv_module()
-
-    def _check_hyperv_module(self):
-        """Check if Hyper-V module is available and import it."""
-        logger.warning("Hyper-V backend integration is under construction in this module.")
-        return False
-
-    async def list_vms(self) -> list[VirtualMachine]:
-        """List all virtual machines.
-
-        Returns:
-            List[VirtualMachine]: List of virtual machines
-        """
-        await self._refresh_vm_list()
-        return list(self.virtual_machines.values())
-
-    async def get_vm(self, vm_name: str) -> VirtualMachine | None:
-        """Get details of a specific virtual machine.
-
-        Args:
-            vm_name: Name of the virtual machine
-
-        Returns:
-            Optional[VirtualMachine]: The virtual machine or None if not found
-        """
-        await self._refresh_vm_list()
-        return self.virtual_machines.get(vm_name)
-
-    async def start_vm(self, vm_name: str, wait: bool = False) -> dict[str, Any]:
-        """Start a virtual machine.
-
-        Args:
-            vm_name: Name of the virtual machine
-            wait: Whether to wait for the operation to complete
-
-        Returns:
-            Dict[str, Any]: Operation result
-        """
-        return await self._execute_vm_action("start", vm_name, wait)
-
-    async def stop_vm(self, vm_name: str, force: bool = False, wait: bool = False) -> dict[str, Any]:
-        """Stop a virtual machine.
-
-        Args:
-            vm_name: Name of the virtual machine
-            force: Whether to force stop the VM
-            wait: Whether to wait for the operation to complete
-
-        Returns:
-            Dict[str, Any]: Operation result
-        """
-        action = "stop" if not force else "force_stop"
-        return await self._execute_vm_action(action, vm_name, wait)
-
-    async def _execute_vm_action(self, action: str, vm_name: str, wait: bool = False, **kwargs) -> dict[str, Any]:
-        """Execute a VM action and return the result.
-
-        Args:
-            action: Action to perform (start, stop, restart, etc.)
-            vm_name: Name of the virtual machine
-            wait: Whether to wait for the operation to complete
-            **kwargs: Additional arguments for the action
-
-        Returns:
-            Dict[str, Any]: Operation result
-        """
-        return {
-            "status": "error",
-            "error_type": "not_implemented",
-            "message": "Hyper-V VM actions are under construction in this tool module.",
-            "vm_name": vm_name,
-            "action": action,
-        }
-
-    async def _refresh_vm_list(self):
-        """Refresh the list of virtual machines from Hyper-V."""
-        self.virtual_machines = {}
-
-    async def _refresh_switches(self):
-        """Refresh the list of virtual switches from Hyper-V."""
-        self.virtual_switches = []
-
-
-# Create a singleton instance
-hyperv_manager = HyperVManager()
-
-
-# Public API functions
 async def list_hyperv_vms() -> list[dict[str, Any]]:
-    """List all Hyper-V virtual machines.
-
-    Returns:
-        List[Dict[str, Any]]: List of virtual machines with basic information
-    """
-    vms = await hyperv_manager.list_vms()
-    return [
-        {
-            "name": vm.name,
-            "state": vm.state.value,
-            "cpu_usage": vm.cpu_usage,
-            "memory_assigned": vm.memory_assigned,
-            "uptime": str(vm.uptime) if vm.uptime else None,
-            "os": vm.operating_system,
-        }
-        for vm in vms
-    ]
+    """List all Hyper-V virtual machines."""
+    return await _svc().list_vms()
 
 
 async def get_hyperv_vm(vm_name: str) -> dict[str, Any] | None:
-    """Get details of a specific Hyper-V virtual machine.
+    """Get details of a specific Hyper-V virtual machine."""
+    return await _svc().get_vm(vm_name)
 
-    Args:
-        vm_name: Name of the virtual machine
 
-    Returns:
-        Optional[Dict[str, Any]]: Virtual machine details or None if not found
-    """
-    vm = await hyperv_manager.get_vm(vm_name)
-    if not vm:
-        return None
+async def create_hyperv_vm(
+    vm_name: str, memory_mb: int = 2048, disk_gb: int = 25, generation: int = 2
+) -> dict[str, Any]:
+    """Create a Hyper-V virtual machine."""
+    return await _svc().create_vm(vm_name, memory_mb=memory_mb, disk_gb=disk_gb, generation=generation)
 
-    return vm.dict()
+
+async def delete_hyperv_vm(vm_name: str, delete_vhd: bool = True) -> dict[str, Any]:
+    """Delete a Hyper-V virtual machine."""
+    return await _svc().delete_vm(vm_name, delete_vhd=delete_vhd)
 
 
 async def start_hyperv_vm(vm_name: str, wait: bool = False) -> dict[str, Any]:
-    """Start a Hyper-V virtual machine.
-
-    Args:
-        vm_name: Name of the virtual machine
-        wait: Whether to wait for the operation to complete
-
-    Returns:
-        Dict[str, Any]: Operation result
-    """
-    return await hyperv_manager.start_vm(vm_name, wait)
+    """Start a Hyper-V virtual machine."""
+    del wait  # Hyper-V Start-VM is synchronous enough; kept for API parity
+    return await _svc().start_vm(vm_name)
 
 
 async def stop_hyperv_vm(vm_name: str, force: bool = False, wait: bool = False) -> dict[str, Any]:
-    """Stop a Hyper-V virtual machine.
+    """Stop a Hyper-V virtual machine."""
+    del wait
+    return await _svc().stop_vm(vm_name, force=force)
 
-    Args:
-        vm_name: Name of the virtual machine
-        force: Whether to force stop the VM
-        wait: Whether to wait for the operation to complete
 
-    Returns:
-        Dict[str, Any]: Operation result
-    """
-    return await hyperv_manager.stop_vm(vm_name, force, wait)
+async def pause_hyperv_vm(vm_name: str) -> dict[str, Any]:
+    """Pause (suspend) a Hyper-V virtual machine."""
+    return await _svc().pause_vm(vm_name)
+
+
+async def resume_hyperv_vm(vm_name: str) -> dict[str, Any]:
+    """Resume a paused Hyper-V virtual machine."""
+    return await _svc().resume_vm(vm_name)
+
+
+async def list_hyperv_checkpoints(vm_name: str) -> list[dict[str, Any]]:
+    """List checkpoints for a Hyper-V VM."""
+    return await _svc().list_checkpoints(vm_name)
+
+
+async def create_hyperv_checkpoint(vm_name: str, checkpoint_name: str) -> dict[str, Any]:
+    """Create a named checkpoint."""
+    return await _svc().create_checkpoint(vm_name, checkpoint_name)
+
+
+async def restore_hyperv_checkpoint(vm_name: str, checkpoint_name: str) -> dict[str, Any]:
+    """Restore a named checkpoint."""
+    return await _svc().restore_checkpoint(vm_name, checkpoint_name)
+
+
+async def remove_hyperv_checkpoint(vm_name: str, checkpoint_name: str) -> dict[str, Any]:
+    """Delete a named checkpoint."""
+    return await _svc().remove_checkpoint(vm_name, checkpoint_name)
+
+
+async def list_hyperv_switches() -> list[dict[str, Any]]:
+    """List Hyper-V virtual switches."""
+    return await _svc().list_switches()
+
+
+async def create_hyperv_switch(switch_name: str, switch_type: str = "Internal") -> dict[str, Any]:
+    """Create a Hyper-V virtual switch."""
+    return await _svc().create_switch(switch_name, switch_type)
+
+
+async def connect_hyperv_network(vm_name: str, switch_name: str) -> dict[str, Any]:
+    """Connect a VM to a virtual switch."""
+    return await _svc().connect_network(vm_name, switch_name)
+
+
+async def attach_hyperv_iso(vm_name: str, iso_path: str) -> dict[str, Any]:
+    """Attach an ISO to a VM DVD drive."""
+    return await _svc().attach_iso(vm_name, iso_path)
+
+
+async def detach_hyperv_iso(vm_name: str) -> dict[str, Any]:
+    """Detach ISO from a VM DVD drive."""
+    return await _svc().detach_iso(vm_name)
+
+
+async def get_hyperv_enhanced_session() -> dict[str, Any]:
+    """Get host Enhanced Session Mode setting."""
+    return await _svc().get_enhanced_session()
+
+
+async def set_hyperv_enhanced_session(enabled: bool = True) -> dict[str, Any]:
+    """Enable/disable host Enhanced Session Mode."""
+    return await _svc().set_enhanced_session(enabled)
+
+
+async def launch_hyperv_console(vm_name: str, server: str = "localhost") -> dict[str, Any]:
+    """Launch VMConnect console for a VM (best-effort server-side)."""
+    return await _svc().launch_console(vm_name, server)
+
+
+def hyperv_connect_command(vm_name: str, server: str = "localhost") -> dict[str, Any]:
+    """Return the local VMConnect command for a VM."""
+    return _svc().connect_command(vm_name, server)
+
+
+# Backward-compatible model re-exports (moved to plugins.hyperv.manager).
+# Kept so `from virtualization_mcp.tools.vm import VirtualMachine, ...` keeps working.
+try:
+    from virtualization_mcp.plugins.hyperv.manager import (
+        VirtualMachine,
+        VMDisk,
+        VMNetworkAdapter,
+        VMSize,
+        VMSnapshot,
+        VMState,
+    )
+except Exception:  # pragma: no cover - plugin import should always succeed
+    VMDisk = object  # type: ignore[assignment,misc]
+    VMNetworkAdapter = object  # type: ignore[assignment,misc]
+    VMSize = object  # type: ignore[assignment,misc]
+    VMSnapshot = object  # type: ignore[assignment,misc]
+    VMState = object  # type: ignore[assignment,misc]
+    VirtualMachine = object  # type: ignore[assignment,misc]
+
+__all__ = [
+    "VMDisk",
+    "VMNetworkAdapter",
+    "VMSize",
+    "VMSnapshot",
+    "VMState",
+    "VirtualMachine",
+    "attach_hyperv_iso",
+    "connect_hyperv_network",
+    "create_hyperv_checkpoint",
+    "create_hyperv_switch",
+    "create_hyperv_vm",
+    "delete_hyperv_vm",
+    "detach_hyperv_iso",
+    "get_hyperv_enhanced_session",
+    "get_hyperv_vm",
+    "hyperv_connect_command",
+    "launch_hyperv_console",
+    "list_hyperv_checkpoints",
+    "list_hyperv_switches",
+    "list_hyperv_vms",
+    "pause_hyperv_vm",
+    "remove_hyperv_checkpoint",
+    "restore_hyperv_checkpoint",
+    "resume_hyperv_vm",
+    "set_hyperv_enhanced_session",
+    "start_hyperv_vm",
+    "stop_hyperv_vm",
+]
