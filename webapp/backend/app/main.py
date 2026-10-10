@@ -702,16 +702,20 @@ SANDBOX_DEV_SETUP_TOOLS = {
 SANDBOX_DEV_SETUP_DOWNLOAD = {
     "claude_desktop": ("https://claude.ai/api/desktop/win32/x64/msix/latest/redirect", "Claude.msix"),
 }
-# OpenClaw (npm), OpenFang (install.ps1), RoboFang (git + pip -e) - optional post-steps
+# OpenClaw (npm), OpenCode (npm), OpenFang (install.ps1), RoboFang (git + pip -e) - optional post-steps
 ROBOFANG_REPO = "https://github.com/sandraschi/robofang"
+
+# Default full-dev selection: every winget tool plus opencode (npm, needs Node).
+SANDBOX_DEV_SETUP_DEFAULT_TOOLS = [*SANDBOX_DEV_SETUP_TOOLS, "opencode"]
 
 
 def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> str:
-    """Generate PowerShell script: winget + pip upgrade + optional Claude/OpenClaw/OpenFang/RoboFang + optional OLLAMA_HOST to host. As automatic as possible."""
+    """Generate PowerShell script: winget + pip upgrade + optional Claude/OpenClaw/OpenCode/OpenFang/RoboFang + optional OLLAMA_HOST to host. As automatic as possible."""
     winget_ids = []
     has_python = False
     do_claude_desktop = False
     do_openclaw = False
+    do_opencode = False
     do_openfang = False
     do_robofang = False
     for t in tools:
@@ -724,11 +728,15 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
             do_claude_desktop = True
         elif t_lower == "openclaw":
             do_openclaw = True
+        elif t_lower == "opencode":
+            do_opencode = True
         elif t_lower == "openfang":
             do_openfang = True
         elif t_lower == "robofang":
             do_robofang = True
-    if not winget_ids and not any((do_claude_desktop, do_openclaw, do_openfang, do_robofang)):
+    if do_opencode and "OpenJS.NodeJS.LTS" not in winget_ids:
+        winget_ids.append("OpenJS.NodeJS.LTS")  # opencode installs via npm
+    if not winget_ids and not any((do_claude_desktop, do_openclaw, do_opencode, do_openfang, do_robofang)):
         winget_ids = [
             "Python.Python.3.12",
             "Git.Git",
@@ -784,16 +792,26 @@ if (Get-Command npm -ErrorAction SilentlyContinue) {
     openfang_block = ""
     if do_openfang:
         openfang_block = """
-# 8) OpenFang (official install script)
+# 9) OpenFang (official install script)
 Write-Host "Installing OpenFang..." -ForegroundColor Yellow
 try {
     irm https://openfang.sh/install.ps1 | iex
 } catch { Write-Host "OpenFang: $($_.Exception.Message)" -ForegroundColor Yellow }
 """
+    opencode_block = ""
+    if do_opencode:
+        opencode_block = """
+# 8) OpenCode (npm global, needs Node from step 2)
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+    Write-Host "Installing OpenCode..." -ForegroundColor Yellow
+    npm install -g opencode-ai@latest
+    if ($LASTEXITCODE -ne 0) { Write-Host "OpenCode install failed." -ForegroundColor Yellow }
+}
+"""
     robofang_block = ""
     if do_robofang:
         robofang_block = f"""
-# 9) RoboFang (git clone + pip install -e .)
+# 10) RoboFang (git clone + pip install -e .)
 $codeRoot = Join-Path $assetRoot "code"
 New-Item -ItemType Directory -Path $codeRoot -Force | Out-Null
 Set-Location $codeRoot
@@ -811,7 +829,7 @@ Set-Location $assetRoot
     ollama_block = ""
     if use_host_ollama:
         ollama_block = r"""
-# 10) Use host Ollama (default gateway = host from sandbox)
+# 11) Use host Ollama (default gateway = host from sandbox)
 $gw = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Select-Object -First 1).NextHop
 if ($gw) {
     $env:OLLAMA_HOST = "http://$gw:11434"
@@ -819,8 +837,8 @@ if ($gw) {
     Write-Host "OLLAMA_HOST set to $env:OLLAMA_HOST (host Ollama)" -ForegroundColor Cyan
 }
 """
-    return """# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
-# Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenFang, RoboFang. Optional: host Ollama.
+    script = """# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
+# Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenCode, OpenFang, RoboFang. Optional: host Ollama.
 # Downloads winget from GitHub if not present, then installs dev tools via winget.
 
 # Wait for mapped folder + network to stabilize
@@ -889,6 +907,7 @@ Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
 {pip_block}
 {claude_block}
 {openclaw_block}
+{opencode_block}
 {openfang_block}
 {robofang_block}
 {ollama_block}
@@ -896,6 +915,20 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";
 Write-Host "Full dev setup complete." -ForegroundColor Green
 Stop-Transcript
 """
+    # Plain (non-f) template: splice the blocks explicitly. An f-string would
+    # require doubling every PowerShell brace in the template.
+    for _key, _val in (
+        ("winget_blocks", winget_blocks),
+        ("pip_block", pip_block),
+        ("claude_block", claude_block),
+        ("openclaw_block", openclaw_block),
+        ("opencode_block", opencode_block),
+        ("openfang_block", openfang_block),
+        ("robofang_block", robofang_block),
+        ("ollama_block", ollama_block),
+    ):
+        script = script.replace("{" + _key + "}", _val)
+    return script
 
 
 def _build_sandbox_xml_dev_setup(
@@ -2877,7 +2910,7 @@ async def get_host_info():
 async def get_dev_setup_script(tools: str | None = None, use_host_ollama: bool | None = None):
     """Return PowerShell script for full dev setup in Sandbox. Query: tools (comma-separated), use_host_ollama (true/false)."""
     tool_list = (
-        [t.strip() for t in (tools or "").split(",") if t.strip()] if tools else list(SANDBOX_DEV_SETUP_TOOLS.keys())
+        [t.strip() for t in (tools or "").split(",") if t.strip()] if tools else list(SANDBOX_DEV_SETUP_DEFAULT_TOOLS)
     )
     script = _get_dev_setup_script(tool_list, use_host_ollama=bool(use_host_ollama))
     return {"script": script, "tools": tool_list}
@@ -2976,7 +3009,7 @@ async def launch_sandbox(request: SandboxLaunchRequest):
             with open(script_path, "w", encoding="utf-8") as f:
                 f.write(
                     _get_dev_setup_script(
-                        request.dev_tools or list(SANDBOX_DEV_SETUP_TOOLS.keys()),
+                        request.dev_tools or list(SANDBOX_DEV_SETUP_DEFAULT_TOOLS),
                         use_host_ollama=use_host_ollama,
                     )
                 )

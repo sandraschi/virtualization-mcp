@@ -30,6 +30,7 @@ const DEV_TOOL_OPTIONS = [
   { id: "antigravity", label: "Antigravity" },
   { id: "claude_desktop", label: "Claude Desktop" },
   { id: "openclaw", label: "OpenClaw" },
+  { id: "opencode", label: "OpenCode" },
   { id: "openfang", label: "OpenFang" },
   { id: "robofang", label: "RoboFang" },
 ] as const;
@@ -83,7 +84,16 @@ export default function Sandbox() {
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   const [devTools, setDevTools] = useState<Record<string, boolean>>(() => {
-    const core = ["python", "node", "uv", "git", "just", "vscode", "notepad++"];
+    const core = [
+      "python",
+      "node",
+      "uv",
+      "git",
+      "just",
+      "vscode",
+      "notepad++",
+      "opencode",
+    ];
     return Object.fromEntries(
       DEV_TOOL_OPTIONS.map(({ id }) => [id, core.includes(id)]),
     );
@@ -754,9 +764,9 @@ export default function Sandbox() {
               Setup-DevInfraSandbox.ps1
             </code>
             ). That script installs winget from GitHub, then winget installs:
-            Git, GitHub CLI, Node LTS (npm), Python 3.12, ruff, just, Biome.
-            Requires outbound HTTPS. If nothing happens, a second PowerShell
-            window opens with the tail of{" "}
+            Git, GitHub CLI, Node LTS (npm), Python 3.12, ruff, just, Biome,
+            Notepad++. Requires outbound HTTPS. If nothing happens, a second
+            PowerShell window opens with the tail of{" "}
             <code className="text-foreground/80">
               Desktop\dev-infra-launch.log
             </code>{" "}

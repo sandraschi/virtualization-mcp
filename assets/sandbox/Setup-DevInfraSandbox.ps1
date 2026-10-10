@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  virtualization-mcp: bootstrap winget in Windows Sandbox, then install git, gh, npm (Node LTS), Python, ruff, just, biome.
+  virtualization-mcp: bootstrap winget in Windows Sandbox, then install git, gh, npm (Node LTS), Python, ruff, just, biome, Notepad++.
 
 .DESCRIPTION
   Intended to run from the mapped folder as C:\Assets (see DevInfra.wsb or scripts/Launch-DevInfraSandbox.ps1).
@@ -33,7 +33,8 @@ $ids = @(
   'Python.Python.3.12',
   'astral-sh.ruff',
   'Casey.Just',
-  'BiomeJS.Biome'
+  'BiomeJS.Biome',
+  'Notepad++.Notepad++'
 )
 
 foreach ($id in $ids) {
@@ -66,6 +67,14 @@ foreach ($c in $checks) {
   } else {
     Write-Warning "Missing on PATH: $c (open a new PowerShell window and try again)"
   }
+}
+
+# Notepad++ does not register on PATH - verify the install folder instead.
+$nppExe = Join-Path ${env:ProgramFiles} 'Notepad++\notepad++.exe'
+if (Test-Path -LiteralPath $nppExe) {
+  Write-Host ("OK  notepad++ -> {0}" -f $nppExe)
+} else {
+  Write-Warning 'Missing: Notepad++ (C:\Program Files\Notepad++\notepad++.exe not found)'
 }
 
 Write-WsbStep 'Done'
