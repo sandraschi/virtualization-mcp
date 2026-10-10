@@ -1,11 +1,16 @@
 import {
+  Camera,
+  Disc,
   Loader2,
   Monitor,
   Pause,
   Play,
+  Plug,
   Plus,
   Power,
   RefreshCw,
+  RotateCcw,
+  Trash2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +25,13 @@ interface VmInfo {
   provider?: string;
 }
 
+interface Checkpoint {
+  name: string;
+  type: string;
+  creation_time: string;
+  id: string;
+}
+
 export default function HyperV() {
   const [vms, setVms] = useState<VmInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +42,14 @@ export default function HyperV() {
   const [createMemory, setCreateMemory] = useState(2048);
   const [createDisk, setCreateDisk] = useState(25);
   const [creating, setCreating] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [checkpoints, setCheckpoints] = useState<Record<string, Checkpoint[]>>(
+    {},
+  );
+  const [cpName, setCpName] = useState("");
+  const [isoPath, setIsoPath] = useState("");
+  const [connectCmd, setConnectCmd] = useState<string | null>(null);
+  const [enhanced, setEnhanced] = useState<boolean | null>(null);
 
   const fetchVMs = useCallback(async () => {
     setLoading(true);
@@ -47,9 +67,22 @@ export default function HyperV() {
     }
   }, []);
 
+  const fetchEnhanced = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/hyperv/enhanced-session`);
+      if (res.ok) {
+        const data = await res.json();
+        setEnhanced(data.enabled ?? null);
+      }
+    } catch {
+      /* ignore - host may not support Hyper-V */
+    }
+  }, []);
+
   useEffect(() => {
     fetchVMs();
-  }, [fetchVMs]);
+    fetchEnhanced();
+  }, [fetchVMs, fetchEnhanced]);
 
   const vmAction = async (name: string, action: string) => {
     setActionVm(`${name}-${action}`);
@@ -63,6 +96,171 @@ export default function HyperV() {
       /* ignore */
     }
     setActionVm(null);
+  };
+
+  const deleteVm = async (name: string) => {
+    if (!window.confirm(`Delete Hyper-V VM "${name}" and its VHDX folder?`))
+      return;
+    setActionVm(`${name}-delete`);
+    try {
+      await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(name)}?provider=hyperv`,
+        { method: "DELETE" },
+      );
+      setTimeout(fetchVMs, 1000);
+    } catch {
+      /* ignore */
+    }
+    setActionVm(null);
+  };
+
+  const connectVm = async (name: string) => {
+    setActionVm(`${name}-connect`);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(name)}/connect`,
+        { method: "POST" },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setConnectCmd(data.command || `vmconnect.exe localhost ${name}`);
+      }
+    } catch {
+      setConnectCmd(`vmconnect.exe localhost ${name}`);
+    }
+    setActionVm(null);
+  };
+
+  const loadCheckpoints = async (name: string) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(name)}/snapshots?provider=hyperv`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setCheckpoints((prev) => ({ ...prev, [name]: data.snapshots || [] }));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const toggleExpand = (name: string) => {
+    if (expanded === name) {
+      setExpanded(null);
+    } else {
+      setExpanded(name);
+      loadCheckpoints(name);
+    }
+  };
+
+  const createCheckpoint = async (name: string) => {
+    if (!cpName.trim()) return;
+    setActionVm(`${name}-snapshot`);
+    try {
+      await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(name)}/snapshot?provider=hyperv`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            snapshot_name: cpName.trim(),
+            description: "",
+          }),
+        },
+      );
+      setCpName("");
+      loadCheckpoints(name);
+    } catch {
+      /* ignore */
+    }
+    setActionVm(null);
+  };
+
+  const restoreCheckpoint = async (vm: string, cp: string) => {
+    setActionVm(`${vm}-restore`);
+    try {
+      await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(vm)}/restore?provider=hyperv`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snapshot_name: cp, description: "" }),
+        },
+      );
+      setTimeout(fetchVMs, 1000);
+    } catch {
+      /* ignore */
+    }
+    setActionVm(null);
+  };
+
+  const deleteCheckpoint = async (vm: string, cp: string) => {
+    setActionVm(`${vm}-delcp`);
+    try {
+      await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(vm)}/delete-snapshot?provider=hyperv`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snapshot_name: cp, description: "" }),
+        },
+      );
+      loadCheckpoints(vm);
+    } catch {
+      /* ignore */
+    }
+    setActionVm(null);
+  };
+
+  const attachIso = async (name: string) => {
+    if (!isoPath.trim()) return;
+    setActionVm(`${name}-iso`);
+    try {
+      await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(name)}/iso-attach`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ iso_path: isoPath.trim() }),
+        },
+      );
+      setIsoPath("");
+    } catch {
+      /* ignore */
+    }
+    setActionVm(null);
+  };
+
+  const detachIso = async (name: string) => {
+    setActionVm(`${name}-iso`);
+    try {
+      await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(name)}/iso-detach`,
+        {
+          method: "POST",
+        },
+      );
+    } catch {
+      /* ignore */
+    }
+    setActionVm(null);
+  };
+
+  const toggleEnhanced = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/hyperv/enhanced-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !enhanced }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEnhanced(data.enabled ?? !enhanced);
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   const createVm = async () => {
@@ -152,6 +350,26 @@ export default function HyperV() {
           Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V
           -All
         </code>
+        <div className="mt-2 flex items-center gap-2">
+          <span>
+            Enhanced Session Mode:{" "}
+            <strong>
+              {enhanced === null ? "unknown" : enhanced ? "on" : "off"}
+            </strong>{" "}
+            (USB, clipboard, resolution via VMConnect)
+          </span>
+          <button
+            onClick={toggleEnhanced}
+            className="px-2 py-1 text-xs rounded border border-white/10 bg-white/5 hover:bg-white/10"
+          >
+            Turn {enhanced ? "off" : "on"}
+          </button>
+        </div>
+        {connectCmd && (
+          <div className="mt-2 font-mono text-xs bg-black/20 px-2 py-1 rounded">
+            Run locally: <strong>{connectCmd}</strong>
+          </div>
+        )}
       </div>
 
       {showCreate && (
@@ -304,6 +522,19 @@ export default function HyperV() {
                         )}
                       </button>
                     </>
+                  ) : vm.state === "paused" || vm.state === "saved" ? (
+                    <button
+                      onClick={() => vmAction(vm.name, "resume")}
+                      disabled={isBusy(vm.name)}
+                      className="p-2 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                      title="Resume"
+                    >
+                      {isBusy(vm.name) ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="w-4 h-4" />
+                      )}
+                    </button>
                   ) : (
                     <button
                       onClick={() => vmAction(vm.name, "start")}
@@ -318,8 +549,123 @@ export default function HyperV() {
                       )}
                     </button>
                   )}
+                  <button
+                    onClick={() => connectVm(vm.name)}
+                    disabled={isBusy(vm.name)}
+                    className="p-2 rounded-lg bg-blue-500/20 text-blue-500 hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+                    title="Connect via VMConnect"
+                  >
+                    <Plug className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => toggleExpand(vm.name)}
+                    className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-muted-foreground"
+                    title="Checkpoints and ISO"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteVm(vm.name)}
+                    disabled={isBusy(vm.name)}
+                    className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                    title="Delete VM"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
+              {expanded === vm.name && (
+                <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">
+                      Checkpoints (VMConnect Action &gt; Checkpoint)
+                    </h4>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={cpName}
+                        onChange={(e) => setCpName(e.target.value)}
+                        placeholder="checkpoint name"
+                        className="flex-1 bg-background/50 border border-input rounded px-3 py-1.5 text-sm"
+                      />
+                      <button
+                        onClick={() => createCheckpoint(vm.name)}
+                        disabled={!cpName.trim()}
+                        className="px-3 py-1.5 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        Create
+                      </button>
+                    </div>
+                    {(checkpoints[vm.name] || []).length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No checkpoints.
+                      </p>
+                    ) : (
+                      <div className="space-y-1">
+                        {(checkpoints[vm.name] || []).map((cp) => (
+                          <div
+                            key={cp.id || cp.name}
+                            className="flex items-center justify-between text-sm bg-white/5 rounded px-3 py-1.5"
+                          >
+                            <span>
+                              {cp.name}{" "}
+                              <span className="text-xs text-muted-foreground">
+                                {cp.creation_time}
+                              </span>
+                            </span>
+                            <span className="flex gap-1">
+                              <button
+                                onClick={() =>
+                                  restoreCheckpoint(vm.name, cp.name)
+                                }
+                                className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-500 hover:bg-green-500/30"
+                              >
+                                Restore
+                              </button>
+                              <button
+                                onClick={() =>
+                                  deleteCheckpoint(vm.name, cp.name)
+                                }
+                                className="px-2 py-0.5 text-xs rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                              >
+                                Delete
+                              </button>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-1">
+                      <Disc className="w-4 h-4" /> ISO media (VMConnect Media
+                      menu)
+                    </h4>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={isoPath}
+                        onChange={(e) => setIsoPath(e.target.value)}
+                        placeholder="C:\ISOs\ubuntu.iso"
+                        className="flex-1 bg-background/50 border border-input rounded px-3 py-1.5 text-sm"
+                      />
+                      <button
+                        onClick={() => attachIso(vm.name)}
+                        disabled={!isoPath.trim()}
+                        className="px-3 py-1.5 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        Attach
+                      </button>
+                      <button
+                        onClick={() => detachIso(vm.name)}
+                        className="px-3 py-1.5 text-sm rounded border border-border hover:bg-white/10"
+                      >
+                        Detach
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
