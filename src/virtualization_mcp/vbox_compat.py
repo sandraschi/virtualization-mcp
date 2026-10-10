@@ -73,9 +73,13 @@ class VBoxManage:
         Raises:
             VirtualBoxError: If the command fails
         """
-        # Convert command to a list if it's a string
+        # Convert command to a list if it's a string.
+        # posix=False on Windows: POSIX shlex treats backslashes as escapes
+        # and would eat every "\" in "C:\..." args (same ghost as podman-mcp
+        # PODMAN_CMD). Non-POSIX mode keeps grouping quotes - strip those.
         if isinstance(command, str):
-            command = shlex.split(command)
+            parts = shlex.split(command, posix=sys.platform != "win32")
+            command = [p[1:-1] if len(p) >= 2 and p.startswith('"') and p.endswith('"') else p for p in parts]
 
         # Build the full argument list (no shell=True, no string joining)
         full_args = [self.vbox_manage, *command]

@@ -145,6 +145,56 @@ def test_vm_lifecycle():
         raise
 
 
+def test_run_command_preserves_windows_paths(monkeypatch):
+    """Regression: POSIX shlex.split eats backslashes in Windows paths.
+
+    Same ghost as podman-mcp PODMAN_CMD: 'C:\\VMs\\disk.vdi' must survive
+    string->argv splitting on win32, including quoted args with spaces.
+    """
+    from unittest.mock import MagicMock, patch
+
+    from virtualization_mcp.vbox_compat import VBoxManage
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    mgr = VBoxManage(vbox_manage_path=r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe")
+    captured: dict = {}
+
+    def fake_run(args, **kwargs):
+        captured["args"] = args
+        m = MagicMock()
+        m.returncode = 0
+        m.stdout = "ok"
+        m.stderr = ""
+        return m
+
+    with patch("virtualization_mcp.vbox_compat.subprocess.run", side_effect=fake_run):
+        mgr._run_command(r'createhd --filename "C:\VMs\disk.vdi" --size 10240')
+    assert captured["args"][1:] == ["createhd", "--filename", r"C:\VMs\disk.vdi", "--size", "10240"]
+
+
+def test_run_command_posix_split_unchanged(monkeypatch):
+    """POSIX splitting keeps working for non-Windows (escapes processed)."""
+    from unittest.mock import MagicMock, patch
+
+    from virtualization_mcp.vbox_compat import VBoxManage
+
+    monkeypatch.setattr(sys, "platform", "linux")
+    mgr = VBoxManage(vbox_manage_path="/usr/bin/VBoxManage")
+    captured: dict = {}
+
+    def fake_run(args, **kwargs):
+        captured["args"] = args
+        m = MagicMock()
+        m.returncode = 0
+        m.stdout = "ok"
+        m.stderr = ""
+        return m
+
+    with patch("virtualization_mcp.vbox_compat.subprocess.run", side_effect=fake_run):
+        mgr._run_command("list vms")
+    assert captured["args"][1:] == ["list", "vms"]
+
+
 if __name__ == "__main__":
     logger.info("Starting VirtualBox compatibility layer tests...")
     test_vm_lifecycle()
