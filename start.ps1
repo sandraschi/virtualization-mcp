@@ -35,8 +35,10 @@ function Require-Command {
 Require-Command "uv" "astral-sh.uv" "uv (Python package manager)"
 $uvExe = (Get-Command uv).Source
 
-# Clear fleet ports (10700 frontend, 10701 backend, 10702 MCP HTTP) before binding
-@(10700, 10701, 10702) | ForEach-Object {
+# Clear the MCP HTTP port (10702) before binding. Web ports (10700 frontend,
+# 10701 backend) belong to webapp/start.ps1 - do NOT kill them here, or the
+# dashboard loses its backend and vite returns 500 on /api.
+@(10702) | ForEach-Object {
     Get-NetTCPConnection -LocalPort $_ -ErrorAction SilentlyContinue | ForEach-Object {
         Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
     }
