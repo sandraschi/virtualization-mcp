@@ -4404,15 +4404,20 @@ async def resume_vm(name: str, request: Request):
 
 
 @app.post("/api/v1/vms/{name}/snapshot")
-async def create_snapshot(name: str, request: VMSnapshotRequest):
+async def create_snapshot(name: str, snapshot_request: VMSnapshotRequest, request: Request):
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
+    provider = request.query_params.get("provider", "virtualbox")
     try:
+        if provider == "hyperv":
+            return await service_manager.vm_service.hyperv_manager.create_checkpoint(
+                name, snapshot_request.snapshot_name
+            )
         result = await asyncio.to_thread(
             service_manager.vm_service.create_snapshot,
             name,
-            request.snapshot_name,
-            request.description,
+            snapshot_request.snapshot_name,
+            snapshot_request.description,
         )
         return result
     except Exception as e:
@@ -4421,11 +4426,15 @@ async def create_snapshot(name: str, request: VMSnapshotRequest):
 
 
 @app.get("/api/v1/vms/{name}/snapshots")
-async def list_vm_snapshots(name: str):
+async def list_vm_snapshots(name: str, request: Request):
     """List all snapshots for a VM."""
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
+    provider = request.query_params.get("provider", "virtualbox")
     try:
+        if provider == "hyperv":
+            cps = await service_manager.vm_service.hyperv_manager.list_checkpoints(name)
+            return {"status": "success", "snapshots": cps}
         result = await asyncio.to_thread(service_manager.vm_service.list_snapshots, name)
         return result
     except Exception as e:
@@ -4434,12 +4443,19 @@ async def list_vm_snapshots(name: str):
 
 
 @app.post("/api/v1/vms/{name}/restore")
-async def restore_vm_snapshot(name: str, request: VMSnapshotRequest):
+async def restore_vm_snapshot(name: str, snapshot_request: VMSnapshotRequest, request: Request):
     """Restore a VM snapshot."""
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
+    provider = request.query_params.get("provider", "virtualbox")
     try:
-        result = await asyncio.to_thread(service_manager.vm_service.restore_snapshot, name, request.snapshot_name)
+        if provider == "hyperv":
+            return await service_manager.vm_service.hyperv_manager.restore_checkpoint(
+                name, snapshot_request.snapshot_name
+            )
+        result = await asyncio.to_thread(
+            service_manager.vm_service.restore_snapshot, name, snapshot_request.snapshot_name
+        )
         return result
     except Exception as e:
         logger.error(f"Error restoring snapshot for VM {name}: {e}")
@@ -4447,12 +4463,19 @@ async def restore_vm_snapshot(name: str, request: VMSnapshotRequest):
 
 
 @app.post("/api/v1/vms/{name}/delete-snapshot")
-async def delete_vm_snapshot(name: str, request: VMSnapshotRequest):
+async def delete_vm_snapshot(name: str, snapshot_request: VMSnapshotRequest, request: Request):
     """Delete a VM snapshot."""
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
+    provider = request.query_params.get("provider", "virtualbox")
     try:
-        result = await asyncio.to_thread(service_manager.vm_service.delete_snapshot, name, request.snapshot_name)
+        if provider == "hyperv":
+            return await service_manager.vm_service.hyperv_manager.remove_checkpoint(
+                name, snapshot_request.snapshot_name
+            )
+        result = await asyncio.to_thread(
+            service_manager.vm_service.delete_snapshot, name, snapshot_request.snapshot_name
+        )
         return result
     except Exception as e:
         logger.error(f"Error deleting snapshot for VM {name}: {e}")
@@ -4460,15 +4483,151 @@ async def delete_vm_snapshot(name: str, request: VMSnapshotRequest):
 
 
 @app.delete("/api/v1/vms/{name}")
-async def delete_vm(name: str):
-    """Delete a VM (VirtualBox)."""
+async def delete_vm(name: str, request: Request):
+    """Delete a VM (VirtualBox by default, Hyper-V with ?provider=hyperv)."""
     if not service_manager:
         raise HTTPException(status_code=503, detail="VM Service not available")
+    provider = request.query_params.get("provider", "virtualbox")
     try:
+        if provider == "hyperv":
+            delete_vhd = request.query_params.get("delete_vhd", "true").lower() != "false"
+            return await service_manager.vm_service.hyperv_manager.delete_vm(name, delete_vhd=delete_vhd)
         result = await asyncio.to_thread(service_manager.vm_service.delete_vm, name)
         return result
     except Exception as e:
         logger.error(f"Error deleting VM {name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# -- Hyper-V console (VMConnect), switches, ISO media, Enhanced Session Mode --
+
+
+class HyperVSwitchRequest(BaseModel):
+    switch_name: str
+    switch_type: str = "Internal"
+
+
+class HyperVNetworkConnectRequest(BaseModel):
+    switch_name: str
+
+
+class HyperVIsoAttachRequest(BaseModel):
+    iso_path: str
+
+
+class HyperVEnhancedSessionRequest(BaseModel):
+    enabled: bool = True
+
+
+@app.get("/api/v1/hyperv/switches")
+async def hyperv_list_switches():
+    """List Hyper-V virtual switches."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        switches = await service_manager.vm_service.hyperv_manager.list_switches()
+        return {"status": "success", "switches": switches}
+    except Exception as e:
+        logger.error(f"Error listing Hyper-V switches: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/hyperv/switches")
+async def hyperv_create_switch(request: HyperVSwitchRequest):
+    """Create a Hyper-V virtual switch."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        return await service_manager.vm_service.hyperv_manager.create_switch(request.switch_name, request.switch_type)
+    except Exception as e:
+        logger.error(f"Error creating Hyper-V switch: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/vms/{name}/network-connect")
+async def hyperv_network_connect(name: str, request: HyperVNetworkConnectRequest):
+    """Connect a Hyper-V VM to a virtual switch."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        return await service_manager.vm_service.hyperv_manager.connect_network(name, request.switch_name)
+    except Exception as e:
+        logger.error(f"Error connecting {name} to switch: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/vms/{name}/iso-attach")
+async def hyperv_iso_attach(name: str, request: HyperVIsoAttachRequest):
+    """Attach an ISO to a Hyper-V VM DVD drive (VMConnect Media menu equivalent)."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    norm = os.path.normpath(os.path.abspath(request.iso_path.strip()))
+    if not os.path.isfile(norm):
+        raise HTTPException(status_code=400, detail=f"iso_path must be an existing file: {norm}")
+    try:
+        return await service_manager.vm_service.hyperv_manager.attach_iso(name, norm)
+    except Exception as e:
+        logger.error(f"Error attaching ISO to {name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/vms/{name}/iso-detach")
+async def hyperv_iso_detach(name: str):
+    """Detach ISO from a Hyper-V VM DVD drive."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        return await service_manager.vm_service.hyperv_manager.detach_iso(name)
+    except Exception as e:
+        logger.error(f"Error detaching ISO from {name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/api/v1/vms/{name}/connect")
+async def hyperv_connect_info(name: str, server: str = "localhost"):
+    """Get the local VMConnect command for a Hyper-V VM."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        return service_manager.vm_service.hyperv_manager.connect_command(name, server)
+    except Exception as e:
+        logger.error(f"Error getting connect info for {name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/vms/{name}/connect")
+async def hyperv_connect_launch(name: str, server: str = "localhost"):
+    """Best-effort launch VMConnect console for a Hyper-V VM on the backend host."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        return await service_manager.vm_service.hyperv_manager.launch_console(name, server)
+    except Exception as e:
+        logger.error(f"Error launching console for {name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.get("/api/v1/hyperv/enhanced-session")
+async def hyperv_enhanced_get():
+    """Get host Enhanced Session Mode setting."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        return await service_manager.vm_service.hyperv_manager.get_enhanced_session()
+    except Exception as e:
+        logger.error(f"Error getting enhanced session: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/api/v1/hyperv/enhanced-session")
+async def hyperv_enhanced_set(request: HyperVEnhancedSessionRequest):
+    """Enable/disable host Enhanced Session Mode."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    try:
+        return await service_manager.vm_service.hyperv_manager.set_enhanced_session(request.enabled)
+    except Exception as e:
+        logger.error(f"Error setting enhanced session: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
