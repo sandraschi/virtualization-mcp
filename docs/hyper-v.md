@@ -44,27 +44,48 @@ Same buttons as VirtualBox — the provider is detected from the VM metadata. Th
 
 ## Current limitations
 
-Hyper-V support is focused on **basic lifecycle operations**. Advanced VirtualBox features are not available for Hyper-V:
+Hyper-V now covers the full VMConnect workflow (console, checkpoints, ISO media,
+switches). Remaining VirtualBox-only features:
 
 | Feature | VirtualBox | Hyper-V |
 |---------|-----------|---------|
 | Create / Start / Stop | ✅ | ✅ |
 | Pause / Resume | ✅ | ✅ |
-| Delete | ✅ | ✅ |
-| Snapshots | ✅ | ❌ |
-| Network config (NAT, bridged, etc.) | ✅ | ❌ (uses default switch) |
-| Console (VNC / VRDP) | ✅ | ❌ |
-| ISO attach / detach | ✅ | ❌ |
+| Delete | ✅ | ✅ (`DELETE /api/v1/vms/{name}?provider=hyperv`) |
+| Checkpoints | ✅ | ✅ (`Checkpoint-VM`, via snapshot routes with `?provider=hyperv`) |
+| Network config | ✅ (NAT/bridged/hostonly) | ✅ (VMSwitch list/create/connect) |
+| Console | ✅ (VNC/VRDP in browser) | ✅ (VMConnect: `POST /api/v1/vms/{name}/connect`, Enhanced Session toggle) |
+| ISO attach / detach | ✅ | ✅ (`POST /api/v1/vms/{name}/iso-attach`, `/iso-detach`) |
 | Unattended install | ✅ | ❌ |
 | Port forwarding | ✅ | ❌ |
 | Templates | ✅ | ❌ |
 
 Hyper-V is ideal for:
 - **Lightweight Windows dev VMs** that just need to exist and run
-- **Quick testing** where you don't need snapshot rollback or console access
-- **Leveraging Windows-native virtualization** without installing VirtualBox
+- **Windows-native virtualization** without installing VirtualBox
+- **VMConnect console access** with Enhanced Session Mode (USB, clipboard, resolution)
 
-If you need snapshots, console access, advanced networking, or ISO management, use VirtualBox instead — both providers coexist on the same machine.
+## Console (VMConnect)
+
+Per https://learn.microsoft.com/en-gb/windows-server/virtualization/hyper-v/virtual-machine-connection:
+
+- Click the plug icon on a VM card, or `POST /api/v1/vms/{name}/connect` to
+  best-effort launch `vmconnect.exe localhost <name>` on the backend host.
+- `GET /api/v1/vms/{name}/connect` returns the local command
+  (`vmconnect.exe <server> <name>` and the `/edit` variant) for remote clients.
+- Toggle Enhanced Session Mode from the Hyper-V page header, or
+  `GET/POST /api/v1/hyperv/enhanced-session`.
+- MCP: `hyperv_management(action="console", vm_name="...")`,
+  `hyperv_management(action="enhanced_get")` / `enhanced_set`.
+
+## Checkpoints, switches, ISO
+
+- Checkpoints: expand a VM card (camera icon) or use the snapshot routes with
+  `?provider=hyperv`. MCP: `checkpoint_list/create/restore/delete`.
+- Switches: `GET/POST /api/v1/hyperv/switches`,
+  `POST /api/v1/vms/{name}/network-connect`. MCP: `switch_list/create`, `network_connect`.
+- ISO: per-VM card ISO section or `iso-attach` / `iso-detach` routes.
+  MCP: `iso_attach` / `iso_detach`.
 
 ## Architecture
 
