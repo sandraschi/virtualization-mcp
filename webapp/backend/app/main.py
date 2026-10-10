@@ -697,6 +697,18 @@ SANDBOX_DEV_SETUP_TOOLS = {
     "windsurf": "Codeium.Windsurf",
     "cursor": "Anysphere.Cursor",
     "antigravity": "Google.Antigravity",
+    "github-desktop": "GitHub.GitHubDesktop",
+    "firefox": "Mozilla.Firefox",
+    "chrome": "Google.Chrome",
+    "office365": "Microsoft.Office",
+    "outlook": "Microsoft.Outlook",
+    "tailscale": "Tailscale.Tailscale",
+    "wireguard": "WireGuard.WireGuard",
+    "7zip": "7zip.7zip",
+    "pwsh": "Microsoft.PowerShell",
+    "terminal": "Microsoft.WindowsTerminal",
+    "sysinternals": "Microsoft.Sysinternals.Suite",
+    "vlc": "VideoLAN.VLC",
 }
 # Claude Desktop: use MSIX for silent/headless install
 SANDBOX_DEV_SETUP_DOWNLOAD = {
@@ -705,8 +717,9 @@ SANDBOX_DEV_SETUP_DOWNLOAD = {
 # OpenClaw (npm), OpenCode (npm), OpenFang (install.ps1), RoboFang (git + pip -e) - optional post-steps
 ROBOFANG_REPO = "https://github.com/sandraschi/robofang"
 
-# Default full-dev selection: every winget tool plus opencode (npm, needs Node).
-SANDBOX_DEV_SETUP_DEFAULT_TOOLS = [*SANDBOX_DEV_SETUP_TOOLS, "opencode"]
+# Default full-dev selection: curated core (NOT every catalog entry - Office
+# alone is a ~2GB download). The frontend "Choose software" modal mirrors this.
+SANDBOX_DEV_SETUP_DEFAULT_TOOLS = ["python", "git", "node", "just", "vscode", "notepad++", "uv", "opencode"]
 
 
 def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> str:
@@ -716,6 +729,7 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
     do_claude_desktop = False
     do_openclaw = False
     do_opencode = False
+    do_rustdesk = False
     do_openfang = False
     do_robofang = False
     for t in tools:
@@ -730,13 +744,15 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
             do_openclaw = True
         elif t_lower == "opencode":
             do_opencode = True
+        elif t_lower == "rustdesk":
+            do_rustdesk = True
         elif t_lower == "openfang":
             do_openfang = True
         elif t_lower == "robofang":
             do_robofang = True
     if do_opencode and "OpenJS.NodeJS.LTS" not in winget_ids:
         winget_ids.append("OpenJS.NodeJS.LTS")  # opencode installs via npm
-    if not winget_ids and not any((do_claude_desktop, do_openclaw, do_opencode, do_openfang, do_robofang)):
+    if not winget_ids and not any((do_claude_desktop, do_openclaw, do_opencode, do_rustdesk, do_openfang, do_robofang)):
         winget_ids = [
             "Python.Python.3.12",
             "Git.Git",
@@ -751,10 +767,9 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
         ]
         has_python = True
 
-    winget_blocks = "\n".join(
-        f'$wingetArgs = @("install", "-e", "--id", "{wid}", "--source", "winget", "--accept-package-agreements", "--accept-source-agreements")\n& winget @wingetArgs\nif ($LASTEXITCODE -ne 0) {{ Write-Host "winget {wid} failed." -ForegroundColor Red; exit 1 }}'
-        for wid in winget_ids
-    )
+    # Winget IDs as a PowerShell array literal. The template installs them in a
+    # warn-and-continue loop (one bad ID must not abort a 20-item list).
+    winget_ids_ps = "@(" + ", ".join(f"'{wid}'" for wid in winget_ids) + ")"
     pip_block = ""
     if has_python or "Python.Python.3.12" in winget_ids:
         pip_block = """
@@ -762,7 +777,7 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
 if (Get-Command python -ErrorAction SilentlyContinue) {
     Write-Host "Upgrading pip..." -ForegroundColor Yellow
     python -m pip install --upgrade pip
-    if ($LASTEXITCODE -ne 0) { Write-Host "pip upgrade failed." -ForegroundColor Red; exit 1 }
+    if ($LASTEXITCODE -ne 0) { Write-Host "pip upgrade failed - continuing." -ForegroundColor Yellow }
 }
 """
     claude_block = ""
@@ -826,10 +841,28 @@ python -m pip install -e .
 if ($LASTEXITCODE -ne 0) {{ Write-Host "RoboFang pip install failed." -ForegroundColor Red; exit 1 }}
 Set-Location $assetRoot
 """
+    rustdesk_block = ""
+    if do_rustdesk:
+        rustdesk_block = """
+# 11) RustDesk (GitHub release exe, silent install with timeout)
+Write-Host "Installing RustDesk..." -ForegroundColor Yellow
+try {
+    $rdRelease = Invoke-RestMethod -Uri 'https://api.github.com/repos/rustdesk/rustdesk/releases/latest' -UseBasicParsing
+    $rdAsset = $null
+    foreach ($a in $rdRelease.assets) { if ($a.name -like 'rustdesk-*-x86_64.exe') { $rdAsset = $a; break } }
+    if ($rdAsset) {
+        $rdExe = Join-Path $env:TEMP $rdAsset.name
+        Invoke-WebRequest -Uri $rdAsset.browser_download_url -OutFile $rdExe -UseBasicParsing
+        $rdJob = Start-Job -ScriptBlock { param($p) Start-Process -FilePath $p -ArgumentList '--silent-install' -Wait } -ArgumentList $rdExe
+        if (Wait-Job $rdJob -Timeout 180) { Receive-Job $rdJob } else { Stop-Job $rdJob; Write-Host "RustDesk installer timed out - continuing." -ForegroundColor Yellow }
+        Remove-Job $rdJob -Force -ErrorAction SilentlyContinue
+    } else { Write-Host "RustDesk: no x86_64 exe in latest release." -ForegroundColor Yellow }
+} catch { Write-Host "RustDesk: $($_.Exception.Message)" -ForegroundColor Yellow }
+"""
     ollama_block = ""
     if use_host_ollama:
         ollama_block = r"""
-# 11) Use host Ollama (default gateway = host from sandbox)
+# 12) Use host Ollama (default gateway = host from sandbox)
 $gw = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Select-Object -First 1).NextHop
 if ($gw) {
     $env:OLLAMA_HOST = "http://$gw:11434"
@@ -838,7 +871,7 @@ if ($gw) {
 }
 """
     script = """# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
-# Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, Claude Desktop, OpenClaw, OpenCode, OpenFang, RoboFang. Optional: host Ollama.
+# Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, GitHub Desktop, Firefox, Chrome, 7-Zip, PowerShell 7, Windows Terminal, Sysinternals, VLC, Office 365, Outlook, Tailscale, WireGuard, Claude Desktop, OpenClaw, OpenCode, RustDesk, OpenFang, RoboFang. Optional: host Ollama.
 # Downloads winget from GitHub if not present, then installs dev tools via winget.
 
 # Wait for mapped folder + network to stabilize
@@ -901,14 +934,22 @@ if (-not $haveWinget) {
     Write-Host "winget installed successfully." -ForegroundColor Green
 }
 
-# 2) Dev stack via winget
+# 2) Dev stack via winget (warn-and-continue per package; summary at the end)
 Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
-{winget_blocks}
+$wingetIds = {winget_ids_ps}
+$failedWinget = @()
+foreach ($wid in $wingetIds) {
+    $wingetArgs = @("install", "-e", "--id", $wid, "--source", "winget", "--accept-package-agreements", "--accept-source-agreements")
+    & winget @wingetArgs
+    if ($LASTEXITCODE -ne 0) { Write-Host "winget $wid failed - continuing." -ForegroundColor Yellow; $failedWinget += $wid }
+}
+if ($failedWinget.Count -gt 0) { Write-Host ("winget failures: " + ($failedWinget -join ", ")) -ForegroundColor Yellow }
 {pip_block}
 {claude_block}
 {openclaw_block}
 {opencode_block}
 {openfang_block}
+{rustdesk_block}
 {robofang_block}
 {ollama_block}
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
@@ -918,12 +959,13 @@ Stop-Transcript
     # Plain (non-f) template: splice the blocks explicitly. An f-string would
     # require doubling every PowerShell brace in the template.
     for _key, _val in (
-        ("winget_blocks", winget_blocks),
+        ("winget_ids_ps", winget_ids_ps),
         ("pip_block", pip_block),
         ("claude_block", claude_block),
         ("openclaw_block", openclaw_block),
         ("opencode_block", opencode_block),
         ("openfang_block", openfang_block),
+        ("rustdesk_block", rustdesk_block),
         ("robofang_block", robofang_block),
         ("ollama_block", ollama_block),
     ):
@@ -2585,6 +2627,18 @@ def _generate_win_dev_setup_ps1(
         "windsurf": "Codeium.Windsurf",
         "cursor": "Anysphere.Cursor",
         "antigravity": "Google.Antigravity",
+        "github-desktop": "GitHub.GitHubDesktop",
+        "firefox": "Mozilla.Firefox",
+        "chrome": "Google.Chrome",
+        "office365": "Microsoft.Office",
+        "outlook": "Microsoft.Outlook",
+        "tailscale": "Tailscale.Tailscale",
+        "wireguard": "WireGuard.WireGuard",
+        "7zip": "7zip.7zip",
+        "pwsh": "Microsoft.PowerShell",
+        "terminal": "Microsoft.WindowsTerminal",
+        "sysinternals": "Microsoft.Sysinternals.Suite",
+        "vlc": "VideoLAN.VLC",
     }
 
     winget_ids = [tool_map[t] for t in tools if t in tool_map]

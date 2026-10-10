@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Save,
   Wrench,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "../api/config";
@@ -33,7 +34,58 @@ const DEV_TOOL_OPTIONS = [
   { id: "opencode", label: "OpenCode" },
   { id: "openfang", label: "OpenFang" },
   { id: "robofang", label: "RoboFang" },
+  { id: "github-desktop", label: "GitHub Desktop" },
+  { id: "firefox", label: "Firefox" },
+  { id: "chrome", label: "Chrome" },
+  { id: "rustdesk", label: "RustDesk" },
+  { id: "tailscale", label: "Tailscale" },
+  { id: "wireguard", label: "WireGuard" },
+  { id: "office365", label: "Microsoft 365" },
+  { id: "outlook", label: "Outlook" },
+  { id: "7zip", label: "7-Zip" },
+  { id: "pwsh", label: "PowerShell 7" },
+  { id: "terminal", label: "Windows Terminal" },
+  { id: "sysinternals", label: "Sysinternals Suite" },
+  { id: "vlc", label: "VLC" },
 ] as const;
+
+const TOOL_GROUPS: Array<{ title: string; items: string[] }> = [
+  { title: "Dev stack", items: ["python", "node", "uv", "git", "just"] },
+  {
+    title: "Editors & IDEs",
+    items: [
+      "vscode",
+      "notepad++",
+      "windsurf",
+      "cursor",
+      "antigravity",
+      "github-desktop",
+    ],
+  },
+  { title: "Browsers", items: ["firefox", "chrome"] },
+  { title: "Remote & VPN", items: ["rustdesk", "tailscale", "wireguard"] },
+  { title: "Office", items: ["office365", "outlook"] },
+  {
+    title: "Utilities",
+    items: ["7zip", "pwsh", "terminal", "sysinternals", "vlc"],
+  },
+  {
+    title: "AI tools",
+    items: ["claude_desktop", "openclaw", "opencode", "openfang", "robofang"],
+  },
+];
+
+const TOOL_HINTS: Record<string, string> = {
+  office365: "Microsoft 365 Apps (~2 GB download, needs a license)",
+  outlook: "New Outlook (needs a Microsoft account)",
+  tailscale: "Needs a Tailscale login inside the sandbox",
+  wireguard: "Client only - import your tunnel config after install",
+  rustdesk: "From GitHub releases (not on winget)",
+};
+
+const TOOL_LABELS: Record<string, string> = Object.fromEntries(
+  DEV_TOOL_OPTIONS.map(({ id, label }) => [id, label]),
+);
 
 export default function Sandbox() {
   const [config, setConfig] = useState({
@@ -381,8 +433,14 @@ export default function Sandbox() {
     }
   };
 
-  const toggleDevTool = (id: string) =>
-    setDevTools((prev) => ({ ...prev, [id]: !prev[id] }));
+  const [showPicker, setShowPicker] = useState(false);
+  const [draftTools, setDraftTools] = useState<Record<string, boolean>>({});
+
+  const selectedToolIds = DEV_TOOL_OPTIONS.filter(({ id }) => devTools[id]).map(
+    ({ id }) => id,
+  );
+  const selectedToolNames =
+    selectedToolIds.map((id) => TOOL_LABELS[id]).join(", ") || "none";
 
   const handleLaunchDevInfra = async () => {
     if (!(await checkSandboxRunning())) return;
@@ -1203,22 +1261,21 @@ export default function Sandbox() {
             <span className="block text-sm font-medium mb-2">
               Tools to install
             </span>
-            <div className="flex flex-wrap gap-2">
-              {DEV_TOOL_OPTIONS.map(({ id, label }) => (
-                <label
-                  key={id}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!devTools[id]}
-                    onChange={() => toggleDevTool(id)}
-                    className="rounded border-input bg-background/50 text-primary"
-                  />
-                  <span className="text-sm">{label}</span>
-                </label>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDraftTools({ ...devTools });
+                setShowPicker(true);
+              }}
+              className="w-full text-left px-3 py-2 rounded-lg border border-input bg-background/50 hover:bg-white/10 text-sm"
+            >
+              <span className="text-primary font-medium">
+                Choose software ({selectedToolIds.length} selected)
+              </span>
+              <span className="block text-xs text-muted-foreground mt-1 truncate">
+                {selectedToolNames}
+              </span>
+            </button>
           </div>
           <div className="flex flex-col gap-3">
             <label className="flex items-center gap-3 cursor-pointer">
@@ -1288,6 +1345,108 @@ export default function Sandbox() {
           </div>
         </div>
       </div>
+
+      {showPicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowPicker(false)}
+        >
+          <div
+            className="bg-card border border-border rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-semibold text-lg">Choose software</h3>
+              <button
+                type="button"
+                onClick={() => setShowPicker(false)}
+                className="p-1 rounded hover:bg-white/10 text-muted-foreground"
+                title="Close"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-auto p-4 space-y-5">
+              {TOOL_GROUPS.map((group) => {
+                const allOn = group.items.every((id) => draftTools[id]);
+                return (
+                  <div key={group.title}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold">
+                        {group.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = { ...draftTools };
+                          group.items.forEach((id) => {
+                            next[id] = !allOn;
+                          });
+                          setDraftTools(next);
+                        }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {allOn ? "None" : "All"}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {group.items.map((id) => (
+                        <label
+                          key={id}
+                          className="flex items-start gap-2 cursor-pointer rounded-lg px-2 py-1.5 hover:bg-white/5"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!draftTools[id]}
+                            onChange={() =>
+                              setDraftTools((prev) => ({
+                                ...prev,
+                                [id]: !prev[id],
+                              }))
+                            }
+                            className="rounded border-input bg-background/50 text-primary mt-0.5"
+                          />
+                          <span>
+                            <span className="block text-sm">
+                              {TOOL_LABELS[id]}
+                            </span>
+                            {TOOL_HINTS[id] && (
+                              <span className="block text-xs text-muted-foreground">
+                                {TOOL_HINTS[id]}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-2 p-4 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowPicker(false)}
+                className="flex-1 py-2 rounded-lg border border-border hover:bg-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDevTools({ ...draftTools });
+                  setShowPicker(false);
+                }}
+                className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Apply ({Object.values(draftTools).filter(Boolean).length}{" "}
+                selected)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preview */}
       <div className="flex flex-col h-full rounded-xl border border-border bg-card/60 backdrop-blur-md overflow-hidden min-h-[24rem]">
