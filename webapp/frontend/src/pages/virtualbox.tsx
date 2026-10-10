@@ -107,6 +107,14 @@ export default function VirtualBox() {
   const [showNetworkConfig, setShowNetworkConfig] = useState<string | null>(
     null,
   );
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
+  const [pfName, setPfName] = useState("");
+  const [pfProto, setPfProto] = useState("tcp");
+  const [pfHost, setPfHost] = useState("");
+  const [pfGuest, setPfGuest] = useState("");
+  const [unattendedStatus, setUnattendedStatus] = useState<Record<string, any>>(
+    {},
+  );
   const [showUnattended, setShowUnattended] = useState<string | null>(null);
   const [unattendedUsername, setUnattendedUsername] = useState("user");
   const [unattendedPassword, setUnattendedPassword] = useState("password");
@@ -260,13 +268,19 @@ export default function VirtualBox() {
       } catch {
         config = { os_type: "Linux_64", memory_mb: 2048, disk_gb: 20, cpus: 2 };
       }
-      await fetch(`${API_BASE}/api/v1/templates`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editTemplateName.trim(), config }),
-      });
+      await fetch(
+        editingTemplate
+          ? `${API_BASE}/api/v1/templates/${encodeURIComponent(editingTemplate)}`
+          : `${API_BASE}/api/v1/templates`,
+        {
+          method: editingTemplate ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: editTemplateName.trim(), config }),
+        },
+      );
       setEditTemplateName("");
       setEditTemplateConfig("{}");
+      setEditingTemplate(null);
       fetchTemplates();
     } catch (e: any) {
       console.error(e);
@@ -294,6 +308,20 @@ export default function VirtualBox() {
       if (res.ok) {
         const d = await res.json();
         setVmNetworks((prev) => ({ ...prev, [vmName]: d }));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const fetchUnattendedStatus = async (vmName: string) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/v1/vms/${encodeURIComponent(vmName)}/unattended`,
+      );
+      if (res.ok) {
+        const d = await res.json();
+        setUnattendedStatus((prev) => ({ ...prev, [vmName]: d }));
       }
     } catch {
       /* ignore */
@@ -1320,8 +1348,20 @@ export default function VirtualBox() {
                 {creatingTemplate ? (
                   <Loader2 className="w-4 h-4 animate-spin inline" />
                 ) : null}{" "}
-                Save Template
+                {editingTemplate ? "Update Template" : "Save Template"}
               </button>
+              {editingTemplate && (
+                <button
+                  onClick={() => {
+                    setEditingTemplate(null);
+                    setEditTemplateName("");
+                    setEditTemplateConfig("{}");
+                  }}
+                  className="w-full py-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Cancel editing {editingTemplate}
+                </button>
+              )}
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <p className="text-xs text-muted-foreground font-medium">
@@ -1340,12 +1380,26 @@ export default function VirtualBox() {
                     </p>
                   </div>
                   {!t.builtin && (
-                    <button
-                      onClick={() => deleteTemplate(t.name)}
-                      className="px-2 py-1 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors font-medium"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => {
+                          setEditTemplateName(t.name);
+                          setEditTemplateConfig(
+                            JSON.stringify(t.config ?? {}, null, 2),
+                          );
+                          setEditingTemplate(t.name);
+                        }}
+                        className="px-2 py-1 text-xs rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteTemplate(t.name)}
+                        className="px-2 py-1 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors font-medium"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -1455,6 +1509,61 @@ export default function VirtualBox() {
                   No port forwarding rules.
                 </p>
               )}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <input
+                  value={pfName}
+                  onChange={(e) => setPfName(e.target.value)}
+                  placeholder="rule name"
+                  className="w-24 bg-background/50 border border-input rounded px-2 py-1 text-xs"
+                />
+                <select
+                  value={pfProto}
+                  onChange={(e) => setPfProto(e.target.value)}
+                  className="bg-background/50 border border-input rounded px-2 py-1 text-xs"
+                >
+                  <option value="tcp">tcp</option>
+                  <option value="udp">udp</option>
+                </select>
+                <input
+                  value={pfHost}
+                  onChange={(e) => setPfHost(e.target.value)}
+                  placeholder="host port"
+                  inputMode="numeric"
+                  className="w-20 bg-background/50 border border-input rounded px-2 py-1 text-xs"
+                />
+                <input
+                  value={pfGuest}
+                  onChange={(e) => setPfGuest(e.target.value)}
+                  placeholder="guest port"
+                  inputMode="numeric"
+                  className="w-20 bg-background/50 border border-input rounded px-2 py-1 text-xs"
+                />
+                <button
+                  onClick={async () => {
+                    if (!pfName.trim() || !pfHost || !pfGuest) return;
+                    await fetch(
+                      `${API_BASE}/api/v1/vms/${encodeURIComponent(showNetworkConfig)}/network/port-forwarding`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: pfName.trim(),
+                          protocol: pfProto,
+                          host_port: Number(pfHost),
+                          guest_port: Number(pfGuest),
+                        }),
+                      },
+                    );
+                    setPfName("");
+                    setPfHost("");
+                    setPfGuest("");
+                    fetchNetworkConfig(showNetworkConfig!);
+                  }}
+                  className="px-2 py-1 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+                >
+                  Add
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1477,6 +1586,36 @@ export default function VirtualBox() {
               For Windows VMs, selected dev tools install via winget on first
               login.
             </p>
+            <div className="rounded-lg bg-black/20 border border-border/40 p-3 text-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium">Existing config</span>
+                <button
+                  onClick={() => fetchUnattendedStatus(showUnattended!)}
+                  className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-muted-foreground"
+                >
+                  Refresh
+                </button>
+              </div>
+              {unattendedStatus[showUnattended!]?.exists ? (
+                <div>
+                  <p className="font-mono text-muted-foreground">
+                    {unattendedStatus[showUnattended!].file}
+                  </p>
+                  <pre className="mt-1 max-h-32 overflow-auto font-mono text-[11px] text-muted-foreground whitespace-pre-wrap">
+                    {(unattendedStatus[showUnattended!].content || "").slice(
+                      0,
+                      600,
+                    )}
+                  </pre>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  {unattendedStatus[showUnattended!]
+                    ? "No config generated yet."
+                    : "Click Refresh to check for a generated config."}
+                </p>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-medium mb-1">Username</label>
               <input

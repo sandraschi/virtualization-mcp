@@ -7,9 +7,16 @@ const endpoints = [
   { method: "GET", path: "/api/v1/host/info", desc: "Host system info" },
   { method: "GET", path: "/api/v1/vms", desc: "List all VMs" },
   { method: "POST", path: "/api/v1/vms", desc: "Create a VM" },
-  { method: "GET", path: "/api/v1/sandbox", desc: "Sandbox status" },
-  { method: "GET", path: "/api/v1/fleet/apps", desc: "Fleet app registry" },
+  { method: "GET", path: "/api/v1/sandbox/status", desc: "Sandbox status" },
+  { method: "GET", path: "/api/v1/apps", desc: "Fleet app registry" },
   { method: "POST", path: "/api/v1/chat", desc: "AI Chat completion" },
+  {
+    method: "GET",
+    path: "/api/v1/metrics/history",
+    desc: "Host CPU/memory history",
+  },
+  { method: "GET", path: "/api/llm/providers", desc: "Saved LLM providers" },
+  { method: "POST", path: "/api/llm/chat", desc: "LLM chat completion" },
 ];
 
 export default function ApiDocs() {

@@ -1160,6 +1160,45 @@ async def shutdown():
     return {"status": "shutting down"}
 
 
+# ── Metrics history ring for the dashboard chart (frontend polls every 15s) ──
+_METRICS_HISTORY: Any = None
+
+
+def _metrics_ring():
+    global _METRICS_HISTORY
+    if _METRICS_HISTORY is None:
+        from collections import deque
+
+        _METRICS_HISTORY = deque(maxlen=20)
+    return _METRICS_HISTORY
+
+
+@app.get("/api/v1/metrics/history")
+async def metrics_history():
+    """Last ~5 min of host CPU/memory for the dashboard AreaChart.
+
+    Never 500s: without psutil (or on error) returns an empty history and
+    the chart simply renders flat, as documented in the help page.
+    """
+    try:
+        import datetime as _dt
+
+        import psutil
+
+        ring = _metrics_ring()
+        ring.append(
+            {
+                "time": _dt.datetime.now().strftime("%H:%M:%S"),
+                "cpu": round(float(psutil.cpu_percent(interval=None)), 1),
+                "memory": round(float(psutil.virtual_memory().percent), 1),
+            }
+        )
+        return {"history": list(ring)}
+    except Exception as e:
+        logger.warning(f"metrics/history unavailable: {e}")
+        return {"history": []}
+
+
 @app.get("/api/v1/dashboard")
 async def dashboard():
     """Aggregated dashboard data: host info, VMs, VBox status, sandbox."""
@@ -1575,6 +1614,310 @@ async def set_llm_settings(request: LlmSettingsRequest):
 
     _save_llm_settings(data)
     return {"success": True, "settings": data}
+
+
+# ── /api/llm/* provider CRUD + proxy (contract: frontend src/api/llm.ts) ──
+
+LLM_PROVIDERS_FILE = os.path.join(os.path.dirname(KEYS_FILE), "llm_providers.json")
+
+_LLM_DEFAULT_PROVIDERS = [
+    {
+        "id": "ollama-local",
+        "name": "Ollama (Local)",
+        "type": "ollama",
+        "baseUrl": "http://localhost:11434",
+        "apiKey": "",
+        "enabled": True,
+        "defaultModel": "",
+    },
+    {
+        "id": "lmstudio-local",
+        "name": "LM Studio (Local)",
+        "type": "lmstudio",
+        "baseUrl": "http://localhost:1234",
+        "apiKey": "",
+        "enabled": False,
+        "defaultModel": "",
+    },
+    {
+        "id": "openai",
+        "name": "OpenAI",
+        "type": "openai",
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "",
+        "enabled": False,
+        "defaultModel": "",
+    },
+    {
+        "id": "anthropic",
+        "name": "Anthropic",
+        "type": "anthropic",
+        "baseUrl": "https://api.anthropic.com",
+        "apiKey": "",
+        "enabled": False,
+        "defaultModel": "",
+    },
+]
+
+
+class LLMProviderConfig(BaseModel):
+    id: str
+    name: str = ""
+    type: str = "ollama"
+    baseUrl: str = "http://localhost:11434"
+    apiKey: str = ""
+    enabled: bool = True
+    defaultModel: str = ""
+
+
+class LLMChatRequest(BaseModel):
+    provider: LLMProviderConfig
+    model: str = ""
+    messages: list = []
+
+
+def _load_llm_providers() -> list:
+    """Load saved providers, seeding defaults on first run."""
+    try:
+        if os.path.isfile(LLM_PROVIDERS_FILE):
+            with open(LLM_PROVIDERS_FILE, encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+    except Exception as e:
+        logger.warning(f"Could not load LLM providers: {e}")
+    return [dict(p) for p in _LLM_DEFAULT_PROVIDERS]
+
+
+def _save_llm_providers(providers: list) -> None:
+    os.makedirs(os.path.dirname(LLM_PROVIDERS_FILE), exist_ok=True)
+    with open(LLM_PROVIDERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(providers, f, indent=2)
+
+
+def _llm_http(
+    method: str, url: str, headers: dict | None = None, payload: dict | None = None, timeout: int = 10
+) -> tuple[int, Any]:
+    """Blocking JSON HTTP helper (callers run it in a thread)."""
+    import urllib.request as _req
+
+    body = json.dumps(payload).encode() if payload is not None else None
+    req = _req.Request(url, data=body, headers=headers or {}, method=method)
+    if payload is not None:
+        req.add_header("Content-Type", "application/json")
+    with _req.urlopen(req, timeout=timeout) as r:
+        return r.status, json.loads(r.read().decode() or "{}")
+
+
+def _probe_llm_provider(p: dict) -> dict:
+    """Test reachability for one provider config. Returns {success, message}."""
+    ptype = (p.get("type") or "ollama").lower()
+    base = (p.get("baseUrl") or "").rstrip("/")
+    key = p.get("apiKey") or ""
+    try:
+        if ptype == "ollama":
+            _llm_http("GET", f"{base}/api/version", timeout=8)
+            return {"success": True, "message": f"Ollama reachable at {base}"}
+        if ptype in ("lmstudio", "openai"):
+            headers = {"Authorization": f"Bearer {key}"} if key else {}
+            _llm_http("GET", f"{base}/v1/models", headers=headers, timeout=8)
+            return {"success": True, "message": f"{ptype} endpoint reachable at {base}"}
+        if ptype == "anthropic":
+            if not key:
+                return {"success": False, "message": "Anthropic needs an API key"}
+            _llm_http(
+                "GET",
+                "https://api.anthropic.com/v1/models",
+                headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
+                timeout=8,
+            )
+            return {"success": True, "message": "Anthropic API reachable"}
+        return {"success": False, "message": f"Unknown provider type '{ptype}'"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+def _list_llm_models(p: dict) -> list:
+    """List models for one provider config, normalized to LLMModel shape."""
+    ptype = (p.get("type") or "ollama").lower()
+    base = (p.get("baseUrl") or "").rstrip("/")
+    key = p.get("apiKey") or ""
+    if ptype == "ollama":
+        _, data = _llm_http("GET", f"{base}/api/tags", timeout=10)
+        return [
+            {
+                "id": m.get("name", ""),
+                "name": m.get("name", ""),
+                "provider": "ollama",
+                "contextLength": (m.get("details") or {}).get("context_length"),
+                "capabilities": ["chat", "completion"],
+            }
+            for m in data.get("models", [])
+        ]
+    if ptype in ("lmstudio", "openai"):
+        headers = {"Authorization": f"Bearer {key}"} if key else {}
+        _, data = _llm_http("GET", f"{base}/v1/models", headers=headers, timeout=10)
+        models = data.get("data", []) if isinstance(data, dict) else []
+        if ptype == "openai":
+            models = [m for m in models if "gpt" in m.get("id", "")]
+        return [
+            {"id": m.get("id", ""), "name": m.get("id", ""), "provider": ptype, "capabilities": ["chat", "completion"]}
+            for m in models
+        ]
+    if ptype == "anthropic":
+        if not key:
+            raise HTTPException(status_code=400, detail="Anthropic needs an API key")
+        _, data = _llm_http(
+            "GET",
+            "https://api.anthropic.com/v1/models",
+            headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
+            timeout=10,
+        )
+        return [
+            {
+                "id": m.get("id", ""),
+                "name": m.get("display_name", m.get("id", "")),
+                "provider": "anthropic",
+                "capabilities": ["chat", "completion"],
+            }
+            for m in data.get("data", [])
+        ]
+    raise HTTPException(status_code=400, detail=f"Unknown provider type '{ptype}'")
+
+
+@app.get("/api/llm/providers")
+async def llm_provider_list():
+    """List saved LLM providers (frontend api/llm.ts fetchProviders)."""
+    return _load_llm_providers()
+
+
+@app.post("/api/llm/providers")
+async def llm_provider_save(provider: LLMProviderConfig):
+    """Create or update one provider by id (frontend saveProvider)."""
+    providers = _load_llm_providers()
+    data = {
+        "id": provider.id,
+        "name": provider.name,
+        "type": provider.type,
+        "baseUrl": provider.baseUrl,
+        "apiKey": provider.apiKey,
+        "enabled": provider.enabled,
+        "defaultModel": provider.defaultModel,
+    }
+    for i, p in enumerate(providers):
+        if p.get("id") == data["id"]:
+            providers[i] = data
+            break
+    else:
+        providers.append(data)
+    _save_llm_providers(providers)
+    return {"success": True, "provider": data}
+
+
+@app.delete("/api/llm/providers/{provider_id}")
+async def llm_provider_delete(provider_id: str):
+    """Delete one provider by id (frontend deleteProvider)."""
+    providers = _load_llm_providers()
+    kept = [p for p in providers if p.get("id") != provider_id]
+    if len(kept) == len(providers):
+        raise HTTPException(status_code=404, detail=f"Provider '{provider_id}' not found")
+    _save_llm_providers(kept)
+    return {"success": True, "id": provider_id}
+
+
+@app.post("/api/llm/providers/test")
+async def llm_provider_test(provider: LLMProviderConfig):
+    """Probe one provider config (frontend testProvider)."""
+    data = {
+        "id": provider.id,
+        "name": provider.name,
+        "type": provider.type,
+        "baseUrl": provider.baseUrl,
+        "apiKey": provider.apiKey,
+        "enabled": provider.enabled,
+        "defaultModel": provider.defaultModel,
+    }
+    return await asyncio.to_thread(_probe_llm_provider, data)
+
+
+@app.post("/api/llm/models")
+async def llm_provider_models(provider: LLMProviderConfig):
+    """List models for one provider config (frontend fetchModels)."""
+    data = {
+        "id": provider.id,
+        "name": provider.name,
+        "type": provider.type,
+        "baseUrl": provider.baseUrl,
+        "apiKey": provider.apiKey,
+        "enabled": provider.enabled,
+        "defaultModel": provider.defaultModel,
+    }
+    try:
+        return await asyncio.to_thread(_list_llm_models, data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+
+@app.post("/api/llm/chat")
+async def llm_chat(request: LLMChatRequest):
+    """Chat completion via one provider config (frontend sendChatMessage)."""
+    p = request.provider
+    ptype = (p.type or "ollama").lower()
+    base = (p.baseUrl or "").rstrip("/")
+    key = p.apiKey or ""
+    model = request.model or p.defaultModel or ""
+    try:
+        if ptype == "ollama":
+            if not model:
+                raise HTTPException(status_code=400, detail="No model specified")
+            _, data = await asyncio.to_thread(
+                _llm_http,
+                "POST",
+                f"{base}/api/chat",
+                None,
+                {"model": model, "messages": request.messages, "stream": False},
+                180,
+            )
+            text = (data.get("message") or {}).get("content", "")
+            return {"content": text}
+        if ptype in ("lmstudio", "openai"):
+            if not model:
+                raise HTTPException(status_code=400, detail="No model specified")
+            headers = {"Authorization": f"Bearer {key}"} if key else {}
+            _, data = await asyncio.to_thread(
+                _llm_http,
+                "POST",
+                f"{base}/chat/completions",
+                headers,
+                {"model": model, "messages": request.messages},
+                180,
+            )
+            choices = data.get("choices", [])
+            text = choices[0].get("message", {}).get("content", "") if choices else ""
+            return {"content": text}
+        if ptype == "anthropic":
+            if not key:
+                raise HTTPException(status_code=400, detail="Anthropic needs an API key")
+            if not model:
+                raise HTTPException(status_code=400, detail="No model specified")
+            _, data = await asyncio.to_thread(
+                _llm_http,
+                "POST",
+                "https://api.anthropic.com/v1/messages",
+                {"x-api-key": key, "anthropic-version": "2023-06-01"},
+                {"model": model, "max_tokens": 1024, "messages": request.messages},
+                180,
+            )
+            blocks = data.get("content", [])
+            text = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+            return {"content": text}
+        raise HTTPException(status_code=400, detail=f"Unknown provider type '{ptype}'")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @app.get("/api/v1/logs")
@@ -2013,20 +2356,17 @@ async def set_vm_network(name: str, request: VmNetworkRequest):
 
 @app.post("/api/v1/vms/{name}/network/port-forwarding")
 async def add_port_forwarding(name: str, request: VmPortForwardRequest):
-    """Add a NAT port forwarding rule to a VM."""
+    """Add a NAT port forwarding rule to a VM (NIC 1)."""
     import subprocess as _sub
 
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+    if "," in (request.name or ""):
+        raise HTTPException(status_code=400, detail="Rule name must not contain commas")
+    # natpf takes ONE rulespec arg: name,proto,[hostip],hostport,[guestip],guestport
+    spec = f"{request.name},{request.protocol},,{request.host_port},,{request.guest_port}"
     try:
         r = _sub.run(
-            [
-                vbox,
-                "controlvm",
-                name,
-                "natpf1",
-                request.name,
-                f"{request.protocol},,{request.host_port},,{request.guest_port}",
-            ],
+            [vbox, "controlvm", name, "natpf1", spec],
             capture_output=True,
             text=True,
             timeout=15,
