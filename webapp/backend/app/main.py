@@ -3793,6 +3793,32 @@ async def fleet_naked_test(request: NakedTestRequest):
             status_code=400,
             detail=f"repo '{repo}' not found in workspace {repos_root} - paste a full https URL to test a remote repo",
         )
+    if local_repo:
+        # The sandbox tests committed HEAD (bare clone) - uncommitted WIP
+        # would silently NOT travel. Refuse instead of testing the wrong code.
+        try:
+            git_full = r"C:\Program Files\Git\cmd\git.exe"
+            git_exe = git_full if os.path.isfile(git_full) else "git"
+            dirty = await asyncio.to_thread(
+                subprocess.run,
+                [git_exe, "-C", local_repo, "status", "--porcelain"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            dirty_files = [line for line in (dirty.stdout or "").splitlines() if line.strip()]
+            if dirty_files:
+                shown = "\n".join(dirty_files[:20])
+                more = f"\n... and {len(dirty_files) - 20} more" if len(dirty_files) > 20 else ""
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"local checkout {local_repo} has {len(dirty_files)} uncommitted change(s) - "
+                    f"commit or stash first, the sandbox would test committed HEAD without them:\n{shown}{more}",
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.debug(f"naked-test dirty check best-effort failed for {local_repo}: {e}")
     repo_url = ""
     branch = (request.branch or "main").strip() or "main"
     health_url = request.health_url or ""
