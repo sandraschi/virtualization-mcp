@@ -1481,9 +1481,9 @@ async def _check_ollama(endpoint: str) -> dict:
     try:
         import urllib.request as _req
 
-        r = _req.urlopen(f"{endpoint}/api/version", timeout=3)
+        r = await asyncio.to_thread(_req.urlopen, f"{endpoint}/api/version", timeout=3)
         version_data = _json.loads(r.read())
-        r2 = _req.urlopen(f"{endpoint}/api/tags", timeout=5)
+        r2 = await asyncio.to_thread(_req.urlopen, f"{endpoint}/api/tags", timeout=5)
         tags_data = _json.loads(r2.read())
         models = [{"name": m["name"], "size": m.get("size", 0)} for m in tags_data.get("models", [])]
         return {"available": True, "version": version_data.get("version", ""), "models": models}
@@ -1498,7 +1498,7 @@ async def _check_lm_studio(endpoint: str) -> dict:
     try:
         import urllib.request as _req
 
-        r = _req.urlopen(f"{endpoint}/v1/models", timeout=3)
+        r = await asyncio.to_thread(_req.urlopen, f"{endpoint}/v1/models", timeout=3)
         data = _json.loads(r.read())
         models = [{"name": m["id"], "size": m.get("owned_by", "")} for m in data.get("data", [])]
         return {"available": True, "version": "LM Studio", "models": models}
@@ -2440,7 +2440,8 @@ async def add_port_forwarding(name: str, request: VmPortForwardRequest):
     # natpf takes ONE rulespec arg: name,proto,[hostip],hostport,[guestip],guestport
     spec = f"{request.name},{request.protocol},,{request.host_port},,{request.guest_port}"
     try:
-        r = _sub.run(
+        r = await asyncio.to_thread(
+            _sub.run,
             [vbox, "controlvm", name, "natpf1", spec],
             capture_output=True,
             text=True,
@@ -2462,7 +2463,8 @@ async def remove_port_forwarding(name: str, rule_name: str):
 
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     try:
-        r = _sub.run(
+        r = await asyncio.to_thread(
+            _sub.run,
             [vbox, "controlvm", name, "natpf1", "delete", rule_name],
             capture_output=True,
             text=True,
@@ -2707,7 +2709,7 @@ async def setup_unattended_install(name: str, request: UnattendedRequest):
             dest = os.path.join(UNATTENDED_DIR, f"{name}-autoinstall.yaml")
             with open(dest, "w") as f:
                 f.write(content)
-            _make_cloudinit_iso(name, dest)
+            await asyncio.to_thread(_make_cloudinit_iso, name, dest)
             return {
                 "success": True,
                 "os_type": "ubuntu",
@@ -3031,7 +3033,8 @@ async def sandbox_status():
     import subprocess as _sub
 
     try:
-        r = _sub.run(
+        r = await asyncio.to_thread(
+            _sub.run,
             ["tasklist", "/FI", "IMAGENAME eq WindowsSandbox.exe", "/NH", "/FO", "CSV"],
             capture_output=True,
             text=True,
@@ -3214,7 +3217,7 @@ async def check_apps_health():
             statuses[app_id] = "unknown"
             continue
         try:
-            with _socket.create_connection(("127.0.0.1", port), timeout=1):
+            with await asyncio.to_thread(_socket.create_connection, ("127.0.0.1", port), timeout=1):
                 statuses[app_id] = "running"
         except (ConnectionRefusedError, OSError):
             statuses[app_id] = "stopped"
@@ -4154,14 +4157,14 @@ async def chat_interaction(request: ChatRequest):
                 ollama_endpoint = ollama_endpoint.replace("1234", "11434")
 
             try:
-                _avail_req = _req.urlopen(f"{ollama_endpoint}/api/tags", timeout=3)
+                _avail_req = await asyncio.to_thread(_req.urlopen, f"{ollama_endpoint}/api/tags", timeout=3)
                 _avail_data = _json.loads(_avail_req.read())
                 _models = [m["name"] for m in _avail_data.get("models", [])]
             except Exception:
                 if ollama_endpoint != "http://localhost:11434":
                     try:
                         ollama_endpoint = "http://localhost:11434"
-                        _avail_req = _req.urlopen(f"{ollama_endpoint}/api/tags", timeout=3)
+                        _avail_req = await asyncio.to_thread(_req.urlopen, f"{ollama_endpoint}/api/tags", timeout=3)
                         _avail_data = _json.loads(_avail_req.read())
                         _models = [m["name"] for m in _avail_data.get("models", [])]
                     except Exception:
@@ -4199,7 +4202,7 @@ async def chat_interaction(request: ChatRequest):
                 data=ollama_payload,
                 headers={"Content-Type": "application/json"},
             )
-            with _req.urlopen(oreq, timeout=120) as r:
+            with await asyncio.to_thread(_req.urlopen, oreq, timeout=120) as r:
                 data = _json.loads(r.read())
                 reply = data.get("message", {}).get("content", "")
                 if reply:
@@ -4236,7 +4239,7 @@ async def chat_interaction(request: ChatRequest):
                 data=openai_payload,
                 headers=headers,
             )
-            with _req.urlopen(oreq, timeout=60) as r:
+            with await asyncio.to_thread(_req.urlopen, oreq, timeout=60) as r:
                 data = _json.loads(r.read())
                 reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                 if reply:
@@ -4273,7 +4276,7 @@ async def chat_interaction(request: ChatRequest):
                 data=deepseek_payload,
                 headers=headers,
             )
-            with _req.urlopen(oreq, timeout=60) as r:
+            with await asyncio.to_thread(_req.urlopen, oreq, timeout=60) as r:
                 data = _json.loads(r.read())
                 reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                 if reply:
@@ -4314,7 +4317,7 @@ async def chat_interaction(request: ChatRequest):
                 data=anthropic_payload,
                 headers=headers,
             )
-            with _req.urlopen(oreq, timeout=60) as r:
+            with await asyncio.to_thread(_req.urlopen, oreq, timeout=60) as r:
                 data = _json.loads(r.read())
                 reply = data.get("content", [{}])[0].get("text", "")
                 if reply:
@@ -4346,7 +4349,7 @@ async def chat_interaction(request: ChatRequest):
             payload = _json.dumps({"contents": [{"parts": [{"text": prefix + request.message}]}]}).encode()
 
             oreq = _req.Request(url, data=payload, headers=headers)
-            with _req.urlopen(oreq, timeout=60) as r:
+            with await asyncio.to_thread(_req.urlopen, oreq, timeout=60) as r:
                 data = _json.loads(r.read())
                 reply = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                 if reply:
@@ -4376,7 +4379,7 @@ async def chat_interaction(request: ChatRequest):
                 headers={"Content-Type": "application/json"},
             )
             try:
-                with _req.urlopen(lreq, timeout=60) as r:
+                with await asyncio.to_thread(_req.urlopen, lreq, timeout=60) as r:
                     data = _json.loads(r.read())
                     reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                     if reply:
@@ -4390,7 +4393,7 @@ async def chat_interaction(request: ChatRequest):
                         data=lm_payload,
                         headers={"Content-Type": "application/json"},
                     )
-                    with _req.urlopen(lreq_fallback, timeout=30) as r:
+                    with await asyncio.to_thread(_req.urlopen, lreq_fallback, timeout=30) as r:
                         data = _json.loads(r.read())
                         reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                         if reply:
@@ -4885,7 +4888,9 @@ public class VBoxWindow {{
 [VBoxWindow]::MoveToDesktop("{name}", {desktop})
 '''
     try:
-        r = _sub.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, text=True, timeout=30)
+        r = await asyncio.to_thread(
+            _sub.run, ["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, text=True, timeout=30
+        )
         if r.returncode == 0:
             return {"status": "success", "message": f"Moved {name} to desktop {desktop}"}
         else:
@@ -4929,7 +4934,9 @@ async def get_vm_screenshot(name: str):
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
         tmp_path = tmp.name
     try:
-        r = _sub.run([vbox, "controlvm", name, "screenshotpng", tmp_path], capture_output=True, text=True, timeout=15)
+        r = await asyncio.to_thread(
+            _sub.run, [vbox, "controlvm", name, "screenshotpng", tmp_path], capture_output=True, text=True, timeout=15
+        )
         if r.returncode != 0:
             raise Exception(r.stderr.strip())
         from fastapi.responses import FileResponse
@@ -4951,11 +4958,11 @@ async def set_vm_vrde(name: str, request: VrdeRequest):
     port_arg = ["--vrdeport", str(request.port)] if request.port else []
     try:
         cmd = [vbox, "modifyvm", name, "--vrde", enable] + port_arg
-        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        r = await asyncio.to_thread(_sub.run, cmd, capture_output=True, text=True, timeout=30)
         if r.returncode != 0:
             raise HTTPException(status_code=400, detail=r.stderr.strip())
         show_cmd = [vbox, "showvminfo", name, "--machinereadable"]
-        r2 = _sub.run(show_cmd, capture_output=True, text=True, timeout=30)
+        r2 = await asyncio.to_thread(_sub.run, show_cmd, capture_output=True, text=True, timeout=30)
         port = "3389"
         for line in r2.stdout.splitlines():
             if line.startswith("vrdeport="):
@@ -4976,7 +4983,7 @@ async def get_vm_vrde(name: str):
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     try:
         cmd = [vbox, "showvminfo", name, "--machinereadable"]
-        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        r = await asyncio.to_thread(_sub.run, cmd, capture_output=True, text=True, timeout=30)
         if r.returncode != 0:
             raise HTTPException(status_code=404, detail=f"VM '{name}' not found")
         vrde = "false"
@@ -5001,7 +5008,7 @@ async def download_vm_rdp(name: str):
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     try:
         cmd = [vbox, "showvminfo", name, "--machinereadable"]
-        r = _sub.run(cmd, capture_output=True, text=True, timeout=30)
+        r = await asyncio.to_thread(_sub.run, cmd, capture_output=True, text=True, timeout=30)
         port = "3389"
         for line in r.stdout.splitlines():
             if line.startswith("vrdeport="):
@@ -5028,7 +5035,9 @@ async def vm_vnc_websocket(websocket: WebSocket, name: str):
     vbox = r"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     port = 3389
     try:
-        r = _sub.run([vbox, "showvminfo", name, "--machinereadable"], capture_output=True, text=True, timeout=15)
+        r = await asyncio.to_thread(
+            _sub.run, [vbox, "showvminfo", name, "--machinereadable"], capture_output=True, text=True, timeout=15
+        )
         for line in r.stdout.splitlines():
             if line.startswith("vrdeport="):
                 port = int(line.split("=", 1)[1].strip('"'))
