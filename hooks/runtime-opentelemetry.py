@@ -1,10 +1,12 @@
 """PyInstaller runtime hook: make OpenTelemetry entry_points discoverable."""
 
+import os as _os
 import sys as _sys
+import tempfile as _tempfile
 
-# Marker: verify this hook actually runs
+# Marker: verify this hook actually runs (in %TEMP%, not the author's D:\Dev\repos\temp)
 try:
-    with open(r"D:\Dev\repos\temp\hook_ran_marker.txt", "w") as _f:
+    with open(_os.path.join(_tempfile.gettempdir(), "hook_ran_marker.txt"), "w") as _f:
         _f.write("runtime-opentelemetry.py executed at " + str(_sys.argv))
 except Exception:
     pass
