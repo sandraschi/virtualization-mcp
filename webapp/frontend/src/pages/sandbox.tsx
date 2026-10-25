@@ -53,7 +53,10 @@ const DEV_TOOL_OPTIONS = [
 ] as const;
 
 const TOOL_GROUPS: Array<{ title: string; items: string[] }> = [
-  { title: "Dev stack", items: ["python", "node", "uv", "git", "gh", "just", "ruff", "biome"] },
+  {
+    title: "Dev stack",
+    items: ["python", "node", "uv", "git", "gh", "just", "ruff", "biome"],
+  },
   {
     title: "Editors & IDEs",
     items: [
@@ -821,10 +824,10 @@ export default function Sandbox() {
           <code className="text-foreground/80">Run-DevInfra.cmd</code> at logon
           (short wait, then{" "}
           <code className="text-foreground/80">Setup-DevInfraSandbox.ps1</code>
-          ).           That script installs winget from GitHub, then winget installs: Git,
-          GitHub CLI, Node LTS (npm), Python 3.12, uv, ruff, just, Biome, Notepad++.
-          Requires outbound HTTPS. If nothing happens, a second PowerShell
-          window opens with the tail of{" "}
+          ). That script installs winget from GitHub, then winget installs: Git,
+          GitHub CLI, Node LTS (npm), Python 3.12, uv, ruff, just, Biome,
+          Notepad++. Requires outbound HTTPS. If nothing happens, a second
+          PowerShell window opens with the tail of{" "}
           <code className="text-foreground/80">
             Desktop\dev-infra-launch.log
           </code>{" "}
@@ -1208,12 +1211,13 @@ export default function Sandbox() {
         <p className="text-sm text-muted-foreground">
           Each card below generates a <strong>different</strong> WSB: dev infra
           runs <code className="text-foreground/80">Run-DevInfra.cmd</code>,
-          consumer runs <code className="text-foreground/80">Run-Consumer.cmd</code>,
-          full dev runs <code className="text-foreground/80">Run-DevSetup.cmd</code>{" "}
+          consumer runs{" "}
+          <code className="text-foreground/80">Run-Consumer.cmd</code>, full dev
+          runs <code className="text-foreground/80">Run-DevSetup.cmd</code>{" "}
           (generated from your tool selection). All three map the same{" "}
           <code className="text-foreground/80">assets/sandbox</code> folder to{" "}
-          <code className="text-foreground/80">C:\Assets</code>. Script installs winget
-          online if missing, then the selected tools.
+          <code className="text-foreground/80">C:\Assets</code>. Script installs
+          winget online if missing, then the selected tools.
         </p>
         <a
           href="https://github.com/microsoft/winget-cli/releases"

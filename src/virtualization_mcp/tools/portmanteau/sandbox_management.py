@@ -53,6 +53,7 @@ def _naked_singleton_lock() -> asyncio.Lock:
         _NAKED_SINGLETON_LOCK = asyncio.Lock()
     return _NAKED_SINGLETON_LOCK
 
+
 SANDBOX_ACTIONS = {
     # Ephemeral Docker
     "execute_code": "Run a code snippet in a throwaway container (auto-removed after run)",

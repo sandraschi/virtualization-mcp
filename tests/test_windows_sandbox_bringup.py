@@ -43,9 +43,15 @@ def _sandbox_module():
 
 def test_windows_sandbox_helper_terminate_active_graceful():
     # Ladder phase 1: clients close cleanly, no per-process kill needed.
-    with patch.object(WindowsSandboxHelper, "sandbox_process_snapshot", return_value=[{"pid": 111, "name": "WindowsSandbox.exe", "via": "psutil"}]), \
-        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=True) as mock_graceful, \
-        patch("psutil.process_iter") as mock_iter:
+    with (
+        patch.object(
+            WindowsSandboxHelper,
+            "sandbox_process_snapshot",
+            return_value=[{"pid": 111, "name": "WindowsSandbox.exe", "via": "psutil"}],
+        ),
+        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=True) as mock_graceful,
+        patch("psutil.process_iter") as mock_iter,
+    ):
         detail = WindowsSandboxHelper.terminate_active_sandbox_detailed()
         assert detail["present"] is True
         assert detail["gone"] is True
@@ -59,13 +65,19 @@ def test_windows_sandbox_helper_terminate_active_via_terminate():
     mock_proc = MagicMock()
     mock_proc.info = {"pid": 1234, "name": "WindowsSandbox.exe"}
     mock_proc.pid = 1234
-    with patch.object(WindowsSandboxHelper, "sandbox_process_snapshot", return_value=[{"pid": 1234, "name": "WindowsSandbox.exe", "via": "psutil"}]), \
-        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=False), \
-        patch.object(WindowsSandboxHelper, "_tasklist_snapshot", return_value=[]), \
-        patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=False), \
-        patch("psutil.process_iter", return_value=[mock_proc]), \
-        patch("psutil.wait_procs", return_value=([mock_proc], [])) as mock_wait, \
-        patch("time.sleep"):
+    with (
+        patch.object(
+            WindowsSandboxHelper,
+            "sandbox_process_snapshot",
+            return_value=[{"pid": 1234, "name": "WindowsSandbox.exe", "via": "psutil"}],
+        ),
+        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=False),
+        patch.object(WindowsSandboxHelper, "_tasklist_snapshot", return_value=[]),
+        patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=False),
+        patch("psutil.process_iter", return_value=[mock_proc]),
+        patch("psutil.wait_procs", return_value=([mock_proc], [])) as mock_wait,
+        patch("time.sleep"),
+    ):
         detail = WindowsSandboxHelper.terminate_active_sandbox_detailed()
         assert detail["gone"] is True
         assert detail["method"] == "terminate"
@@ -73,7 +85,9 @@ def test_windows_sandbox_helper_terminate_active_via_terminate():
         mock_proc.terminate.assert_called_once()
         mock_wait.assert_called_once()
     # Compat wrapper: present AND gone -> True.
-    with patch.object(WindowsSandboxHelper, "terminate_active_sandbox_detailed", return_value={"present": True, "gone": True}):
+    with patch.object(
+        WindowsSandboxHelper, "terminate_active_sandbox_detailed", return_value={"present": True, "gone": True}
+    ):
         assert WindowsSandboxHelper.terminate_active_sandbox() is True
 
 
@@ -89,7 +103,9 @@ def test_windows_sandbox_helper_terminate_nothing_present():
             "still_running": [],
             "method": "none",
         }
-    with patch.object(WindowsSandboxHelper, "terminate_active_sandbox_detailed", return_value={"present": False, "gone": True}):
+    with patch.object(
+        WindowsSandboxHelper, "terminate_active_sandbox_detailed", return_value={"present": False, "gone": True}
+    ):
         assert WindowsSandboxHelper.terminate_active_sandbox() is False
 
 
@@ -106,14 +122,20 @@ def test_windows_sandbox_helper_terminate_access_denied_flag():
     mock_proc.kill.side_effect = _psutil.AccessDenied(pid=4321, name="vmmemWindowsSandbox.exe")
     fake_tk = MagicMock()
     fake_tk.returncode = 1
-    with patch.object(WindowsSandboxHelper, "sandbox_process_snapshot", return_value=[{"pid": 4321, "name": "vmmemWindowsSandbox.exe", "via": "psutil"}]), \
-        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=False), \
-        patch.object(WindowsSandboxHelper, "_tasklist_snapshot", return_value=[]), \
-        patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=True), \
-        patch("psutil.process_iter", return_value=[mock_proc]), \
-        patch("psutil.wait_procs", return_value=([], [mock_proc])), \
-        patch.object(_sandbox_module(), "subprocess") as mock_sub, \
-        patch("time.sleep"):
+    with (
+        patch.object(
+            WindowsSandboxHelper,
+            "sandbox_process_snapshot",
+            return_value=[{"pid": 4321, "name": "vmmemWindowsSandbox.exe", "via": "psutil"}],
+        ),
+        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=False),
+        patch.object(WindowsSandboxHelper, "_tasklist_snapshot", return_value=[]),
+        patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=True),
+        patch("psutil.process_iter", return_value=[mock_proc]),
+        patch("psutil.wait_procs", return_value=([], [mock_proc])),
+        patch.object(_sandbox_module(), "subprocess") as mock_sub,
+        patch("time.sleep"),
+    ):
         mock_sub.run.return_value = fake_tk
         detail = WindowsSandboxHelper.terminate_active_sandbox_detailed()
         assert detail["present"] is True
@@ -163,8 +185,10 @@ async def test_windows_sandbox_execute_failing_exit(tmp_path):
 async def test_windows_sandbox_oneshot_busy_singleton(tmp_path):
     # Singleton running -> explicit busy error before any launch attempt.
     helper = _bare_helper(tmp_path)
-    with patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=True), \
-        patch.object(helper, "_launch_wsb") as mock_launch:
+    with (
+        patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=True),
+        patch.object(helper, "_launch_wsb") as mock_launch,
+    ):
         with pytest.raises(WindowsSandboxError, match="already running"):
             await helper._run_oneshot("echo hi", timeout=5)
         mock_launch.assert_not_called()
@@ -219,7 +243,13 @@ async def test_windows_sandbox_download_success(tmp_path):
         helper,
         "_run_oneshot",
         new=AsyncMock(
-            return_value={"status": "completed", "exit_code": 0, "stdout": "", "stderr": "", "collected": b"guest-bytes"}
+            return_value={
+                "status": "completed",
+                "exit_code": 0,
+                "stdout": "",
+                "stderr": "",
+                "collected": b"guest-bytes",
+            }
         ),
     ):
         res = await helper.download_file("job1", r"C:\Job\result.bin", dest)
@@ -234,7 +264,9 @@ async def test_windows_sandbox_download_missing_guest_file(tmp_path):
     with patch.object(
         helper,
         "_run_oneshot",
-        new=AsyncMock(return_value={"status": "completed", "exit_code": 1, "stdout": "", "stderr": "not found", "collected": None}),
+        new=AsyncMock(
+            return_value={"status": "completed", "exit_code": 1, "stdout": "", "stderr": "not found", "collected": None}
+        ),
     ):
         with pytest.raises(WindowsSandboxError, match="Failed to download"):
             await helper.download_file("job1", r"C:\missing.bin", tmp_path / "out.bin")
@@ -260,8 +292,16 @@ async def test_windows_sandbox_terminate_unknown():
 
 @pytest.mark.asyncio
 async def test_sandbox_management_win_status():
-    with patch("virtualization_mcp.tools.portmanteau.sandbox_management.WindowsSandboxHelper.is_sandbox_running", return_value=False), \
-         patch("virtualization_mcp.tools.portmanteau.sandbox_management.WindowsSandboxHelper.check_prerequisites", return_value={"ready": True}):
+    with (
+        patch(
+            "virtualization_mcp.tools.portmanteau.sandbox_management.WindowsSandboxHelper.is_sandbox_running",
+            return_value=False,
+        ),
+        patch(
+            "virtualization_mcp.tools.portmanteau.sandbox_management.WindowsSandboxHelper.check_prerequisites",
+            return_value={"ready": True},
+        ),
+    ):
         res = await sandbox_management(action="win_sandbox_status")
         assert res["success"] is True
         assert res["running"] is False
@@ -269,7 +309,10 @@ async def test_sandbox_management_win_status():
 
 @pytest.mark.asyncio
 async def test_sandbox_management_win_terminate():
-    with patch("virtualization_mcp.tools.portmanteau.sandbox_management.WindowsSandboxHelper.terminate_active_sandbox", return_value=True):
+    with patch(
+        "virtualization_mcp.tools.portmanteau.sandbox_management.WindowsSandboxHelper.terminate_active_sandbox",
+        return_value=True,
+    ):
         res = await sandbox_management(action="win_sandbox_terminate")
         assert res["success"] is True
         assert res["terminated"] is True

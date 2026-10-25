@@ -112,10 +112,11 @@ class TestVMManagementPortmanteau:
         """Test create VM action with valid parameters."""
         mock_result = {"status": "success", "vm_name": "TestVM", "message": "ok"}
 
-        with patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.create_vm", new_callable=AsyncMock
-        ) as mock_create_vm, patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"
+        with (
+            patch(
+                "virtualization_mcp.tools.portmanteau.vm_management.create_vm", new_callable=AsyncMock
+            ) as mock_create_vm,
+            patch("virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"),
         ):
             mock_create_vm.return_value = mock_result
 
@@ -159,10 +160,11 @@ class TestVMManagementPortmanteau:
     @pytest.mark.asyncio
     async def test_create_vm_action_error(self, vm_management_tool):
         """Test create VM action with error."""
-        with patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.create_vm", new_callable=AsyncMock
-        ) as mock_create_vm, patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"
+        with (
+            patch(
+                "virtualization_mcp.tools.portmanteau.vm_management.create_vm", new_callable=AsyncMock
+            ) as mock_create_vm,
+            patch("virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"),
         ):
             mock_create_vm.side_effect = Exception("Creation failed")
 
@@ -177,10 +179,11 @@ class TestVMManagementPortmanteau:
         """Test start VM action."""
         mock_result = {"status": "success", "message": "started"}
 
-        with patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.start_vm", new_callable=AsyncMock
-        ) as mock_start_vm, patch(
-            "virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"
+        with (
+            patch(
+                "virtualization_mcp.tools.portmanteau.vm_management.start_vm", new_callable=AsyncMock
+            ) as mock_start_vm,
+            patch("virtualization_mcp.tools.portmanteau.vm_management.ResourceGuard.check_resource_quota"),
         ):
             mock_start_vm.return_value = mock_result
 

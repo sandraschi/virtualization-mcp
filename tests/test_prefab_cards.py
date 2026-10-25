@@ -1,6 +1,5 @@
 """Unit tests for Prefab UI tools, ResourceGuard, and Cloud-Init ISO generator."""
 
-
 from unittest.mock import MagicMock, patch
 
 import pytest

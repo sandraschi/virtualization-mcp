@@ -100,9 +100,7 @@ class WindowsSandboxHelper:
         """
         out: list[dict[str, Any]] = []
         try:
-            proc = subprocess.run(
-                ["tasklist", "/FO", "CSV", "/NH"], capture_output=True, timeout=20, text=True
-            )
+            proc = subprocess.run(["tasklist", "/FO", "CSV", "/NH"], capture_output=True, timeout=20, text=True)
         except Exception as e:
             logger.debug(f"tasklist snapshot best-effort failed: {e}")
             return out
@@ -353,7 +351,9 @@ class WindowsSandboxHelper:
             logger.warning(f"elevated teardown trigger failed: {e}")
             return False
         if run.returncode != 0:
-            logger.warning(f"elevated teardown trigger denied (rc={run.returncode}): {run.stderr.decode(errors='replace')[:200]}")
+            logger.warning(
+                f"elevated teardown trigger denied (rc={run.returncode}): {run.stderr.decode(errors='replace')[:200]}"
+            )
             return False
         deadline = time.monotonic() + timeout_sec
         while time.monotonic() < deadline:
