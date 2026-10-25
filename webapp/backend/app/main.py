@@ -686,18 +686,25 @@ except Exception as e:
 
 
 # Full dev setup: winget package IDs + optional download-and-run (max automatic)
+# Keys are NORMALIZED (lowercase, no spaces/dashes/underscores) because the
+# lookup in _get_dev_setup_script strips those characters. Keep them that way.
 SANDBOX_DEV_SETUP_TOOLS = {
     "python": "Python.Python.3.12",
     "git": "Git.Git",
+    "gh": "GitHub.cli",
+    "githubcli": "GitHub.cli",
     "node": "OpenJS.NodeJS.LTS",
     "just": "Casey.Just",
+    "ruff": "astral-sh.ruff",
+    "biome": "BiomeJS.Biome",
     "vscode": "Microsoft.VisualStudioCode",
     "notepad++": "Notepad++.Notepad++",
+    "notepadplusplus": "Notepad++.Notepad++",
     "uv": "astral-sh.uv",
     "windsurf": "Codeium.Windsurf",
     "cursor": "Anysphere.Cursor",
     "antigravity": "Google.Antigravity",
-    "github-desktop": "GitHub.GitHubDesktop",
+    "githubdesktop": "GitHub.GitHubDesktop",
     "firefox": "Mozilla.Firefox",
     "chrome": "Google.Chrome",
     "office365": "Microsoft.Office",
@@ -706,7 +713,9 @@ SANDBOX_DEV_SETUP_TOOLS = {
     "wireguard": "WireGuard.WireGuard",
     "7zip": "7zip.7zip",
     "pwsh": "Microsoft.PowerShell",
+    "powershell7": "Microsoft.PowerShell",
     "terminal": "Microsoft.WindowsTerminal",
+    "windowsterminal": "Microsoft.WindowsTerminal",
     "sysinternals": "Microsoft.Sysinternals.Suite",
     "vlc": "VideoLAN.VLC",
 }
@@ -719,7 +728,20 @@ ROBOFANG_REPO = "https://github.com/sandraschi/robofang"
 
 # Default full-dev selection: curated core (NOT every catalog entry - Office
 # alone is a ~2GB download). The frontend "Choose software" modal mirrors this.
-SANDBOX_DEV_SETUP_DEFAULT_TOOLS = ["python", "git", "node", "just", "vscode", "notepad++", "uv", "opencode"]
+# Includes gh/ruff/biome so full-dev matches dev-infra for naked-pc gates.
+SANDBOX_DEV_SETUP_DEFAULT_TOOLS = [
+    "python",
+    "git",
+    "gh",
+    "node",
+    "just",
+    "ruff",
+    "biome",
+    "vscode",
+    "notepad++",
+    "uv",
+    "opencode",
+]
 
 
 def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> str:
@@ -733,12 +755,13 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
     do_openfang = False
     do_robofang = False
     for t in tools:
-        t_lower = t.strip().lower().replace(" ", "").replace("-", "_")
+        # Normalized: lowercase, strip spaces/dashes/underscores (keeps "+" for notepad++).
+        t_lower = t.strip().lower().replace(" ", "").replace("-", "").replace("_", "")
         if t_lower in SANDBOX_DEV_SETUP_TOOLS:
             winget_ids.append(SANDBOX_DEV_SETUP_TOOLS[t_lower])
             if t_lower == "python":
                 has_python = True
-        elif t_lower in ("claude_desktop", "claudesktop", "claudedesktop"):
+        elif t_lower in ("claudesktop", "claudedesktop"):
             do_claude_desktop = True
         elif t_lower == "openclaw":
             do_openclaw = True
@@ -750,8 +773,23 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
             do_openfang = True
         elif t_lower == "robofang":
             do_robofang = True
-    if do_opencode and "OpenJS.NodeJS.LTS" not in winget_ids:
-        winget_ids.append("OpenJS.NodeJS.LTS")  # opencode installs via npm
+    if (do_opencode or do_openclaw) and "OpenJS.NodeJS.LTS" not in winget_ids:
+        winget_ids.append("OpenJS.NodeJS.LTS")  # opencode/openclaw install via npm
+
+    # Install order matters in a single non-interactive session: git/node/python
+    # first so npm/python exist for the post-steps below after the PATH repair.
+    def _winget_order(wid: str) -> int:
+        order = {
+            "Git.Git": 0,
+            "GitHub.cli": 1,
+            "OpenJS.NodeJS.LTS": 2,
+            "Python.Python.3.12": 3,
+            "astral-sh.uv": 4,
+            "Casey.Just": 5,
+        }
+        return order.get(wid, 99)
+
+    winget_ids = sorted(set(winget_ids), key=lambda w: (_winget_order(w), w))
     if not winget_ids and not any((do_claude_desktop, do_openclaw, do_opencode, do_rustdesk, do_openfang, do_robofang)):
         winget_ids = [
             "Python.Python.3.12",
@@ -773,11 +811,14 @@ def _get_dev_setup_script(tools: list[str], use_host_ollama: bool = False) -> st
     pip_block = ""
     if has_python or "Python.Python.3.12" in winget_ids:
         pip_block = """
-# 5) Upgrade pip (mod cons)
-if (Get-Command python -ErrorAction SilentlyContinue) {
+# 5) Upgrade pip (mod cons) - resolves python absolutely (non-interactive shells have thin PATH)
+$pythonExe = (Get-Command python -ErrorAction SilentlyContinue).Source
+if ($pythonExe) {
     Write-Host "Upgrading pip..." -ForegroundColor Yellow
-    python -m pip install --upgrade pip
+    & $pythonExe -m pip install --upgrade pip
     if ($LASTEXITCODE -ne 0) { Write-Host "pip upgrade failed - continuing." -ForegroundColor Yellow }
+} else {
+    Write-Host "python not on PATH after install - open a new PowerShell window." -ForegroundColor Yellow
 }
 """
     claude_block = ""
@@ -797,11 +838,14 @@ try {{
     openclaw_block = ""
     if do_openclaw:
         openclaw_block = """
-# 7) OpenClaw (npm global)
-if (Get-Command npm -ErrorAction SilentlyContinue) {
+# 7) OpenClaw (npm global - npm must already be on PATH from step 2/3)
+$npmExe = (Get-Command npm -ErrorAction SilentlyContinue).Source
+if ($npmExe) {
     Write-Host "Installing OpenClaw..." -ForegroundColor Yellow
-    npm install -g openclaw@latest
+    & $npmExe install -g openclaw@latest
     if ($LASTEXITCODE -ne 0) { Write-Host "OpenClaw install failed." -ForegroundColor Yellow }
+} else {
+    Write-Host "OpenClaw skipped: npm not on PATH (Node install may need a new window)." -ForegroundColor Yellow
 }
 """
     openfang_block = ""
@@ -817,29 +861,40 @@ try {
     if do_opencode:
         opencode_block = """
 # 8) OpenCode (npm global, needs Node from step 2)
-if (Get-Command npm -ErrorAction SilentlyContinue) {
+$npmExe2 = (Get-Command npm -ErrorAction SilentlyContinue).Source
+if ($npmExe2) {
     Write-Host "Installing OpenCode..." -ForegroundColor Yellow
-    npm install -g opencode-ai@latest
+    & $npmExe2 install -g opencode-ai@latest
     if ($LASTEXITCODE -ne 0) { Write-Host "OpenCode install failed." -ForegroundColor Yellow }
+} else {
+    Write-Host "OpenCode skipped: npm not on PATH (Node install may need a new window)." -ForegroundColor Yellow
 }
 """
     robofang_block = ""
     if do_robofang:
         robofang_block = f"""
 # 10) RoboFang (git clone + pip install -e .)
-$codeRoot = Join-Path $assetRoot "code"
-New-Item -ItemType Directory -Path $codeRoot -Force | Out-Null
-Set-Location $codeRoot
-if (-not (Test-Path "robofang")) {{
-    Write-Host "Cloning RoboFang..." -ForegroundColor Yellow
-    git clone {ROBOFANG_REPO}
-    if ($LASTEXITCODE -ne 0) {{ Write-Host "RoboFang clone failed." -ForegroundColor Red; exit 1 }}
+$gitExe = (Get-Command git -ErrorAction SilentlyContinue).Source
+$pythonExe2 = (Get-Command python -ErrorAction SilentlyContinue).Source
+if (-not $gitExe) {{ Write-Host "RoboFang skipped: git not on PATH." -ForegroundColor Yellow }}
+elseif (-not $pythonExe2) {{ Write-Host "RoboFang skipped: python not on PATH." -ForegroundColor Yellow }}
+else {{
+    $codeRoot = Join-Path ([Environment]::GetFolderPath('Desktop')) "code"
+    New-Item -ItemType Directory -Path $codeRoot -Force | Out-Null
+    Set-Location $codeRoot
+    if (-not (Test-Path "robofang")) {{
+        Write-Host "Cloning RoboFang..." -ForegroundColor Yellow
+        & $gitExe clone {ROBOFANG_REPO}
+        if ($LASTEXITCODE -ne 0) {{ Write-Host "RoboFang clone failed - continuing." -ForegroundColor Yellow }}
+    }}
+    if (Test-Path "robofang") {{
+        Set-Location (Join-Path $codeRoot "robofang")
+        Write-Host "Installing RoboFang (pip install -e .)..." -ForegroundColor Yellow
+        & $pythonExe2 -m pip install -e .
+        if ($LASTEXITCODE -ne 0) {{ Write-Host "RoboFang pip install failed - continuing." -ForegroundColor Yellow }}
+    }}
+    Set-Location ([Environment]::GetFolderPath('Desktop'))
 }}
-Set-Location (Join-Path $codeRoot "robofang")
-Write-Host "Installing RoboFang (pip install -e .)..." -ForegroundColor Yellow
-python -m pip install -e .
-if ($LASTEXITCODE -ne 0) {{ Write-Host "RoboFang pip install failed." -ForegroundColor Red; exit 1 }}
-Set-Location $assetRoot
 """
     rustdesk_block = ""
     if do_rustdesk:
@@ -871,8 +926,13 @@ if ($gw) {
 }
 """
     script = """# Setup-DevSandbox.ps1 - Full dev stack in Windows Sandbox (virtualization-mcp)
-# Automatic: Python, Node, pip, uv/uvx, Git, VS Code, Just, Notepad++, Windsurf, Cursor, Antigravity, GitHub Desktop, Firefox, Chrome, 7-Zip, PowerShell 7, Windows Terminal, Sysinternals, VLC, Office 365, Outlook, Tailscale, WireGuard, Claude Desktop, OpenClaw, OpenCode, RustDesk, OpenFang, RoboFang. Optional: host Ollama.
-# Downloads winget from GitHub if not present, then installs dev tools via winget.
+# Generated by virtualization-mcp backend (_get_dev_setup_script). Do not hand-edit
+# the copy in assets/sandbox - regenerate via GET /api/v1/sandbox/dev-setup-script.
+# Uses the shared lib\\Winget-Bootstrap.ps1 when present (same path as dev-infra),
+# with an inline fallback for standalone -script downloads.
+
+$ErrorActionPreference = 'Continue'
+$ProgressPreference = 'SilentlyContinue'
 
 # Wait for mapped folder + network to stabilize
 Write-Host "Waiting for environment to initialize..." -ForegroundColor Cyan
@@ -881,69 +941,109 @@ Start-Sleep 5
 $logPath = "$env:USERPROFILE\\Desktop\\dev-setup-ps.log"
 Start-Transcript -Path $logPath -Append
 
-# 1) Check if winget already available
-$haveWinget = $false
-try {
-    $null = (Get-Command winget -ErrorAction Stop)
-    $haveWinget = $true
-} catch {}
+# 1) Winget via shared library (dev-infra/consumer/naked-test use the same file).
+$lib = Join-Path $PSScriptRoot 'lib\\Winget-Bootstrap.ps1'
+if (Test-Path -LiteralPath $lib) {
+    . $lib
+    Ensure-WsbWingetAvailable
+} else {
+    Write-Host "Shared Winget-Bootstrap.ps1 not found - using inline fallback." -ForegroundColor Yellow
+    $haveWinget = $false
+    try {
+        $null = (Get-Command winget -ErrorAction Stop)
+        $haveWinget = $true
+    } catch {}
 
-if (-not $haveWinget) {
-    Write-Host "winget not found. Installing App Installer from GitHub..." -ForegroundColor Yellow
-
-    $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
-    $null = New-Item -ItemType Directory -Path $work -Force
-
-    $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing
-
-    # Download deps zip
-    $depsAsset = $null
-    foreach ($a in $release.assets) { if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') { $depsAsset = $a; break } }
-    if ($depsAsset) {
-        Write-Host "Downloading dependencies (93 MB)..." -ForegroundColor Yellow
-        $depsPath = Join-Path $work $depsAsset.name
-        Invoke-WebRequest -Uri $depsAsset.browser_download_url -OutFile $depsPath -UseBasicParsing
-        $depsDir = Join-Path $work 'deps'
-        Expand-Archive -Path $depsPath -DestinationPath $depsDir -Force
-        Get-ChildItem -Path $depsDir -Include '*.appx','*.msix','*.msixbundle' -Recurse | Sort-Object Name | ForEach-Object {
-            try { Add-AppxPackage -Path $_.FullName -ErrorAction Stop } catch { Write-Host "  Skip: $($_.Name)" -ForegroundColor Yellow }
+    if (-not $haveWinget) {
+        Write-Host "winget not found. Installing App Installer from GitHub..." -ForegroundColor Yellow
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+        $work = Join-Path $env:TEMP ('winget-bootstrap-' + [Guid]::NewGuid().ToString('N'))
+        $null = New-Item -ItemType Directory -Path $work -Force
+        $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/winget-cli/releases/latest' -UseBasicParsing
+        $depsAsset = $null
+        foreach ($a in $release.assets) { if ($a.name -eq 'DesktopAppInstaller_Dependencies.zip') { $depsAsset = $a; break } }
+        if ($depsAsset) {
+            Write-Host "Downloading dependencies (93 MB)..." -ForegroundColor Yellow
+            $depsPath = Join-Path $work $depsAsset.name
+            Invoke-WebRequest -Uri $depsAsset.browser_download_url -OutFile $depsPath -UseBasicParsing
+            $depsDir = Join-Path $work 'deps'
+            Expand-Archive -Path $depsPath -DestinationPath $depsDir -Force
+            Get-ChildItem -Path $depsDir -Include '*.appx','*.msix','*.msixbundle' -Recurse | Sort-Object Name | ForEach-Object {
+                try { Add-AppxPackage -Path $_.FullName -ErrorAction Stop } catch { Write-Host "  Skip: $($_.Name)" -ForegroundColor Yellow }
+            }
         }
-    }
-
-    # Download and install App Installer bundle
-    foreach ($a in $release.assets) {
-        if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') {
-            Write-Host "Downloading App Installer..." -ForegroundColor Yellow
-            $bundlePath = Join-Path $work $a.name
-            Invoke-WebRequest -Uri $a.browser_download_url -OutFile $bundlePath -UseBasicParsing
-            Add-AppxPackage -Path $bundlePath
-            break
+        foreach ($a in $release.assets) {
+            if ($a.name -like 'Microsoft.DesktopAppInstaller_*.msixbundle') {
+                Write-Host "Downloading App Installer..." -ForegroundColor Yellow
+                $bundlePath = Join-Path $work $a.name
+                Invoke-WebRequest -Uri $a.browser_download_url -OutFile $bundlePath -UseBasicParsing
+                Add-AppxPackage -Path $bundlePath
+                break
+            }
         }
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+            Write-Host "winget still not found after install." -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "winget installed successfully." -ForegroundColor Green
     }
-
-    # Refresh PATH
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    $wingetDirs = @("$env:LOCALAPPDATA\\Microsoft\\WindowsApps", "$env:ProgramFiles\\winget")
-    foreach ($dir in $wingetDirs) {
-        if (Test-Path $dir -and $env:Path -notlike "*$dir*") { $env:Path = "$dir;$env:Path" }
-    }
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Host "winget still not found after install." -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "winget installed successfully." -ForegroundColor Green
 }
 
-# 2) Dev stack via winget (warn-and-continue per package; summary at the end)
+function Repair-WsbDevPath {
+    # Winget drops shims outside Machine/User PATH in the same session (notably
+    # WinGet Links for uv/just, Python Scripts, npm roaming). Re-read the
+    # registry first, then append well-known dirs that exist on disk.
+    $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
+    $user = [Environment]::GetEnvironmentVariable('Path', 'User')
+    $env:Path = "$machine;$user"
+    $extraPaths = @(
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\\WinGet\\Links'),
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\\WindowsApps'),
+        (Join-Path $env:APPDATA 'npm'),
+        'C:\\Program Files\\nodejs',
+        'C:\\Program Files\\Git\\cmd',
+        'C:\\Program Files\\Git\\bin',
+        'C:\\Program Files\\Python312',
+        'C:\\Program Files\\Python312\\Scripts',
+        "$env:LOCALAPPDATA\\Programs\\Python\\Python312",
+        "$env:LOCALAPPDATA\\Programs\\Python\\Python312\\Scripts",
+        "$env:LOCALAPPDATA\\Programs\\Just",
+        'C:\\Program Files\\Just',
+        "$env:USERPROFILE\\.cargo\\bin"
+    )
+    foreach ($ep in $extraPaths) {
+        if ((Test-Path -LiteralPath $ep) -and ($env:Path -notlike "*$ep*")) {
+            $env:Path = "$ep;$($env:Path)"
+        }
+    }
+}
+
+# 2) Dev stack via winget (warn-and-continue per package; summary at the end).
+# Install order is git/node/python first so npm/python resolve for post-steps.
 Write-Host "Installing dev tools via winget..." -ForegroundColor Yellow
 $wingetIds = {winget_ids_ps}
 $failedWinget = @()
 foreach ($wid in $wingetIds) {
-    $wingetArgs = @("install", "-e", "--id", $wid, "--source", "winget", "--accept-package-agreements", "--accept-source-agreements")
-    & winget @wingetArgs
-    if ($LASTEXITCODE -ne 0) { Write-Host "winget $wid failed - continuing." -ForegroundColor Yellow; $failedWinget += $wid }
+    if (Get-Command Invoke-WsbWingetExe -ErrorAction SilentlyContinue) {
+        try {
+            Invoke-WsbWingetExe @('install', '-e', '--id', $wid, '--source', 'winget', '--accept-source-agreements', '--accept-package-agreements', '--disable-interactivity')
+        } catch {
+            Write-Host "winget $wid failed - continuing. ($($_.Exception.Message))" -ForegroundColor Yellow
+            $failedWinget += $wid
+        }
+    } else {
+        $wingetArgs = @("install", "-e", "--id", $wid, "--source", "winget", "--accept-package-agreements", "--accept-source-agreements")
+        & winget @wingetArgs
+        if ($LASTEXITCODE -ne 0) { Write-Host "winget $wid failed - continuing." -ForegroundColor Yellow; $failedWinget += $wid }
+    }
+    Repair-WsbDevPath
 }
 if ($failedWinget.Count -gt 0) { Write-Host ("winget failures: " + ($failedWinget -join ", ")) -ForegroundColor Yellow }
+
+# 3) Repair PATH so uv/npm/python/just resolve in THIS session (no reopen needed).
+if (Get-Command Sync-WsbPathFromRegistry -ErrorAction SilentlyContinue) { Sync-WsbPathFromRegistry }
+Repair-WsbDevPath
 {pip_block}
 {claude_block}
 {openclaw_block}
@@ -952,7 +1052,24 @@ if ($failedWinget.Count -gt 0) { Write-Host ("winget failures: " + ($failedWinge
 {rustdesk_block}
 {robofang_block}
 {ollama_block}
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+if (Get-Command Sync-WsbPathFromRegistry -ErrorAction SilentlyContinue) { Sync-WsbPathFromRegistry }
+Repair-WsbDevPath
+
+# 4) Verify: these MUST resolve or the naked-pc start.bat chain fails downstream.
+Write-Host "Verify versions..." -ForegroundColor Cyan
+$missing = @()
+foreach ($c in @('git', 'node', 'npm', 'python', 'uv', 'just')) {
+    if (Get-Command $c -ErrorAction SilentlyContinue) {
+        try { $verOut = & (Get-Command $c -ErrorAction Stop).Source @('--version') 2>&1 } catch { $verOut = '(failed to read version)' }
+        $firstLine = $verOut
+        if ($verOut -is [System.Array]) { $firstLine = $verOut[0] }
+        Write-Host ("OK  {0} -> {1}" -f $c, $firstLine) -ForegroundColor Green
+    } else {
+        Write-Host ("MISSING on PATH: {0}" -f $c) -ForegroundColor Yellow
+        $missing += $c
+    }
+}
+if ($missing.Count -gt 0) { Write-Host ("Missing tools will break start.bat: " + ($missing -join ", ") + ". Open a NEW PowerShell window and re-check before filing.") -ForegroundColor Yellow }
 Write-Host "Full dev setup complete." -ForegroundColor Green
 Stop-Transcript
 """
@@ -3015,12 +3132,20 @@ async def sandbox_wsb_preview(
         xml = _build_sandbox_xml_consumer(folder, memory_mb=mem, vgpu=vgpu, networking=networking)
         return {"xml": xml, "preset": p, "assets_folder": folder, "filename": "Consumer.wsb"}
     if p == "full-dev":
-        folder = (assets_folder or "").strip()
-        if not folder or not os.path.isdir(folder):
-            raise HTTPException(
-                status_code=400,
-                detail="full-dev requires assets_folder query parameter (existing host directory with offline winget assets).",
-            )
+        folder = (assets_folder or "").strip() or ASSETS_SANDBOX
+        if not os.path.isdir(folder):
+            raise HTTPException(status_code=400, detail=f"Assets folder does not exist: {folder}")
+        for required in (
+            "Setup-DevSandbox.ps1",
+            "Run-DevSetup.cmd",
+            os.path.join("lib", "Winget-Bootstrap.ps1"),
+        ):
+            rp = os.path.join(folder, required)
+            if not os.path.isfile(rp):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Missing {required} in {folder}. Use virtualization-mcp assets/sandbox.",
+                )
         xml = _build_sandbox_xml_dev_setup(folder, memory_mb=mem, vgpu=vgpu, networking=networking)
         return {"xml": xml, "preset": p, "assets_folder": folder, "filename": "FullDev.wsb"}
     raise HTTPException(status_code=400, detail="Unknown preset (use dev-infra, consumer, or full-dev).")
@@ -3070,29 +3195,53 @@ async def launch_sandbox(request: SandboxLaunchRequest):
                         use_host_ollama=use_host_ollama,
                     )
                 )
-            # Write .cmd launcher (delay + log capture)
+            # Write .cmd launcher (robust mount wait + log capture, mirrors Run-DevInfra.cmd)
             cmd_path = os.path.join(assets_folder, "Run-DevSetup.cmd")
             with open(cmd_path, "w", encoding="utf-8") as f:
                 f.write(
                     "@echo off\r\n"
+                    "setlocal EnableExtensions\r\n"
                     'set "LOG=%USERPROFILE%\\Desktop\\dev-setup.log"\r\n'
-                    'echo [%DATE% %TIME%] Run-DevSetup.cmd starting > "%LOG%"\r\n'
-                    'if exist "C:\\Assets\\Run-DevSetup.cmd" ( echo [%DATE% %TIME%] C:\\Assets mapped OK >> "%LOG%" ) else ( echo [%DATE% %TIME%] C:\\Assets NOT MAPPED >> "%LOG%" )\r\n'
-                    'dir "C:\\Assets" >> "%LOG%" 2>&1\r\n'
-                    'echo [%DATE% %TIME%] Waiting 5s... >> "%LOG%"\r\n'
-                    "ping -n 6 127.0.0.1 > nul\r\n"
+                    "echo ========================================\r\n"
+                    "echo     Virtualization-MCP Full Dev Setup\r\n"
+                    "echo ========================================\r\n"
+                    "echo.\r\n"
+                    "echo Log: %LOG%\r\n"
+                    "echo.\r\n"
+                    'echo [%date% %time%] Run-DevSetup.cmd starting > "%LOG%"\r\n'
+                    'set "RETRY_COUNT=0"\r\n'
+                    ":wait_assets_loop\r\n"
                     'if exist "C:\\Assets\\Setup-DevSandbox.ps1" (\r\n'
-                    '    echo [%DATE% %TIME%] Starting Setup-DevSandbox.ps1 >> "%LOG%"\r\n'
-                    '    powershell -ExecutionPolicy Bypass -File "C:\\Assets\\Setup-DevSandbox.ps1" >> "%LOG%" 2>&1\r\n'
-                    '    echo [%DATE% %TIME%] Exit code %ERRORLEVEL% >> "%LOG%"\r\n'
-                    ") else (\r\n"
-                    '    echo [%DATE% %TIME%] ERROR: Setup-DevSandbox.ps1 NOT FOUND >> "%LOG%"\r\n'
+                    '    echo [%date% %time%] C:\\Assets mapped and setup script found >> "%LOG%"\r\n'
+                    "    goto assets_ready\r\n"
                     ")\r\n"
+                    "set /a RETRY_COUNT+=1\r\n"
+                    "if %RETRY_COUNT% gtr 15 (\r\n"
+                    '    echo [%date% %time%] ERROR: C:\\Assets\\Setup-DevSandbox.ps1 NOT FOUND after 30s >> "%LOG%"\r\n'
+                    "    echo ERROR: Setup script not found in mapped folder within 30s!\r\n"
+                    "    goto assets_failed\r\n"
+                    ")\r\n"
+                    'echo [%date% %time%] Waiting for C:\\Assets folder mount (attempt %RETRY_COUNT%/15)... >> "%LOG%"\r\n'
+                    "ping -n 3 127.0.0.1 >nul\r\n"
+                    "goto wait_assets_loop\r\n"
+                    ":assets_ready\r\n"
+                    'echo [%date% %time%] Starting Setup-DevSandbox.ps1 >> "%LOG%"\r\n'
+                    "echo Running setup script, this may take several minutes...\r\n"
+                    'powershell.exe -NoLogo -NoProfile -WindowStyle Normal -ExecutionPolicy Bypass -File "C:\\Assets\\Setup-DevSandbox.ps1" >> "%LOG%" 2>&1\r\n'
+                    'echo [%date% %time%] powershell exit %ERRORLEVEL% >> "%LOG%"\r\n'
+                    ":assets_failed\r\n"
+                    "echo.\r\n"
+                    "echo ========================================\r\n"
+                    "echo     Setup finished. Check the log above.\r\n"
+                    "echo ========================================\r\n"
                     'echo @echo off > "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
                     'echo type "%LOG%" >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
                     'echo echo. >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
                     'echo pause >> "%USERPROFILE%\\Desktop\\View Setup Log.cmd"\r\n'
                     'start "" cmd.exe /c "title Dev Setup Log & powershell -NoExit -Command Get-Content -Wait \'%LOG%\'"\r\n'
+                    'if exist "%windir%\\notepad.exe" (\r\n'
+                    '    start "" notepad "%LOG%"\r\n'
+                    ")\r\n"
                 )
             config_xml = _build_sandbox_xml_dev_setup(
                 assets_folder,
@@ -3640,15 +3789,27 @@ def _valid_job_id(job_id: str) -> bool:
 # Singleton lifecycle budgets for naked-test dispatch. WindowsSandbox.exe
 # returns as soon as the new instance is *requested*; the old VM keeps
 # shutting down asynchronously, and a relaunch into that window wedges
-# with zero LogonCommand output (fleet 2026-09-20: back-to-back matrix
-# dispatches timed out fleet-wide with empty steps/log_tail). So: wait
-# for teardown, verify boot via job-dir markers, retry once, then fail
-# loud with a harness RESULT instead of a forever-running ghost.
+# with zero LogonCommand output (fleet 2026-09-20, 2026-10-25 shard 2/4:
+# 22x harness wedge). So: serialize on a lock, hard-terminate with kill
+# escalation, verify teardown BEFORE launching, verify boot via job-dir
+# markers, and never launch into a still-present singleton.
 NAKED_BOOT_VERIFY_SEC = 240
-NAKED_TEARDOWN_WAIT_SEC = 60
+NAKED_TEARDOWN_WAIT_SEC = 90
+NAKED_LAUNCH_GRACE_SEC = 20
 
 # Background naked-test lifecycles (kept to avoid GC of asyncio Tasks).
 _NAKED_TASKS: set = set()
+
+# Singleton mutex: concurrent dispatches interleave terminate/launch and
+# wedge every instance after the first. Matrix pollers must queue here.
+_NAKED_SINGLETON_LOCK: asyncio.Lock | None = None
+
+
+def _naked_singleton_lock() -> asyncio.Lock:
+    global _NAKED_SINGLETON_LOCK
+    if _NAKED_SINGLETON_LOCK is None:
+        _NAKED_SINGLETON_LOCK = asyncio.Lock()
+    return _NAKED_SINGLETON_LOCK
 
 
 def _naked_launch_markers(job_dir: str) -> bool:
@@ -3673,9 +3834,37 @@ async def _naked_wait_gone(timeout_sec: float) -> bool:
             logger.debug(f"Sandbox running check best-effort failed: {e}")
         await asyncio.sleep(2)
     try:
-        return not WindowsSandboxHelper.is_sandbox_running()
+        gone = not WindowsSandboxHelper.is_sandbox_running()
     except Exception:
         return False
+    if not gone:
+        try:
+            leftovers = WindowsSandboxHelper.sandbox_process_snapshot()
+            logger.warning(f"naked-test: teardown incomplete, still present: {leftovers}")
+        except Exception as e:
+            logger.debug(f"Sandbox snapshot best-effort failed: {e}")
+    return gone
+
+
+def _naked_write_result(job_dir: str, *, failed_step: str, note: str) -> None:
+    try:
+        with open(os.path.join(job_dir, "RESULT.json"), "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "finished_utc": __import__("datetime").datetime.now(__import__("datetime").UTC).isoformat(),
+                    "repo": "",
+                    "branch": "",
+                    "pass": False,
+                    "failed_step": failed_step,
+                    "note": note,
+                    "steps": [],
+                    "log_tail": [],
+                },
+                f,
+                indent=2,
+            )
+    except OSError:
+        pass
 
 
 async def _naked_launch_once(config_xml: str) -> None:
@@ -3693,52 +3882,123 @@ async def _naked_launch_once(config_xml: str) -> None:
         )
 
 
-async def _naked_dispatch_lifecycle(job_id: str, job_dir: str, config_xml: str) -> None:
+async def _naked_hard_teardown(job_id: str) -> tuple[bool, list]:
+    """Bringdown ladder in a worker thread + elevated-task fallback.
+
+    Returns (gone, still_running). The elevated fallback fires only when a
+    stage hit AccessDenied (medium-integrity backend vs SYSTEM-owned vmmem);
+    it is a no-op None when the one-time-admin task is not installed.
+    """
     from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
 
     try:
-        WindowsSandboxHelper.terminate_active_sandbox()
+        detail = await asyncio.to_thread(WindowsSandboxHelper.terminate_active_sandbox_detailed)
     except Exception as e:
-        logger.debug(f"Pre-test teardown terminate best-effort failed: {e}")
-    if not await _naked_wait_gone(NAKED_TEARDOWN_WAIT_SEC):
-        logger.warning(f"naked-test {job_id}: previous sandbox still present after teardown wait")
-    for attempt in (1, 2):
+        logger.debug(f"naked-test {job_id}: bringdown ladder best-effort failed: {e}")
+        detail = {"gone": False, "access_denied": False}
+    if detail.get("gone"):
+        return True, []
+    if detail.get("access_denied"):
+        logger.warning(f"naked-test {job_id}: teardown hit AccessDenied, trying elevated task")
         try:
-            await _naked_launch_once(config_xml)
+            elevated = await asyncio.to_thread(WindowsSandboxHelper.elevated_teardown)
         except Exception as e:
-            logger.warning(f"naked-test {job_id}: launch attempt {attempt} failed: {e}")
-            await asyncio.sleep(10)
-            continue
-        deadline = time.monotonic() + NAKED_BOOT_VERIFY_SEC
-        while time.monotonic() < deadline:
+            logger.debug(f"naked-test {job_id}: elevated teardown best-effort failed: {e}")
+            elevated = False
+        if elevated:
+            return True, []
+        if elevated is None:
+            logger.warning(
+                f"naked-test {job_id}: elevated teardown task not installed "
+                "(run scripts/Install-SandboxTeardownTask.ps1 elevated, once)"
+            )
+    try:
+        leftovers = WindowsSandboxHelper.sandbox_process_snapshot()
+    except Exception:
+        leftovers = []
+    return False, leftovers
+
+
+async def _naked_dispatch_lifecycle(job_id: str, job_dir: str, config_xml: str) -> None:
+    """Own the singleton under a lock: hard teardown -> verify gone -> launch.
+
+    Never launches into a still-present instance. Two failure notes are
+    now distinct: "previous sandbox would not die" (bringdown failed, host
+    issue, no launch attempted) vs "no boot markers after 240s, teardown
+    was clean" (launch happened but LogonCommand/assets failed).
+    """
+    from virtualization_mcp.utils.windows_sandbox_helper import WindowsSandboxHelper
+
+    async with _naked_singleton_lock():
+        gone, leftovers = await _naked_hard_teardown(job_id)
+        if not gone:
+            logger.warning(f"naked-test {job_id}: refusing launch, previous still present: {leftovers}")
+            _naked_write_result(
+                job_dir,
+                failed_step="harness",
+                note=(
+                    "Previous sandbox would not die (still present: "
+                    f"{leftovers}). No launch attempted to avoid wedge. "
+                    "If AccessDenied persists, run scripts/Install-SandboxTeardownTask.ps1 "
+                    "elevated once for the SYSTEM fallback kill task."
+                ),
+            )
+            return
+        for attempt in (1, 2):
+            try:
+                await _naked_launch_once(config_xml)
+            except Exception as e:
+                logger.warning(f"naked-test {job_id}: launch attempt {attempt} failed: {e}")
+                await asyncio.sleep(10)
+                continue
+            # Fast-fail: if the launcher exited without a VM behind it,
+            # don't burn the full 240s boot window.
+            await asyncio.sleep(NAKED_LAUNCH_GRACE_SEC)
             if _naked_launch_markers(job_dir):
                 logger.info(f"naked-test {job_id}: boot verified on attempt {attempt}")
                 return
-            await asyncio.sleep(5)
-        logger.warning(f"naked-test {job_id}: no boot markers after attempt {attempt}, retrying once")
-        try:
-            WindowsSandboxHelper.terminate_active_sandbox()
-        except Exception as e:
-            logger.debug(f"Sandbox terminate best-effort failed: {e}")
-        await _naked_wait_gone(NAKED_TEARDOWN_WAIT_SEC)
-    try:
-        with open(os.path.join(job_dir, "RESULT.json"), "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "finished_utc": __import__("datetime").datetime.now(__import__("datetime").UTC).isoformat(),
-                    "repo": "",
-                    "branch": "",
-                    "pass": False,
-                    "failed_step": "harness",
-                    "note": "Sandbox never booted twice in a row (singleton wedge).",
-                    "steps": [],
-                    "log_tail": [],
-                },
-                f,
-                indent=2,
-            )
-    except OSError:
-        pass
+            try:
+                launch_alive = WindowsSandboxHelper.is_sandbox_running()
+            except Exception:
+                launch_alive = True
+            if not launch_alive:
+                logger.warning(f"naked-test {job_id}: launcher produced no VM on attempt {attempt}, retrying")
+                try:
+                    WindowsSandboxHelper.terminate_active_sandbox()
+                except Exception as e:
+                    logger.debug(f"Sandbox terminate best-effort failed: {e}")
+                await _naked_wait_gone(NAKED_TEARDOWN_WAIT_SEC)
+                continue
+            deadline = time.monotonic() + (NAKED_BOOT_VERIFY_SEC - NAKED_LAUNCH_GRACE_SEC)
+            booted = False
+            while time.monotonic() < deadline:
+                if _naked_launch_markers(job_dir):
+                    logger.info(f"naked-test {job_id}: boot verified on attempt {attempt}")
+                    return
+                await asyncio.sleep(5)
+            logger.warning(f"naked-test {job_id}: no boot markers after attempt {attempt}, tearing down")
+            gone, leftovers = await _naked_hard_teardown(job_id)
+            if not gone:
+                logger.warning(f"naked-test {job_id}: post-attempt teardown failed: {leftovers}")
+                _naked_write_result(
+                    job_dir,
+                    failed_step="harness",
+                    note=(
+                        f"Sandbox wedged after attempt {attempt} and would not die "
+                        f"(still present: {leftovers}). If AccessDenied persists, run "
+                        "scripts/Install-SandboxTeardownTask.ps1 elevated once."
+                    ),
+                )
+                return
+        _naked_write_result(
+            job_dir,
+            failed_step="harness",
+            note=(
+                f"No boot markers within {NAKED_BOOT_VERIFY_SEC}s on either attempt, "
+                "teardown was clean both times. Suspect LogonCommand/assets mapping "
+                "(C:\\Assets\\Run-NakedTest.cmd), not a lingering singleton."
+            ),
+        )
 
 
 def _build_sandbox_xml_naked(

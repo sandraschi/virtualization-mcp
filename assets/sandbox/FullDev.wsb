@@ -1,0 +1,18 @@
+<Configuration>
+  <!-- Full dev: Run-DevSetup.cmd -> Setup-DevSandbox.ps1 (default tool list).
+       Edit HostFolder if your clone is not at D:\Dev\repos\virtualization-mcp\assets\sandbox.
+       For a custom tool selection, generate via webapp Sandbox page (Download script). -->
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>D:\Dev\repos\virtualization-mcp\assets\sandbox</HostFolder>
+      <SandboxFolder>C:\Assets</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <VGpu>Enable</VGpu>
+  <Networking>Enable</Networking>
+  <MemoryInMB>8192</MemoryInMB>
+  <LogonCommand>
+    <Command>C:\Assets\Run-DevSetup.cmd</Command>
+  </LogonCommand>
+</Configuration>

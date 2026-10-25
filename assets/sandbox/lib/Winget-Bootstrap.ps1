@@ -13,9 +13,33 @@ function Test-WsbCommandExists {
 }
 
 function Sync-WsbPathFromRegistry {
+    # Re-read Machine+User PATH, then append well-known winget shim dirs that
+    # exist on disk but are not yet in the registry in the SAME session.
+    # Without this, uv (WinGet Links) and npm (nodejs + roaming npm) do not
+    # resolve until a new window opens - which kills naked-pc start.bat chains.
     $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
     $user = [Environment]::GetEnvironmentVariable('Path', 'User')
     $env:Path = "$machine;$user"
+    $extraPaths = @(
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links'),
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'),
+        (Join-Path $env:APPDATA 'npm'),
+        'C:\Program Files\nodejs',
+        'C:\Program Files\Git\cmd',
+        'C:\Program Files\Git\bin',
+        'C:\Program Files\Python312',
+        'C:\Program Files\Python312\Scripts',
+        (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\Scripts'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Just'),
+        'C:\Program Files\Just',
+        (Join-Path $env:USERPROFILE '.cargo\bin')
+    )
+    foreach ($ep in $extraPaths) {
+        if ((Test-Path -LiteralPath $ep) -and ($env:Path -notlike "*$ep*")) {
+            $env:Path = "$ep;$($env:Path)"
+        }
+    }
 }
 
 function Invoke-WsbWingetExe {

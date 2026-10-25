@@ -1,19 +1,54 @@
-@echo off
-set "LOG=%USERPROFILE%\Desktop\dev-setup.log"
-echo [%DATE% %TIME%] Run-DevSetup.cmd starting > "%LOG%"
-if exist "C:\Assets\Run-DevSetup.cmd" ( echo [%DATE% %TIME%] C:\Assets mapped OK >> "%LOG%" ) else ( echo [%DATE% %TIME%] C:\Assets NOT MAPPED >> "%LOG%" )
-dir "C:\Assets" >> "%LOG%" 2>&1
-echo [%DATE% %TIME%] Waiting 5s... >> "%LOG%"
-ping -n 6 127.0.0.1 > nul
-if exist "C:\Assets\Setup-DevSandbox.ps1" (
-    echo [%DATE% %TIME%] Starting Setup-DevSandbox.ps1 >> "%LOG%"
-    powershell -ExecutionPolicy Bypass -File "C:\Assets\Setup-DevSandbox.ps1" >> "%LOG%" 2>&1
-    echo [%DATE% %TIME%] Exit code %ERRORLEVEL% >> "%LOG%"
-) else (
-    echo [%DATE% %TIME%] ERROR: Setup-DevSandbox.ps1 NOT FOUND >> "%LOG%"
-)
-echo @echo off > "%USERPROFILE%\Desktop\View Setup Log.cmd"
-echo type "%LOG%" >> "%USERPROFILE%\Desktop\View Setup Log.cmd"
-echo echo. >> "%USERPROFILE%\Desktop\View Setup Log.cmd"
-echo pause >> "%USERPROFILE%\Desktop\View Setup Log.cmd"
-start "" cmd.exe /c "title Dev Setup Log & powershell -NoExit -Command Get-Content -Wait '%LOG%'"
+@echo off
+setlocal EnableExtensions
+set "LOG=%USERPROFILE%\Desktop\dev-setup.log"
+
+echo ========================================
+echo     Virtualization-MCP Full Dev Setup
+echo ========================================
+echo.
+echo Log: %LOG%
+echo.
+
+echo [%date% %time%] Run-DevSetup.cmd starting > "%LOG%"
+
+set "RETRY_COUNT=0"
+:wait_assets_loop
+if exist "C:\Assets\Setup-DevSandbox.ps1" (
+    echo [%date% %time%] C:\Assets mapped and setup script found >> "%LOG%"
+    goto assets_ready
+)
+set /a RETRY_COUNT+=1
+if %RETRY_COUNT% gtr 15 (
+    echo [%date% %time%] ERROR: C:\Assets\Setup-DevSandbox.ps1 NOT FOUND after 30s >> "%LOG%"
+    echo ERROR: Setup script not found in mapped folder within 30s!
+    goto assets_failed
+)
+echo [%date% %time%] Waiting for C:\Assets folder mount (attempt %RETRY_COUNT%/15)... >> "%LOG%"
+ping -n 3 127.0.0.1 >nul
+goto wait_assets_loop
+
+:assets_ready
+echo [%date% %time%] Starting Setup-DevSandbox.ps1 >> "%LOG%"
+echo Running setup script, this may take several minutes...
+powershell.exe -NoLogo -NoProfile -WindowStyle Normal -ExecutionPolicy Bypass -File "C:\Assets\Setup-DevSandbox.ps1" >> "%LOG%" 2>&1
+echo [%date% %time%] powershell exit %ERRORLEVEL% >> "%LOG%"
+:assets_failed
+
+echo.
+echo ========================================
+echo     Setup finished. Check the log above.
+echo ========================================
+
+rem Create desktop shortcut to view log
+echo @echo off > "%USERPROFILE%\Desktop\View Setup Log.cmd"
+echo type "%LOG%" >> "%USERPROFILE%\Desktop\View Setup Log.cmd"
+echo echo. >> "%USERPROFILE%\Desktop\View Setup Log.cmd"
+echo pause >> "%USERPROFILE%\Desktop\View Setup Log.cmd"
+
+rem Also try to open a live log viewer (may fail on some builds, hence the shortcut above)
+start "" cmd.exe /c "title Dev Setup Log & powershell -NoExit -Command Get-Content -Wait '%LOG%'"
+
+rem Fallback: also try opening with notepad if available
+if exist "%windir%\notepad.exe" (
+    start "" notepad "%LOG%"
+)

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  virtualization-mcp: bootstrap winget in Windows Sandbox, then install git, gh, npm (Node LTS), Python, ruff, just, biome, Notepad++.
+  virtualization-mcp: bootstrap winget in Windows Sandbox, then install git, gh, npm (Node LTS), Python, uv, ruff, just, biome, Notepad++.
 
 .DESCRIPTION
   Intended to run from the mapped folder as C:\Assets (see DevInfra.wsb or scripts/Launch-DevInfraSandbox.ps1).
@@ -31,6 +31,7 @@ $ids = @(
   'GitHub.cli',
   'OpenJS.NodeJS.LTS',
   'Python.Python.3.12',
+  'astral-sh.uv',
   'astral-sh.ruff',
   'Casey.Just',
   'BiomeJS.Biome',
@@ -51,7 +52,7 @@ foreach ($id in $ids) {
 Sync-WsbPathFromRegistry
 
 Write-WsbStep 'Verify versions'
-$checks = @('git', 'gh', 'node', 'npm', 'python', 'ruff', 'just', 'biome')
+$checks = @('git', 'gh', 'node', 'npm', 'python', 'uv', 'ruff', 'just', 'biome')
 foreach ($c in $checks) {
   if (Test-WsbCommandExists $c) {
     try {

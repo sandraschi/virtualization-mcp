@@ -23,7 +23,10 @@ const DEV_TOOL_OPTIONS = [
   { id: "node", label: "Node.js LTS" },
   { id: "uv", label: "uv / uvx" },
   { id: "git", label: "Git" },
+  { id: "gh", label: "GitHub CLI" },
   { id: "just", label: "Just" },
+  { id: "ruff", label: "Ruff" },
+  { id: "biome", label: "Biome" },
   { id: "vscode", label: "VS Code" },
   { id: "notepad++", label: "Notepad++" },
   { id: "windsurf", label: "Windsurf" },
@@ -50,7 +53,7 @@ const DEV_TOOL_OPTIONS = [
 ] as const;
 
 const TOOL_GROUPS: Array<{ title: string; items: string[] }> = [
-  { title: "Dev stack", items: ["python", "node", "uv", "git", "just"] },
+  { title: "Dev stack", items: ["python", "node", "uv", "git", "gh", "just", "ruff", "biome"] },
   {
     title: "Editors & IDEs",
     items: [
@@ -141,7 +144,10 @@ export default function Sandbox() {
       "node",
       "uv",
       "git",
+      "gh",
       "just",
+      "ruff",
+      "biome",
       "vscode",
       "notepad++",
       "opencode",
@@ -815,8 +821,8 @@ export default function Sandbox() {
           <code className="text-foreground/80">Run-DevInfra.cmd</code> at logon
           (short wait, then{" "}
           <code className="text-foreground/80">Setup-DevInfraSandbox.ps1</code>
-          ). That script installs winget from GitHub, then winget installs: Git,
-          GitHub CLI, Node LTS (npm), Python 3.12, ruff, just, Biome, Notepad++.
+          ).           That script installs winget from GitHub, then winget installs: Git,
+          GitHub CLI, Node LTS (npm), Python 3.12, uv, ruff, just, Biome, Notepad++.
           Requires outbound HTTPS. If nothing happens, a second PowerShell
           window opens with the tail of{" "}
           <code className="text-foreground/80">
@@ -914,7 +920,9 @@ export default function Sandbox() {
           <code className="text-foreground/80">
             scripts/Launch-ConsumerSandbox.ps1
           </code>{" "}
-          (same assets folder as dev infra below)
+          (same assets folder as dev infra above; runs{" "}
+          <code className="text-foreground/80">Run-Consumer.cmd</code>, not{" "}
+          <code className="text-foreground/80">Run-DevInfra.cmd</code>)
         </p>
         {consumerError && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2">
@@ -1198,15 +1206,14 @@ export default function Sandbox() {
           Full dev setup
         </h3>
         <p className="text-sm text-muted-foreground">
-          Place{" "}
-          <code className="text-foreground/80">
-            DesktopAppInstaller_Dependencies.zip
-          </code>{" "}
-          and{" "}
-          <code className="text-foreground/80">
-            Microsoft.DesktopAppInstaller_*.msixbundle
-          </code>{" "}
-          in a folder, then launch. Script installs winget, then selected tools.
+          Each card below generates a <strong>different</strong> WSB: dev infra
+          runs <code className="text-foreground/80">Run-DevInfra.cmd</code>,
+          consumer runs <code className="text-foreground/80">Run-Consumer.cmd</code>,
+          full dev runs <code className="text-foreground/80">Run-DevSetup.cmd</code>{" "}
+          (generated from your tool selection). All three map the same{" "}
+          <code className="text-foreground/80">assets/sandbox</code> folder to{" "}
+          <code className="text-foreground/80">C:\Assets</code>. Script installs winget
+          online if missing, then the selected tools.
         </p>
         <a
           href="https://github.com/microsoft/winget-cli/releases"
