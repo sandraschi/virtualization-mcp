@@ -1,5 +1,5 @@
 # Create missing directories and README files for 6_software
-$basePath = "D:\Dev\repos\mywienerlinien\.windsurf\docs\6_software"
+$basePath = "D:\Dev\repos\publictransport-mcp\.windsurf\docs\6_software"
 
 # Create directories
 $directories = @(
@@ -29,7 +29,7 @@ foreach ($dir in $directories) {
         New-Item -ItemType Directory -Path $fullPath -Force | Out-Null
         Write-Host "Created directory: $fullPath"
     }
-    
+
     # Create README.md if it doesn't exist
     $readmePath = Join-Path -Path $fullPath -ChildPath "README.md"
     if (-not (Test-Path -Path $readmePath)) {
@@ -177,6 +177,3 @@ foreach ($file in $contentFiles.Keys) {
 }
 
 Write-Host "Directory structure and README files have been created/updated successfully."
-
-
-

@@ -1,5 +1,5 @@
 # Update README files with detailed content
-$basePath = "D:\Dev\repos\mywienerlinien\.windsurf\docs\6_software"
+$basePath = "D:\Dev\repos\publictransport-mcp\.windsurf\docs\6_software"
 
 # Content templates for different categories
 $contentTemplates = @{
@@ -242,13 +242,13 @@ $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 foreach ($file in $contentTemplates.Keys) {
     $fullPath = Join-Path -Path $basePath -ChildPath $file
     $content = $contentTemplates[$file]
-    
+
     # Ensure directory exists
     $dir = [System.IO.Path]::GetDirectoryName($fullPath)
     if (-not (Test-Path -Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
-    
+
     $content | Out-File -FilePath $fullPath -Encoding utf8 -Force
     Write-Host "Updated: $file"
 }
@@ -286,6 +286,3 @@ Get-ChildItem -Path $basePath -Directory -Recurse | ForEach-Object {
 }
 
 Write-Host "All README files have been updated with detailed content."
-
-
-

@@ -8,7 +8,7 @@ $category = "transformers"
 $arxivId = "1706.03762"
 
 # Setup paths
-$basePath = "D:\Dev\repos\mywienerlinien\.windsurf\docs\3_ai\papers"
+$basePath = "D:\Dev\repos\publictransport-mcp\.windsurf\docs\3_ai\papers"
 $outputDir = Join-Path $basePath $category
 $fileName = $paperTitle -replace '[^\w]', '_'
 $fileName = $fileName + ".pdf"
@@ -26,7 +26,7 @@ $pdfUrl = "https://arxiv.org/pdf/$arxivId.pdf"
 try {
     $webClient = New-Object System.Net.WebClient
     $webClient.DownloadFile($pdfUrl, $outputPath)
-    
+
     # Create metadata
     $metadata = @{
         title = $paperTitle
@@ -37,16 +37,13 @@ try {
         arxivId = $arxivId
         downloaded = (Get-Date -Format "yyyy-MM-dd")
     } | ConvertTo-Json
-    
+
     $metadataPath = $outputPath -replace '\.pdf$', '.json'
     $metadata | Out-File -FilePath $metadataPath -Encoding utf8
-    
+
     Write-Host "Successfully downloaded: $paperTitle" -ForegroundColor Green
     Write-Host "Saved to: $outputPath" -ForegroundColor Green
 } catch {
     Write-Host "Error downloading $paperTitle" -ForegroundColor Red
     Write-Host "Error details: $_" -ForegroundColor Red
 }
-
-
-
