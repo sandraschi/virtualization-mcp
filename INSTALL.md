@@ -115,6 +115,14 @@ Dev stack sandbox (wrong baseline for naked tests):
 .\scripts\Launch-DevInfraSandbox.ps1
 ```
 
+Fully automated (no manual sandbox): install the one-time elevated teardown
+task, then trigger and poll - see [docs/NAKED_TEST_RECIPE.md](docs/NAKED_TEST_RECIPE.md)
+"Run it on your PC":
+
+```powershell
+.\scripts\Install-SandboxTeardownTask.ps1   # elevated, once
+```
+
 See [docs/sandbox.md](docs/sandbox.md).
 
 ---

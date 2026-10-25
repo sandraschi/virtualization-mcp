@@ -209,6 +209,12 @@ if ($listExit -ne 0) {
 }
 
 # ---- step 4: launch start.bat under observation ----
+# Joe-Shmoe equivalence: the fleet start.ps1 template defaults $ReposRoot to
+# D:\Dev\repos when FLEET_REPOS_ROOT is unset. That drive exists neither
+# in-guest (clone lives at C:\Test\<repo>) nor on a fresh user PC with a
+# different clone path, and Join-Path on a missing drive throws. Point the
+# launcher at the real clone parent before handing off.
+$env:FLEET_REPOS_ROOT = $TestRoot
 $startBat = Join-Path $cloneDir 'start.bat'
 if (-not (Test-Path -LiteralPath $startBat)) {
     Add-Step $steps 'start' 1 0 'no start.bat at repo root'

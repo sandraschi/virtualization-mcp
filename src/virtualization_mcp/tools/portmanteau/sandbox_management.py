@@ -35,11 +35,23 @@ logger = logging.getLogger(__name__)
 # nothing appears within this window the instance is wedged (fleet 2026-09-20:
 # ~50% of launches under overlap produced zero output forever).
 NAKED_BOOT_VERIFY_SEC = 240
-NAKED_TEARDOWN_WAIT_SEC = 60
+NAKED_TEARDOWN_WAIT_SEC = 90
+NAKED_LAUNCH_GRACE_SEC = 20
 
 # Background naked-test lifecycles. Kept to avoid GC of asyncio Tasks (RUF006)
 # and so dispatch stays fast while teardown/boot/verify runs.
 _NAKED_TASKS: set[asyncio.Task[None]] = set()
+
+# Singleton mutex: concurrent dispatches interleave terminate/launch and wedge
+# every instance after the first. Matrix pollers must queue here.
+_NAKED_SINGLETON_LOCK: asyncio.Lock | None = None
+
+
+def _naked_singleton_lock() -> asyncio.Lock:
+    global _NAKED_SINGLETON_LOCK
+    if _NAKED_SINGLETON_LOCK is None:
+        _NAKED_SINGLETON_LOCK = asyncio.Lock()
+    return _NAKED_SINGLETON_LOCK
 
 SANDBOX_ACTIONS = {
     # Ephemeral Docker
@@ -74,11 +86,17 @@ async def _wait_until_no_sandbox(timeout_sec: float) -> bool:
                 return True
         except Exception:
             return True
-        await asyncio.sleep(3)
+        await asyncio.sleep(2)
     try:
-        return not WindowsSandboxHelper.is_sandbox_running()
+        gone = not WindowsSandboxHelper.is_sandbox_running()
     except Exception:
         return True
+    if not gone:
+        try:
+            logger.warning(f"naked-test: teardown incomplete: {WindowsSandboxHelper.sandbox_process_snapshot()}")
+        except Exception as e:
+            logger.debug(f"naked-test teardown snapshot best-effort failed: {e}")
+    return gone
 
 
 def _launch_naked_wsb(tmp_wsb: Path) -> None:
@@ -98,6 +116,7 @@ async def _naked_boot_verified(job_dir: Path, timeout_sec: float) -> bool:
     def _signalled() -> bool:
         return (
             (job_dir / "naked-test-launch.log").is_file()
+            or (job_dir / "start-bat.log").is_file()
             or (job_dir / "PROGRESS.json").is_file()
             or (job_dir / "RESULT.json").is_file()
         )
@@ -110,61 +129,117 @@ async def _naked_boot_verified(job_dir: Path, timeout_sec: float) -> bool:
     return _signalled()
 
 
-async def _naked_test_lifecycle(jid: str, job_dir: Path, wsb_xml: str, tmp_wsb: Path) -> None:
-    """Own the singleton across terminate -> boot -> verify -> retry-once.
+async def _naked_hard_teardown(jid: str) -> tuple[bool, list]:
+    """Bringdown ladder in a worker thread + elevated-task fallback."""
+    try:
+        detail = await asyncio.to_thread(WindowsSandboxHelper.terminate_active_sandbox_detailed)
+    except Exception as e:
+        logger.debug(f"naked-test {jid}: bringdown ladder best-effort failed: {e}")
+        detail = {"gone": False, "access_denied": False}
+    if detail.get("gone"):
+        return True, []
+    if detail.get("access_denied"):
+        logger.warning(f"naked-test {jid}: teardown hit AccessDenied, trying elevated task")
+        try:
+            elevated = await asyncio.to_thread(WindowsSandboxHelper.elevated_teardown)
+        except Exception as e:
+            logger.debug(f"naked-test {jid}: elevated teardown best-effort failed: {e}")
+            elevated = False
+        if elevated:
+            return True, []
+        if elevated is None:
+            logger.warning(
+                f"naked-test {jid}: elevated teardown task not installed "
+                "(run scripts/Install-SandboxTeardownTask.ps1 elevated, once)"
+            )
+    try:
+        leftovers = WindowsSandboxHelper.sandbox_process_snapshot()
+    except Exception:
+        leftovers = []
+    return False, leftovers
 
-    Runs as a background task so dispatch stays fast. If the sandbox never
-    boots twice in a row, writes a harness-failure RESULT.json so pollers
-    stop waiting and the failure is attributed to the host, not the repo.
+
+async def _naked_test_lifecycle(jid: str, job_dir: Path, wsb_xml: str, tmp_wsb: Path) -> None:
+    """Own the singleton under a lock: hard teardown -> verify gone -> launch.
+
+    Never launches into a still-present instance. Failure RESULTs
+    distinguish "previous would not die" (bringdown failed, no launch
+    attempted) from "no boot markers, teardown clean" (LogonCommand/assets
+    suspect).
     """
     import json as _json
     from datetime import datetime as _dt
 
-    try:
-        WindowsSandboxHelper.terminate_active_sandbox()
-    except Exception as e:
-        logger.warning(f"naked-test {jid}: terminate failed: {e}")
-    await _wait_until_no_sandbox(NAKED_TEARDOWN_WAIT_SEC)
-
-    for attempt in (1, 2):
+    def _write_harness_result(note: str) -> None:
         try:
-            tmp_wsb.write_text(wsb_xml, encoding="utf-8")
-            _launch_naked_wsb(tmp_wsb)
+            (job_dir / "RESULT.json").write_text(
+                _json.dumps(
+                    {
+                        "finished_utc": _dt.now(UTC).isoformat(),
+                        "repo": "",
+                        "branch": "",
+                        "pass": False,
+                        "failed_step": "harness",
+                        "note": note,
+                        "steps": [],
+                        "log_tail": [],
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
         except Exception as e:
-            logger.warning(f"naked-test {jid}: launch attempt {attempt} failed: {e}")
-            continue
-        logger.info(f"naked-test {jid}: launched (attempt {attempt} via {tmp_wsb}), verifying boot...")
-        if await _naked_boot_verified(job_dir, NAKED_BOOT_VERIFY_SEC):
+            logger.warning(f"naked-test {jid}: could not write harness RESULT: {e}")
+
+    async with _naked_singleton_lock():
+        gone, leftovers = await _naked_hard_teardown(jid)
+        if not gone:
+            logger.warning(f"naked-test {jid}: refusing launch, previous still present: {leftovers}")
+            _write_harness_result(
+                "Previous sandbox would not die "
+                f"(still present: {leftovers}). No launch attempted to avoid wedge. "
+                "If AccessDenied persists, run scripts/Install-SandboxTeardownTask.ps1 elevated once."
+            )
             return
-        logger.warning(f"naked-test {jid}: no boot signal after {NAKED_BOOT_VERIFY_SEC}s (attempt {attempt})")
-        try:
-            WindowsSandboxHelper.terminate_active_sandbox()
-        except Exception as e:
-            logger.debug(f"naked-test {jid}: teardown terminate best-effort failed: {e}")
-        await _wait_until_no_sandbox(NAKED_TEARDOWN_WAIT_SEC)
 
-    try:
-        (job_dir / "RESULT.json").write_text(
-            _json.dumps(
-                {
-                    "finished_utc": _dt.now(UTC).isoformat(),
-                    "repo": "",
-                    "branch": "",
-                    "pass": False,
-                    "failed_step": "harness",
-                    "note": (
-                        "Sandbox never booted twice in a row (no LogonCommand output"
-                        f" within {NAKED_BOOT_VERIFY_SEC}s). Host/sandbox issue, not the repo."
-                    ),
-                    "steps": [],
-                    "log_tail": [],
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
+        for attempt in (1, 2):
+            try:
+                tmp_wsb.write_text(wsb_xml, encoding="utf-8")
+                _launch_naked_wsb(tmp_wsb)
+            except Exception as e:
+                logger.warning(f"naked-test {jid}: launch attempt {attempt} failed: {e}")
+                continue
+            logger.info(f"naked-test {jid}: launched (attempt {attempt} via {tmp_wsb}), verifying boot...")
+            await asyncio.sleep(NAKED_LAUNCH_GRACE_SEC)
+            if await _naked_boot_verified(job_dir, NAKED_BOOT_VERIFY_SEC - NAKED_LAUNCH_GRACE_SEC):
+                return
+            try:
+                launch_alive = WindowsSandboxHelper.is_sandbox_running()
+            except Exception:
+                launch_alive = True
+            if not launch_alive:
+                logger.warning(f"naked-test {jid}: launcher produced no VM on attempt {attempt}, retrying")
+                try:
+                    WindowsSandboxHelper.terminate_active_sandbox()
+                except Exception as e:
+                    logger.debug(f"naked-test {jid}: teardown terminate best-effort failed: {e}")
+                await _wait_until_no_sandbox(NAKED_TEARDOWN_WAIT_SEC)
+                continue
+            logger.warning(f"naked-test {jid}: no boot signal after {NAKED_BOOT_VERIFY_SEC}s (attempt {attempt})")
+            gone, leftovers = await _naked_hard_teardown(jid)
+            if not gone:
+                _write_harness_result(
+                    f"Sandbox wedged after attempt {attempt} and would not die "
+                    f"(still present: {leftovers}). If AccessDenied persists, run "
+                    "scripts/Install-SandboxTeardownTask.ps1 elevated once."
+                )
+                return
+
+        _write_harness_result(
+            f"No boot markers within {NAKED_BOOT_VERIFY_SEC}s on either attempt, teardown was clean "
+            "both times. Suspect LogonCommand/assets mapping (C:\\Assets\\Run-NakedTest.cmd), "
+            "not a lingering singleton."
         )
-    except Exception as e:
-        logger.warning(f"naked-test {jid}: could not write harness RESULT: {e}")
 
 
 async def sandbox_management(

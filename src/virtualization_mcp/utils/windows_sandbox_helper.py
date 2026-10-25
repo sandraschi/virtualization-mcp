@@ -72,53 +72,309 @@ class WindowsSandboxHelper:
         # Track running sandboxes
         self._sandbox_processes: dict[str, dict] = {}
 
+    # All OS processes backing the singleton. vmmemWindowsSandbox.exe is the
+    # Hyper-V worker: it outlives the user-mode processes after a kill, and
+    # relaunching while it still holds the partition wedges with zero
+    # LogonCommand output (fleet 2026-09-20, 2026-10-25 shard 2/4: 22x).
+    _SANDBOX_PROC_NAMES: ClassVar[frozenset[str]] = frozenset(
+        {
+            "windowssandbox.exe",
+            "windowssandboxclient.exe",
+            "windowssandboxserver.exe",
+            "windowssandboxremotesession.exe",
+            "vmmemwindowssandbox.exe",
+        }
+    )
+
+    @staticmethod
+    def _tasklist_snapshot() -> list[dict[str, Any]]:
+        """Second-opinion enumeration via tasklist (sees Session-0 ghosts).
+
+        psutil enumerates user-session processes but is blind to the
+        Session-0 vmmemWindowsSandbox ghosts (SYSTEM/Hyper-V owned, 0
+        handles) that hold the sandbox partition after a wedged boot
+        (fleet 2026-10-25: 3 accumulated ghosts, psutil reported "clean"
+        while every new boot wedged with zero LogonCommand output).
+        tasklist uses a different API surface and sees them. Slower
+        (~300 ms) - used as an OR-condition, not the hot path.
+        """
+        out: list[dict[str, Any]] = []
+        try:
+            proc = subprocess.run(
+                ["tasklist", "/FO", "CSV", "/NH"], capture_output=True, timeout=20, text=True
+            )
+        except Exception as e:
+            logger.debug(f"tasklist snapshot best-effort failed: {e}")
+            return out
+        if proc.returncode != 0:
+            return out
+        for line in (proc.stdout or "").splitlines():
+            line = line.strip()
+            if len(line) < 3 or not line.startswith('"'):
+                continue
+            parts = line.split('","')
+            if len(parts) < 2:
+                continue
+            name = parts[0].lstrip('"')
+            if name.lower() in WindowsSandboxHelper._SANDBOX_PROC_NAMES:
+                try:
+                    pid = int(parts[1].strip('"'))
+                except ValueError:
+                    continue
+                out.append({"pid": pid, "name": name, "via": "tasklist"})
+        return out
+
+    @staticmethod
+    def sandbox_process_snapshot() -> list[dict[str, Any]]:
+        """Live (pid, name) snapshot of singleton processes for diagnostics."""
+        out: list[dict[str, Any]] = []
+        seen: set[int] = set()
+        for proc in psutil.process_iter(["pid", "name"]):
+            try:
+                name = proc.info.get("name") or ""
+                if name.lower() in WindowsSandboxHelper._SANDBOX_PROC_NAMES:
+                    out.append({"pid": proc.info["pid"], "name": name, "via": "psutil"})
+                    seen.add(proc.info["pid"])
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        # Union with tasklist so Session-0 ghosts are named, not hidden.
+        try:
+            for hit in WindowsSandboxHelper._tasklist_snapshot():
+                if hit["pid"] not in seen:
+                    out.append(hit)
+                    seen.add(hit["pid"])
+        except Exception as e:
+            logger.debug(f"tasklist union best-effort failed: {e}")
+        return out
+
     @staticmethod
     def is_sandbox_running() -> bool:
         """Check if Windows Sandbox OS process is currently running."""
-        sandbox_procs = {
-            "windowssandbox.exe",
-            "windowssandboxclient.exe",
-            "windowssandboxserver.exe",
-            "windowssandboxremotesession.exe",
-            # Hyper-V worker backing the sandbox VM. It outlives the
-            # user-mode processes after a kill; relaunching while it
-            # still holds the partition wedges with zero LogonCommand
-            # output (fleet 2026-09-20).
-            "vmmemwindowssandbox.exe",
-        }
         for proc in psutil.process_iter(["name"]):
             try:
-                if proc.info["name"] and proc.info["name"].lower() in sandbox_procs:
+                if proc.info["name"] and proc.info["name"].lower() in WindowsSandboxHelper._SANDBOX_PROC_NAMES:
                     return True
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
+        # Ghost check: wedged Session-0 vmmem workers are invisible to
+        # psutil but still hold the partition (2026-10-25). A "clean"
+        # verdict here launches straight into the wedge.
+        try:
+            if WindowsSandboxHelper._tasklist_snapshot():
+                return True
+        except Exception as e:
+            logger.debug(f"ghost check best-effort failed: {e}")
         return False
 
-    @staticmethod
-    def terminate_active_sandbox() -> bool:
-        """Terminate any existing Windows Sandbox OS instances to allow fresh sandbox launch.
+    # Name of the optional one-time-admin scheduled task that performs the
+    # last-resort kill as SYSTEM. Installed by scripts/Install-SandboxTeardownTask.ps1
+    # (elevated, once). The backend (medium integrity) only triggers it via
+    # schtasks /Run; the payload is kill-only, so this is least privilege.
+    ELEVATED_TEARDOWN_TASK: ClassVar[str] = "virtualization-mcp-sandbox-teardown"
 
-        Returns:
-            True if an active instance was terminated.
+    @staticmethod
+    def graceful_close_clients(timeout_sec: float = 20) -> bool:
+        """Ask the sandbox UI to shut down (same-user WM_CLOSE, no elevation).
+
+        taskkill without /F sends a close request instead of killing, which
+        the sandbox client honors by shutting the VM down cleanly. The vmmem
+        worker then exits on its own -- which matters because a
+        medium-integrity caller is normally denied from killing vmmem
+        directly (AccessDenied), while closing the client is always allowed.
         """
-        sandbox_procs = {
-            "windowssandbox.exe",
-            "windowssandboxclient.exe",
-            "windowssandboxserver.exe",
-            "windowssandboxremotesession.exe",
-            "vmmemwindowssandbox.exe",
-        }
-        terminated = False
+        for image in ("WindowsSandboxClient.exe", "WindowsSandbox.exe"):
+            try:
+                subprocess.run(["taskkill", "/IM", image], capture_output=True, timeout=15)
+            except Exception as e:
+                logger.debug(f"graceful close {image} best-effort failed: {e}")
+        deadline = time.monotonic() + timeout_sec
+        while time.monotonic() < deadline:
+            if not WindowsSandboxHelper.is_sandbox_running():
+                return True
+            time.sleep(2)
+        return not WindowsSandboxHelper.is_sandbox_running()
+
+    @staticmethod
+    def terminate_active_sandbox_detailed(timeout_sec: float = 60) -> dict[str, Any]:
+        """Full bringdown ladder with per-phase reporting.
+
+        Phase 1: graceful client close (no elevation needed).
+        Phase 2: terminate() + wait.
+        Phase 3: kill() survivors + wait.
+        Phase 4: taskkill /F fallback per remaining PID.
+
+        Returns dict with present (was anything there), gone, access_denied
+        (any stage hit AccessDenied -- caller should try the elevated task),
+        still_running (snapshot), and method (which stage cleared it).
+        """
+        before = WindowsSandboxHelper.sandbox_process_snapshot()
+        if not before:
+            return {
+                "present": False,
+                "gone": True,
+                "access_denied": False,
+                "still_running": [],
+                "method": "none",
+            }
+        if WindowsSandboxHelper.graceful_close_clients(timeout_sec=min(20.0, timeout_sec / 3)):
+            return {
+                "present": True,
+                "gone": True,
+                "access_denied": False,
+                "still_running": [],
+                "method": "graceful-close",
+            }
+        targets = []
         for proc in psutil.process_iter(["pid", "name"]):
             try:
-                if proc.info["name"] and proc.info["name"].lower() in sandbox_procs:
-                    proc.terminate()
-                    terminated = True
+                if proc.info["name"] and proc.info["name"].lower() in WindowsSandboxHelper._SANDBOX_PROC_NAMES:
+                    targets.append(proc)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
-        if terminated:
-            time.sleep(1.5)
-        return terminated
+        if not targets:
+            return {
+                "present": True,
+                "gone": True,
+                "access_denied": False,
+                "still_running": [],
+                "method": "graceful-close",
+            }
+        access_denied = False
+        for proc in targets:
+            try:
+                proc.terminate()
+            except psutil.AccessDenied:
+                access_denied = True
+            except (psutil.NoSuchProcess, AttributeError):
+                pass
+        try:
+            _gone, alive = psutil.wait_procs(targets, timeout=10)
+        except Exception:
+            alive = [p for p in targets if p.is_running()]
+        if not alive and WindowsSandboxHelper.is_sandbox_running() is False:
+            return {
+                "present": True,
+                "gone": True,
+                "access_denied": access_denied,
+                "still_running": [],
+                "method": "terminate",
+            }
+        if alive:
+            for proc in alive:
+                try:
+                    proc.kill()
+                except psutil.AccessDenied:
+                    access_denied = True
+                except (psutil.NoSuchProcess, AttributeError):
+                    pass
+            try:
+                _gone2, alive = psutil.wait_procs(alive, timeout=10)
+            except Exception:
+                alive = [p for p in alive if p.is_running()]
+        if not alive and WindowsSandboxHelper.is_sandbox_running() is False:
+            return {
+                "present": True,
+                "gone": True,
+                "access_denied": access_denied,
+                "still_running": [],
+                "method": "kill",
+            }
+        if alive:
+            # vmmem worker often survives psutil.kill from a non-elevated
+            # session but answers to taskkill. Best-effort per PID.
+            # Include tasklist-visible ghosts: they are never in the psutil
+            # `alive` list, yet they hold the partition (2026-10-25).
+            ghost_pids: list[int] = []
+            try:
+                alive_pids = {p.pid for p in alive}
+                for hit in WindowsSandboxHelper._tasklist_snapshot():
+                    if hit["pid"] not in alive_pids:
+                        ghost_pids.append(hit["pid"])
+            except Exception as e:
+                logger.debug(f"ghost pid harvest best-effort failed: {e}")
+            for proc in list(alive):
+                try:
+                    subprocess.run(
+                        ["taskkill", "/F", "/PID", str(proc.pid)],
+                        capture_output=True,
+                        timeout=15,
+                    )
+                except Exception as e:
+                    logger.debug(f"taskkill fallback failed for pid {proc.pid}: {e}")
+            for pid in ghost_pids:
+                # Ghost taskkill as a medium user almost always fails
+                # (AccessDenied) - that is the signal to fire the SYSTEM
+                # task, not a reason to declare victory. Check rc, since
+                # taskkill reports denial via exit code, not exception.
+                try:
+                    tk = subprocess.run(
+                        ["taskkill", "/F", "/PID", str(pid)],
+                        capture_output=True,
+                        timeout=15,
+                    )
+                    if tk.returncode != 0:
+                        access_denied = True
+                except Exception as e:
+                    logger.debug(f"taskkill fallback failed for ghost pid {pid}: {e}")
+                    access_denied = True
+            time.sleep(2)
+        gone = not WindowsSandboxHelper.is_sandbox_running()
+        try:
+            still = [] if gone else WindowsSandboxHelper.sandbox_process_snapshot()
+        except Exception:
+            still = []
+        return {
+            "present": True,
+            "gone": gone,
+            "access_denied": access_denied,
+            "still_running": still,
+            "method": "taskkill" if gone else "failed",
+        }
+
+    @staticmethod
+    def elevated_teardown(timeout_sec: float = 45) -> bool | None:
+        """Trigger the pre-installed elevated teardown task (SYSTEM kill-only).
+
+        Returns True when the sandbox went away, False when it is still
+        there, None when the task is not installed (run
+        scripts/Install-SandboxTeardownTask.ps1 elevated, once).
+        """
+        task = WindowsSandboxHelper.ELEVATED_TEARDOWN_TASK
+        try:
+            probe = subprocess.run(["schtasks", "/Query", "/TN", task], capture_output=True, timeout=15)
+        except Exception as e:
+            logger.debug(f"elevated teardown probe best-effort failed: {e}")
+            return None
+        if probe.returncode != 0:
+            return None
+        try:
+            run = subprocess.run(["schtasks", "/Run", "/TN", task], capture_output=True, timeout=30)
+        except Exception as e:
+            logger.warning(f"elevated teardown trigger failed: {e}")
+            return False
+        if run.returncode != 0:
+            logger.warning(f"elevated teardown trigger denied (rc={run.returncode}): {run.stderr.decode(errors='replace')[:200]}")
+            return False
+        deadline = time.monotonic() + timeout_sec
+        while time.monotonic() < deadline:
+            if not WindowsSandboxHelper.is_sandbox_running():
+                return True
+            time.sleep(2)
+        return not WindowsSandboxHelper.is_sandbox_running()
+
+    @staticmethod
+    def terminate_active_sandbox(timeout_sec: float = 60) -> bool:
+        """Compat wrapper: True if a sandbox was present and is now gone.
+
+        Prefer terminate_active_sandbox_detailed (reports access_denied and
+        the clearing method); this keeps older call sites working.
+        """
+        try:
+            detail = WindowsSandboxHelper.terminate_active_sandbox_detailed(timeout_sec=timeout_sec)
+        except Exception as e:
+            logger.debug(f"bringdown ladder best-effort failed: {e}")
+            return False
+        return bool(detail.get("present") and detail.get("gone"))
 
     def _launch_wsb(self, wsb_path: Path) -> None:
         """Launch a .wsb file in Windows Sandbox (returns immediately)."""
