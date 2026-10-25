@@ -35,15 +35,97 @@ def test_windows_sandbox_helper_is_running():
         assert running is True
 
 
-def test_windows_sandbox_helper_terminate_active():
-    with patch("psutil.process_iter") as mock_iter, patch("time.sleep"):
-        mock_proc = MagicMock()
-        mock_proc.info = {"pid": 1234, "name": "WindowsSandbox.exe"}
-        mock_iter.return_value = [mock_proc]
+def _sandbox_module():
+    import virtualization_mcp.utils.windows_sandbox_helper as mod
 
-        terminated = WindowsSandboxHelper.terminate_active_sandbox()
-        assert terminated is True
+    return mod
+
+
+def test_windows_sandbox_helper_terminate_active_graceful():
+    # Ladder phase 1: clients close cleanly, no per-process kill needed.
+    with patch.object(WindowsSandboxHelper, "sandbox_process_snapshot", return_value=[{"pid": 111, "name": "WindowsSandbox.exe", "via": "psutil"}]), \
+        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=True) as mock_graceful, \
+        patch("psutil.process_iter") as mock_iter:
+        detail = WindowsSandboxHelper.terminate_active_sandbox_detailed()
+        assert detail["present"] is True
+        assert detail["gone"] is True
+        assert detail["method"] == "graceful-close"
+        mock_graceful.assert_called_once()
+        mock_iter.assert_not_called()
+
+
+def test_windows_sandbox_helper_terminate_active_via_terminate():
+    # Ladder phase 2: graceful fails, terminate() clears it, running-check confirms.
+    mock_proc = MagicMock()
+    mock_proc.info = {"pid": 1234, "name": "WindowsSandbox.exe"}
+    mock_proc.pid = 1234
+    with patch.object(WindowsSandboxHelper, "sandbox_process_snapshot", return_value=[{"pid": 1234, "name": "WindowsSandbox.exe", "via": "psutil"}]), \
+        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=False), \
+        patch.object(WindowsSandboxHelper, "_tasklist_snapshot", return_value=[]), \
+        patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=False), \
+        patch("psutil.process_iter", return_value=[mock_proc]), \
+        patch("psutil.wait_procs", return_value=([mock_proc], [])) as mock_wait, \
+        patch("time.sleep"):
+        detail = WindowsSandboxHelper.terminate_active_sandbox_detailed()
+        assert detail["gone"] is True
+        assert detail["method"] == "terminate"
+        assert detail["access_denied"] is False
         mock_proc.terminate.assert_called_once()
+        mock_wait.assert_called_once()
+    # Compat wrapper: present AND gone -> True.
+    with patch.object(WindowsSandboxHelper, "terminate_active_sandbox_detailed", return_value={"present": True, "gone": True}):
+        assert WindowsSandboxHelper.terminate_active_sandbox() is True
+
+
+def test_windows_sandbox_helper_terminate_nothing_present():
+    # Empty snapshot: nothing to do (gone), but the compat wrapper reports
+    # False since no sandbox was ever present.
+    with patch.object(WindowsSandboxHelper, "sandbox_process_snapshot", return_value=[]):
+        detail = WindowsSandboxHelper.terminate_active_sandbox_detailed()
+        assert detail == {
+            "present": False,
+            "gone": True,
+            "access_denied": False,
+            "still_running": [],
+            "method": "none",
+        }
+    with patch.object(WindowsSandboxHelper, "terminate_active_sandbox_detailed", return_value={"present": False, "gone": True}):
+        assert WindowsSandboxHelper.terminate_active_sandbox() is False
+
+
+def test_windows_sandbox_helper_terminate_access_denied_flag():
+    # Every stage denied: terminate/kill raise AccessDenied, taskkill rc=1,
+    # box still reported running -> gone False, access_denied True (the
+    # signal to fire the elevated SYSTEM task, not a silent success).
+    import psutil as _psutil
+
+    mock_proc = MagicMock()
+    mock_proc.info = {"pid": 4321, "name": "vmmemWindowsSandbox.exe"}
+    mock_proc.pid = 4321
+    mock_proc.terminate.side_effect = _psutil.AccessDenied(pid=4321, name="vmmemWindowsSandbox.exe")
+    mock_proc.kill.side_effect = _psutil.AccessDenied(pid=4321, name="vmmemWindowsSandbox.exe")
+    fake_tk = MagicMock()
+    fake_tk.returncode = 1
+    with patch.object(WindowsSandboxHelper, "sandbox_process_snapshot", return_value=[{"pid": 4321, "name": "vmmemWindowsSandbox.exe", "via": "psutil"}]), \
+        patch.object(WindowsSandboxHelper, "graceful_close_clients", return_value=False), \
+        patch.object(WindowsSandboxHelper, "_tasklist_snapshot", return_value=[]), \
+        patch.object(WindowsSandboxHelper, "is_sandbox_running", return_value=True), \
+        patch("psutil.process_iter", return_value=[mock_proc]), \
+        patch("psutil.wait_procs", return_value=([], [mock_proc])), \
+        patch.object(_sandbox_module(), "subprocess") as mock_sub, \
+        patch("time.sleep"):
+        mock_sub.run.return_value = fake_tk
+        detail = WindowsSandboxHelper.terminate_active_sandbox_detailed()
+        assert detail["present"] is True
+        assert detail["gone"] is False
+        assert detail["access_denied"] is True
+        assert detail["method"] == "failed"
+    with patch.object(
+        WindowsSandboxHelper,
+        "terminate_active_sandbox_detailed",
+        return_value={"present": True, "gone": False, "access_denied": True},
+    ):
+        assert WindowsSandboxHelper.terminate_active_sandbox() is False
 
 
 @pytest.mark.asyncio

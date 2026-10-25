@@ -36,7 +36,7 @@ From repo root:
 
 ---
 
-## Dev infra (winget + git, gh, npm, Python, ruff, just, biome)
+## Dev infra (winget + git, gh, npm, Python, uv, ruff, just, biome)
 
 | File | Purpose |
 |------|---------|
