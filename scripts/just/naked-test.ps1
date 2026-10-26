@@ -22,6 +22,9 @@
 
 .PARAMETER HealthUrl
   Optional health URL to probe (e.g. 'http://localhost:10701/health').
+  Pass 'none' for repos whose root start.bat serves no HTTP (e.g. an
+  MCP-server entrypoint): the harness then uses the alive-process gate
+  instead of the fleet-start.config.ps1 derived URL.
 
 .EXAMPLE
   just naked-test repo=virtualization-mcp
@@ -84,6 +87,9 @@ if (-not $HealthUrl -and (Test-Path -LiteralPath (Join-Path $localRepoPath "flee
         }
     } catch { }
 }
+# Opt-out: a root start.bat that serves no HTTP (MCP-server entrypoint)
+# must not be probed at the dashboard URL - use the alive-process gate.
+if ($HealthUrl -eq "none") { $HealthUrl = "" }
 
 Write-Host ""
 Write-Host "================================================================" -ForegroundColor Magenta
@@ -175,6 +181,16 @@ $utf8Bom = New-Object System.Text.UTF8Encoding $true
 $sbProcs = Get-Process -Name "WindowsSandboxServer", "WindowsSandboxRemoteSession", "WindowsSandboxClient", "WindowsSandbox" -ErrorAction SilentlyContinue
 if ($sbProcs) {
     Write-Host "Closing existing Windows Sandbox instances to ensure fresh boot..." -ForegroundColor Yellow
+    # Graceful close FIRST (no /F): lets the Hyper-V worker exit cleanly.
+    # taskkill /F straight away orphans vmmemWindowsSandbox, which then
+    # holds the partition and wedges the next boot with zero LogonCommand
+    # output (fleet 2026-10-26: runs wedged back-to-back twice).
+    & cmd.exe /c "taskkill /IM WindowsSandboxClient.exe /IM WindowsSandbox.exe >nul 2>&1"
+    for ($i = 0; $i -lt 20; $i++) {
+        $p = Get-Process -Name "WindowsSandboxServer", "WindowsSandboxRemoteSession", "WindowsSandboxClient", "WindowsSandbox" -ErrorAction SilentlyContinue
+        if (-not $p) { break }
+        Start-Sleep -Milliseconds 500
+    }
     & cmd.exe /c "taskkill /F /IM WindowsSandboxServer.exe /IM WindowsSandboxRemoteSession.exe /IM WindowsSandboxClient.exe /IM WindowsSandbox.exe >nul 2>&1"
     for ($i = 0; $i -lt 20; $i++) {
         $p = Get-Process -Name "WindowsSandboxServer", "WindowsSandboxRemoteSession", "WindowsSandboxClient", "WindowsSandbox" -ErrorAction SilentlyContinue
@@ -182,6 +198,21 @@ if ($sbProcs) {
         Start-Sleep -Milliseconds 500
     }
     Start-Sleep -Seconds 3
+}
+# Verify the Hyper-V worker actually released the partition. Launching while
+# vmmemWindowsSandbox lingers wedges with zero guest output and wastes the
+# whole run - refuse instead (run the elevated teardown task or restart the
+# vmcompute service, then retry).
+for ($i = 0; $i -lt 12; $i++) {
+    $ghost = Get-Process -Name "vmmemWindowsSandbox" -ErrorAction SilentlyContinue
+    if (-not $ghost) { break }
+    if ($i -eq 0) { Write-Host "Waiting for vmmemWindowsSandbox to release the partition..." -ForegroundColor Yellow }
+    Start-Sleep -Seconds 5
+}
+$ghost = Get-Process -Name "vmmemWindowsSandbox" -ErrorAction SilentlyContinue
+if ($ghost) {
+    Write-Error "vmmemWindowsSandbox (pid $($ghost.Id)) still holds the sandbox partition after teardown. Run the elevated teardown task (schtasks /Run /TN virtualization-mcp-sandbox-teardown) or restart the vmcompute service, then retry. Refusing to launch into a wedge."
+    exit 5
 }
 
 Write-Host "Starting Windows Sandbox instance [$jobId]..." -ForegroundColor Cyan
@@ -257,6 +288,12 @@ while ((Get-Date) -lt $deadline) {
 Write-Host ""
 
 function Cleanup-Sandbox {
+    # Graceful close first so vmmem exits cleanly; /F only for leftovers.
+    # Pure-/F cleanup orphans vmmemWindowsSandbox and wedges the next run.
+    try {
+        & cmd.exe /c "taskkill /IM WindowsSandboxClient.exe /IM WindowsSandbox.exe >nul 2>&1"
+    } catch { }
+    Start-Sleep -Seconds 3
     try {
         & cmd.exe /c "taskkill /F /IM WindowsSandboxServer.exe /IM WindowsSandboxRemoteSession.exe /IM WindowsSandboxClient.exe /IM WindowsSandbox.exe >nul 2>&1"
     } catch { }
