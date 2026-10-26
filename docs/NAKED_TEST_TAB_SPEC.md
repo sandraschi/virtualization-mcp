@@ -20,6 +20,8 @@ spinner / error / preview patterns. No new dependencies.
 - `POST /api/v1/fleet/naked-test`
   `{repo, branch="main", observe_sec=90, health_url="", memory_in_mb=8192}`
   -> `{success, job_id, repo, branch, run_dir}` (400 bad repo, 500 missing payloads)
+  `health_url: "none"` opts out of the fleet-start.config.ps1 derivation for
+  repos whose root `start.bat` serves no HTTP (alive-process gate instead).
 - `GET /api/v1/fleet/naked-test/{job_id}`
   -> `{status:"running", files}` until `RESULT.json` lands, then the RESULT
   body + `status:"finished"` (404 unknown job, 400 bad id)

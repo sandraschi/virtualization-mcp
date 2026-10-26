@@ -42,7 +42,22 @@ just naked-test repo=https://github.com/sandraschi/<repo>.git
      Browsers are opened by Edge executable path, never by URL association
      (fresh sandboxes have no http handler). `start.ps1` files must forward
      args (`... start.ps1 %*`) and must not detach stdout when it is redirected.
-   - step 2 (if start.bat passed): backend `/health` probe where applicable.
+    - step 2 (if start.bat passed): backend `/health` probe where applicable.
+      Repos whose root `start.bat` serves no HTTP (MCP-server entrypoints
+      like this repo - root start launches the MCP server, the dashboard
+      lives in `webapp\start.ps1`) pass `health=none` (`just naked-test
+      repo=... health=none`, `"health_url": "none"` via API/MCP/UI): the
+      fleet-start.config.ps1 derivation is skipped and the harness uses the
+      alive-process gate (`start` passes if the process is still alive at
+      the end of the observation window).
+    - just-path preflight (2026-10-26, after two back-to-back wedges):
+      graceful close first (no `/F`, so `vmmem` exits cleanly), then `/F`
+      leftovers, then VERIFY `vmmemWindowsSandbox` released the partition
+      (up to 60 s). If it lingers, the run refuses to launch (exit 5,
+      names the PID) instead of wedging with zero LogonCommand output.
+      Same graceful-first order in post-run cleanup so the next run boots
+      clean. A stubborn worker still needs the elevated teardown task or
+      a `vmcompute` service restart (see Joe-Shmoe step 3 / TROUBLESHOOTING).
    - step 3 (opt-in, `e2e_click: true`): full-stack E2E - starts `webapp\start.ps1`,
      waits for the frontend, drives Edge through a generic UIA sidebar walk
      (`Invoke-E2EClick.py`, no OCR), writes `E2E.json` + `e2e-*.png` screenshots.
@@ -83,12 +98,15 @@ interactive use).
    Expected: `SUCCESS`. The task payload is kill-only on the five Windows
    Sandbox processes. Remove anytime with the `-Uninstall` switch (elevated).
 4. **Trigger a test** (any repo, any branch):
-   ```powershell
-   Invoke-RestMethod -Uri http://127.0.0.1:10701/api/v1/fleet/naked-test `
-     -Method Post -ContentType 'application/json' `
-     -Body '{"repo": "sandraschi/git-github-mcp"}'
-   ```
-   Or MCP action `win_sandbox_naked_test`, or the webapp Sandbox page.
+    ```powershell
+    Invoke-RestMethod -Uri http://127.0.0.1:10701/api/v1/fleet/naked-test `
+      -Method Post -ContentType 'application/json' `
+      -Body '{"repo": "sandraschi/git-github-mcp"}'
+    ```
+    Or `just naked-test repo=git-github-mcp` (add `health=none` when the
+    target's root `start.bat` serves no HTTP - e.g. MCP-server repos),
+    or MCP action `win_sandbox_naked_test` (`health_url: "none"`), or the
+    webapp Sandbox page (type `none` in the Health URL box).
    Local checkouts must be committed first - the sandbox tests committed
    HEAD via a bare mirror, and a dirty tree is refused with 409.
 5. **Poll** `GET /api/v1/fleet/naked-test/{job_id}` until `status: finished`

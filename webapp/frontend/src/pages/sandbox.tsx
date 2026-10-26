@@ -1031,7 +1031,7 @@ export default function Sandbox() {
             type="text"
             value={ntHealth}
             onChange={(e) => setNtHealth(e.target.value)}
-            placeholder="health URL (optional)"
+            placeholder="health URL (optional, none for non-HTTP entrypoints)"
             aria-label="Health URL"
             className="col-span-2 bg-background/50 border border-input rounded px-3 py-2 font-mono text-sm"
           />

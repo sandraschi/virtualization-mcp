@@ -44,11 +44,30 @@
 
 **Cause:** Relaunch raced the previous sandbox's teardown. The `vmmem`
 Hyper-V worker outlives the user-mode processes; a new instance started
-while it lingers wedges with zero LogonCommand output.
-**Fix:** Fixed 2026-09-20 - dispatch waits for full teardown (worker included),
-verifies boot via job-dir markers, retries once, then writes a
-`failed_step: "harness"` RESULT. Lingering `vmmemWindowsSandbox` orphans
-self-clear; a host reboot clears stubborn ones.
+while it lingers wedges with zero LogonCommand output. Pure-`/F` cleanup
+makes it worse: killing the user-mode processes with `/F` orphans `vmmem`
+instead of letting it exit.
+**Fix:** Fixed 2026-09-20 (dispatch waits for full teardown, verifies boot
+via job-dir markers, `failed_step: "harness"` RESULT); hardened 2026-10-26
+after two back-to-back wedges in one night (proven 2026-10-26 01:27-07:50):
+the just-path preflight now closes gracefully first (no `/F`), then `/F`
+leftovers, then VERIFIES `vmmemWindowsSandbox` released the partition and
+REFUSES to launch (exit 5, names the PID) instead of wedging. Same
+graceful-first order in post-run cleanup. A worker that survives even the
+SYSTEM teardown task needs an admin `vmcompute` service restart (or reboot).
+Lingering orphans otherwise self-clear; a host reboot clears stubborn ones.
+
+## Naked-test `start` step fails health check although the app booted
+
+**Cause:** The harness probed a dashboard URL for a repo whose root
+`start.bat` serves no HTTP (e.g. this repo: root start launches the MCP
+server, the dashboard is `webapp\start.ps1`). The fleet-start.config.ps1
+derivation guessed a URL that can never return 200.
+**Fix:** Pass `health=none` (`just naked-test repo=... health=none`,
+`"health_url": "none"` via API/MCP, `none` in the Sandbox page Health URL
+box): derivation is skipped and the alive-process gate applies (pass if
+the process is still alive at end of window). Proven 2026-10-26: full PASS
+on `virtualization-mcp` itself (rig + clone + just-list + start).
 
 ## `uv` not recognized in start.bat (naked PC / sandbox)
 

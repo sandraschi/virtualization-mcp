@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Naked-test `health=none` opt-out**: repos whose root `start.bat` serves no
+  HTTP (MCP-server entrypoints) skip the fleet-start.config.ps1 health-URL
+  derivation on all dispatch paths (`just naked-test health=none`, API/MCP
+  `"health_url": "none"`, Sandbox page Health URL box) and use the
+  alive-process gate. Proven with a full PASS run on `virtualization-mcp`
+  itself (2026-10-26: rig + clone + just-list + start).
+- **Wedge-proof just-path preflight**: graceful close before `/F`, verify
+  `vmmemWindowsSandbox` released the partition, refuse to launch (exit 5)
+  instead of wedging with zero LogonCommand output; same graceful-first
+  order in post-run cleanup.
+
 ## [Unreleased] - 2026-10-09
 
 ### Fixed (assfix pass)

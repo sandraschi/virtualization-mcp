@@ -4041,6 +4041,8 @@ async def fleet_naked_test(request: NakedTestRequest):
     """Start an automated naked-install test: repo name in, RESULT.json out.
 
     Body: {repo: owner/name or URL, branch, observe_sec, health_url}.
+    health_url "none" opts out of the derived dashboard URL for repos whose
+    root start.bat serves no HTTP (alive-process gate instead).
     Creates a job dir, writes spec.json, launches a consumer sandbox whose
     logon payload clones, smoke-gates (just --list) and observes start.bat.
     Poll GET /api/v1/fleet/naked-test/{job_id} for progress.
@@ -4085,6 +4087,11 @@ async def fleet_naked_test(request: NakedTestRequest):
     repo_url = ""
     branch = (request.branch or "main").strip() or "main"
     health_url = request.health_url or ""
+    # Opt-out for repos whose root start.bat serves no HTTP (MCP-server
+    # entrypoints): "none" skips the derived dashboard URL so the harness
+    # uses the alive-process gate (same as scripts/just/naked-test.ps1).
+    if health_url.strip().lower() == "none":
+        health_url = ""
 
     if os.path.isfile(os.path.join(local_repo, ".git", "config")):
         try:

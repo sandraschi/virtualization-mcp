@@ -284,7 +284,10 @@ async def sandbox_management(
     repo: Annotated[str | None, Field(description="Fleet repo for naked-test.")] = None,
     branch: Annotated[str, Field(description="Repo branch for naked-test.")] = "main",
     observe_sec: Annotated[int, Field(description="Observation window for naked-test.")] = 90,
-    health_url: Annotated[str | None, Field(description="Health URL for naked-test.")] = None,
+    health_url: Annotated[
+        str | None,
+        Field(description="Health URL for naked-test ('none' opts out for non-HTTP entrypoints)."),
+    ] = None,
     job_id: Annotated[str | None, Field(description="Naked-test job id (status).")] = None,
     memory_in_mb: Annotated[int, Field(description="Sandbox memory in MB.")] = 8192,
 ) -> dict[str, Any]:
@@ -420,6 +423,10 @@ async def sandbox_management(
             if not repo:
                 return {"success": False, "error": "repo is required (owner/name or https URL)"}
             repo_clean = repo.strip()
+            # Opt-out for repos whose root start.bat serves no HTTP
+            # (MCP-server entrypoints): "none" skips the derived dashboard
+            # URL so the harness uses the alive-process gate.
+            health_url = "" if (health_url or "").strip().lower() == "none" else (health_url or "")
             repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
             repo_url = ""
 
