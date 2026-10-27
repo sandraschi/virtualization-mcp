@@ -3,9 +3,12 @@ Quick coverage boost for existing modules.
 Focus on modules that actually exist and can be tested safely.
 """
 
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 
 class TestMainModules:
@@ -169,9 +172,9 @@ class TestVMServiceQuick:
             if hasattr(vm_service, "VMService"):
                 # Just test that the class exists
                 assert vm_service.VMService is not None
-        except Exception:
+        except Exception as exc:
             # Expected - may have complex dependencies
-            pass
+            logger.debug("tolerated smoke-test failure: %s", exc)
 
 
 class TestVBoxManagerQuick:
@@ -257,6 +260,6 @@ class TestModuleImports:
         for module_name in modules_to_test:
             try:
                 __import__(module_name)
-            except Exception:
+            except Exception as exc:
                 # Some modules may have runtime dependencies
-                pass
+                logger.debug("tolerated smoke-test failure: %s", exc)

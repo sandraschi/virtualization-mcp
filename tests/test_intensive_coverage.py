@@ -5,10 +5,13 @@ These tests execute actual code paths in low-coverage modules to reach 80%.
 Focus on portmanteau tools, services, and VBox operations.
 """
 
+import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 
 class TestVBoxManagerMethods:
@@ -148,8 +151,10 @@ class TestTemplateManagerMethods:
         try:
             result = manager.get_template("ubuntu-dev")
             assert result is not None or result is None
-        except Exception:
-            pass  # Expected if template not found
+        except Exception as exc:
+            logger.debug(
+                "tolerated smoke-test failure (template may not exist): %s", exc
+            )  # Expected if template not found
 
 
 class TestVMServiceMethods:

@@ -5,9 +5,12 @@ Targeting 36% → 50% coverage by executing every major function.
 Auto-generated with smart mocking for rapid coverage gains.
 """
 
+import logging
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # ALL_TOOLS_SERVER DEEP EXECUTION (31% coverage, 155 lines - TARGET: 80%)
@@ -239,8 +242,8 @@ class TestPortmanteauCompleteExecution:
                         await func(action=action, source_vm="src", new_vm_name="new")
                     else:
                         await func(action=action, vm_name="test")
-                except Exception:
-                    pass  # Expected for some cases
+                except Exception as exc:
+                    logger.debug("tolerated smoke-test failure (some cases): %s", exc)  # Expected for some cases
 
     @pytest.mark.asyncio
     async def test_network_management_all_actions(self):

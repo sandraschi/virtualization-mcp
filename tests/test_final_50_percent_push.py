@@ -11,9 +11,12 @@ Target files:
 If we get these to 60%, that's ~146 lines = +1.6% coverage!
 """
 
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # SERVER_V2/SERVER.PY - 122 lines at 0% → Target 60% = +73 lines = +0.8%
@@ -271,9 +274,9 @@ class TestTemplateManagerComplete:
                 result = manager.get_template(name)
                 # Either succeeds or fails, code is executed
                 assert result is not None or result is None
-            except Exception:
+            except Exception as exc:
                 # Expected for non-existent templates
-                pass
+                logger.debug("tolerated smoke-test failure: %s", exc)
 
 
 if __name__ == "__main__":

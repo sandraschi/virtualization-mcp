@@ -6,12 +6,15 @@ Dual testing strategy:
 - `real_vbox` fixture: Only works when VirtualBox is installed (skipped in CI).
 """
 
+import logging
 import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from virtualization_mcp.vbox.compat_adapter import VBoxManager
+
+logger = logging.getLogger(__name__)
 
 # ── Mocks ──────────────────────────────────────────────────────────────────────
 
@@ -81,8 +84,8 @@ def vbox_manager(mock_vbox_manager):
     if vbox_available():
         try:
             return VBoxManager()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("tolerated VBoxManager fallback: %s", exc)
     return mock_vbox_manager
 
 

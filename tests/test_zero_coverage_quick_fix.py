@@ -3,9 +3,12 @@ Quick coverage fixes for 0% coverage modules.
 These are simple import and basic execution tests to boost coverage numbers.
 """
 
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 
 class TestMainModuleQuick:
@@ -117,9 +120,9 @@ class TestZeroCoverageExecution:
             if hasattr(dev_tools, "get_project_root"):
                 result = dev_tools.get_project_root()
                 assert result is not None
-        except Exception:
+        except Exception as exc:
             # Expected - dev tools may have complex dependencies
-            pass
+            logger.debug("tolerated smoke-test failure: %s", exc)
 
 
 class TestMainModuleExecution:
@@ -192,9 +195,9 @@ class TestQuickExecutionCoverage:
         for module_name in modules_to_test:
             try:
                 __import__(module_name)
-            except Exception:
+            except Exception as exc:
                 # Expected - some modules have runtime dependencies
-                pass
+                logger.debug("tolerated smoke-test failure: %s", exc)
 
     def test_basic_function_calls(self):
         """Call basic functions that don't require complex setup."""

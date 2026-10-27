@@ -4,9 +4,12 @@ Tests for main entry point modules (currently 0% coverage).
 These modules are small but completely untested.
 """
 
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 
 class TestMainPyEntryPoint:
@@ -32,9 +35,9 @@ class TestMainPyEntryPoint:
             # Can't actually call main() as it runs forever, but importing executes module code
             assert main is not None
             assert callable(main)
-        except Exception:
+        except Exception as exc:
             # Expected - main() tries to run server
-            pass
+            logger.debug("tolerated smoke-test failure: %s", exc)
 
 
 class TestDunderMainEntryPoint:

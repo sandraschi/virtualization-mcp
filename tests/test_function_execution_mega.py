@@ -6,10 +6,13 @@ This will dramatically increase coverage by running function bodies.
 """
 
 import argparse
+import logging
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # all_tools_server.py - Execute ALL functions
@@ -177,8 +180,8 @@ class TestTemplateManagerFunctionExecution:
         try:
             result = manager.get_template("ubuntu-dev")
             assert result is not None or result is None
-        except Exception:
-            pass  # Expected if template doesn't exist
+        except Exception as exc:
+            logger.debug("tolerated smoke-test failure (template may not exist): %s", exc)
 
     def test_template_manager_create_execution(self):
         """Execute create_template method."""
@@ -196,8 +199,8 @@ class TestTemplateManagerFunctionExecution:
         try:
             result = manager.create_template(template_data)
             assert result is not None or result is None
-        except Exception:
-            pass  # Expected
+        except Exception as exc:
+            logger.debug("tolerated smoke-test failure: %s", exc)  # Expected
 
 
 # =============================================================================
