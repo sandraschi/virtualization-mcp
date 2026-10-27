@@ -6,6 +6,7 @@ Runs basic tests to check progress toward 80%+ coverage.
 """
 
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -14,7 +15,8 @@ from pathlib import Path
 def run_command(cmd):
     """Run a command and return success status."""
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        # No shell=True: callers pass plain executable strings, split safely.
+        result = subprocess.run(shlex.split(cmd), shell=False, capture_output=True, text=True)
         return result.returncode == 0, result.stdout, result.stderr
     except Exception as e:
         return False, "", str(e)

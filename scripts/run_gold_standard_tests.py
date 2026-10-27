@@ -7,6 +7,7 @@ Runs comprehensive tests to validate progress toward GLAMA Gold Standard (80%+ c
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -18,7 +19,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 def run_command(cmd, cwd=None):
     """Run a command and return the result."""
     try:
-        result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False)
+        # No shell=True: callers pass plain executable strings, split safely.
+        result = subprocess.run(shlex.split(cmd), shell=False, cwd=cwd, capture_output=True, text=True, check=False)
         return {
             "success": result.returncode == 0,
             "stdout": result.stdout,
