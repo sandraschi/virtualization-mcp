@@ -16,6 +16,7 @@ foreach ($dir in $frontendDirs) {
         Write-Host "-> [1/4] Building frontend ($dir)..." -ForegroundColor Yellow
         Push-Location $frontend
         npm install --silent 2>$null
+        if ($LASTEXITCODE -ne 0) { throw "npm install failed with exit code $LASTEXITCODE" }
 
         # Gate 0: TypeScript lint (mandatory before any build)
         Write-Host "  tsc --noEmit..." -ForegroundColor Gray
@@ -27,12 +28,10 @@ foreach ($dir in $frontendDirs) {
             throw "TypeScript compilation failed - fix all errors before building NSIS installer"
         }
 
-        $env:TAURI_BUILD = "1"
-        $env:VITE_API_URL = "http://127.0.0.1:10700"
+        # NOTE: no VITE_* env needed. The frontend resolves the backend itself
+        # (src/api/config.ts): same-origin via vite proxy in dev, hardcoded
+        # http://127.0.0.1:10701 inside Tauri. Do not reintroduce VITE_API_URL.
         npm run build
-        if ($LASTEXITCODE -ne 0) { throw "Frontend build failed" }
-        Remove-Item env:TAURI_BUILD -ErrorAction SilentlyContinue
-        Remove-Item env:VITE_API_URL -ErrorAction SilentlyContinue
         Pop-Location
         break
     }
