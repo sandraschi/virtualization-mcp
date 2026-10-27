@@ -83,6 +83,9 @@ coverage.xml
 test_results.txt
 ruff_errors.json
 junit/
+webapp/frontend/test-results/
+webapp/frontend/playwright-report/
+webapp/frontend/.auth/
 
 # Test artifacts and temporary data
 MagicMock/

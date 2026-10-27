@@ -12,6 +12,9 @@
       "!**/dist/",
       "!**/node_modules/",
       "!**/build/",
+      "!**/test-results/**",
+      "!**/playwright-report/**",
+      "!**/.auth/**",
       "!**/index.css"
     ]
   },
