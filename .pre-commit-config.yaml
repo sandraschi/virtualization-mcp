@@ -14,6 +14,18 @@ repos:
 
   - repo: local
     hooks:
+      - id: ps1-ascii-fix
+        name: powershell confusables to ASCII (autofix)
+        entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/pre-commit-ascii-fix.ps1
+        language: system
+        # Runs BEFORE ps1-ascii-only: rewrites em/en dashes, smart quotes,
+        # ellipsis and nbsp to ASCII in place, then exits 1 so the commit
+        # aborts and the fix gets re-staged. Anything outside that map still
+        # fails ps1-ascii-only below on purpose. Vendor copy of
+        # mcp-central-docs/templates/pre-commit-ascii-fix.ps1 - keep in sync.
+        files: \.(ps1|psm1|psd1)$
+        require_serial: true
+
       - id: biome-web
         name: biome check (webapp)
         entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/pre-commit-biome.ps1
