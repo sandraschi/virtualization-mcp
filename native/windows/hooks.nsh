@@ -1,5 +1,11 @@
 ; Kill UI + backend before install/uninstall (backend locks resources/*.exe).
 ; Fleet AI-client registration (canonical include, see mcp-central-docs/scripts/nsis/).
+; NOTE on include paths: tauri runs makensis with CWD=target/release/nsis/x64
+; (tauri-bundler nsis/mod.rs: .current_dir(output_path)), so a bare !include
+; does NOT resolve next to this file. Add native/windows explicitly - the
+; depth (x64 -> nsis -> release -> target -> native) is fixed by tauri's
+; own output_path layout, not by machine paths.
+!addincludedir "..\..\..\..\windows"
 !define MCP_REG_NAME "virtualization-mcp"
 !define MCP_REG_EXE "virtualization-mcp-backend.exe"
 !include "mcp-clients.nsh"

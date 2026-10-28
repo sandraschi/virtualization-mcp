@@ -71,6 +71,17 @@ Copy-Item $src "$ResourceDir\${RepoName}-backend.exe" -Force
 Copy-Item $src "$DevDir\${RepoName}-backend-$Triple.exe" -Force
 Write-Host "  Backend exe: $((Get-Item $src).Length / 1MB) MB" -ForegroundColor Green
 
+# Step 3b: Vendor fleet NSIS include (canonical copy lives in mcp-central-docs,
+# NOT in this repo - never hand-edit the vendored copy, fix the canonical one).
+Write-Host "-> [3b/4] Vendoring fleet NSIS include..." -ForegroundColor Yellow
+$mcdNsis = Join-Path (Split-Path -Parent $Root) "mcp-central-docs\scripts\nsis\mcp-clients.nsh"
+$dstNsis = Join-Path $PSScriptRoot "windows\mcp-clients.nsh"
+if (-not (Test-Path -LiteralPath $mcdNsis)) {
+    throw "Fleet NSIS include missing: $mcdNsis (clone mcp-central-docs next to this repo)"
+}
+Copy-Item -LiteralPath $mcdNsis -Destination $dstNsis -Force
+Write-Host "  Vendored: $dstNsis" -ForegroundColor Green
+
 # Step 4: Single NSIS installer
 Write-Host "-> [4/4] Tauri NSIS bundle..." -ForegroundColor Yellow
 Push-Location $PSScriptRoot

@@ -185,7 +185,7 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         command.creation_flags(CREATE_NO_WINDOW);
     }
 
-    let mut child = command
+    let child = command
         .spawn()
         .map_err(|e| format!("Failed to spawn {}: {e}", backend_path.display()))?;
 
