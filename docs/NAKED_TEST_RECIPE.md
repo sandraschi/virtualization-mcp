@@ -122,6 +122,29 @@ interactive use).
 - Sandbox is stock + winget-sourced bits only; ephemeral, no host mutation
   except the job dir. No credentials mapped in. Network on (winget needs it).
 
+## Child process logs (repo convention)
+
+`start.bat` output alone rarely explains a red `start` step: backends and
+frontends run in separate windows whose text never reaches `start-bat.log`.
+Repos with a `start.bat`-launched stack SHOULD redirect child output to
+`$repoRoot\logs\<service>.log` (+ `.err.log`), gitignored, windows left
+open for live view:
+
+```powershell
+$logsDir = Join-Path $repoRoot 'logs'
+New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
+Start-Process powershell.exe -ArgumentList @('-NoProfile', '-NoExit', '-Command', $bCmd) `
+    -WorkingDirectory $bWorkDir `
+    -RedirectStandardOutput (Join-Path $logsDir 'backend.log') `
+    -RedirectStandardError (Join-Path $logsDir 'backend.err.log')
+```
+
+The harness exfiltrates `$cloneDir\logs\*` into the host job dir after the
+observe window and appends each tail to `start-bat.log`, so the failure
+reason shows up in `log_tail`/`RESULT.json` without opening the sandbox.
+Missing `logs/` is fine (best-effort) - but then a red `start` step is
+opaque. speech-mcp implements this since 2026-10-28 (uv/npm guard fix).
+
 ## Revive checklist
 
 - [x] implement `assets/sandbox/Run-NakedTest.cmd` (+ spec.json reader)

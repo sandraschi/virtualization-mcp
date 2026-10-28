@@ -258,6 +258,23 @@ while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 3
 }
 $sw.Stop()
+# Exfiltrate child-process logs (repo-local logs/ convention, see
+# docs/NAKED_TEST_RECIPE.md "Child process logs"). Best-effort: a missing
+# logs dir is normal for repos that don't implement it yet. Tails are
+# appended to start-bat.log so the failure reason is visible in log_tail.
+try {
+    $childLogsDir = Join-Path $cloneDir 'logs'
+    if (Test-Path -LiteralPath $childLogsDir) {
+        Get-ChildItem -LiteralPath $childLogsDir -File -ErrorAction SilentlyContinue |
+            ForEach-Object {
+                Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $JobDir $_.Name) -Force -ErrorAction SilentlyContinue
+                Add-Content -LiteralPath $startLog -Value "" -ErrorAction SilentlyContinue
+                Add-Content -LiteralPath $startLog -Value "===== child log: $($_.Name) (tail) =====" -ErrorAction SilentlyContinue
+                Get-Content -LiteralPath $_.FullName -Tail 25 -ErrorAction SilentlyContinue |
+                    Add-Content -LiteralPath $startLog -ErrorAction SilentlyContinue
+            }
+    }
+} catch { }
 if ($healthUrl) {
     if ($healthOk) {
         Add-Step $steps 'start' 0 $sw.ElapsedMilliseconds "health 200 at $healthUrl"
