@@ -53,8 +53,9 @@ test-file file:
     cd {{justfile_directory()}}; $env:PYTHONPATH = "src"; uv run pytest {{file}} -v --tb=short -o "addopts="
 
 # Run automated naked install test in Windows Sandbox (e.g. just naked-test winrar-mcp)
-naked-test repo branch="main" observe="90" health="":
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '{{justfile_directory()}}/scripts/just/naked-test.ps1' -Repo '{{repo}}' -Branch '{{branch}}' -ObserveSec {{observe}} -HealthUrl '{{health}}'"
+# noteardown=1 leaves the box running for hand-testing (no post-run teardown).
+naked-test repo branch="main" observe="90" health="" noteardown="":
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '{{justfile_directory()}}/scripts/just/naked-test.ps1' -Repo '{{repo}}' -Branch '{{branch}}' -ObserveSec {{observe}} -HealthUrl '{{health}}' -NoTeardown '{{noteardown}}'"
 
 
 # --- Quality ---

@@ -26,25 +26,43 @@
   MCP-server entrypoint): the harness then uses the alive-process gate
   instead of the fleet-start.config.ps1 derived URL.
 
+.PARAMETER NoTeardown
+  Leave the sandbox running after the run (pass '1' or 'true'): skips the
+  post-run Cleanup-Sandbox so the box can be tested by hand. Preflight
+  cleanup of STALE sandboxes still runs (a held partition would wedge the
+  boot). Close the Sandbox window yourself when done.
+
 .EXAMPLE
   just naked-test repo=virtualization-mcp
   just naked-test repo=sandraschi/calibre-mcp observe=120
+  just naked-test repo=speech-mcp observe=600 noteardown=1
 #>
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$Repo,
     [string]$Branch = "main",
-    [int]$ObserveSec = 90,
-    [string]$HealthUrl = ""
+    [string]$ObserveSec = "90",
+    [string]$HealthUrl = "",
+    [string]$NoTeardown = ""
 )
 
 $ErrorActionPreference = "Stop"
 
-# Clean positional prefix if user typed key=val
+# Clean positional prefix if user typed key=val (just passes them through verbatim)
 if ($Repo -match '^repo=(.+)$') { $Repo = $matches[1].Trim() }
 if ($Branch -match '^branch=(.+)$') { $Branch = $matches[1].Trim() }
+if ($ObserveSec -match '^observe=(\d+)$') { $ObserveSec = $matches[1] }
 if ($HealthUrl -match '^health=(.+)$') { $HealthUrl = $matches[1].Trim() }
+if ($NoTeardown -match '^noteardown=(.+)$') { $NoTeardown = $matches[1].Trim() }
+$observeSecInt = 90
+if (-not [int]::TryParse($ObserveSec, [ref]$observeSecInt)) {
+    Write-Error "Invalid observe value '$ObserveSec' - expected seconds, e.g. observe=300."
+    exit 2
+}
+$ObserveSec = $observeSecInt
+$leaveUp = ($NoTeardown -eq '1') -or ($NoTeardown.ToLowerInvariant() -eq 'true')
+if ($leaveUp) { Write-Host "NoTeardown: sandbox stays running for hand-testing after the run." -ForegroundColor Yellow }
 
 $repoRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $assetsFolder = Join-Path $repoRoot "assets\sandbox"
@@ -300,7 +318,7 @@ function Cleanup-Sandbox {
 }
 
 if (-not (Test-Path -LiteralPath $resultPath)) {
-    Cleanup-Sandbox
+    if (-not $leaveUp) { Cleanup-Sandbox }
     Write-Host "TIMEOUT: Sandbox did not write RESULT.json within deadline." -ForegroundColor Red
     Write-Host "Job directory preserved at: $jobDir" -ForegroundColor DarkGray
     exit 3
@@ -310,7 +328,7 @@ try {
     $rawResult = Get-Content -LiteralPath $resultPath -Raw -Encoding UTF8
     $res = $rawResult | ConvertFrom-Json
 } catch {
-    Cleanup-Sandbox
+    if (-not $leaveUp) { Cleanup-Sandbox }
     Write-Host "ERROR: Could not parse RESULT.json : $($_.Exception.Message)" -ForegroundColor Red
     exit 4
 }
@@ -335,7 +353,11 @@ foreach ($s in $res.steps) {
 }
 
 Write-Host "----------------------------------------------------------------" -ForegroundColor DarkGray
-Cleanup-Sandbox
+if (-not $leaveUp) { Cleanup-Sandbox } else {
+    Write-Host "  NoTeardown: sandbox left RUNNING for hand-testing." -ForegroundColor Yellow
+    Write-Host "  In-guest repo: C:\Test\$repoClean | job dir: $jobDir" -ForegroundColor DarkGray
+    Write-Host "  Close the Sandbox window yourself when done." -ForegroundColor DarkGray
+}
 if ($res.pass -eq $true) {
     Write-Host "  FINAL STATUS: PASS" -ForegroundColor Green
     if ($res.note) { Write-Host "  Note: $($res.note)" -ForegroundColor DarkGray }
