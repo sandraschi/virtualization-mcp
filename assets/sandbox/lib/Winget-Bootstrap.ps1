@@ -60,6 +60,17 @@ function Invoke-WsbWingetExe {
     throw 'winget executable not found on PATH or in WindowsApps after install.'
 }
 
+function Repair-WsbWingetSource {
+    # 0x8a15000f "Data required by the source is missing": the msstore/winget
+    # source index failed to initialize (cold boot, CDN hiccup, stale cache).
+    # The error message itself suggests 'source reset' - do that plus a fresh
+    # update, then let the caller retry once. Harmless when the failure had
+    # another cause (reset restores stock sources; update is idempotent).
+    Write-Host 'Repairing winget sources (reset to defaults + update)...' -ForegroundColor Yellow
+    try { Invoke-WsbWingetExe @('source', 'reset', '--force') 2>&1 | Out-Null } catch { }
+    try { Invoke-WsbWingetExe @('source', 'update') 2>&1 | Out-Null } catch { }
+}
+
 function Install-WsbWingetViaMsix {
     Write-WsbStep 'Installing winget (Desktop App Installer)'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13

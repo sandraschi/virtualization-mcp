@@ -112,11 +112,18 @@ Ensure-WsbWingetAvailable
 Sync-WsbPathFromRegistry
 foreach ($pkg in @('Git.Git', 'Casey.Just')) {
     Write-Step "rig: installing $pkg via winget"
-    try {
+    $exeName = if ($pkg -eq 'Git.Git') { 'git' } else { 'just' }
+    Invoke-WsbWingetExe @('install', '--id', $pkg, '--source', 'winget', '--silent',
+        '--accept-source-agreements', '--accept-package-agreements', '--disable-interactivity')
+    if (-not (Test-WsbCommandExists $exeName)) {
+        # Native winget exit codes do not throw, so detect the miss directly.
+        # Source-index failures (0x8a15000f) are common on cold boots - reset
+        # sources and retry once before giving up on the whole run.
+        Write-Host "First install attempt missed ($exeName not found) - repairing sources and retrying once..." -ForegroundColor Yellow
+        Repair-WsbWingetSource
         Invoke-WsbWingetExe @('install', '--id', $pkg, '--source', 'winget', '--silent',
             '--accept-source-agreements', '--accept-package-agreements', '--disable-interactivity')
-    } catch {
-        Write-Warning "winget install $pkg error: $($_.Exception.Message)"
+        Sync-WsbPathFromRegistry
     }
 }
 Sync-WsbPathFromRegistry
