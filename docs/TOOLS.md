@@ -12,6 +12,7 @@ Full parameter schemas: call `info_tools(action="tool_schema", tool_name="<name>
 | `system_management` | host_info, vbox_version, ostypes, metrics, screenshot |
 | `sandbox_management` | execute_code, execute_file, session_create/run/write_file/read_file/list/destroy, win_sandbox_launch_consumer/devinfra/status/terminate, win_sandbox_naked_test/status/list |
 | `hyperv_management` | list, get, start, stop (Windows only) |
+| `vmware_management` | status, list, get, start, stop, reset, suspend, pause, unpause, snapshot_list/create/revert/delete, clone, guest_ip |
 | `libvirt_management` | list, start, stop, status (Linux/WSL2) |
 | `proxmox_management` | list_vms, start_vm, stop_vm, shutdown_vm, status, create_snapshot, list_snapshots, delete_snapshot, node_status, cluster_resources |
 | `discovery_management` | list_tools, tool_info, tool_schema, help (as `info_tools`) |

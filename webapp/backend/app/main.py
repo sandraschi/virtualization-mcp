@@ -3006,7 +3006,16 @@ async def get_vms():
         except Exception as e:
             logger.warning("Proxmox VM list failed: %s", e)
 
-        return {"status": "success", "vms": vbox_list + hyperv_list + proxmox_list}
+        # Get VMware VMs (if vmrun present)
+        vmware_list = []
+        try:
+            vmw = getattr(service_manager.vm_service, "vmware_manager", None)
+            if vmw is not None and vmw.vmrun_path is not None:
+                vmware_list = await vmw.list_vms()
+        except Exception as e:
+            logger.warning("VMware VM list failed: %s", e)
+
+        return {"status": "success", "vms": vbox_list + hyperv_list + proxmox_list + vmware_list}
     except Exception as e:
         logger.error(f"Error fetching VMs: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -5086,6 +5095,85 @@ async def hyperv_enhanced_set(request: HyperVEnhancedSessionRequest):
         return await service_manager.vm_service.hyperv_manager.set_enhanced_session(request.enabled)
     except Exception as e:
         logger.error(f"Error setting enhanced session: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# -- VMware Workstation Pro (vmrun) --
+
+
+def _require_vmware():
+    vmw = getattr(service_manager.vm_service, "vmware_manager", None) if service_manager else None
+    if vmw is None or vmw.vmrun_path is None:
+        raise HTTPException(status_code=503, detail="VMware vmrun not found. Install Workstation Pro (free).")
+    return vmw
+
+
+@app.get("/api/v1/vmware/status")
+async def vmware_status():
+    """Probe for vmrun availability."""
+    if not service_manager:
+        raise HTTPException(status_code=503, detail="VM Service not available")
+    vmw = getattr(service_manager.vm_service, "vmware_manager", None)
+    if vmw is None:
+        return {"available": False, "message": "VMware manager not initialised"}
+    return {
+        "available": vmw.is_available(),
+        "vmrun_path": str(vmw.vmrun_path) if vmw.vmrun_path else None,
+    }
+
+
+@app.get("/api/v1/vmware/vms")
+async def vmware_vms():
+    """List VMware VMs (inventory + running state)."""
+    try:
+        return {"status": "success", "vms": await _require_vmware().list_vms()}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+class VmwareActionRequest(BaseModel):
+    vmx_path: str
+    gui: bool = False
+    hard: bool = False
+    snapshot_name: str | None = None
+    dest_vmx: str | None = None
+
+
+@app.post("/api/v1/vmware/action")
+async def vmware_action(req: VmwareActionRequest, action: str = "start"):
+    """Generic VMware action bridge (start/stop/reset/suspend/pause/unpause/snapshot_*/clone/guest_ip)."""
+    vmw = _require_vmware()
+    try:
+        if action == "start":
+            return await vmw.start_vm(req.vmx_path, gui=req.gui)
+        if action == "stop":
+            return await vmw.stop_vm(req.vmx_path, hard=req.hard)
+        if action == "reset":
+            return await vmw.reset_vm(req.vmx_path)
+        if action == "suspend":
+            return await vmw.suspend_vm(req.vmx_path)
+        if action == "pause":
+            return await vmw.pause_vm(req.vmx_path)
+        if action == "unpause":
+            return await vmw.unpause_vm(req.vmx_path)
+        if action == "snapshot_list":
+            return {"status": "success", "snapshots": await vmw.list_snapshots(req.vmx_path)}
+        if action == "snapshot_create" and req.snapshot_name:
+            return await vmw.create_snapshot(req.vmx_path, req.snapshot_name)
+        if action == "snapshot_revert" and req.snapshot_name:
+            return await vmw.revert_snapshot(req.vmx_path, req.snapshot_name)
+        if action == "snapshot_delete" and req.snapshot_name:
+            return await vmw.delete_snapshot(req.vmx_path, req.snapshot_name)
+        if action == "clone" and req.dest_vmx:
+            return await vmw.clone_vm(req.vmx_path, req.dest_vmx)
+        if action == "guest_ip":
+            return await vmw.get_guest_ip(req.vmx_path)
+        raise HTTPException(status_code=400, detail=f"Unknown/underspecified action: {action}")
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

@@ -60,6 +60,15 @@ def register_all_portmanteau_tools(mcp: FastMCP) -> None:
         except ImportError as e:
             logger.debug(f"Hyper-V tools not available: {e}")
 
+    # VMware Workstation Pro (Windows + Linux, free since Broadcom Nov 2024)
+    try:
+        from .vmware_management import register_vmware_management_tool
+
+        register_vmware_management_tool(mcp)
+        logger.info("VMware management tool registered")
+    except Exception as e:
+        logger.debug(f"VMware tools not available: {e}")
+
     # Libvirt / QEMU / KVM management
     try:
         from .libvirt_management import register_libvirt_management_tool

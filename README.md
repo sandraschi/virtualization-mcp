@@ -11,6 +11,8 @@ Spin up VMs, sandboxes, and dev environments from Claude Desktop, Cursor, or the
 ## Features
 
 - **VirtualBox & Hyper-V** — create, start, stop, snapshot, clone VMs
+- **VMware Workstation Pro (free)** — vmrun-driven list/start/stop/suspend/snapshots/clone + webapp page; best Windows path for macOS slow-tests
+- **Hackintosh lab page** — Intel-notebook-first guidance, 16GB floor, Goliath slow-test checklist
 - **Libvirt / KVM / QEMU** — native Linux and WSL2 hypervisor management
 - **Automated Naked Install Testing** — zero-touch verification on clean Windows Sandbox (`just naked-test`, REST endpoints, and `win_sandbox_naked_test` FastMCP tools) enforcing NAKED_PC_INSTALL_STANDARD with 4 fail-loud gates
 - **Windows Sandbox & MCP Tools** — consumer (nearly naked) and dev-infra bringups with direct MCP tool triggers (`win_sandbox_launch_consumer`, `win_sandbox_launch_devinfra`, `win_sandbox_terminate`, `win_sandbox_naked_test`) and singleton auto-cleanup

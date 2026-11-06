@@ -44,7 +44,7 @@ const tabs = [
               {
                 step: "4",
                 title: "Explore the pages",
-                desc: "Use the sidebar to navigate: VirtualBox (manage VMs), Windows Sandbox (launch sandboxes), Tools Console, AI Chat, Apps Hub, and Settings.",
+                desc: "Use the sidebar: VirtualBox, VMware (vmrun), Hackintosh lab, Windows Sandbox, Tools Console, AI Chat, Apps Hub, Settings.",
               },
             ].map((item) => (
               <div
@@ -75,7 +75,11 @@ const tabs = [
               },
               {
                 label: "VirtualBox 7+",
-                note: "Required for VM management features. VBoxManage must be on PATH.",
+                note: "Required for VirtualBox page. VBoxManage must be on PATH.",
+              },
+              {
+                label: "VMware Workstation Pro (free)",
+                note: "Optional, for VMware page. Provides vmrun.exe. Best for macOS slow-tests.",
               },
               {
                 label: "Python 3.12+",

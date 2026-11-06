@@ -6,6 +6,7 @@ import Chat from "./pages/chat";
 import Dashboard from "./pages/dashboard";
 import Help from "./pages/help";
 import HyperV from "./pages/hyperv";
+import Hackintosh from "./pages/hackintosh";
 import Logs from "./pages/logs";
 import PromptsSkills from "./pages/prompts-skills";
 import Proxmox from "./pages/proxmox";
@@ -13,6 +14,7 @@ import Sandbox from "./pages/sandbox";
 import Settings from "./pages/settings";
 import Tools from "./pages/tools";
 import VirtualBox from "./pages/virtualbox";
+import Vmware from "./pages/vmware";
 import VmConsole from "./pages/vm-console";
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="virtualbox" element={<VirtualBox />} />
+          <Route path="vmware" element={<Vmware />} />
+          <Route path="hackintosh" element={<Hackintosh />} />
           <Route path="hyperv" element={<HyperV />} />
           <Route path="proxmox" element={<Proxmox />} />
           <Route path="sandbox" element={<Sandbox />} />
