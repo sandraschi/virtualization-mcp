@@ -3,7 +3,7 @@
   "install_dir": "%LOCALAPPDATA%\\Virtualization MCP",
   "operator_exe": "virtualization-mcp-native.exe",
   "backend_process_names": ["virtualization-mcp-native", "virtualization-mcp-backend"],
-  "backend_port": 10700,
+  "backend_port": 10701,
   "health_path": "/health",
   "diagnostics_path": "/api/v1/diagnostics",
   "feature_smoke_path": "/api/v1/status",
