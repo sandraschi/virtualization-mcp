@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
+# ruff: noqa: S310  (urlopen is only used for loopback health/diagnostics URLs built from config)
 """CUA smoke test for NSIS-installed fleet apps (pywinauto-mcp canary).
 
-CUA_SMOKE_VERSION = 13
+CUA_SMOKE_VERSION = 17  (v17: scroll-into-view sidebar walk (below-fold entries are
+scrolled visible before clicking, no black-space/taskbar clicks); coordinate
+LEFT-clicks only, UIA click_input() removed (it maps to a WebView2 contextmenu);
+foreground guard on every click and Escape (no input spray into toasts/chat);
+port-free verify after kill_stale + stale-backend freshness probe; v16: nav
+discovery retries the sidebar scan 3x over 15s for the maximize/layout UIA race;
+v15: writes cua-reports/cua-result.json for the release gate; v14: nav pages are
+discovered from the sidebar, not configured; the phase can fail)
 If this file differs from templates/tauri-native/scripts/cua-smoke.py in
 mcp-central-docs, copy the template over - version number will have changed.
 
@@ -28,16 +36,12 @@ Phases (planned Phase 3): nav sidebar click-through, floating chat visibility.
 import argparse
 import hashlib
 import json
-import logging
 import os
 import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import UTC, datetime
-
-logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────
 
@@ -63,7 +67,7 @@ def load_config(path: str | None = None) -> dict:
     return {k: _expand(v) for k, v in cfg.items()}
 
 
-CUA_SMOKE_VERSION = 13  # bump when template changes; see docstring
+CUA_SMOKE_VERSION = 17  # bump when template changes; see docstring
 
 
 def _check_version():
@@ -115,10 +119,6 @@ MAX_RETRY = 20
 RETRY_DELAY = 3
 
 _INSTALLED = False
-_INSTALLER_SHA256 = ""
-_BACKEND_RECEIPT_PROOF = False
-_NAV_OK = 0
-_NAV_TOTAL = 0
 
 
 # ── Helpers (must be before CUA client) ────────────────────────────
@@ -190,8 +190,8 @@ def cua_find_window(title_re: str = "", retry_seconds: int = 10) -> dict | None:
                     "title": win.window_text(),
                     "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h},
                 }
-        except Exception as exc:
-            logger.debug("tolerated poll-loop miss: %s", exc)
+        except Exception:
+            pass
         if time.monotonic() >= deadline:
             return None
         time.sleep(1)
@@ -241,8 +241,8 @@ def cua_ocr_text(window_handle: int = 0, image_path: str = "") -> str:
             capture = cua_screenshot(window_handle, f"{image_path or 'capture'}.png")
             if capture and os.path.exists(capture):
                 return pytesseract.image_to_string(Image.open(capture))
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+    except Exception:
+        pass
     return ""
 
 
@@ -252,8 +252,8 @@ def cua_click(window_handle: int, x: int, y: int):
         import pywinauto.mouse
 
         pywinauto.mouse.click(button="left", coords=(x, y))
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+    except Exception:
+        pass
 
 
 def _release_mouse(handle: int = 0):
@@ -264,9 +264,9 @@ def _release_mouse(handle: int = 0):
     click handler is bound - Escape clears that before the next step.
 
     The Escape keystroke is GLOBAL (keybd_event), so it is only sent when the
-    target window actually holds the foreground - otherwise it lands in
-    whatever the user (or a notification toast) just activated.
-    """
+    target window actually holds the foreground - otherwise it lands in whatever
+    the user (or a notification toast) just activated. Observed 2026-11-07: stray
+    Escape interrupted a chat compose while a toast held focus."""
     try:
         import ctypes
 
@@ -275,8 +275,8 @@ def _release_mouse(handle: int = 0):
         MOUSEEVENTF_MIDDLEUP = 0x0040
         for flag in (MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_MIDDLEUP):
             ctypes.windll.user32.mouse_event(flag, 0, 0, 0, 0)
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+    except Exception:
+        pass
     if handle and not _our_window_foreground(handle):
         log("Skipping Escape - target window does not hold foreground")
         return
@@ -289,8 +289,8 @@ def _release_mouse(handle: int = 0):
         KEYEVENTF_KEYUP = 0x0002
         ctypes.windll.user32.keybd_event(VK_ESCAPE, 0, 0, 0)
         ctypes.windll.user32.keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, 0)
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+    except Exception:
+        pass
 
 
 # ── Helpers ───────────────────────────────────────────────────────────
@@ -318,6 +318,34 @@ def kill_stale():
         subprocess.run(["taskkill", "/F", "/IM", f"{name}.exe", "/T"], capture_output=True, timeout=10)
     time.sleep(1)
     log("Stale processes killed")
+    _assert_backend_port_free()
+
+
+def _assert_backend_port_free():
+    """Fail LOUD if something still listens on the backend port after the kill.
+
+    A squatter here (vite dev server, a previous install's backend that
+    survived uninstall) makes every later phase lie: health checks pass
+    against the WRONG backend and the nav walk verifies the wrong app.
+    Observed 2026-11-07: a stale backend served the whole run while the fresh
+    install sat behind it, and Phase 10 404'd on a missing endpoint.
+    """
+    import socket
+
+    for _ in range(3):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            if s.connect_ex(("127.0.0.1", BACKEND_PORT)) != 0:
+                log(f"Backend port {BACKEND_PORT} is free")
+                return
+        for name in PROCESS_NAMES:
+            subprocess.run(["taskkill", "/F", "/IM", f"{name}.exe", "/T"], capture_output=True, timeout=10)
+        time.sleep(2)
+    fatal(
+        f"Port {BACKEND_PORT} still occupied after kill_stale - a squatter "
+        f"(vite dev server? old backend?) would invalidate the whole run. "
+        f"Free it (netstat -ano | findstr {BACKEND_PORT}) and re-run."
+    )
 
 
 # ── Phase 2: Install ──────────────────────────────────────────────────
@@ -336,16 +364,6 @@ def find_installer() -> str:
 
 def silent_install(installer: str):
     log(f"Installing: {installer}")
-    try:
-        h = hashlib.sha256()
-        with open(installer, "rb") as f:
-            for chunk in iter(lambda: f.read(8 * 1024 * 1024), b""):
-                h.update(chunk)
-        global _INSTALLER_SHA256
-        _INSTALLER_SHA256 = h.hexdigest().lower()
-        log(f"Installer sha256: {_INSTALLER_SHA256[:12]}...")
-    except Exception as exc:
-        log(f"Could not hash installer (non-fatal): {exc}")
     r = subprocess.run([installer, "/S"], capture_output=True, timeout=120)
     if r.returncode != 0:
         fatal(f"NSIS install exited with code {r.returncode}")
@@ -375,11 +393,39 @@ def launch_app():
             resp = urllib.request.urlopen(f"{BACKEND_URL}{HEALTH_PATH}", timeout=5)
             if resp.status == 200:
                 log(f"Backend healthy (attempt {attempt + 1})")
+                _assert_backend_fresh()
                 return
         except (urllib.error.URLError, urllib.error.HTTPError, OSError):
             pass
         time.sleep(RETRY_DELAY)
     fatal(f"Backend not reachable after {MAX_RETRY * RETRY_DELAY}s")
+
+
+def _assert_backend_fresh():
+    """Fail LOUD if the backend on BACKEND_PORT predates the request-log pattern.
+
+    A stale backend (previous install that survived uninstall, dev server on
+    the same port) answers health/status fine but 404s the receipt endpoint,
+    turning Phase 10 into a misleading skip. The release gate needs proof, not
+    a skip, so a stale backend is fatal here, not later.
+    """
+    try:
+        req = urllib.request.Request(f"{BACKEND_URL}{REQUEST_LOG_PATH}")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                log("Backend freshness OK (request-log answers - this is the current build)")
+                return
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            fatal(
+                f"Stale backend on port {BACKEND_PORT}: answers health but 404s "
+                f"{REQUEST_LOG_PATH} - an old install survived uninstall (or a dev "
+                f"server squats the port). Kill it and re-run; shipping against a "
+                f"stale backend would invalidate the CUA evidence."
+            )
+    except Exception as e:
+        fatal(f"Backend freshness probe failed: {e} (backend on {BACKEND_PORT} is not usable)")
+    fatal(f"Backend freshness probe got unexpected response on {BACKEND_PORT}")
 
 
 # ── Phase 4: Verify window ───────────────────────────────────────────
@@ -401,25 +447,21 @@ def _foreground_and_maximize(handle: int):
         w.set_focus()
         w.maximize()
         time.sleep(1)
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+    except Exception:
+        pass
 
 
 def _our_window_foreground(handle: int) -> bool:
     """True if the target window currently owns the foreground.
 
-    Notification toasts (Outlook et al.) steal focus mid-run; every
-    synthetic click and every global keystroke MUST be gated on this,
-    otherwise input lands in whatever app the user (or a toast) just
-    activated. Observed 2026-11-07: stray Escape interrupted a chat
-    compose while a toast held focus.
-    """
+    Notification toasts (Outlook et al.) steal focus mid-run; every synthetic
+    click and every global keystroke MUST be gated on this, otherwise input
+    lands in whatever app the user (or a toast) just activated."""
     try:
         import ctypes
 
         return ctypes.windll.user32.GetForegroundWindow() == handle
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+    except Exception:
         return False
 
 
@@ -434,6 +476,47 @@ def _ensure_foreground(handle: int, tries: int = 3) -> bool:
     if not ok:
         log("WARNING: could not reclaim foreground - skipping input this round")
     return ok
+
+
+def _left_click_at(handle: int, x: int, y: int) -> bool:
+    """Real left-click at absolute screen coords. Never click_input().
+
+    UIA click_input() on WebView2 content fires through the accessibility
+    Invoke pattern, which Chromium maps to a contextmenu (right-click) event
+    when no direct click handler is bound (observed 2026-11-07: link context
+    menus opening over the sidebar). A true synthetic left button press has no
+    such mapping. Foreground-guarded: refuses to click into another app.
+    """
+    if not _ensure_foreground(handle):
+        return False
+    try:
+        import pywinauto.mouse
+
+        pywinauto.mouse.click(button="left", coords=(int(x), int(y)))
+    except Exception:
+        return False
+    _release_mouse(handle)
+    return True
+
+
+def _wheel(handle: int, x: int, y: int, notches_down: int) -> bool:
+    """Roll the mouse wheel over (x, y). Positive notches_down scrolls down."""
+    if not _ensure_foreground(handle):
+        return False
+    try:
+        import ctypes
+
+        u = ctypes.windll.user32
+        u.SetCursorPos(int(x), int(y))
+        time.sleep(0.15)
+        WHEEL_DELTA = 120
+        for _ in range(abs(int(notches_down))):
+            direction = -WHEEL_DELTA if notches_down > 0 else WHEEL_DELTA
+            u.mouse_event(0x0800, 0, 0, direction, 0)
+            time.sleep(0.05)
+    except Exception:
+        return False
+    return True
 
 
 def verify_window():
@@ -494,7 +577,9 @@ def check_diagnostics():
             d = data["data"]
             log(f"Backend: {d['backend'].get('status')} v{d['backend'].get('version')}")
             log(
-                f"System: CPU {d['system'].get('cpu_percent')}% | Mem {d['system'].get('memory_percent')}% | Disk {d['system'].get('disk_percent')}%"
+                f"System: CPU {d['system'].get('cpu_percent')}% | "
+                f"Mem {d['system'].get('memory_percent')}% | "
+                f"Disk {d['system'].get('disk_percent')}%"
             )
             log(f"Tools: {d['tools'].get('total')} registered")
             log(f"CUA: Tesseract={d['cua_status']['tesseract_available']} Window={d['cua_status']['window_found']}")
@@ -584,169 +669,287 @@ def _verify_page_ocr(text: str, label: str, expected: str) -> bool:
     return False
 
 
-def _element_center(el) -> tuple[int, int] | None:
-    """Center of a UIA element's rectangle in absolute screen coords."""
+_NAV_STATE = {"pages": 0}  # pages visited by the last nav walk; feeds the backend-receipt phase
+
+
+def _sidebar_links(w):
+    """Sidebar links read from the live UI, top to bottom, as [(label, element)].
+
+    The sidebar is the largest group of visible, labelled Hyperlinks sharing one x-extent,
+    so in-page links elsewhere on the page are not mistaken for navigation.
+    """
+    columns = {}
+    for el in w.descendants(control_type="Hyperlink"):
+        try:
+            label = (el.window_text() or "").strip()
+            if not label or not el.is_visible():
+                continue
+            rect = el.rectangle()
+        except Exception:  # element vanished mid-scan, next pass re-reads it
+            continue
+        columns.setdefault((rect.left, rect.right), []).append((rect.top, label, el))
+    if not columns:
+        return []
+    seen, links = set(), []
+    for _top, label, el in sorted(max(columns.values(), key=len), key=lambda item: item[0]):
+        if label not in seen:
+            seen.add(label)
+            links.append((label, el))
+    return links
+
+
+def _invoke(el, handle: int, win_rect: dict) -> bool:
+    """Left-click a UIA element at its visible center. No click_input() ever.
+
+    UIA click_input() on WebView2 content fires through the accessibility
+    Invoke pattern, which Chromium maps to a contextmenu (right-click) event
+    when no direct click handler is bound (observed 2026-11-07: link context
+    menus opening over the sidebar). A true synthetic left button press has no
+    such mapping. Refuses to click outside the window rect (no taskbar hits).
+    """
     try:
         r = el.rectangle()
-        return (r.left + r.width() // 2, r.top + r.height() // 2)
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+        cx, cy = r.left + r.width() // 2, r.top + r.height() // 2
+    except Exception:
+        return False
+    try:
+        wl, wt = win_rect.get("left", 0) or 0, win_rect.get("top", 0) or 0
+        ww, wh = win_rect.get("width", 0) or 0, win_rect.get("height", 0) or 0
+        if not (wl <= cx < wl + ww and wt <= cy < wt + wh):
+            log(f"Click point ({cx},{cy}) is outside the window - refusing (no taskbar clicks)")
+            return False
+    except Exception:
+        return False
+    return _left_click_at(handle, cx, cy)
+
+
+def _sidebar_viewport(w):
+    """Bounding box of the sidebar hyperlink column, or None."""
+    try:
+        cols = {}
+        for el in w.descendants(control_type="Hyperlink"):
+            try:
+                if not (el.window_text() or "").strip() or not el.is_visible():
+                    continue
+                r = el.rectangle()
+            except Exception:
+                continue
+            cols.setdefault((r.left, r.right), []).append(r.top)
+        if not cols:
+            return None
+        (left, right), _tops = max(cols.items(), key=lambda kv: len(kv[1]))
+        return (left, right)
+    except Exception:
         return None
 
 
-def _nav_click_point(w, label: str, idx: int, wx: int, wy: int) -> tuple[int, int] | None:
-    """Locate a nav item WITHOUT clicking. UIA is used for finding only.
+def _scroll_sidebar(w, handle: int, viewport, notches: int) -> bool:
+    """Roll the wheel over the sidebar middle. Returns False when focus is lost."""
+    if not viewport:
+        return False
+    left, right = viewport
+    try:
+        cur = cua_find_window(WINDOW_TITLE_RE, retry_seconds=2) or {}
+        r = cur.get("rect", {}) or {}
+        top, height = r.get("top", 0) or 0, r.get("height", 0) or 0
+    except Exception:
+        return False
+    return _wheel(handle, (left + right) // 2, top + height // 2, notches)
 
-    Preferred: match by accessible name. Then hyperlink text, positional
-    hyperlink, sidebar Pane. Final fallback: the config coordinate grid.
-    Returns absolute screen coords, never None (grid always answers).
+
+def _scroll_into_view(w, handle: int, label: str, viewport, tries: int = 12):
+    """Wheel the sidebar until `label` is visible. Returns the element or None.
+
+    Below-fold entries report is_visible() False with stale off-window rects;
+    clicking those coordinates hits black space or the taskbar (observed
+    2026-11-07: 15-entry sidebar, only the top ~7 visible). Never click what
+    is not on screen.
     """
-    if label:
+    for _ in range(tries):
         try:
-            link = w.descendants(title=label)
-            if link:
-                pt = _element_center(link[0])
-                if pt:
-                    return pt
-        except Exception as exc:
-            logger.debug("tolerated poll-loop miss: %s", exc)
-        try:
-            elements = w.descendants(control_type="Hyperlink")
-            el = [e for e in elements if label.lower() in (e.window_text() or "").lower()]
-            if el:
-                pt = _element_center(el[0])
-                if pt:
-                    return pt
-        except Exception as exc:
-            logger.debug("tolerated poll-loop miss: %s", exc)
+            for el in w.descendants(control_type="Hyperlink"):
+                try:
+                    if (el.window_text() or "").strip() != label or not el.is_visible():
+                        continue
+                    return el
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        if not _scroll_sidebar(w, handle, viewport, 3):
+            return None
+        time.sleep(0.4)
+    return None
+
+
+def _menu_open(w) -> bool:
+    """True if a context menu is currently showing in the target window."""
     try:
-        elements = w.descendants(control_type="Hyperlink")
-        if idx < len(elements):
-            pt = _element_center(elements[idx])
-            if pt:
-                return pt
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
+        for m in w.descendants(control_type="Menu"):
+            try:
+                if m.is_visible():
+                    return True
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return False
+
+
+def _log_nav_changes(snap_dir: str, labels: list):
+    """Say when pages were added or removed since the last run, then remember this run."""
+    path = os.path.join(snap_dir, "nav-last.json")
     try:
-        elements = w.descendants(control_type="Pane")
-        nav_elements = [e for e in elements if e.rectangle().left < wx + 200]
-        nav_elements_sorted = sorted(nav_elements, key=lambda e: e.rectangle().top)
-        if idx < len(nav_elements_sorted):
-            pt = _element_center(nav_elements_sorted[idx])
-            if pt:
-                return pt
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
-    return (
-        wx + int(cfg("sidebar_click_x", 30)),
-        wy + int(cfg("sidebar_first_y", 90)) + idx * int(cfg("sidebar_step_y", 55)),
-    )
-
-
-def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str = "") -> bool:
-    """Left-click a nav item at its element center. Returns False when the
-    target window does not hold the foreground (notification toast stole
-    focus) - the caller retries or skips instead of spraying input into
-    whatever app the user just activated.
-
-    Deliberately NEVER uses UIA click_input() on WebView2 content: it fires
-    through the accessibility Invoke pattern, which Chromium maps to a
-    contextmenu (right-click) event when no direct click handler is bound.
-    Real synthetic left-clicks at element coordinates do not have this
-    failure mode. (Observed 2026-11-07.)
-    """
-    import pywinauto
-
-    if not _ensure_foreground(win_handle):
-        return False
-    try:
-        app = pywinauto.Application(backend="uia").connect(handle=win_handle)
-        w = app.window(handle=win_handle)
-        pt = _nav_click_point(w, label, idx, wx, wy)
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
-        return False
-    if pt is None or not _ensure_foreground(win_handle):
-        return False
-    try:
-        pywinauto.mouse.click(button="left", coords=(pt[0], pt[1]))
-    except Exception as exc:
-        logger.debug("tolerated automation miss: %s", exc)
-        return False
-    _release_mouse(win_handle)
-    return True
-
-
-def _parse_nav_routes(raw) -> list[tuple[str, str]]:
-    """Accept dict-format routes ({label, path, expect?}) and legacy pairs."""
-    routes: list[tuple[str, str]] = []
-    for r in raw or []:
-        if isinstance(r, dict):
-            label = (r.get("label") or "").strip()
-            if label:
-                routes.append((label, str(r.get("expect") or label)))
-        elif isinstance(r, (list, tuple)) and len(r) >= 2:
-            routes.append((str(r[0]), str(r[1])))
-    return routes
+        with open(path, encoding="utf-8") as f:
+            before = json.load(f)
+    except (OSError, ValueError):
+        before = None
+    if before is not None:
+        added = [label for label in labels if label not in before]
+        removed = [label for label in before if label not in labels]
+        if added or removed:
+            log(f"Sidebar changed since last run: added {added}, removed {removed}")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(labels, f)
 
 
 def nav_click_through(output_dir: str):
-    """Click each sidebar nav item, verify page loads via OCR."""
-    global _NAV_OK, _NAV_TOTAL
+    """Walk every sidebar page the app actually offers; fail the phase on any problem.
+
+    Pages are discovered from the live UI on each run, so adding or deleting a sidebar
+    entry needs no config change (a configured list went stale silently, and a repo with
+    no list walked a hardcoded four-page default). The phase FAILS when no sidebar is found,
+    a page's screenshot is identical to the previous page's (navigation had no visible
+    effect), or a page shows an error/empty OCR. Optional config `nav_must_include`
+    (labels) guards against discovery regressions; legacy `nav_routes` is ignored.
+    """
     if not cua_available():
         log("CUA client unavailable -- nav click-through skipped")
         return
     _release_mouse()
     _show_automation_warning()
 
-    nav_routes = _parse_nav_routes(
-        cfg(
-            "nav_routes",
-            [["Dashboard", "Automation Dashboard"], ["Logging", "Logs"], ["Settings", "Settings"], ["Help", "Help"]],
-        )
-    )
-    if not nav_routes:
-        phase_fail("No nav routes configured - check cua-nsis-config.json format")
     win = cua_find_window(WINDOW_TITLE_RE)
     if not win:
-        log("No window found for nav click-through")
-        return
-    snap_dir = os.path.join(output_dir, "nav")
+        phase_fail("No window found for nav click-through")
     handle = win.get("handle", 0)
+    snap_dir = os.path.join(output_dir, "nav")
+    os.makedirs(snap_dir, exist_ok=True)
 
-    _ensure_foreground(handle)
-    _NAV_OK = 0
-    _NAV_TOTAL = len(nav_routes)
+    _foreground_and_maximize(handle)
 
-    for idx, (label, expected_header) in enumerate(nav_routes):
+    import pywinauto
+
+    w = pywinauto.Application(backend="uia").connect(handle=handle).window(handle=handle)
+    # Settle + retry: the scan runs right after maximize, and a WebView2 UIA
+    # tree mid-re-layout reports every link invisible/unnamed (observed
+    # 2026-11-01 on splatmaker-mcp: 0 links found, same binary passed twice
+    # before and after — app renders fine, the scan was just early).
+    labels: list = []
+    for attempt in range(1, 4):
+        time.sleep(5)
+        labels = [label for label, _el in _sidebar_links(w)]
+        if labels:
+            if attempt > 1:
+                log(f"Sidebar discovered on attempt {attempt} (UIA settle race, not an app bug)")
+            break
+        log(f"Sidebar scan attempt {attempt}: no links yet, waiting for the UIA tree to settle")
+    if labels:
+        # Scrolling discovery: below-fold entries are invisible to UIA, so walk
+        # the sidebar top to bottom, merging every scan. Stops when two full
+        # sweeps add nothing new. Without this, long sidebars silently skip
+        # every page below the fold (observed 2026-11-07: 8 of 12 walked).
+        viewport = _sidebar_viewport(w)
+        _scroll_sidebar(w, handle, viewport, -30)
+        time.sleep(0.6)
+        seen = list(labels)
+        stable_rounds = 0
+        for _ in range(15):
+            if not _scroll_sidebar(w, handle, viewport, 3):
+                break
+            time.sleep(0.4)
+            grown = False
+            for label, _el in _sidebar_links(w):
+                if label not in seen:
+                    seen.append(label)
+                    grown = True
+            if grown:
+                stable_rounds = 0
+            else:
+                stable_rounds += 1
+                if stable_rounds >= 2:
+                    break
+        if len(seen) > len(labels):
+            log(f"Scrolling discovery added {len(seen) - len(labels)} below-fold pages")
+        labels = seen
+        _scroll_sidebar(w, handle, viewport, -30)
+        time.sleep(0.6)
+    if not labels:
+        phase_fail("no sidebar links discovered (icon-only collapsed sidebar, or nav is not <a> links)")
+    log(f"Discovered {len(labels)} sidebar pages: {', '.join(labels)}")
+    if cfg("nav_routes"):
+        log("config nav_routes is ignored: pages are discovered from the sidebar (you can remove it)")
+    _log_nav_changes(snap_dir, labels)
+
+    failures = [
+        (label, "required by nav_must_include but not in sidebar")
+        for label in cfg("nav_must_include", [])
+        if label not in labels
+    ]
+    previous = None
+    for index, label in enumerate(labels, 1):
         try:
-            # Re-read the rect every round: maximize/focus changes move it,
-            # and stale wx/wy is how clicks land in the wrong window.
             cur = cua_find_window(WINDOW_TITLE_RE, retry_seconds=2) or win
-            r = cur.get("rect", {}) or {}
-            wx = r.get("left", 0) or 0
-            wy = r.get("top", 0) or 0
-            clicked = _nav_click_element(handle, wx, wy, idx, label)
-            if not clicked:
-                log(f"Nav '{label}': SKIPPED (target window lost foreground, not spraying input)")
+            win_rect = cur.get("rect", {}) or {}
+            viewport = _sidebar_viewport(w)
+            el = _scroll_into_view(w, handle, label, viewport)
+            if el is None:
+                failures.append((label, "never scrolled into view after 12 wheel rounds"))
                 continue
-            time.sleep(3)
+            navigated = False
+            for _click_round in (1, 2):
+                if not _invoke(el, handle, win_rect):
+                    failures.append((label, "click refused (focus lost or point outside window)"))
+                    break
+                time.sleep(3)
+                if _menu_open(w):
+                    log(f"Nav '{label}': context menu appeared after click - dismissing and retrying once")
+                    _release_mouse(handle)
+                    time.sleep(0.5)
+                    continue
+                navigated = True
+                break
+            if not navigated:
+                failures.append((label, "context menu persisted after retry"))
+                continue
 
-            snap_path = os.path.join(snap_dir, f"nav-{label.lower()}-{int(time.time())}.png")
-            os.makedirs(snap_dir, exist_ok=True)
+            slug = "".join(c if c.isalnum() else "-" for c in label.lower()).strip("-")
+            snap_path = os.path.join(snap_dir, f"nav-{index:02d}-{slug}.png")
             cua_screenshot(handle, snap_path)
-            text = cua_ocr_text(handle, snap_path)
+            with open(snap_path, "rb") as f:
+                digest = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
+            if digest == previous:
+                failures.append((label, "screenshot identical to the previous page: navigation had no visible effect"))
+            previous = digest
 
-            if _verify_page_ocr(text, label, expected_header):
-                _NAV_OK += 1
+            text = cua_ocr_text(handle, snap_path)
+            if not _verify_page_ocr(text, label, ""):
+                failures.append((label, "error page or empty OCR"))
+            elif label.lower() not in text.lower():
+                log_warn(f"Page '{label}': its name was not found in OCR (title may differ; check the screenshot)")
+            log(f"Nav {index}/{len(labels)} '{label}': ok")
+        except PhaseFailed:
+            raise
         except Exception as e:
-            log(f"Nav '{label}' failed (non-fatal): {e}")
+            failures.append((label, str(e)))
+            log(f"Nav '{label}' failed: {e}")
             _release_mouse(handle)
 
     _release_mouse(handle)
-    log(f"Nav click-through: {_NAV_OK}/{_NAV_TOTAL} pages verified")
-    if _NAV_OK == 0:
-        phase_fail(f"Nav click-through verified 0/{_NAV_TOTAL} pages - clicks are not landing")
+    _NAV_STATE["pages"] = len(labels)
+    if failures:
+        phase_fail(f"nav walk problems: {failures}")
+    log(f"All {len(labels)} discovered pages navigated, each visibly different from the last")
 
 
 # ── Phase 9b: Backend-receipt proof (bypasses webview entirely) ─────────
@@ -788,7 +991,7 @@ def verify_backend_received_requests(baseline_count: int):
         return
 
     new_count = data.get("count", 0) - baseline_count
-    nav_route_count = len(cfg("nav_routes", []))
+    nav_route_count = _NAV_STATE["pages"]
     if new_count <= 0:
         phase_fail(
             f"Backend received ZERO new requests during nav click-through "
@@ -802,8 +1005,6 @@ def verify_backend_received_requests(baseline_count: int):
             f"pages visited -- some pages' fetches may not be landing."
         )
     else:
-        global _BACKEND_RECEIPT_PROOF
-        _BACKEND_RECEIPT_PROOF = True
         log(f"Backend-receipt OK: {new_count} requests logged during nav click-through")
 
 
@@ -878,7 +1079,9 @@ def uninstall():
             "powershell",
             "-NoProfile",
             "-Command",
-            f"Get-ItemProperty 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' -ErrorAction SilentlyContinue | Where-Object {{ $_.DisplayName -like '{REGISTRY_FILTER}' }}",
+            "Get-ItemProperty 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' "
+            "-ErrorAction SilentlyContinue | "
+            f"Where-Object {{ $_.DisplayName -like '{REGISTRY_FILTER}' }}",
         ],
         capture_output=True,
         text=True,
@@ -890,40 +1093,45 @@ def uninstall():
         log("Clean: app uninstalled")
 
 
-# ── Result file (release-gate contract) ──────────────────────────
+# ── Main ──────────────────────────────────────────────────────────────
 
 
-def _write_cua_result(output_dir: str, passed: int, failed: int):
-    """Write cua-reports/cua-result.json for check-release-gate.ps1.
+def _write_result(output_dir, installer, phase_results, passed, failed, fatal_failed):
+    """Write cua-reports/cua-result.json: the machine-readable record the release gate checks.
 
-    Schema (gate reads all_passed, passed, failed, pywinauto,
-    backend_receipt_proof, finished_at, installer_sha256): any field
-    false/missing fails the gate. Written on EVERY run, pass or fail,
-    so a red run leaves red evidence instead of a missing file.
+    A gate must never trust "a report exists" (see CRITICAL PITFALLs above). It verifies
+    installer_sha256 against the release asset it is about to ship, all_passed, pywinauto, and that the
+    Backend-receipt proof phase ran and passed.
     """
+    import datetime
+
+    sha = size = None
+    if installer and os.path.isfile(installer):
+        h = hashlib.sha256()
+        with open(installer, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                h.update(chunk)
+        sha, size = h.hexdigest(), os.path.getsize(installer)
+    proof = any(p["name"] == "Backend-receipt proof" and p["ok"] for p in phase_results)
     result = {
-        "cua_smoke_version": CUA_SMOKE_VERSION,
+        "schema": 1,
+        "smoke_version": CUA_SMOKE_VERSION,
         "product": PRODUCT_NAME,
-        "all_passed": failed == 0 and _HAS_PYWAUTO,
+        "installer": os.path.basename(installer) if installer else None,
+        "installer_sha256": sha,
+        "installer_size": size,
+        "pywinauto": bool(_HAS_PYWAUTO),
+        "backend_receipt_proof": proof,
+        "phases": phase_results,
         "passed": passed,
         "failed": failed,
-        "pywinauto": bool(_HAS_PYWAUTO),
-        "backend_receipt_proof": bool(_BACKEND_RECEIPT_PROOF),
-        "nav_verified": f"{_NAV_OK}/{_NAV_TOTAL}",
-        "installer_sha256": _INSTALLER_SHA256,
-        "finished_at": datetime.now(UTC).isoformat(),
+        "all_passed": bool(passed and not failed and not fatal_failed and _HAS_PYWAUTO and proof and sha),
+        "finished_at": datetime.datetime.now(datetime.UTC).isoformat(),
     }
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-        path = os.path.join(output_dir, "cua-result.json")
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2)
-        log(f"CUA result written: {path} (all_passed={result['all_passed']})")
-    except Exception as exc:
-        log(f"Could not write CUA result (non-fatal): {exc}")
-
-
-# ── Main ──────────────────────────────────────────────────────────────
+    os.makedirs(output_dir, exist_ok=True)
+    with open(os.path.join(output_dir, "cua-result.json"), "w", encoding="utf-8") as fh:
+        json.dump(result, fh, indent=2)
+    print(f"  Wrote {os.path.join(output_dir, 'cua-result.json')} (all_passed={result['all_passed']})")
 
 
 def main():
@@ -948,9 +1156,15 @@ def main():
         _capture_nav_baseline()
         nav_click_through(args.output_dir)
 
+    _installer = {"path": None}
+
+    def _install_phase():
+        _installer["path"] = args.installer or find_installer()
+        silent_install(_installer["path"])
+
     phases = [
         (True, "Kill stale processes", lambda: kill_stale()),
-        (True, "Install NSIS", lambda: silent_install(args.installer or find_installer())),
+        (True, "Install NSIS", _install_phase),
         (True, "Launch app", launch_app),
         (False, "Verify window", verify_window),
         (False, "Screenshot", lambda: take_screenshot(args.output_dir)),
@@ -965,6 +1179,7 @@ def main():
 
     passed = failed = 0
     fatal_failed = False
+    phase_results: list[dict] = []
 
     print(f"\n{'=' * 50}")
     print(f"  CUA Smoke Test - {PRODUCT_NAME}")
@@ -983,22 +1198,25 @@ def main():
                 fn()
                 print(f"  V {name}\n")
                 passed += 1
+                phase_results.append({"name": name, "ok": True})
             except PhaseFailed:
                 print(f"  X {name}\n")
                 failed += 1
+                phase_results.append({"name": name, "ok": False})
                 if is_fatal:
                     fatal_failed = True
             except Exception as e:
                 print(f"  X {name}: {e}\n")
                 failed += 1
+                phase_results.append({"name": name, "ok": False, "error": str(e)[:300]})
                 if is_fatal:
                     fatal_failed = True
     finally:
         _release_mouse()
+        _write_result(args.output_dir, _installer["path"], phase_results, passed, failed, fatal_failed)
 
     print(f"{'=' * 50}")
     print(f"  Result: {passed}/{passed + failed} phases passed")
-    _write_cua_result(output_dir=args.output_dir, passed=passed, failed=failed)
     if not _HAS_PYWAUTO:
         print("  WARNING: pywinauto was NOT importable in this venv - every GUI-driven")
         print("  phase (window verify, screenshot, WebView OCR, nav click-through) was")
