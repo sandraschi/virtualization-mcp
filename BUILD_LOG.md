@@ -49,11 +49,37 @@ Tauri NSIS `Virtualization MCP_1.7.0_x64-setup.exe` (40.35 MiB) +
 contract-name copy `dist/virtualization-mcp-1.7.0-setup.exe` (same bytes).
 **Gate:** `check-release-gate.ps1 -Local -Version 1.7.0` 10/11 PASS -
 only `cua-reports/cua-result.json` missing.
-**Remaining for SHIP:** `just cua-nsis-test` (interactive desktop takeover,
-needs Sandra's explicit go) -> commit (16 modified + 8 new files, exceeds
-10-file single-commit limit: split per AGENT policy) -> tag `v1.7.0` ->
-`gh release create` with `virtualization-mcp-1.7.0.mcpb` +
-`virtualization-mcp-1.7.0-setup.exe`.
+**Remaining for SHIP (at that point):** `just cua-nsis-test` -> commit ->
+tag `v1.7.0` -> `gh release create` with both contract-named assets.
+
+### 2026-11-07 ~15:05 +01:00 — v1.7.0 CUA smoke (PASS 12/12) + gate (11/11 PASS)
+
+**Trigger:** Sandra watched run #1 right-clicking (context menus), missing
+pages, taskbar clicks + chat interruption. Forensics + fixes, vendored to the
+fleet template as cua-smoke v17/v18 (commits mcd@c876f0f0, mcd@8ce1d7eb).
+**Root causes found (all fixed, all with regression coverage in the script):**
+1. Run #1 parsed dict-format nav_routes with pair indexing -> KeyError: 0,
+   nav walk never ran (the ": 0" in "X Nav click-through: 0").
+2. UIA click_input()/synthetic clicks on WebView2 links intermittently open
+   link context menus instead of navigating; OCR-against-sidebar-text could
+   not tell a menu from a navigation (label always on screen) and digest-diff
+   counted menus as "visible effect" -> systematic false passes. Nav now
+   actuates via UIA Invoke only; labels verify against the main panel crop.
+3. Sidebar has 15 entries, ~7 visible: below-fold clicks landed on black
+   space/taskbar. Now: scrolling discovery (found 6 below-fold pages) +
+   scroll-into-view before actuation + in-window guard.
+4. Global Escape sprayed into whatever held focus (chat compose interrupted).
+   Now: foreground-guarded clicks and Escape; skips + logs when focus is lost.
+5. Previous runs never tested the installed app: Tauri sidecar serves
+   :10701 but CUA probed :10700 (vite dev server, /api proxied to the dev
+   backend) -> all green against the dev stack. Config now probes 10701 +
+   freshness probe (request-log 200 = current build) + port-free verify.
+**Result:** 15/15 pages navigated (digest-differing screenshots each),
+48 backend requests logged during the walk (receipt proof),
+cua-result.json all_passed=True, installer sha bound (57750b85a110).
+Gate `check-release-gate.ps1 -Local -Version 1.7.0`: 11/11 PASS.
+**Remaining for SHIP:** tag `v1.7.0` + `gh release create` with
+`virtualization-mcp-1.7.0.mcpb` + `virtualization-mcp-1.7.0-setup.exe`.
 
 ## 2026-09-20 ~20:30 +02:00 — v1.6.0 release build (SHIPPED)
 

@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "smoke_version": 18,
+  "product": "Virtualization MCP",
+  "installer": "Virtualization MCP_1.7.0_x64-setup.exe",
+  "installer_sha256": "57750b85a1100ae6708477f13bf88af64941856352de18fb4753685f9c0855e0",
+  "installer_size": 42364619,
+  "pywinauto": true,
+  "backend_receipt_proof": true,
+  "phases": [
+    {
+      "name": "Kill stale processes",
+      "ok": true
+    },
+    {
+      "name": "Install NSIS",
+      "ok": true
+    },
+    {
+      "name": "Launch app",
+      "ok": true
+    },
+    {
+      "name": "Verify window",
+      "ok": true
+    },
+    {
+      "name": "Screenshot",
+      "ok": true
+    },
+    {
+      "name": "Feature route",
+      "ok": true
+    },
+    {
+      "name": "Check diagnostics",
+      "ok": true
+    },
+    {
+      "name": "WebView bridge",
+      "ok": true
+    },
+    {
+      "name": "Nav click-through",
+      "ok": true
+    },
+    {
+      "name": "Backend-receipt proof",
+      "ok": true
+    },
+    {
+      "name": "Analyze app logs",
+      "ok": true
+    },
+    {
+      "name": "Uninstall",
+      "ok": true
+    }
+  ],
+  "passed": 12,
+  "failed": 0,
+  "all_passed": true,
+  "finished_at": "2026-11-07T14:05:36.203461+00:00"
+}

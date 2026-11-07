@@ -153,3 +153,8 @@ pytest_full_output.txt
 reports/
 
 _dashboard/
+
+# CUA smoke evidence: screenshots are machine-specific noise, the result JSON is the release-gate proof (tracked).
+cua-reports/*.png
+cua-reports/nav/
+cua-reports/nav-last.json
