@@ -9,6 +9,13 @@ from ..vbox.compat_adapter import VBoxManagerError, get_vbox_manager
 from ..vbox.vm_operations import VMOperations
 from .hyperv_manager import hyperv_manager
 
+try:
+    from .vmware_manager import VmwareManager
+
+    _vmware_manager: VmwareManager | None = VmwareManager()
+except Exception:  # vmrun missing is normal, not fatal
+    _vmware_manager = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,6 +27,7 @@ class VMService:
         self.vbox_manager = get_vbox_manager()
         self.vm_operations = VMOperations(self.vbox_manager)
         self.hyperv_manager = hyperv_manager
+        self.vmware_manager = _vmware_manager
 
         # Alias for main.py endpoint access
         self.vbox_operations = self.vm_operations
