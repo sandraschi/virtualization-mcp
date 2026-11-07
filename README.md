@@ -8,9 +8,20 @@ Spin up VMs, sandboxes, and dev environments from Claude Desktop, Cursor, or the
   <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.4.4+-7c5cfc?style=flat-square" alt="FastMCP"></a>
 </p>
 
+## Download
+
+**End users:** get `virtualization-mcp-1.7.0-setup.exe` from
+[Releases](https://github.com/sandraschi/virtualization-mcp/releases) — one
+download installs the webapp with embedded backend. The installer is
+unsigned: on SmartScreen click "More info > Run anyway". Claude Desktop-only
+users can register `virtualization-mcp-1.7.0.mcpb` from the same release
+instead (MCP server only, no webapp).
+
 ## Features
 
 - **VirtualBox & Hyper-V** — create, start, stop, snapshot, clone VMs
+- **VMware Workstation Pro (free)** — vmrun-driven list/start/stop/suspend/snapshots/clone + webapp page; best Windows path for macOS slow-tests
+- **Hackintosh lab page** — Intel-notebook-first guidance, 16GB floor, Goliath slow-test checklist
 - **Libvirt / KVM / QEMU** — native Linux and WSL2 hypervisor management
 - **Automated Naked Install Testing** — zero-touch verification on clean Windows Sandbox (`just naked-test`, REST endpoints, and `win_sandbox_naked_test` FastMCP tools) enforcing NAKED_PC_INSTALL_STANDARD with 4 fail-loud gates
 - **Windows Sandbox & MCP Tools** — consumer (nearly naked) and dev-infra bringups with direct MCP tool triggers (`win_sandbox_launch_consumer`, `win_sandbox_launch_devinfra`, `win_sandbox_terminate`, `win_sandbox_naked_test`) and singleton auto-cleanup

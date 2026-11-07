@@ -3,6 +3,58 @@
 Running record for Tauri/NSIS builds (fleet NSIS Build Gate requires this file).
 Newest entry first.
 
+## 2026-11-07 ~02:10 +01:00 — v1.7.0 release PREP (VMware create/delete + Hackintosh page)
+
+**Trigger:** `vmware_management` could not create VMs (vmrun has no create
+verb; page told users to create VMs manually) + 64-bit Workstation installs
+probed as "vmrun not found".
+**Changes:** `VmwareManager.create_vm/delete_vm` (.vmx + `.vmdk` via
+vmware-vdiskmanager), `create`/`delete` MCP actions, `POST
+/api/v1/vmware/create` + `action=delete` + `provider: "vmware"` on
+`POST /api/v1/vms`, VMware page New-VM form + delete button, Hackintosh lab
+page, versions 1.6.1 -> 1.7.0 (pyproject incl. uv-dynamic fallback,
+`__init__.__version__`, root + mcpb manifests, tauri.conf.json,
+Cargo.toml/lock), CHANGELOG entry.
+**Gates:** `ruff check` + `ruff format --check` clean; `tsc -b` + `vite
+build` clean (2260 modules, 6.56s; chunk-size warning pre-existing);
+`just test` 700 passed / 191 skipped; `test_app_version_matches_package_version`
+re-verified at 1.7.0.
+**Blocked:** `just mcpb-pack` fails at step 4 (import isolation) - `uv`
+cannot replace `.venv\Scripts\virtualization-mcp.exe`, held by a live MCP
+session tree (65452 -> 55112 -> 236792, started 00:59, predates this
+session). Same os-error-32 gremlin as the v1.6.0 entry. `uv run` anything
+(incl. pytest) hits the same lock; venv-python-direct works. Left running
+deliberately - kill the holder tree to proceed.
+**Remaining for SHIP:** kill holders -> `just mcpb-pack` -> `just
+build-native` -> `just cua-nsis-test` -> local gate -> tag `v1.7.0` + `gh
+release create` with both assets.
+
+### 2026-11-07 ~02:30 +01:00 — v1.7.0 mcpb-pack (PASS)
+
+**Trigger:** Stale `virtualization-mcp.exe` holders (65452 -> 55112 -> 236792)
+killed with Sandra's go; lock released, dev backend (uvicorn :10701) untouched.
+**Pack:** all required checks green - import isolation (v1.7.0 banner,
+"VMware management tool registered" in probe log), AST, pollution,
+prompts 3371/4002/100, launch check (clean-unpack TCP accept).
+Output `dist/virtualization_mcp-v1.7.0.mcpb` (358.6 KB, sha256
+f2c9fd9d...) + contract-name copy `dist/virtualization-mcp-1.7.0.mcpb`
+(same hash, for the gate/upload name).
+
+### 2026-11-07 ~02:45 +01:00 — v1.7.0 NSIS build (PASS, not yet shipped)
+
+**Trigger:** Release prep continued with Sandra's go after the mcpb-pack.
+**Build:** `just build-native` exit 0. Frontend (tsc + vite, 2260 modules),
+PyInstaller backend `dist/virtualization-mcp-backend.exe` (38.18 MB),
+Tauri NSIS `Virtualization MCP_1.7.0_x64-setup.exe` (40.35 MiB) +
+contract-name copy `dist/virtualization-mcp-1.7.0-setup.exe` (same bytes).
+**Gate:** `check-release-gate.ps1 -Local -Version 1.7.0` 10/11 PASS -
+only `cua-reports/cua-result.json` missing.
+**Remaining for SHIP:** `just cua-nsis-test` (interactive desktop takeover,
+needs Sandra's explicit go) -> commit (16 modified + 8 new files, exceeds
+10-file single-commit limit: split per AGENT policy) -> tag `v1.7.0` ->
+`gh release create` with `virtualization-mcp-1.7.0.mcpb` +
+`virtualization-mcp-1.7.0-setup.exe`.
+
 ## 2026-09-20 ~20:30 +02:00 — v1.6.0 release build (SHIPPED)
 
 **Trigger:** Fail-soft VBox init fix + version bump for release.

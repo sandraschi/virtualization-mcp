@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit pilot config for virtualization-mcp — 2-week trial, chill profile.
+# Docs: https://docs.coderabbit.ai/getting-started/yaml-configuration
+language: "en-US"
+early_access: false
+
+reviews:
+  profile: "chill" # quiet | chill | assertive — chill = balanced, least spam for solo pilot
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: false # noise on VM CRUD PRs — turn on later if useful
+  estimate_code_review_effort: false
+  related_issues: false
+  related_prs: false
+  suggested_labels: true
+  auto_approvals:
+    enabled: false # never auto-approve VM/sandbox exec paths
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 10
+    drafts: false
+    base_branches: [] # default = default branch only (master here)
+    ignore_title_keywords:
+      - "WIP"
+      - "wip(auto)"
+      - "[skip review]"
+      - "[skip-reviewer]"
+
+  # Scope: review everything EXCEPT generated / binary / log / vendored output.
+  # Syntax: `!` = exclude. These also apply to git sparse-checkout.
+  path_filters:
+    - "!**/.venv/**"
+    - "!**/__pycache__/**"
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/target/**"
+    - "!**/src-tauri/target/**"
+    - "!**/src-tauri/binaries/**"
+    - "!**/VMs/**"
+    - "!**/*.vdi"
+    - "!**/*.vmdk"
+    - "!**/*.ova"
+    - "!**/*.iso"
+    - "!**/logs/**"
+    - "!**/*.log"
+    - "!**/junit/**"
+    - "!**/coverage.xml"
+    - "!**/.coverage*"
+    - "!**/security_reports/**"
+    - "!**/cua-reports/**"
+    - "!**/reports/**"
+    - "!**/backups/**"
+    - "!**/quarantine/**"
+    - "!**/*.bak"
+    - "!**/*.bak.*"
+    - "!**/uv.lock"
+    - "!**/package-lock.json"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.svg"
+    - "!**/*.ico"
+    - "!**/webapp/dist/**"
+
+  path_instructions:
+    - path: "src/**/*.py"
+      instructions: |
+        FastMCP Python server (fleet standard: FastMCP >=3.4, portmanteau tools with `operation` enum, no stubs).
+        Focus review on: command injection via vmrun / VBoxManage / PowerShell / Docker args, path traversal on VM names and disk paths, unsandboxed subprocess calls, hardcoded ports (must come from config/env, allowed range 10700-15000), secrets in logs, broad `except Exception` swallowing VM failures.
+        Do NOT nit formatting — ruff handles that. Do NOT suggest adding dependencies without noting `uv` workflow.
+    - path: "webapp/src/**/*.{ts,tsx}"
+      instructions: |
+        React + Vite + TypeScript + Tailwind (dark Slate-950/Zinc-950) + Zustand. No white backgrounds, no Bootstrap.
+        Flag: hardcoded tool lists (must be discovered from MCP server), hardcoded ports or backend URLs, mock/fake KPIs or dead buttons presented as live, missing data-testid on domain pages.
+        Do NOT nit formatting — biome/tsc handle that.
+    - path: "tests/**/*.py"
+      instructions: |
+        Tests must assert real behavior (VM lifecycle, snapshot, network). Flag tests with no asserts, undeclared mocks/fakes that pretend to touch VirtualBox/Hyper-V, and tests that shell out to real hypervisors without dry-run guards.
+    - path: "src-tauri/**"
+      instructions: |
+        Tauri 2.0 + NSIS path. Flag: frontend bypassing sidecar, new embedded binaries without allow-path notes, CORS widening. See standards/TAURI_PRODUCTION_PITFALLS.md checklist A-J for context.
+    - path: ".github/workflows/**"
+      instructions: |
+        Windows-only lightweight CI (ruff, biome, pytest, tsc). Private repos keep Actions account-disabled; agents run `just ci` locally. Flag Linux-only assumptions and unpinned actions.
+
+chat:
+  auto_reply: true

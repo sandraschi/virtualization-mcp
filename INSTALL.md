@@ -13,12 +13,18 @@ Control VirtualBox, Hyper-V, and Windows Sandbox from Claude Desktop or Cursor.
 | **Python + uv** | Options C, D | `winget install astral-sh.uv` |
 | **Node.js** | Option B, webapp | `winget install OpenJS.NodeJS` |
 
-> **Windows:** use [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/).  
+> **Windows:** use [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/).
 > After winget installs, close and reopen PowerShell so PATH updates apply.
 
 ---
 
 ## Option A — Drag and Drop (Recommended)
+
+> **Full install (webapp + backend):** download
+> `virtualization-mcp-*-setup.exe` from
+> [Releases](https://github.com/sandraschi/virtualization-mcp/releases/latest)
+> instead — one download, one shortcut. The installer is unsigned: on
+> SmartScreen click "More info > Run anyway".
 
 1. Open [Releases](https://github.com/sandraschi/virtualization-mcp/releases/latest)
 2. Download `virtualization-mcp-*.mcpb` (or build with `just mcpb-pack`)
