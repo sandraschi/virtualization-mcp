@@ -4,6 +4,7 @@ import ApiDocs from "./pages/api-docs";
 import Apps from "./pages/apps";
 import Chat from "./pages/chat";
 import Dashboard from "./pages/dashboard";
+import Hackintosh from "./pages/hackintosh";
 import Help from "./pages/help";
 import HyperV from "./pages/hyperv";
 import Logs from "./pages/logs";
@@ -14,6 +15,7 @@ import Settings from "./pages/settings";
 import Tools from "./pages/tools";
 import VirtualBox from "./pages/virtualbox";
 import VmConsole from "./pages/vm-console";
+import Vmware from "./pages/vmware";
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="virtualbox" element={<VirtualBox />} />
+          <Route path="vmware" element={<Vmware />} />
+          <Route path="hackintosh" element={<Hackintosh />} />
           <Route path="hyperv" element={<HyperV />} />
           <Route path="proxmox" element={<Proxmox />} />
           <Route path="sandbox" element={<Sandbox />} />

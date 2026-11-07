@@ -65,6 +65,8 @@ export default function Layout() {
   const navItems = [
     { to: "/", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/virtualbox", icon: Server, label: "VirtualBox" },
+    { to: "/vmware", icon: Server, label: "VMware" },
+    { to: "/hackintosh", icon: Cpu, label: "Hackintosh" },
     { to: "/hyperv", icon: Cpu, label: "Hyper-V" },
     { to: "/proxmox", icon: Server, label: "Proxmox VE" },
     { to: "/sandbox", icon: Box, label: "Windows Sandbox" },
