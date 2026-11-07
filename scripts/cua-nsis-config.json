@@ -11,6 +11,8 @@
   "nav_routes": [
     {"label": "Dashboard", "path": "/"},
     {"label": "VirtualBox", "path": "/virtualbox"},
+    {"label": "VMware", "path": "/vmware"},
+    {"label": "Hackintosh", "path": "/hackintosh"},
     {"label": "Hyper-V", "path": "/hyperv"},
     {"label": "Proxmox", "path": "/proxmox"},
     {"label": "Sandbox", "path": "/sandbox"},

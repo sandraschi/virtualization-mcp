@@ -26,6 +26,7 @@ Phases (planned Phase 3): nav sidebar click-through, floating chat visibility.
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -34,6 +35,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +115,10 @@ MAX_RETRY = 20
 RETRY_DELAY = 3
 
 _INSTALLED = False
+_INSTALLER_SHA256 = ""
+_BACKEND_RECEIPT_PROOF = False
+_NAV_OK = 0
+_NAV_TOTAL = 0
 
 
 # ── Helpers (must be before CUA client) ────────────────────────────
@@ -250,12 +256,17 @@ def cua_click(window_handle: int, x: int, y: int):
         logger.debug("tolerated automation miss: %s", exc)
 
 
-def _release_mouse():
+def _release_mouse(handle: int = 0):
     """Release all mouse buttons and dismiss any stray context menu - call after
     any clicking to prevent stuck input. UIA click_input() on some WebView2/Chromium
     elements fires through the accessibility Invoke pattern rather than a true
     synthetic click, which Chromium can map to a contextmenu event when no direct
-    click handler is bound - Escape clears that before the next step."""
+    click handler is bound - Escape clears that before the next step.
+
+    The Escape keystroke is GLOBAL (keybd_event), so it is only sent when the
+    target window actually holds the foreground - otherwise it lands in
+    whatever the user (or a notification toast) just activated.
+    """
     try:
         import ctypes
 
@@ -266,6 +277,11 @@ def _release_mouse():
             ctypes.windll.user32.mouse_event(flag, 0, 0, 0, 0)
     except Exception as exc:
         logger.debug("tolerated automation miss: %s", exc)
+    if handle and not _our_window_foreground(handle):
+        log("Skipping Escape - target window does not hold foreground")
+        return
+    if not handle:
+        return
     try:
         import ctypes
 
@@ -320,6 +336,16 @@ def find_installer() -> str:
 
 def silent_install(installer: str):
     log(f"Installing: {installer}")
+    try:
+        h = hashlib.sha256()
+        with open(installer, "rb") as f:
+            for chunk in iter(lambda: f.read(8 * 1024 * 1024), b""):
+                h.update(chunk)
+        global _INSTALLER_SHA256
+        _INSTALLER_SHA256 = h.hexdigest().lower()
+        log(f"Installer sha256: {_INSTALLER_SHA256[:12]}...")
+    except Exception as exc:
+        log(f"Could not hash installer (non-fatal): {exc}")
     r = subprocess.run([installer, "/S"], capture_output=True, timeout=120)
     if r.returncode != 0:
         fatal(f"NSIS install exited with code {r.returncode}")
@@ -377,6 +403,37 @@ def _foreground_and_maximize(handle: int):
         time.sleep(1)
     except Exception as exc:
         logger.debug("tolerated automation miss: %s", exc)
+
+
+def _our_window_foreground(handle: int) -> bool:
+    """True if the target window currently owns the foreground.
+
+    Notification toasts (Outlook et al.) steal focus mid-run; every
+    synthetic click and every global keystroke MUST be gated on this,
+    otherwise input lands in whatever app the user (or a toast) just
+    activated. Observed 2026-11-07: stray Escape interrupted a chat
+    compose while a toast held focus.
+    """
+    try:
+        import ctypes
+
+        return ctypes.windll.user32.GetForegroundWindow() == handle
+    except Exception as exc:
+        logger.debug("tolerated automation miss: %s", exc)
+        return False
+
+
+def _ensure_foreground(handle: int, tries: int = 3) -> bool:
+    """Re-foreground the target window; True if it now holds focus."""
+    for _ in range(tries):
+        if _our_window_foreground(handle):
+            return True
+        _foreground_and_maximize(handle)
+        time.sleep(1)
+    ok = _our_window_foreground(handle)
+    if not ok:
+        log("WARNING: could not reclaim foreground - skipping input this round")
+    return ok
 
 
 def verify_window():
@@ -527,86 +584,152 @@ def _verify_page_ocr(text: str, label: str, expected: str) -> bool:
     return False
 
 
-def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str = ""):
-    """Click a nav item. Tries title-based UIA matching first, then index, then coordinates."""
-    import pywinauto
+def _element_center(el) -> tuple[int, int] | None:
+    """Center of a UIA element's rectangle in absolute screen coords."""
+    try:
+        r = el.rectangle()
+        return (r.left + r.width() // 2, r.top + r.height() // 2)
+    except Exception as exc:
+        logger.debug("tolerated automation miss: %s", exc)
+        return None
 
-    app = pywinauto.Application(backend="uia").connect(handle=win_handle)
-    w = app.window(handle=win_handle)
 
-    # Preferred: match by accessible name (title= is the pywinauto criteria for UIA Name).
-    # Index-based Hyperlink ordering is fragile - sidebar order may differ from nav_routes.
+def _nav_click_point(w, label: str, idx: int, wx: int, wy: int) -> tuple[int, int] | None:
+    """Locate a nav item WITHOUT clicking. UIA is used for finding only.
+
+    Preferred: match by accessible name. Then hyperlink text, positional
+    hyperlink, sidebar Pane. Final fallback: the config coordinate grid.
+    Returns absolute screen coords, never None (grid always answers).
+    """
     if label:
         try:
             link = w.descendants(title=label)
             if link:
-                link[0].click_input()
-                return
+                pt = _element_center(link[0])
+                if pt:
+                    return pt
         except Exception as exc:
             logger.debug("tolerated poll-loop miss: %s", exc)
         try:
             elements = w.descendants(control_type="Hyperlink")
             el = [e for e in elements if label.lower() in (e.window_text() or "").lower()]
             if el:
-                el[0].click_input()
-                return
+                pt = _element_center(el[0])
+                if pt:
+                    return pt
         except Exception as exc:
             logger.debug("tolerated poll-loop miss: %s", exc)
-
-    # Fallback: positional Hyperlink
     try:
         elements = w.descendants(control_type="Hyperlink")
         if idx < len(elements):
-            elements[idx].click_input()
-            return
+            pt = _element_center(elements[idx])
+            if pt:
+                return pt
     except Exception as exc:
         logger.debug("tolerated automation miss: %s", exc)
-    # Try Pane (some WebView versions)
     try:
         elements = w.descendants(control_type="Pane")
         nav_elements = [e for e in elements if e.rectangle().left < wx + 200]
         nav_elements_sorted = sorted(nav_elements, key=lambda e: e.rectangle().top)
         if idx < len(nav_elements_sorted):
-            nav_elements_sorted[idx].click_input()
-            return
+            pt = _element_center(nav_elements_sorted[idx])
+            if pt:
+                return pt
     except Exception as exc:
         logger.debug("tolerated automation miss: %s", exc)
+    return (
+        wx + int(cfg("sidebar_click_x", 30)),
+        wy + int(cfg("sidebar_first_y", 90)) + idx * int(cfg("sidebar_step_y", 55)),
+    )
 
-    # Fallback to coordinate click
-    click_x = wx + int(cfg("sidebar_click_x", 30))
-    click_y = wy + int(cfg("sidebar_first_y", 90)) + idx * int(cfg("sidebar_step_y", 55))
-    cua_click(win_handle, click_x, click_y)
+
+def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str = "") -> bool:
+    """Left-click a nav item at its element center. Returns False when the
+    target window does not hold the foreground (notification toast stole
+    focus) - the caller retries or skips instead of spraying input into
+    whatever app the user just activated.
+
+    Deliberately NEVER uses UIA click_input() on WebView2 content: it fires
+    through the accessibility Invoke pattern, which Chromium maps to a
+    contextmenu (right-click) event when no direct click handler is bound.
+    Real synthetic left-clicks at element coordinates do not have this
+    failure mode. (Observed 2026-11-07.)
+    """
+    import pywinauto
+
+    if not _ensure_foreground(win_handle):
+        return False
+    try:
+        app = pywinauto.Application(backend="uia").connect(handle=win_handle)
+        w = app.window(handle=win_handle)
+        pt = _nav_click_point(w, label, idx, wx, wy)
+    except Exception as exc:
+        logger.debug("tolerated automation miss: %s", exc)
+        return False
+    if pt is None or not _ensure_foreground(win_handle):
+        return False
+    try:
+        pywinauto.mouse.click(button="left", coords=(pt[0], pt[1]))
+    except Exception as exc:
+        logger.debug("tolerated automation miss: %s", exc)
+        return False
+    _release_mouse(win_handle)
+    return True
+
+
+def _parse_nav_routes(raw) -> list[tuple[str, str]]:
+    """Accept dict-format routes ({label, path, expect?}) and legacy pairs."""
+    routes: list[tuple[str, str]] = []
+    for r in raw or []:
+        if isinstance(r, dict):
+            label = (r.get("label") or "").strip()
+            if label:
+                routes.append((label, str(r.get("expect") or label)))
+        elif isinstance(r, (list, tuple)) and len(r) >= 2:
+            routes.append((str(r[0]), str(r[1])))
+    return routes
 
 
 def nav_click_through(output_dir: str):
     """Click each sidebar nav item, verify page loads via OCR."""
+    global _NAV_OK, _NAV_TOTAL
     if not cua_available():
         log("CUA client unavailable -- nav click-through skipped")
         return
     _release_mouse()
     _show_automation_warning()
 
-    nav_routes = cfg(
-        "nav_routes",
-        [["Dashboard", "Automation Dashboard"], ["Logging", "Logs"], ["Settings", "Settings"], ["Help", "Help"]],
+    nav_routes = _parse_nav_routes(
+        cfg(
+            "nav_routes",
+            [["Dashboard", "Automation Dashboard"], ["Logging", "Logs"], ["Settings", "Settings"], ["Help", "Help"]],
+        )
     )
-    nav_routes = [(r[0], r[1]) for r in nav_routes if len(r) >= 2]
+    if not nav_routes:
+        phase_fail("No nav routes configured - check cua-nsis-config.json format")
     win = cua_find_window(WINDOW_TITLE_RE)
     if not win:
         log("No window found for nav click-through")
         return
-    r = win.get("rect", {}) or {}
-    wx = r.get("left", 0) or 0
-    wy = r.get("top", 0) or 0
     snap_dir = os.path.join(output_dir, "nav")
     handle = win.get("handle", 0)
 
-    _foreground_and_maximize(handle)
+    _ensure_foreground(handle)
+    _NAV_OK = 0
+    _NAV_TOTAL = len(nav_routes)
 
     for idx, (label, expected_header) in enumerate(nav_routes):
         try:
-            _nav_click_element(handle, wx, wy, idx, label)
-            _release_mouse()
+            # Re-read the rect every round: maximize/focus changes move it,
+            # and stale wx/wy is how clicks land in the wrong window.
+            cur = cua_find_window(WINDOW_TITLE_RE, retry_seconds=2) or win
+            r = cur.get("rect", {}) or {}
+            wx = r.get("left", 0) or 0
+            wy = r.get("top", 0) or 0
+            clicked = _nav_click_element(handle, wx, wy, idx, label)
+            if not clicked:
+                log(f"Nav '{label}': SKIPPED (target window lost foreground, not spraying input)")
+                continue
             time.sleep(3)
 
             snap_path = os.path.join(snap_dir, f"nav-{label.lower()}-{int(time.time())}.png")
@@ -614,12 +737,16 @@ def nav_click_through(output_dir: str):
             cua_screenshot(handle, snap_path)
             text = cua_ocr_text(handle, snap_path)
 
-            _verify_page_ocr(text, label, expected_header)
+            if _verify_page_ocr(text, label, expected_header):
+                _NAV_OK += 1
         except Exception as e:
             log(f"Nav '{label}' failed (non-fatal): {e}")
-            _release_mouse()
+            _release_mouse(handle)
 
-    _release_mouse()
+    _release_mouse(handle)
+    log(f"Nav click-through: {_NAV_OK}/{_NAV_TOTAL} pages verified")
+    if _NAV_OK == 0:
+        phase_fail(f"Nav click-through verified 0/{_NAV_TOTAL} pages - clicks are not landing")
 
 
 # ── Phase 9b: Backend-receipt proof (bypasses webview entirely) ─────────
@@ -675,6 +802,8 @@ def verify_backend_received_requests(baseline_count: int):
             f"pages visited -- some pages' fetches may not be landing."
         )
     else:
+        global _BACKEND_RECEIPT_PROOF
+        _BACKEND_RECEIPT_PROOF = True
         log(f"Backend-receipt OK: {new_count} requests logged during nav click-through")
 
 
@@ -761,6 +890,39 @@ def uninstall():
         log("Clean: app uninstalled")
 
 
+# ── Result file (release-gate contract) ──────────────────────────
+
+
+def _write_cua_result(output_dir: str, passed: int, failed: int):
+    """Write cua-reports/cua-result.json for check-release-gate.ps1.
+
+    Schema (gate reads all_passed, passed, failed, pywinauto,
+    backend_receipt_proof, finished_at, installer_sha256): any field
+    false/missing fails the gate. Written on EVERY run, pass or fail,
+    so a red run leaves red evidence instead of a missing file.
+    """
+    result = {
+        "cua_smoke_version": CUA_SMOKE_VERSION,
+        "product": PRODUCT_NAME,
+        "all_passed": failed == 0 and _HAS_PYWAUTO,
+        "passed": passed,
+        "failed": failed,
+        "pywinauto": bool(_HAS_PYWAUTO),
+        "backend_receipt_proof": bool(_BACKEND_RECEIPT_PROOF),
+        "nav_verified": f"{_NAV_OK}/{_NAV_TOTAL}",
+        "installer_sha256": _INSTALLER_SHA256,
+        "finished_at": datetime.now(UTC).isoformat(),
+    }
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+        path = os.path.join(output_dir, "cua-result.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2)
+        log(f"CUA result written: {path} (all_passed={result['all_passed']})")
+    except Exception as exc:
+        log(f"Could not write CUA result (non-fatal): {exc}")
+
+
 # ── Main ──────────────────────────────────────────────────────────────
 
 
@@ -836,6 +998,7 @@ def main():
 
     print(f"{'=' * 50}")
     print(f"  Result: {passed}/{passed + failed} phases passed")
+    _write_cua_result(output_dir=args.output_dir, passed=passed, failed=failed)
     if not _HAS_PYWAUTO:
         print("  WARNING: pywinauto was NOT importable in this venv - every GUI-driven")
         print("  phase (window verify, screenshot, WebView OCR, nav click-through) was")

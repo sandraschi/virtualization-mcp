@@ -16,6 +16,7 @@ import threading
 import time
 import urllib.request
 import warnings
+from collections import deque
 from contextlib import asynccontextmanager
 from datetime import date
 from typing import Any
@@ -25,6 +26,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from virtualization_mcp.chat import ChatService
 
@@ -155,6 +157,40 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request log for the CUA backend-receipt proof (release gate): every HTTP
+# request is counted with method/path/status/ms in a capped in-memory ring.
+# Pure ASGI passthrough - never reads bodies. Lock is only ever held for a
+# deque append (microseconds, no await inside), so it cannot stall the loop.
+_REQUEST_LOG: deque = deque(maxlen=200)
+_REQUEST_LOG_COUNT = 0
+_REQUEST_LOG_LOCK = threading.Lock()
+
+
+class _RequestLogMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        global _REQUEST_LOG_COUNT
+        start = time.perf_counter()
+        status = 500
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            return response
+        finally:
+            ms = (time.perf_counter() - start) * 1000.0
+            with _REQUEST_LOG_LOCK:
+                _REQUEST_LOG_COUNT += 1
+                _REQUEST_LOG.append(
+                    {
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status": status,
+                        "ms": round(ms, 1),
+                    }
+                )
+
+
+app.add_middleware(_RequestLogMiddleware)
 
 # MCP protocol (Streamable HTTP) at /mcp for MCP clients. Fail-soft:
 # (mounted AFTER the /mcp/tools* bridge routes below: Starlette matches
@@ -2233,6 +2269,19 @@ async def status():
         "registry_file": REGISTRY_PATH,
         "registry_exists": registry_ok,
     }
+
+
+@app.get("/api/v1/request-log")
+async def request_log(limit: int = 50):
+    """CUA backend-receipt proof: HTTP request count + latest entries.
+
+    The release gate queries this after the nav click-through: zero new
+    requests means the webview's fetches never reached the backend and
+    every OCR pass was a false positive (browser-mcp incident, 2026-09-20).
+    """
+    with _REQUEST_LOG_LOCK:
+        items = list(_REQUEST_LOG)[-max(1, min(limit, 200)) :]
+        return {"count": _REQUEST_LOG_COUNT, "requests": list(reversed(items))}
 
 
 @app.get("/api/v1/assets/paths")
