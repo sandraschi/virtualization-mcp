@@ -2,14 +2,14 @@
 # ruff: noqa: S310  (urlopen is only used for loopback health/diagnostics URLs built from config)
 """CUA smoke test for NSIS-installed fleet apps (pywinauto-mcp canary).
 
-CUA_SMOKE_VERSION = 17  (v17: scroll-into-view sidebar walk (below-fold entries are
-scrolled visible before clicking, no black-space/taskbar clicks); coordinate
-LEFT-clicks only, UIA click_input() removed (it maps to a WebView2 contextmenu);
-foreground guard on every click and Escape (no input spray into toasts/chat);
-port-free verify after kill_stale + stale-backend freshness probe; v16: nav
-discovery retries the sidebar scan 3x over 15s for the maximize/layout UIA race;
-v15: writes cua-reports/cua-result.json for the release gate; v14: nav pages are
-discovered from the sidebar, not configured; the phase can fail)
+CUA_SMOKE_VERSION = 18  (v18: nav actuation is UIA Invoke ONLY - coordinate
+clicking removed entirely after fleet evidence (2026-11-07) proved pixel
+clicks on WebView2 links intermittently open link context menus instead of
+navigating, while OCR-against-sidebar-text cannot tell a menu from a
+navigation; label verification reads the main panel only; context menus fail
+the round loudly; v17: scroll-into-view walk, guarded input, port/freshness
+checks; v16: nav discovery retries; v15: cua-result.json; v14: discovered
+nav, phase can fail)
 If this file differs from templates/tauri-native/scripts/cua-smoke.py in
 mcp-central-docs, copy the template over - version number will have changed.
 
@@ -67,7 +67,7 @@ def load_config(path: str | None = None) -> dict:
     return {k: _expand(v) for k, v in cfg.items()}
 
 
-CUA_SMOKE_VERSION = 17  # bump when template changes; see docstring
+CUA_SMOKE_VERSION = 18  # bump when template changes; see docstring
 
 
 def _check_version():
@@ -478,27 +478,6 @@ def _ensure_foreground(handle: int, tries: int = 3) -> bool:
     return ok
 
 
-def _left_click_at(handle: int, x: int, y: int) -> bool:
-    """Real left-click at absolute screen coords. Never click_input().
-
-    UIA click_input() on WebView2 content fires through the accessibility
-    Invoke pattern, which Chromium maps to a contextmenu (right-click) event
-    when no direct click handler is bound (observed 2026-11-07: link context
-    menus opening over the sidebar). A true synthetic left button press has no
-    such mapping. Foreground-guarded: refuses to click into another app.
-    """
-    if not _ensure_foreground(handle):
-        return False
-    try:
-        import pywinauto.mouse
-
-        pywinauto.mouse.click(button="left", coords=(int(x), int(y)))
-    except Exception:
-        return False
-    _release_mouse(handle)
-    return True
-
-
 def _wheel(handle: int, x: int, y: int, notches_down: int) -> bool:
     """Roll the mouse wheel over (x, y). Positive notches_down scrolls down."""
     if not _ensure_foreground(handle):
@@ -698,29 +677,26 @@ def _sidebar_links(w):
     return links
 
 
-def _invoke(el, handle: int, win_rect: dict) -> bool:
-    """Left-click a UIA element at its visible center. No click_input() ever.
+def _invoke(el) -> bool:
+    """Navigate via the UIA Invoke control pattern. No mouse, no keyboard,
+    no coordinates, no fallback to clicking.
 
-    UIA click_input() on WebView2 content fires through the accessibility
-    Invoke pattern, which Chromium maps to a contextmenu (right-click) event
-    when no direct click handler is bound (observed 2026-11-07: link context
-    menus opening over the sidebar). A true synthetic left button press has no
-    such mapping. Refuses to click outside the window rect (no taskbar hits).
+    This is the ONLY actuation the nav walk uses, deliberately. Fleet evidence
+    (virtualization-mcp, 2026-11-07, two full walks): pixel clicks on WebView2
+    sidebar links - UIA click_input() AND synthetic left button presses -
+    intermittently open the link context menu ("Open link in new window"...)
+    instead of navigating, while OCR-against-sidebar-text cannot tell a menu
+    from a navigation (the label is on screen either way) and digest-diff
+    happily counts a menu popup as "visible effect". Every coordinate-based
+    clicking path, no matter how guarded, can produce that false pass, so
+    none of them exist anymore. An element without Invoke support returns
+    False and the round fails loudly with its label attached.
     """
     try:
-        r = el.rectangle()
-        cx, cy = r.left + r.width() // 2, r.top + r.height() // 2
+        el.invoke()
+        return True
     except Exception:
         return False
-    try:
-        wl, wt = win_rect.get("left", 0) or 0, win_rect.get("top", 0) or 0
-        ww, wh = win_rect.get("width", 0) or 0, win_rect.get("height", 0) or 0
-        if not (wl <= cx < wl + ww and wt <= cy < wt + wh):
-            log(f"Click point ({cx},{cy}) is outside the window - refusing (no taskbar clicks)")
-            return False
-    except Exception:
-        return False
-    return _left_click_at(handle, cx, cy)
 
 
 def _sidebar_viewport(w):
@@ -782,8 +758,44 @@ def _scroll_into_view(w, handle: int, label: str, viewport, tries: int = 12):
     return None
 
 
+def _menu_text_present(text: str) -> bool:
+    """True if OCR text contains WebView2 link-menu phrases.
+
+    UIA Menu detection can miss owner-drawn/rendered menus; the OCR text does
+    not lie. Either signal fails the round loudly instead of letting a menu
+    masquerade as a successful navigation.
+    """
+    lowered = (text or "").lower()
+    return "open link in new window" in lowered or ("save link as" in lowered and "copy link" in lowered)
+
+
+def _ocr_main_panel_text(snap_path: str) -> str:
+    """OCR the main content area only (right ~78% of the screenshot).
+
+    Sidebar labels are visible on EVERY page, so checking the full-screenshot
+    OCR for the page name can never fail - a context menu over the sidebar
+    "verifies" just as well as the real page. Cropping the sidebar out makes
+    the label check mean something again.
+    """
+    try:
+        from PIL import Image
+
+        with Image.open(snap_path) as img:
+            w, h = img.size
+            crop = img.crop((int(w * 0.22), 0, w, h))
+            try:
+                import pytesseract
+
+                pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+                return pytesseract.image_to_string(crop)
+            except Exception:
+                return ""
+    except Exception:
+        return ""
+
+
 def _menu_open(w) -> bool:
-    """True if a context menu is currently showing in the target window."""
+    """True if a UIA context menu is currently showing in the target window."""
     try:
         for m in w.descendants(control_type="Menu"):
             try:
@@ -899,28 +911,37 @@ def nav_click_through(output_dir: str):
     previous = None
     for index, label in enumerate(labels, 1):
         try:
-            cur = cua_find_window(WINDOW_TITLE_RE, retry_seconds=2) or win
-            win_rect = cur.get("rect", {}) or {}
+            _ensure_foreground(handle)
             viewport = _sidebar_viewport(w)
             el = _scroll_into_view(w, handle, label, viewport)
             if el is None:
                 failures.append((label, "never scrolled into view after 12 wheel rounds"))
                 continue
-            navigated = False
-            for _click_round in (1, 2):
-                if not _invoke(el, handle, win_rect):
-                    failures.append((label, "click refused (focus lost or point outside window)"))
-                    break
-                time.sleep(3)
-                if _menu_open(w):
-                    log(f"Nav '{label}': context menu appeared after click - dismissing and retrying once")
+            if not _invoke(el):
+                failures.append((label, "UIA Invoke not supported - no click fallback by design"))
+                continue
+            time.sleep(3)
+
+            slug = "".join(c if c.isalnum() else "-" for c in label.lower()).strip("-")
+            snap_path = os.path.join(snap_dir, f"nav-{index:02d}-{slug}.png")
+
+            menu_free = False
+            for _attempt in (1, 2):
+                cua_screenshot(handle, snap_path)
+                text_full = cua_ocr_text(handle, snap_path)
+                if _menu_open(w) or _menu_text_present(text_full):
+                    log(f"Nav '{label}': context menu detected - dismissing and re-invoking once")
                     _release_mouse(handle)
                     time.sleep(0.5)
-                    continue
-                navigated = True
+                    if _invoke(el):
+                        time.sleep(3)
+                        continue
+                    failures.append((label, "re-invoke refused after menu dismiss"))
+                    break
+                menu_free = True
                 break
-            if not navigated:
-                failures.append((label, "context menu persisted after retry"))
+            if not menu_free:
+                failures.append((label, "context menu persisted after dismiss + re-invoke"))
                 continue
 
             slug = "".join(c if c.isalnum() else "-" for c in label.lower()).strip("-")
@@ -932,11 +953,16 @@ def nav_click_through(output_dir: str):
                 failures.append((label, "screenshot identical to the previous page: navigation had no visible effect"))
             previous = digest
 
-            text = cua_ocr_text(handle, snap_path)
+            text = text_full
             if not _verify_page_ocr(text, label, ""):
                 failures.append((label, "error page or empty OCR"))
-            elif label.lower() not in text.lower():
-                log_warn(f"Page '{label}': its name was not found in OCR (title may differ; check the screenshot)")
+                continue
+            # Label check reads the MAIN PANEL only: sidebar labels are visible
+            # on every page, so a full-screenshot match cannot distinguish a
+            # real navigation from a context menu sitting over the sidebar.
+            main_text = _ocr_main_panel_text(snap_path)
+            if label.lower() not in main_text.lower():
+                log_warn(f"Page '{label}': name not found in main-panel OCR (title may differ; check the screenshot)")
             log(f"Nav {index}/{len(labels)} '{label}': ok")
         except PhaseFailed:
             raise
