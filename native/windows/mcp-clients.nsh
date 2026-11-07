@@ -5,6 +5,14 @@
 ;   !define MCP_REG_NAME "onenote-mcp"                 ; key written into the AI client configs
 ;   !define MCP_REG_EXE  "onenote-mcp-backend.exe"     ; stdio-capable exe under $INSTDIR\resources\
 ;   !include "mcp-clients.nsh"
+; IMPORTANT (proven 2026-10-28 on virtualization-mcp): tauri runs makensis
+; with CWD=target/release/nsis/x64 (tauri-bundler nsis/mod.rs
+; .current_dir(output_path)), so that bare !include does NOT resolve next
+; to hooks.nsh. Precede it with an explicit search path in hooks.nsh:
+;   !addincludedir "..\..\..\..\windows"   ; x64 -> nsis -> release -> target -> native
+;   !include "mcp-clients.nsh"
+; Do not "simplify" this away - the depth is fixed by tauri's own output
+; layout, and the NSIS bundle breaks without it.
 ; then call from your own hook macros:
 ;   NSIS_HOOK_POSTINSTALL  -> !insertmacro McpClientsRegister
 ;   NSIS_HOOK_PREUNINSTALL -> !insertmacro McpClientsUnregister

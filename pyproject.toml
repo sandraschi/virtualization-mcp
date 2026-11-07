@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "virtualization-mcp"
-version = "1.6.1"
+version = "1.7.0"
 description = "Manage VirtualBox and Hyper-V VMs: snapshots, networking, storage, sandboxes, Windows Sandbox"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -83,7 +83,7 @@ source = "uv-dynamic-versioning"
 vcs = "git"
 style = "pep440"
 bump = true
-fallback-version = "1.6.1"
+fallback-version = "1.7.0"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/virtualization_mcp"]

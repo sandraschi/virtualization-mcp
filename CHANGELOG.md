@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.0] - 2026-11-07
+
+### Added
+- **VMware Workstation Pro support (free since Broadcom Nov 2024)**:
+  new `VmwareManager` service driving `vmrun.exe` (probe, list/get enriched
+  from the `Documents/Virtual Machines` inventory scan, start/stop/reset/
+  suspend/pause/unpause, snapshots, clone, guest IP), new
+  `vmware_management` MCP portmanteau tool, REST endpoints
+  (`GET /api/v1/vmware/status`, `GET /api/v1/vmware/vms`,
+  `POST /api/v1/vmware/action`, `POST /api/v1/vmware/create`,
+  `provider: "vmware"` on `POST /api/v1/vms`), and a VMware webapp page
+  with a New-VM form and per-VM delete.
+- **VMware create/delete**: `vmrun` has no create verb, so the backend
+  writes what Workstation would write - VM dir + `.vmdk` via
+  `vmware-vdiskmanager -c` (best-effort, warned-not-failed when missing) +
+  a minimal Workstation 17+ `.vmx` (guestOS aliases, efi/bios firmware,
+  optional installer ISO). Delete stops hard, prefers `vmrun deleteVM`,
+  falls back to removing the VM's own folder.
+- **Hackintosh lab page**: Intel-notebook-first guidance, 16GB floor,
+  Goliath slow-test checklist (`docs/hackintosh.md`).
+
+### Fixed
+- **64-bit Workstation discovery**: `vmrun.exe`/`vmware-vdiskmanager.exe`
+  candidate paths now include `C:\Program Files\VMware\VMware Workstation\`
+  first (the 64-bit install location). Previously only the `(x86)` path was
+  checked, so a standard install probed as "vmrun not found" and every
+  VMware surface failed.
+
 ## [Unreleased]
 
 ### Added
