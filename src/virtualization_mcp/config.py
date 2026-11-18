@@ -25,7 +25,7 @@ except ImportError:
     class BaseSettings(BaseModel):
         debug: bool = False
         log_level: str = "INFO"
-        host: str = "0.0.0.0"  # noqa: S104
+        host: str = "127.0.0.1"
         port: int = 16000
 
 
@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Server configuration (MCP HTTP/SSE: use 10700-10800 per SOTA; 10702 avoids webapp 10700/10701)
-    HOST: str = "0.0.0.0"  # noqa: S104
+    HOST: str = "127.0.0.1"
     PORT: int = Field(default=10702, validation_alias="VIRTUALIZATION_MCP_PORT", description="MCP HTTP/SSE port")
     WEB_PORT: int = 3080  # FastAPI web server port
     WORKERS: int = 1
@@ -74,7 +74,13 @@ class Settings(BaseSettings):
 
     # Security
     API_KEY: str | None = None
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:10700",
+        "http://127.0.0.1:10700",
+        "tauri://localhost",
+        "http://tauri.localhost",
+        "https://tauri.localhost",
+    ]
 
     # Timeouts and limits (in seconds)
     API_TIMEOUT: int = 30

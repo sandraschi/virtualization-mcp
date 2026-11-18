@@ -1,4 +1,4 @@
-# ruff: noqa: S105, S602, B904, F821, RUF005, F841, S104
+# ruff: noqa: S105, S602, B904, F821, RUF005, F841
 # ^ intentional: S105(password defaults), S110(cleanup excepts),
 #   S310(LLM/ISO URL fetch), S602(start fleet app),
 #   B904(HTTPException re-raises), F821(C# string literal),
@@ -5543,4 +5543,4 @@ async def vm_vnc_websocket(websocket: WebSocket, name: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=10701, reload=True)
+    uvicorn.run("main:app", host=os.getenv("WEB_HOST", "127.0.0.1"), port=10701, reload=True)

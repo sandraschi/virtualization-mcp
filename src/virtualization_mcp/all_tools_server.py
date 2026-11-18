@@ -120,7 +120,7 @@ def main() -> int:
     parser.add_argument(
         "--http", action="store_const", const="http", dest="transport", help="Alias for --transport http"
     )
-    parser.add_argument("--host", default="0.0.0.0", help="HTTP host")  # noqa: S104
+    parser.add_argument("--host", default="127.0.0.1", help="HTTP host")
     parser.add_argument("--port", type=int, default=10702, help="HTTP port (fleet registry: MCP HTTP/SSE)")
     # Fleet dual-transport contract (see AGENTS.md): honor MCP_TRANSPORT/MCP_PORT
     # when the caller did not pass explicit transport flags (pack smoke check,

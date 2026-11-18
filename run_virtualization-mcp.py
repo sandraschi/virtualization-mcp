@@ -35,7 +35,7 @@ async def run_server():
         from virtualization_mcp.all_tools_server import start_mcp_server
 
         logger.info("Starting virtualization-mcp server...")
-        _mcp = start_mcp_server(host="0.0.0.0", port=8000)
+        _mcp = start_mcp_server(host="127.0.0.1", port=8000)
         logger.info("virtualization-mcp FastMCP ready: %s", getattr(_mcp, "name", _mcp))
 
         # Keep the server running
