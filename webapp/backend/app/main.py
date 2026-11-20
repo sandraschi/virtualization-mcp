@@ -4105,6 +4105,35 @@ async def fleet_naked_test(request: NakedTestRequest):
     logon payload clones, smoke-gates (just --list) and observes start.bat.
     Poll GET /api/v1/fleet/naked-test/{job_id} for progress.
     """
+    # Fail fast when this backend itself sits in Session 0 (service/SYSTEM):
+    # WindowsSandbox.exe launched from there never produces a LogonCommand
+    # boot, so every dispatched job would burn the full boot budget (240s x2
+    # per repo, hours per shard) and report harness/no-boot-markers. Refuse
+    # with 503 so the matrix records a clear beat instead of a 4.5h red run.
+    if sys.platform == "win32":
+        try:
+            _sess_probe = await asyncio.to_thread(
+                subprocess.run,
+                ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+                 "$p = Get-NetTCPConnection -LocalPort 10701 -State Listen"
+                 " -ErrorAction SilentlyContinue | Select-Object -First 1;"
+                 " if ($p) { (Get-Process -Id $p.OwningProcess"
+                 " -ErrorAction SilentlyContinue).SessionId }"],
+                capture_output=True, text=True, timeout=30,
+            )
+            if (_sess_probe.stdout or "").strip() == "0":
+                raise HTTPException(
+                    status_code=503,
+                    detail="harness backend is in Session 0 (service/SYSTEM) - "
+                    "sandbox jobs launched from there never boot. Stop the "
+                    "Session 0 backend, then in your console run "
+                    "D:\\Dev\\repos\\virtualization-mcp\\webapp\\start.ps1 "
+                    "so port 10701 is owned from the interactive session.",
+                )
+        except HTTPException:
+            raise
+        except Exception as _e:
+            logger.debug(f"naked-test session guard best-effort failed: {_e}")
     repo = (request.repo or "").strip()
     if not repo:
         raise HTTPException(status_code=400, detail="repo is required (owner/name or https URL)")

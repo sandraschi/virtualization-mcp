@@ -103,6 +103,10 @@ async def _wait_until_no_sandbox(timeout_sec: float) -> bool:
 def _launch_naked_wsb(tmp_wsb: Path) -> None:
     import os
 
+    # WSB is parsed by Windows Sandbox's XML stack: write CRLF explicitly.
+    # Path.write_text defaults to LF, which has produced silent no-boot
+    # launches with zero LogonCommand output on some hosts.
+    # Callers must already have written tmp_wsb with newline="\r\n".
     wsb_exe = Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "WindowsSandbox.exe"
     if wsb_exe.exists():
         subprocess.Popen([str(wsb_exe), str(tmp_wsb)])
@@ -205,7 +209,10 @@ async def _naked_test_lifecycle(jid: str, job_dir: Path, wsb_xml: str, tmp_wsb: 
 
         for attempt in (1, 2):
             try:
-                tmp_wsb.write_text(wsb_xml, encoding="utf-8")
+                # CRLF: Windows Sandbox WSB parsing is CRLF-sensitive; LF-only
+                # files launch with zero LogonCommand output on some hosts.
+                with open(tmp_wsb, "w", encoding="utf-8", newline="\r\n") as _wsb:
+                    _wsb.write(wsb_xml)
                 _launch_naked_wsb(tmp_wsb)
             except Exception as e:
                 logger.warning(f"naked-test {jid}: launch attempt {attempt} failed: {e}")
